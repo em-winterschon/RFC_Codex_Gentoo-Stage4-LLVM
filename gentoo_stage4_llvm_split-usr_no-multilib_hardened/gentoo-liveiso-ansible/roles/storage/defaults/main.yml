@@ -1,0 +1,24 @@
+---
+zfs_pool_properties:
+  ashift: '12'
+  autotrim: 'on'
+  compatibility: "{{ zpool_compatibility }}"
+zfs_fs_properties:
+  acltype: posixacl
+  compression: zstd
+  dnodesize: auto
+  relatime: on
+  xattr: sa
+  mountpoint: none
+zfs_root_datasets:
+  - { name: "{{ zpool_name }}/ROOT", extra: "-o mountpoint=none -o canmount=off" }
+  - { name: "{{ zpool_name }}/ROOT/gentoo", extra: "-o mountpoint=/ -o canmount=noauto" }
+  - { name: "{{ zpool_name }}/home", extra: "-o mountpoint=/home" }
+  - { name: "{{ zpool_name }}/opt", extra: "-o mountpoint=/opt" }
+  - { name: "{{ zpool_name }}/srv", extra: "-o mountpoint=/srv" }
+  - { name: "{{ zpool_name }}/tmp", extra: "-o mountpoint=/tmp -o setuid=off" }
+  - { name: "{{ zpool_name }}/usr", extra: "-o mountpoint=/usr -o canmount=off" }
+  - { name: "{{ zpool_name }}/usr/local", extra: "-o mountpoint=/usr/local" }
+  - { name: "{{ zpool_name }}/var", extra: "-o mountpoint=/var -o canmount=off" }
+  - { name: "{{ zpool_name }}/var/log", extra: "-o mountpoint=/var/log" }
+  - { name: "{{ zpool_name }}/var/lib", extra: "-o mountpoint=/var/lib" }

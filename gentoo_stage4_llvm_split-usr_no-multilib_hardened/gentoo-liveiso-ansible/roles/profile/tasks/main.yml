@@ -1,0 +1,47 @@
+---
+- name: Create local overlay repo directories
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - metadata
+    - profiles
+    - profiles/{{ profile_name }}
+
+- name: Write overlay repo_name
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/profiles/repo_name"
+    content: "{{ profile_overlay_name }}\n"
+    mode: '0644'
+
+- name: Write overlay layout.conf
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/metadata/layout.conf"
+    content: |
+      repo-name = {{ profile_overlay_name }}
+      masters = gentoo
+      thin-manifests = true
+    mode: '0644'
+
+- name: Write overlay profile eapi
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/profiles/{{ profile_name }}/eapi"
+    content: "8\n"
+    mode: '0644'
+
+- name: Write overlay profile parents
+  ansible.builtin.template:
+    src: parent.j2
+    dest: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/profiles/{{ profile_name }}/parent"
+    mode: '0644'
+
+- name: Register overlay repo in repos.conf
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/repos.conf/{{ profile_overlay_name }}.conf"
+    mode: '0644'
+    content: |
+      [{{ profile_overlay_name }}]
+      location = /var/db/repos/{{ profile_overlay_name }}
+      masters = gentoo
+      auto-sync = no

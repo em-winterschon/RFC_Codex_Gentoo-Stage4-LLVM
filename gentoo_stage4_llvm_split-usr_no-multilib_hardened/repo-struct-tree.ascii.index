@@ -1,0 +1,80 @@
+[ 36K]  .
+[ 36K]  (0tqq (Bgentoo-liveiso-ansible
+[ 129]  (0x   tqq (Bcollections
+[  69]  (0x   x   mqq (Brequirements.yml
+[3.1K]  (0x   tqq (Binventories
+[3.1K]  (0x   x   mqq (Bexamples
+[2.7K]  (0x   x       tqq (Bgroup_vars
+[2.6K]  (0x   x       x   mqq (Binstall_targets.yml
+[ 312]  (0x   x       mqq (Bhosts.yml
+[ 481]  (0x   tqq (Bplaybooks
+[ 421]  (0x   x   mqq (Binstall.yml
+[ 25K]  (0x   tqq (Broles
+[1.8K]  (0x   x   tqq (Bboot
+[  40]  (0x   x   x   tqq (Bdefaults
+[1.3K]  (0x   x   x   tqq (Btasks
+[1.3K]  (0x   x   x   x   mqq (Bmain.yml
+[ 283]  (0x   x   x   mqq (Btemplates
+[ 223]  (0x   x   x       mqq (Bfstab.j2
+[2.6K]  (0x   x   tqq (Bchroot_base
+[  40]  (0x   x   x   tqq (Bdefaults
+[2.2K]  (0x   x   x   tqq (Btasks
+[2.1K]  (0x   x   x   x   mqq (Bmain.yml
+[ 281]  (0x   x   x   mqq (Btemplates
+[ 221]  (0x   x   x       mqq (Bchroot-runner.sh.j2
+[ 699]  (0x   x   tqq (Bliveiso_prepare
+[  40]  (0x   x   x   tqq (Bdefaults
+[ 519]  (0x   x   x   tqq (Btasks
+[ 459]  (0x   x   x   x   mqq (Bmain.yml
+[  40]  (0x   x   x   mqq (Btemplates
+[1.1K]  (0x   x   tqq (Bnetwork
+[  40]  (0x   x   x   tqq (Bdefaults
+[ 960]  (0x   x   x   tqq (Btasks
+[ 900]  (0x   x   x   x   mqq (Bmain.yml
+[  40]  (0x   x   x   mqq (Btemplates
+[1.9K]  (0x   x   tqq (Bportage
+[  40]  (0x   x   x   tqq (Bdefaults
+[ 643]  (0x   x   x   tqq (Btasks
+[ 583]  (0x   x   x   x   mqq (Bmain.yml
+[1.1K]  (0x   x   x   mqq (Btemplates
+[1.1K]  (0x   x   x       mqq (Bmake.conf.j2
+[2.4K]  (0x   x   tqq (Bpreflight
+[  40]  (0x   x   x   tqq (Bdefaults
+[2.2K]  (0x   x   x   tqq (Btasks
+[2.1K]  (0x   x   x   x   mqq (Bmain.yml
+[  40]  (0x   x   x   mqq (Btemplates
+[1.8K]  (0x   x   tqq (Bprofile
+[  40]  (0x   x   x   tqq (Bdefaults
+[1.6K]  (0x   x   x   tqq (Btasks
+[1.5K]  (0x   x   x   x   mqq (Bmain.yml
+[ 124]  (0x   x   x   mqq (Btemplates
+[  64]  (0x   x   x       mqq (Bparent.j2
+[2.6K]  (0x   x   tqq (Bstage3
+[  40]  (0x   x   x   tqq (Bdefaults
+[2.4K]  (0x   x   x   tqq (Btasks
+[2.3K]  (0x   x   x   x   mqq (Bmain.yml
+[  40]  (0x   x   x   mqq (Btemplates
+[9.4K]  (0x   x   tqq (Bstorage
+[1.1K]  (0x   x   x   tqq (Bdefaults
+[1.1K]  (0x   x   x   x   mqq (Bmain.yml
+[8.1K]  (0x   x   x   tqq (Btasks
+[2.3K]  (0x   x   x   x   tqq (Blayout_mdadm.yml
+[2.8K]  (0x   x   x   x   tqq (Blayout_zfs_native.yml
+[1.1K]  (0x   x   x   x   tqq (Bmain.yml
+[1.8K]  (0x   x   x   x   mqq (Bpartition_uefi.yml
+[  40]  (0x   x   x   mqq (Btemplates
+[1.1K]  (0x   x   mqq (Bsystem_packages
+[  40]  (0x   x       tqq (Bdefaults
+[ 908]  (0x   x       tqq (Btasks
+[ 848]  (0x   x       x   mqq (Bmain.yml
+[  40]  (0x   x       mqq (Btemplates
+[ 543]  (0x   tqq (Bscripts
+[ 483]  (0x   x   mqq (Bbootstrap-liveiso.sh
+[1.6K]  (0x   tqq (Bvars
+[1.1K]  (0x   x   tqq (Bcpu_profiles.yml
+[ 422]  (0x   x   mqq (Bgpu_profiles.yml
+[3.7K]  (0x   tqq (BREADME.md
+[ 351]  (0x   mqq (Bansible.cfg
+[   0]  (0mqq (Brepo-struct-tree.ascii.index
+
+  36K used in 50 directories, 28 files

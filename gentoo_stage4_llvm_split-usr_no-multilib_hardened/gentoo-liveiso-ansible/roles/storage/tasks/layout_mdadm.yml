@@ -1,0 +1,73 @@
+---
+- name: Derive mdadm level for selected layout
+  ansible.builtin.set_fact:
+    mdadm_level: "{{ '1' if storage_layout == 'raid-1' else '10' }}"
+
+- name: Create swap on first swap partition only
+  ansible.builtin.command: "mkswap {{ swap_partitions[0] }}"
+  when: swap_partitions | length > 0
+
+- name: Enable swap on first swap partition only
+  ansible.builtin.command: "swapon {{ swap_partitions[0] }}"
+  when: swap_partitions | length > 0
+
+- name: Create mdadm root array
+  ansible.builtin.shell: |
+    set -euo pipefail
+    yes | mdadm --create /dev/md/root \
+      --level={{ mdadm_level }} \
+      --raid-devices={{ root_partitions | length }} \
+      {{ root_partitions | join(' ') }}
+    udevadm settle
+  args:
+    executable: /bin/bash
+
+- name: Generate hostid for root-on-ZFS
+  ansible.builtin.command: "zgenhostid -f"
+
+- name: Create ZFS root pool on mdadm array
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zpool create -f \
+      -R {{ install_target_root }} \
+      -o ashift={{ zfs_pool_properties.ashift }} \
+      -o autotrim={{ zfs_pool_properties.autotrim }} \
+      -o compatibility={{ zfs_pool_properties.compatibility }} \
+      -O acltype={{ zfs_fs_properties.acltype }} \
+      -O compression={{ zfs_fs_properties.compression }} \
+      -O dnodesize={{ zfs_fs_properties.dnodesize }} \
+      -O relatime={{ zfs_fs_properties.relatime }} \
+      -O xattr={{ zfs_fs_properties.xattr }} \
+      -O mountpoint={{ zfs_fs_properties.mountpoint }} \
+      -m none \
+      {{ zpool_name }} /dev/md/root
+  args:
+    executable: /bin/bash
+
+- name: Create base ZFS datasets
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zfs create {{ item.extra }} {{ item.name }}
+  loop: "{{ zfs_root_datasets }}"
+  args:
+    executable: /bin/bash
+
+- name: Set bootfs on root pool
+  ansible.builtin.command: "zpool set bootfs={{ zpool_name }}/ROOT/gentoo {{ zpool_name }}"
+
+- name: Mount root dataset
+  ansible.builtin.command: "zfs mount {{ zpool_name }}/ROOT/gentoo"
+
+- name: Create EFI mountpoint in target root
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/efi"
+    state: directory
+    mode: '0755'
+
+- name: Mount first EFI partition
+  ansible.posix.mount:
+    src: "{{ esp_partitions[0] }}"
+    path: "{{ install_target_root }}/efi"
+    fstype: vfat
+    opts: defaults,noatime
+    state: mounted

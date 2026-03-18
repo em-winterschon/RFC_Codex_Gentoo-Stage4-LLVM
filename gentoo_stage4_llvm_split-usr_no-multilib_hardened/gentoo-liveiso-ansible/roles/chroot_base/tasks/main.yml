@@ -1,0 +1,68 @@
+---
+- name: Copy resolv.conf into target
+  ansible.builtin.copy:
+    src: /etc/resolv.conf
+    dest: "{{ install_target_root }}/etc/resolv.conf"
+    remote_src: true
+    mode: '0644'
+
+- name: Ensure chroot pseudo-filesystems are mounted
+  ansible.posix.mount:
+    src: "{{ item.src }}"
+    path: "{{ install_target_root }}{{ item.path }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.opts | default('') }}"
+    state: mounted
+  loop:
+    - { src: /proc, path: /proc, fstype: none, opts: bind }
+    - { src: /sys, path: /sys, fstype: none, opts: rbind }
+    - { src: /dev, path: /dev, fstype: none, opts: rbind }
+    - { src: /run, path: /run, fstype: none, opts: rbind }
+
+- name: Create chroot helper script
+  ansible.builtin.template:
+    src: chroot-runner.sh.j2
+    dest: "{{ liveiso_work_dir }}/chroot-runner.sh"
+    mode: '0755'
+
+- name: Sync Portage in target
+  ansible.builtin.command: "{{ liveiso_work_dir }}/chroot-runner.sh {{ portage_sync_command | quote }}"
+
+- name: Select combined local profile in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('eselect profile set ' + profile_overlay_name + ':' + profile_name) | quote }}
+
+- name: Set timezone
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('ln -snf /usr/share/zoneinfo/' + install_timezone + ' /etc/localtime') | quote }}
+
+- name: Write locale.gen
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/locale.gen"
+    content: "{{ install_locale }}\n"
+    mode: '0644'
+
+- name: Generate locale
+  ansible.builtin.command: "{{ liveiso_work_dir }}/chroot-runner.sh locale-gen"
+
+- name: Write locale.conf
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/env.d/02locale"
+    content: |
+      LANG={{ install_locale.split(' ')[0] }}
+    mode: '0644'
+
+- name: Write hostname
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/hostname"
+    content: "{{ install_hostname }}\n"
+    mode: '0644'
+
+- name: Write keymap
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/conf.d/keymaps"
+    content: |
+      keymap="{{ install_keymap }}"
+    mode: '0644'

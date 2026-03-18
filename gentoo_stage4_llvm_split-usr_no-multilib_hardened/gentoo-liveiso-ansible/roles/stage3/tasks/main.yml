@@ -1,0 +1,69 @@
+---
+- name: Build current-stage3 directory name
+  ansible.builtin.set_fact:
+    stage3_current_dir: "current-stage3-{{ install_arch }}-{{ stage3_flavor }}"
+    stage3_latest_txt: "latest-stage3-{{ install_arch }}-{{ stage3_flavor }}.txt"
+
+- name: Download stage3 locator file
+  ansible.builtin.uri:
+    url: "{{ stage3_base_url }}/{{ stage3_current_dir }}/{{ stage3_latest_txt }}"
+    return_content: true
+  register: latest_stage3_info
+
+- name: Parse latest stage3 tarball name
+  ansible.builtin.set_fact:
+    stage3_tarball_name: "{{ latest_stage3_info.content | regex_search('stage3-[^\\s]+\\.tar\\.xz') }}"
+
+- name: Fail if no stage3 tarball could be extracted from locator file
+  ansible.builtin.assert:
+    that:
+      - stage3_tarball_name is string
+      - stage3_tarball_name | length > 0
+    fail_msg: "Unable to parse the latest stage3 tarball from {{ stage3_latest_txt }}."
+
+- name: Resolve stage3 URLs
+  ansible.builtin.set_fact:
+    stage3_tarball_url: "{{ stage3_base_url }}/{{ stage3_current_dir }}/{{ stage3_tarball_name }}"
+    stage3_sha256_url: "{{ stage3_base_url }}/{{ stage3_current_dir }}/{{ stage3_tarball_name }}.sha256"
+    stage3_tarball_path: "{{ liveiso_work_dir }}/{{ stage3_tarball_name }}"
+
+- name: Download stage3 sha256 sidecar
+  ansible.builtin.uri:
+    url: "{{ stage3_sha256_url }}"
+    return_content: true
+  register: stage3_sha256_sidecar
+  when: stage3_verify_checksum | bool
+
+- name: Parse stage3 sha256 checksum
+  ansible.builtin.set_fact:
+    stage3_sha256_checksum: >-
+      {{ stage3_sha256_sidecar.content
+         | regex_search('([A-Fa-f0-9]{64})', '\\1')
+         | first }}
+  when: stage3_verify_checksum | bool
+
+- name: Download stage3 tarball
+  ansible.builtin.get_url:
+    url: "{{ stage3_tarball_url }}"
+    dest: "{{ stage3_tarball_path }}"
+    mode: '0644'
+    checksum: "{{ ('sha256:' + stage3_sha256_checksum) if stage3_verify_checksum | bool else omit }}"
+
+- name: Extract stage3 into target root
+  ansible.builtin.unarchive:
+    src: "{{ stage3_tarball_path }}"
+    dest: "{{ install_target_root }}"
+    remote_src: true
+    extra_opts:
+      - --xattrs-include=*.*
+      - --numeric-owner
+
+- name: Ensure basic target directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - etc/portage/repos.conf
+    - var/db/repos
+    - boot

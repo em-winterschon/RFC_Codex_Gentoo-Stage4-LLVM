@@ -1,0 +1,19 @@
+---
+- name: Rapid Gentoo installer from a booted LiveISO
+  hosts: install_targets
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../vars/cpu_profiles.yml
+    - ../vars/gpu_profiles.yml
+  roles:
+    - role: preflight
+    - role: liveiso_prepare
+    - role: storage
+    - role: stage3
+    - role: profile
+    - role: portage
+    - role: chroot_base
+    - role: system_packages
+    - role: boot
+    - role: network

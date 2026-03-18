@@ -1,0 +1,57 @@
+---
+- name: Partition each storage device
+  ansible.builtin.shell: |
+    set -euo pipefail
+    sgdisk -n 1:1MiB:+{{ esp_size_mib }}MiB -t 1:EF00 -c 1:EFI_SYSTEM_{{ storage_index + 1 }} "{{ item }}"
+    sgdisk -n 2:0:+{{ swap_size_gib }}GiB -t 2:8200 -c 2:SWAP_{{ storage_index + 1 }} "{{ item }}"
+    sgdisk -n 3:0:0 -t 3:BF01 -c 3:ZFS_ROOT_{{ storage_index + 1 }} "{{ item }}"
+    partprobe "{{ item }}"
+    udevadm settle
+  args:
+    executable: /bin/bash
+  loop: "{{ storage_devices }}"
+  loop_control:
+    index_var: storage_index
+
+- name: Resolve EFI partition device paths by GPT PARTLABEL
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ storage_devices | length }}); do
+      blkid -t PARTLABEL="EFI_SYSTEM_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: esp_partition_lookup
+  changed_when: false
+
+- name: Resolve swap partition device paths by GPT PARTLABEL
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ storage_devices | length }}); do
+      blkid -t PARTLABEL="SWAP_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: swap_partition_lookup
+  changed_when: false
+
+- name: Resolve root partition device paths by GPT PARTLABEL
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ storage_devices | length }}); do
+      blkid -t PARTLABEL="ZFS_ROOT_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: root_partition_lookup
+  changed_when: false
+
+- name: Build partition path lists
+  ansible.builtin.set_fact:
+    esp_partitions: "{{ esp_partition_lookup.stdout_lines }}"
+    swap_partitions: "{{ swap_partition_lookup.stdout_lines }}"
+    root_partitions: "{{ root_partition_lookup.stdout_lines }}"
+
+- name: Format all EFI system partitions
+  ansible.builtin.command: "mkfs.vfat -F 32 {{ item }}"
+  loop: "{{ esp_partitions }}"

@@ -1,0 +1,31 @@
+---
+- name: Enable NetworkManager service on OpenRC
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ item | quote }}
+  loop:
+    - rc-update add NetworkManager default
+    - rc-update add dbus default
+  when: install_networkmanager | bool
+
+- name: Enable sshd on OpenRC
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ item | quote }}
+  loop:
+    - rc-update add sshd default
+  when: install_openssh | bool
+
+- name: Create root ssh directory
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/root/.ssh"
+    state: directory
+    mode: '0700'
+  when: root_authorized_keys | length > 0
+
+- name: Install root authorized_keys
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/root/.ssh/authorized_keys"
+    content: "{{ root_authorized_keys | join('\n') }}\n"
+    mode: '0600'
+  when: root_authorized_keys | length > 0

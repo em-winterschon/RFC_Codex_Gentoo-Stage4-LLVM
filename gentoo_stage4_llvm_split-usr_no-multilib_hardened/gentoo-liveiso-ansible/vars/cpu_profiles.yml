@@ -1,0 +1,44 @@
+---
+portage_cpu_profiles:
+  amd_ryzen_z1_extreme:
+    march: znver4
+    tune: znver4
+    rust_target_cpu: znver4
+    llvm_targets: "AMDGPU X86"
+    notes: "Zen 4 handheld APU with AMD RDNA 3 graphics"
+  amd_epyc_zen4:
+    march: znver4
+    tune: znver4
+    rust_target_cpu: znver4
+    llvm_targets: "AMDGPU NVPTX X86"
+    notes: "Zen 4 EPYC"
+  amd_epyc_zen5:
+    march: znver5
+    tune: znver5
+    rust_target_cpu: znver5
+    llvm_targets: "AMDGPU NVPTX X86"
+    notes: "Zen 5 EPYC"
+  intel_xeon_8370c:
+    march: icelake-server
+    tune: icelake-server
+    rust_target_cpu: icelake-server
+    llvm_targets: "AMDGPU NVPTX X86"
+    notes: "Ice Lake server"
+  intel_core_i9_13900hk:
+    march: raptorlake
+    tune: raptorlake
+    rust_target_cpu: raptorlake
+    llvm_targets: "X86"
+    notes: "Raptor Lake mobile"
+  intel_core_ultra_5_125h:
+    march: meteorlake
+    tune: meteorlake
+    rust_target_cpu: meteorlake
+    llvm_targets: "X86"
+    notes: "Meteor Lake mobile"
+  intel_xeon_e5_2643v4:
+    march: broadwell
+    tune: broadwell
+    rust_target_cpu: broadwell
+    llvm_targets: "AMDGPU NVPTX X86"
+    notes: "Broadwell-EP"

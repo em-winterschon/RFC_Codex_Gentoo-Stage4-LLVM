@@ -1,0 +1,19 @@
+---
+- name: Write make.conf from template
+  ansible.builtin.template:
+    src: make.conf.j2
+    dest: "{{ install_target_root }}/etc/portage/make.conf"
+    mode: '0644'
+
+- name: Ensure package.use directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.use"
+    state: directory
+    mode: '0755'
+
+- name: Force installkernel to keep kernels on ZFS /boot instead of ESP
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.use/installkernel"
+    mode: '0644'
+    content: |
+      sys-kernel/installkernel -systemd

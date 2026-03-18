@@ -1,0 +1,25 @@
+---
+- name: Check required commands exist on the LiveISO
+  ansible.builtin.shell: "command -v {{ item }} >/dev/null"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  loop:
+    - awk
+    - curl
+    - gpg
+    - gpgv
+    - lsblk
+    - mount
+    - partprobe
+    - sgdisk
+    - tar
+    - wipefs
+    - zpool
+    - zfs
+
+- name: Create target root directory
+  ansible.builtin.file:
+    path: "{{ install_target_root }}"
+    state: directory
+    mode: '0755'

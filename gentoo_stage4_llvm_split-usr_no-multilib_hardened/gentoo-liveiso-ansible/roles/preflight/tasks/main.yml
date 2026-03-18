@@ -1,0 +1,64 @@
+---
+- name: Assert installer runs as root
+  ansible.builtin.assert:
+    that:
+      - ansible_user_id == 'root' or ansible_effective_user_id | int == 0
+    fail_msg: "This playbook must run as root from the LiveISO or via root SSH."
+
+- name: Assert destructive storage work is acknowledged
+  ansible.builtin.assert:
+    that:
+      - storage_confirm_destroy | bool
+    fail_msg: >-
+      Set storage_confirm_destroy=true after reviewing the selected devices. This
+      playbook will wipe partition tables and filesystems.
+
+- name: Require explicit opt-in for mdadm under ZFS
+  ansible.builtin.assert:
+    that:
+      - storage_layout not in ['raid-1', 'raid-10'] or storage_allow_mdadm_under_zfs | bool
+    fail_msg: >-
+      The mdadm-backed layouts place ZFS on top of mdraid and are intentionally
+      gated. Set storage_allow_mdadm_under_zfs=true if you really want that.
+
+- name: Assert UEFI mode when requested
+  ansible.builtin.stat:
+    path: /sys/firmware/efi/efivars
+  register: efi_vars
+  when: install_boot_mode == 'uefi'
+
+- name: Fail if UEFI was requested but firmware is not in UEFI mode
+  ansible.builtin.assert:
+    that:
+      - efi_vars.stat.exists
+    fail_msg: "UEFI mode requested, but /sys/firmware/efi/efivars is missing."
+  when: install_boot_mode == 'uefi'
+
+- name: Create work directory
+  ansible.builtin.file:
+    path: "{{ liveiso_work_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Assert selected CPU tuning profile exists
+  ansible.builtin.assert:
+    that:
+      - portage_cpu_profile in portage_cpu_profiles
+    fail_msg: "Unknown portage_cpu_profile={{ portage_cpu_profile }}"
+
+- name: Assert selected GPU stack exists
+  ansible.builtin.assert:
+    that:
+      - gpu_stack in gpu_profiles
+    fail_msg: "Unknown gpu_stack={{ gpu_stack }}"
+
+- name: Resolve selected CPU tuning profile
+  ansible.builtin.set_fact:
+    selected_cpu_profile: "{{ portage_cpu_profiles[portage_cpu_profile] }}"
+    selected_gpu_profile: "{{ gpu_profiles[gpu_stack] }}"
+
+- name: Ensure storage device list is present
+  ansible.builtin.assert:
+    that:
+      - storage_devices | length > 0
+    fail_msg: "storage_devices must contain at least one disk or partition path."

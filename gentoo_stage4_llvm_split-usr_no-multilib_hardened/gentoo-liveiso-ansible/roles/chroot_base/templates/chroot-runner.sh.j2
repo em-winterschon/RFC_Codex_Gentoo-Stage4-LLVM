@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+chroot {{ install_target_root }} /usr/bin/env -i \
+  HOME=/root \
+  TERM="${TERM:-linux}" \
+  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  /bin/bash -lc "$*"

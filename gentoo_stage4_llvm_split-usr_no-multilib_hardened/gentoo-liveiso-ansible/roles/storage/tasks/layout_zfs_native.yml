@@ -1,0 +1,79 @@
+---
+- name: Build root vdev specification for native ZFS
+  ansible.builtin.set_fact:
+    zpool_root_vdev_spec: >-
+      {% if storage_layout == 'single-drive' %}
+      {{ root_partitions | join(' ') }}
+      {% elif storage_layout == 'zfs-mirror' %}
+      mirror {{ root_partitions | join(' ') }}
+      {% elif storage_layout == 'zraid1' %}
+      raidz1 {{ root_partitions | join(' ') }}
+      {% elif storage_layout == 'zraid2' %}
+      raidz2 {{ root_partitions | join(' ') }}
+      {% elif storage_layout == 'zraid3' %}
+      raidz3 {{ root_partitions | join(' ') }}
+      {% elif storage_layout == 'draid' and (draid_vdev_spec_override | default('')) | length > 0 %}
+      {{ draid_vdev_spec_override }}
+      {% elif storage_layout == 'draid' %}
+      draid{{ draid_parity }}:{{ (root_partitions | length - draid_parity) | int }}d:1s:{{ root_partitions | length }}c {{ root_partitions | join(' ') }}
+      {% else %}
+      {{ root_partitions | join(' ') }}
+      {% endif %}
+
+- name: Create swap on the first swap partition only
+  ansible.builtin.command: "mkswap {{ swap_partitions[0] }}"
+  when: swap_partitions | length > 0
+
+- name: Enable swap on the first swap partition
+  ansible.builtin.command: "swapon {{ swap_partitions[0] }}"
+  when: swap_partitions | length > 0
+
+- name: Generate hostid for root-on-ZFS
+  ansible.builtin.command: "zgenhostid -f"
+
+- name: Create native ZFS root pool
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zpool create -f \
+      -R {{ install_target_root }} \
+      -o ashift={{ zfs_pool_properties.ashift }} \
+      -o autotrim={{ zfs_pool_properties.autotrim }} \
+      -o compatibility={{ zfs_pool_properties.compatibility }} \
+      -O acltype={{ zfs_fs_properties.acltype }} \
+      -O compression={{ zfs_fs_properties.compression }} \
+      -O dnodesize={{ zfs_fs_properties.dnodesize }} \
+      -O relatime={{ zfs_fs_properties.relatime }} \
+      -O xattr={{ zfs_fs_properties.xattr }} \
+      -O mountpoint={{ zfs_fs_properties.mountpoint }} \
+      -m none \
+      {{ zpool_name }} {{ zpool_root_vdev_spec }}
+  args:
+    executable: /bin/bash
+
+- name: Create base ZFS datasets
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zfs create {{ item.extra }} {{ item.name }}
+  loop: "{{ zfs_root_datasets }}"
+  args:
+    executable: /bin/bash
+
+- name: Set bootfs on root pool
+  ansible.builtin.command: "zpool set bootfs={{ zpool_name }}/ROOT/gentoo {{ zpool_name }}"
+
+- name: Mount root dataset
+  ansible.builtin.command: "zfs mount {{ zpool_name }}/ROOT/gentoo"
+
+- name: Create EFI mountpoint in target root
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/efi"
+    state: directory
+    mode: '0755'
+
+- name: Mount first EFI partition
+  ansible.posix.mount:
+    src: "{{ esp_partitions[0] }}"
+    path: "{{ install_target_root }}/efi"
+    fstype: vfat
+    opts: defaults,noatime
+    state: mounted

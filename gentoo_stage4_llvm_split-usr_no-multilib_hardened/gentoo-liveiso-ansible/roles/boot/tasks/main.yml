@@ -1,0 +1,40 @@
+---
+- name: Write fstab for EFI and swap
+  ansible.builtin.template:
+    src: fstab.j2
+    dest: "{{ install_target_root }}/etc/fstab"
+    mode: '0644'
+
+- name: Configure OpenRC ZFS services
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ item | quote }}
+  loop:
+    - rc-update add zfs-import sysinit
+    - rc-update add zfs-mount sysinit
+    - rc-update add zfs-zed default
+
+- name: Download prebuilt ZFSBootMenu EFI executable
+  ansible.builtin.get_url:
+    url: "{{ zfsbootmenu_efi_url }}"
+    dest: "{{ install_target_root }}/efi/EFI/BOOT/BOOTX64.EFI"
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Create ZFSBootMenu boot entry
+  ansible.builtin.command: >-
+    efibootmgr -c -d {{ storage_devices[0] }} -p 1 -L {{ zfsbootmenu_boot_label }} -l \\EFI\\BOOT\\BOOTX64.EFI
+  when: boot_strategy == 'zfsbootmenu' and install_boot_mode == 'uefi'
+
+- name: Install direct EFI stub helper
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/usr/local/sbin/install-efistub-kernel.sh"
+    mode: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      kernel="${1:?kernel image path required}"
+      target="/efi/EFI/Gentoo/gentoo.efi"
+      mkdir -p /efi/EFI/Gentoo
+      cp -f "$kernel" "$target"
+  when: boot_strategy == 'efistub'

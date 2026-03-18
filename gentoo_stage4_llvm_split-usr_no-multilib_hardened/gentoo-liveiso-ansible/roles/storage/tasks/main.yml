@@ -1,0 +1,38 @@
+---
+- name: Unmount anything under the target root before reprovisioning
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if mountpoint -q {{ install_target_root }}; then
+      umount -R {{ install_target_root }} || true
+    fi
+  changed_when: false
+
+- name: Export existing pool if present
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zpool export {{ zpool_name }} >/dev/null 2>&1 || true
+  changed_when: false
+
+- name: Wipe selected devices
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for dev in {{ storage_devices | join(' ') }}; do
+      swapoff --all || true
+      wipefs -a "$dev" || true
+      sgdisk --zap-all "$dev" || true
+    done
+    udevadm settle
+  args:
+    executable: /bin/bash
+
+- name: Partition target devices for UEFI + swap + root
+  ansible.builtin.include_tasks: partition_uefi.yml
+  when: install_boot_mode == 'uefi'
+
+- name: Create mdadm-backed layout
+  ansible.builtin.include_tasks: layout_mdadm.yml
+  when: storage_layout in ['raid-1', 'raid-10']
+
+- name: Create native ZFS layout
+  ansible.builtin.include_tasks: layout_zfs_native.yml
+  when: storage_layout not in ['raid-1', 'raid-10']
