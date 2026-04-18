@@ -17,7 +17,7 @@ cat > "${OUTPUT_PATH}" <<'GENERATED'
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/<org>/RFC_Codex_Gentoo-Stage4-LLVM.git}"
+REPO_URL="${REPO_URL:-https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM.git}"
 CHECKOUT_DIR="${CHECKOUT_DIR:-RFC_Codex_Gentoo-Stage4-LLVM}"
 BRANCH="${BRANCH:-main}"
 PYTHON_MIN_MINOR="${PYTHON_MIN_MINOR:-11}"
