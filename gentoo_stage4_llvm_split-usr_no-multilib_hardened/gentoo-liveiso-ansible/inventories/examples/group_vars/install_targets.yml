@@ -101,3 +101,16 @@ portage_makeopts_jobs: "{{ ansible_processor_vcpus | default(8) }}"
 portage_emerge_jobs: 4
 portage_load_average: 0
 portage_gpg_key_refresh: false
+
+# Optional role override. Leave undefined to run the full default sequence.
+# selected_roles:
+#   - preflight
+#   - liveiso_prepare
+#   - storage
+#   - stage3
+#   - profile
+#   - portage
+#   - chroot_base
+#   - system_packages
+#   - boot
+#   - network

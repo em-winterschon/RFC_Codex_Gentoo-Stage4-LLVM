@@ -99,6 +99,41 @@ vim inventories/examples/group_vars/install_targets.yml
 ansible-playbook playbooks/install.yml -l remote-liveiso
 ```
 
+### Modular role selection
+
+The installer runs a default ordered role sequence:
+
+- `preflight`
+- `liveiso_prepare`
+- `storage`
+- `stage3`
+- `profile`
+- `portage`
+- `chroot_base`
+- `system_packages`
+- `boot`
+- `network`
+
+Override `selected_roles` in inventory or at the command line if you need to rerun only a
+subset while iterating on one part of the install flow.
+
+Example inventory override:
+
+```yaml
+selected_roles:
+  - storage
+  - stage3
+  - profile
+  - portage
+  - boot
+```
+
+Example command-line override:
+
+```bash
+ansible-playbook playbooks/install.yml -l remote-liveiso -e '{"selected_roles":["boot","network"]}'
+```
+
 ### Python environment setup helper
 
 Generate the ansible Python setup script:
@@ -118,7 +153,7 @@ Then run the generated script (defaults to `scripts/setup-ansible-python-env.sh`
 You can override defaults when running the generated script, for example:
 
 ```bash
-REPO_URL=https://github.com/<org>/RFC_Codex_Gentoo-Stage4-LLVM.git BRANCH=main ./scripts/setup-ansible-python-env.sh
+REPO_URL=https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM.git BRANCH=main ./scripts/setup-ansible-python-env.sh
 ```
 
 ## Current implementation notes
