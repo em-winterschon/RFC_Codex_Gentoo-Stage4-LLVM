@@ -1,0 +1,4 @@
+---
+- name: Configure bootloader and boot integration
+  ansible.builtin.include_role:
+    name: boot
