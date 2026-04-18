@@ -99,6 +99,28 @@ vim inventories/examples/group_vars/install_targets.yml
 ansible-playbook playbooks/install.yml -l remote-liveiso
 ```
 
+### Python environment setup helper
+
+Generate the ansible Python setup script:
+
+```bash
+./scripts/generate-ansible-python-setup.sh
+```
+
+Then run the generated script (defaults to `scripts/setup-ansible-python-env.sh`) to:
+
+- clone/update this repository
+- verify Python 3.11+
+- bootstrap `pip` if needed
+- install `pipenv` if needed
+- install this project's `requirements.txt` into a pipenv
+
+You can override defaults when running the generated script, for example:
+
+```bash
+REPO_URL=https://github.com/<org>/RFC_Codex_Gentoo-Stage4-LLVM.git BRANCH=main ./scripts/setup-ansible-python-env.sh
+```
+
 ## Current implementation notes
 
 This repository is a first-cut scaffold, not a finished fully unattended product. The major
