@@ -1,0 +1,28 @@
+---
+- name: Set the root password hash when provided
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cat <<'EOF' | {{ liveiso_work_dir }}/chroot-runner.sh chpasswd -e
+    root:{{ install_root_password_hash }}
+    EOF
+  args:
+    executable: /bin/bash
+  when: (install_root_password_hash | default('')) | length > 0
+
+- name: Apply final network and service configuration
+  ansible.builtin.include_role:
+    name: network
+
+- name: Unmount the target root when requested
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if mountpoint -q {{ install_target_root }}; then
+      umount -R {{ install_target_root }}
+    fi
+  args:
+    executable: /bin/bash
+  when: finalize_unmount_target | default(false) | bool
+
+- name: Reboot the live environment when requested
+  ansible.builtin.command: reboot
+  when: finalize_reboot_host | default(false) | bool
