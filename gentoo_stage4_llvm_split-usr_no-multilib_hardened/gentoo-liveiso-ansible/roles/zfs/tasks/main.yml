@@ -1,0 +1,67 @@
+---
+- name: Ensure the zfs role is only used with native ZFS layouts
+  ansible.builtin.assert:
+    that:
+      - storage_layout not in ['raid-1', 'raid-10']
+    fail_msg: The zfs role only supports native ZFS layouts. Use the storage role alone for mdadm-backed layouts.
+
+- name: Resolve EFI partition device paths by GPT PARTLABEL when needed
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ storage_devices | length }}); do
+      blkid -t PARTLABEL="EFI_SYSTEM_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: zfs_esp_partition_lookup
+  changed_when: false
+  when: esp_partitions is not defined
+
+- name: Cache EFI partition paths for the zfs role
+  ansible.builtin.set_fact:
+    esp_partitions: "{{ zfs_esp_partition_lookup.stdout_lines }}"
+  when: esp_partitions is not defined
+
+- name: Resolve swap partition device paths by GPT PARTLABEL when needed
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ storage_devices | length }}); do
+      blkid -t PARTLABEL="SWAP_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: zfs_swap_partition_lookup
+  changed_when: false
+  when: swap_partitions is not defined
+
+- name: Cache swap partition paths for the zfs role
+  ansible.builtin.set_fact:
+    swap_partitions: "{{ zfs_swap_partition_lookup.stdout_lines }}"
+  when: swap_partitions is not defined
+
+- name: Resolve root partition device paths by GPT PARTLABEL when needed
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ storage_devices | length }}); do
+      blkid -t PARTLABEL="ZFS_ROOT_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: zfs_root_partition_lookup
+  changed_when: false
+  when: root_partitions is not defined
+
+- name: Cache root partition paths for the zfs role
+  ansible.builtin.set_fact:
+    root_partitions: "{{ zfs_root_partition_lookup.stdout_lines }}"
+  when: root_partitions is not defined
+
+- name: Assert that native ZFS partitions were resolved
+  ansible.builtin.assert:
+    that:
+      - esp_partitions | length > 0
+      - root_partitions | length > 0
+    fail_msg: Native ZFS partition labels were not found. Run the storage role first or provision matching GPT labels.
+
+- name: Create native ZFS layout
+  ansible.builtin.include_tasks: ../../storage/tasks/layout_zfs_native.yml
