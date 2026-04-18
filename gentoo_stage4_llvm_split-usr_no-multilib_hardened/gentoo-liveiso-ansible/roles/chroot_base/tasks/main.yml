@@ -28,6 +28,16 @@
 - name: Sync Portage in target
   ansible.builtin.command: "{{ liveiso_work_dir }}/chroot-runner.sh {{ portage_sync_command | quote }}"
 
+- name: Install eselect-repository in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ 'emerge --oneshot app-eselect/eselect-repository' | quote }}
+
+- name: Enable and sync guru repository in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ 'eselect repository enable guru && emaint sync -r guru && emerge --oneshot sys-apps/portage' | quote }}
+
 - name: Select combined local profile in target
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
