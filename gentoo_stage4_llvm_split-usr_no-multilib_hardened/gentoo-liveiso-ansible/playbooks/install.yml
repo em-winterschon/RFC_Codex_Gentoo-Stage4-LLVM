@@ -7,12 +7,22 @@
     - ../vars/cpu_profiles.yml
     - ../vars/gpu_profiles.yml
   vars:
-    selected_roles: "{{ selected_roles | default(['preflight', 'liveiso_prepare', 'storage', 'stage3', 'profile', 'portage', 'chroot_base', 'system_packages', 'boot', 'network']) }}"
+    default_install_roles:
+      - preflight
+      - liveiso_prepare
+      - storage
+      - stage3
+      - profile
+      - portage
+      - chroot_base
+      - system_packages
+      - boot
+      - network
 
   tasks:
     - name: Include selected roles
       ansible.builtin.include_role:
         name: "{{ item }}"
-      loop: "{{ selected_roles }}"
+      loop: "{{ selected_roles | default(default_install_roles) }}"
       loop_control:
         label: "Running role {{ item }}"
