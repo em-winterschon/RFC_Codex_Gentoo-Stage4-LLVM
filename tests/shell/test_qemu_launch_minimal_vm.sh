@@ -29,7 +29,6 @@ assert_contains() {
 test_prepare_iso_moves_original() {
   local temp_dir
   temp_dir="$(mktemp -d)"
-  trap 'rm -rf "${temp_dir}"' RETURN
 
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/orig.iso"
@@ -40,12 +39,12 @@ test_prepare_iso_moves_original() {
 
   assert_file_exists "${ISO_INST}"
   assert_not_exists "${ISO_ORIG}"
+  rm -rf "${temp_dir}"
 }
 
 test_prepare_iso_accepts_existing_installer_iso() {
   local temp_dir
   temp_dir="$(mktemp -d)"
-  trap 'rm -rf "${temp_dir}"' RETURN
 
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/missing.iso"
@@ -55,6 +54,7 @@ test_prepare_iso_accepts_existing_installer_iso() {
   prepare_iso
 
   assert_file_exists "${ISO_INST}"
+  rm -rf "${temp_dir}"
 }
 
 test_build_qemu_cmd_uses_configured_passthrough_devices() {
@@ -78,7 +78,6 @@ test_build_qemu_cmd_uses_configured_passthrough_devices() {
 test_main_dry_run_prints_command() {
   local temp_dir output
   temp_dir="$(mktemp -d)"
-  trap 'rm -rf "${temp_dir}"' RETURN
 
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/missing.iso"
@@ -92,6 +91,7 @@ test_main_dry_run_prints_command() {
   assert_contains "${output}" "qemu-system-x86_64"
   assert_contains "${output}" "vfio-pci,host=${PCI_NETWK}"
   assert_contains "${output}" "[COMPLETE]"
+  rm -rf "${temp_dir}"
 }
 
 test_prepare_iso_moves_original
