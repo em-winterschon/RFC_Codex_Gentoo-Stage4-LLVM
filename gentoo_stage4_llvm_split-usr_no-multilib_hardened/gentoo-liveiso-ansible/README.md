@@ -134,6 +134,43 @@ Example command-line override:
 ansible-playbook playbooks/install.yml -l remote-liveiso -e '{"selected_roles":["boot","network"]}'
 ```
 
+### Translated modular roles
+
+The external `/opt/gentoo-liveiso-ansible` scaffolding used placeholder roles named `zfs`,
+`kernel`, `bootloader`, and `finalize`. Those names are now backed by real repo logic:
+
+- `zfs`: creates the native ZFS pool and datasets after `storage` has partitioned the devices
+- `kernel`: wraps the current `system_packages` role
+- `bootloader`: wraps the current `boot` role
+- `finalize`: applies the optional root password hash, enables target services and SSH keys via
+  `network`, and can optionally unmount or reboot the live environment
+
+For native ZFS layouts, you can use this alternate modular sequence:
+
+```yaml
+selected_roles:
+  - preflight
+  - liveiso_prepare
+  - storage
+  - zfs
+  - stage3
+  - profile
+  - portage
+  - chroot_base
+  - kernel
+  - bootloader
+  - finalize
+```
+
+Do not mix these wrapper roles with their underlying roles in the same list:
+
+- `kernel` with `system_packages`
+- `bootloader` with `boot`
+- `finalize` with `network`
+
+`zfs` only applies to native ZFS layouts. For `raid-1` and `raid-10`, keep using the `storage`
+role by itself because it owns the mdadm-backed provisioning path.
+
 ### Python environment setup helper
 
 Generate the ansible Python setup script:
@@ -171,6 +208,7 @@ flows are present:
 - package installation for ZFS + dracut + dist-kernel strategy
 - prebuilt ZFSBootMenu EFI deployment
 - OpenRC service enablement for ZFS, NetworkManager, and sshd
+- modular wrapper roles for `zfs`, `kernel`, `bootloader`, and `finalize`
 
 The pieces most likely to need local policy refinement are:
 

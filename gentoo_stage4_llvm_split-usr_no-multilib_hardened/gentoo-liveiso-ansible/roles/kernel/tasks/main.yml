@@ -1,0 +1,4 @@
+---
+- name: Install kernel and target package stack
+  ansible.builtin.include_role:
+    name: system_packages

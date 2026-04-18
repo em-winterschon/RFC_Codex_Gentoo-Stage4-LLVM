@@ -33,6 +33,8 @@
   ansible.builtin.include_tasks: layout_mdadm.yml
   when: storage_layout in ['raid-1', 'raid-10']
 
-- name: Create native ZFS layout
+- name: Create native ZFS layout in storage role when no separate zfs role is selected
   ansible.builtin.include_tasks: layout_zfs_native.yml
-  when: storage_layout not in ['raid-1', 'raid-10']
+  when:
+    - storage_layout not in ['raid-1', 'raid-10']
+    - "'zfs' not in (selected_roles | default([]))"

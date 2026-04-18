@@ -14,6 +14,7 @@ install_hostname: gentoo
 install_timezone: America/Los_Angeles
 install_keymap: us
 install_locale: en_US.UTF-8 UTF-8
+install_root_password_hash: ""
 
 # Storage model
 # Supported values:
@@ -76,10 +77,12 @@ boot_strategy: zfsbootmenu
 zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
 zfsbootmenu_boot_label: ZFSBootMenu
 
-# Installed services
+# Installed services and finalization
 install_openssh: true
 install_networkmanager: true
 root_authorized_keys: []
+finalize_unmount_target: false
+finalize_reboot_host: false
 
 # Optional explicit CPU_FLAGS_X86 override. Leave empty to omit from make.conf.
 cpu_flags_x86_override: []
@@ -102,7 +105,8 @@ portage_emerge_jobs: 4
 portage_load_average: 0
 portage_gpg_key_refresh: false
 
-# Optional role override. Leave undefined to run the full default sequence.
+# Optional role override. Leave undefined to run the default role sequence.
+# Default sequence:
 # selected_roles:
 #   - preflight
 #   - liveiso_prepare
@@ -114,3 +118,22 @@ portage_gpg_key_refresh: false
 #   - system_packages
 #   - boot
 #   - network
+#
+# Alternate modular sequence translated from the external /opt scaffolding:
+# selected_roles:
+#   - preflight
+#   - liveiso_prepare
+#   - storage
+#   - zfs
+#   - stage3
+#   - profile
+#   - portage
+#   - chroot_base
+#   - kernel
+#   - bootloader
+#   - finalize
+#
+# Do not mix the compatibility wrapper roles with their underlying roles in the same list:
+#   kernel <-> system_packages
+#   bootloader <-> boot
+#   finalize <-> network
