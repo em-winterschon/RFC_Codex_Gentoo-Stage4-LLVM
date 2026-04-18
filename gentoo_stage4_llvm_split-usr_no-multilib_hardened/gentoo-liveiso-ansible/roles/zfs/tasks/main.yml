@@ -64,4 +64,6 @@
     fail_msg: Native ZFS partition labels were not found. Run the storage role first or provision matching GPT labels.
 
 - name: Create native ZFS layout
-  ansible.builtin.include_tasks: ../../storage/tasks/layout_zfs_native.yml
+  ansible.builtin.include_role:
+    name: storage
+    tasks_from: layout_zfs_native
