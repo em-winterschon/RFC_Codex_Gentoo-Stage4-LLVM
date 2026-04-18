@@ -118,7 +118,7 @@ Then run the generated script (defaults to `scripts/setup-ansible-python-env.sh`
 You can override defaults when running the generated script, for example:
 
 ```bash
-REPO_URL=https://github.com/<org>/RFC_Codex_Gentoo-Stage4-LLVM.git BRANCH=main ./scripts/setup-ansible-python-env.sh
+REPO_URL=https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM.git BRANCH=main ./scripts/setup-ansible-python-env.sh
 ```
 
 ## Current implementation notes
