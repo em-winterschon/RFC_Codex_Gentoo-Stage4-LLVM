@@ -33,24 +33,6 @@ assert_equals() {
   [[ "${expected}" == "${actual}" ]] || fail "expected '${expected}', got '${actual}'"
 }
 
-setup_vfio_ready_device() {
-  local temp_root="$1"
-  local dev="$2"
-  local group_id="$3"
-  local canonical_dev driver_root device_root group_root vfio_root
-
-  canonical_dev="$(canonicalize_pci_bdf "${dev}")"
-  driver_root="${temp_root}/sys/bus/pci/drivers/vfio-pci"
-  device_root="${temp_root}/sys/bus/pci/devices/${canonical_dev}"
-  group_root="${temp_root}/sys/kernel/iommu_groups/${group_id}"
-  vfio_root="${temp_root}/dev/vfio"
-
-  mkdir -p "${driver_root}" "${device_root}" "${group_root}" "${vfio_root}"
-  ln -s "${driver_root}" "${device_root}/driver"
-  ln -s "${group_root}" "${device_root}/iommu_group"
-  : >"${vfio_root}/${group_id}"
-}
-
 setup_vfio_noiommu_device() {
   local temp_root="$1"
   local dev="$2"
@@ -136,6 +118,70 @@ test_validate_net_backend_accepts_tap_backend() {
   validate_net_backend
 }
 
+test_validate_display_backend_rejects_missing_spice() {
+  local output
+
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_HELP_OUTPUT=$'-machine\n-vnc\n'
+
+  if output="$(validate_display_backend 2>&1)"; then
+    fail 'expected validate_display_backend to fail when spice support is unavailable'
+  fi
+
+  assert_contains "${output}" 'USE=spice'
+  assert_contains "${output}" 'virt-viewer'
+}
+
+test_validate_display_backend_accepts_gtk() {
+  QEMU_DISPLAY_MODE='gtk'
+  QEMU_DISPLAY_HELP_OUTPUT=$'none\ngtk\nsdl\n'
+  validate_display_backend
+}
+
+test_serial_mode_defaults_to_integrated_in_nographic() {
+  QEMU_DISPLAY_MODE='nographic'
+  QEMU_SERIAL_MODE='auto'
+  assert_equals 'integrated' "$(serial_mode_name)"
+}
+
+test_serial_mode_defaults_to_stdio_for_graphical_modes() {
+  QEMU_DISPLAY_MODE='vnc'
+  QEMU_SERIAL_MODE='auto'
+  assert_equals 'stdio' "$(serial_mode_name)"
+}
+
+test_build_qemu_cmd_uses_vnc_and_stdio_serial() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  ISO_INST="${temp_dir}/test.iso"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  QEMU_BIN="/usr/bin/qemu-system-x86_64"
+  PCI_NETWK=''
+  QEMU_DISPLAY_MODE='vnc'
+  QEMU_SERIAL_MODE='stdio'
+  QEMU_VNC_ADDRESS='127.0.0.1:4'
+  : >"${BPOOL_DISK0}"
+  : >"${BPOOL_DISK1}"
+  : >"${RPOOL_DISK0}"
+  : >"${RPOOL_DISK1}"
+  : >"${ISO_INST}"
+  : >"${EFI_FIRM}"
+
+  build_qemu_cmd
+
+  rendered="${QEMU_CMD[*]}"
+  assert_contains "${rendered}" '-display none'
+  assert_contains "${rendered}" '-vnc 127.0.0.1:4'
+  assert_contains "${rendered}" '-serial mon:stdio'
+  assert_contains "${rendered}" 'virtio-net-pci,netdev=net0'
+  rm -rf "${temp_dir}"
+}
+
 test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   local temp_dir rendered
   temp_dir="$(mktemp -d)"
@@ -148,6 +194,8 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
   QEMU_BIN="/usr/bin/qemu-system-x86_64"
   PCI_NETWK=''
+  QEMU_DISPLAY_MODE='nographic'
+  QEMU_SERIAL_MODE='auto'
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -165,6 +213,7 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   assert_contains "${rendered}" 'serial=rpool-1'
   assert_contains "${rendered}" "${QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
   assert_contains "${rendered}" "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
+  assert_contains "${rendered}" '-nographic'
   [[ "${rendered}" != *'vfio-pci,host='* ]] || fail 'unexpected default PCI passthrough NIC'
   rm -rf "${temp_dir}"
 }
@@ -208,6 +257,8 @@ test_main_dry_run_prints_command() {
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_LAUNCH_DRY_RUN=1
   QEMU_NETDEV_HELP_OUTPUT=$'user\ntap\n'
+  QEMU_DISPLAY_MODE='nographic'
+  QEMU_SERIAL_MODE='auto'
   PCI_NETWK=''
   : >"${ISO_INST}"
   : >"${EFI_FIRM}"
@@ -232,6 +283,11 @@ test_prepare_iso_accepts_existing_installer_iso
 test_validate_host_disks_rejects_missing_path
 test_validate_net_backend_rejects_missing_user_backend
 test_validate_net_backend_accepts_tap_backend
+test_validate_display_backend_rejects_missing_spice
+test_validate_display_backend_accepts_gtk
+test_serial_mode_defaults_to_integrated_in_nographic
+test_serial_mode_defaults_to_stdio_for_graphical_modes
+test_build_qemu_cmd_uses_vnc_and_stdio_serial
 test_build_qemu_cmd_uses_host_disks_and_virtio_net
 test_blank_env_overrides_defaults_in_fresh_process
 test_validate_passthrough_devices_rejects_vfio_noiommu_group
