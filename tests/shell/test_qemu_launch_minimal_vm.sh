@@ -72,7 +72,7 @@ test_build_qemu_cmd_uses_configured_passthrough_devices() {
   assert_contains "${rendered}" "vfio-pci,host=${PCI_NETWK}"
   assert_contains "${rendered}" "vfio-pci,host=${PCI_NVME0}"
   assert_contains "${rendered}" "vfio-pci,host=${PCI_NVME1}"
-  assert_contains "${rendered}" "file=${ISO_INST},medium=cdrom"
+  assert_contains "${rendered}" "file=${ISO_INST},media=cdrom"
 }
 
 test_main_dry_run_prints_command() {
@@ -90,6 +90,7 @@ test_main_dry_run_prints_command() {
   assert_contains "${output}" "Launching QEMU VM"
   assert_contains "${output}" "qemu-system-x86_64"
   assert_contains "${output}" "vfio-pci,host=${PCI_NETWK}"
+  assert_contains "${output}" "file=${ISO_INST},media=cdrom"
   assert_contains "${output}" "[COMPLETE]"
   rm -rf "${temp_dir}"
 }
