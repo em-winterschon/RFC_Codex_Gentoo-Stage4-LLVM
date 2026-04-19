@@ -138,6 +138,32 @@ test_validate_display_backend_accepts_gtk() {
   validate_display_backend
 }
 
+test_video_device_defaults_to_qxl_for_spice() {
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_VIDEO_DEVICE='auto'
+  assert_equals 'qxl-vga' "$(video_device_name)"
+}
+
+test_video_device_defaults_to_virtio_vga_for_gtk() {
+  QEMU_DISPLAY_MODE='gtk'
+  QEMU_VIDEO_DEVICE='auto'
+  assert_equals 'virtio-vga' "$(video_device_name)"
+}
+
+test_validate_video_device_rejects_missing_qxl() {
+  local output
+
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_VIDEO_DEVICE='auto'
+  QEMU_VIDEO_DEVICE_HELP_OUTPUT=$'name "virtio-vga"\nname "virtio-net-pci"\n'
+
+  if output="$(validate_video_device 2>&1)"; then
+    fail 'expected validate_video_device to fail when qxl-vga is unavailable'
+  fi
+
+  assert_contains "${output}" "video device 'qxl-vga'"
+}
+
 test_serial_mode_defaults_to_integrated_in_nographic() {
   QEMU_DISPLAY_MODE='nographic'
   QEMU_SERIAL_MODE='auto'
@@ -165,6 +191,7 @@ test_build_qemu_cmd_uses_vnc_and_stdio_serial() {
   QEMU_DISPLAY_MODE='vnc'
   QEMU_SERIAL_MODE='stdio'
   QEMU_VNC_ADDRESS='127.0.0.1:4'
+  QEMU_VIDEO_DEVICE='virtio-vga'
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -175,10 +202,43 @@ test_build_qemu_cmd_uses_vnc_and_stdio_serial() {
   build_qemu_cmd
 
   rendered="${QEMU_CMD[*]}"
+  assert_contains "${rendered}" '-device virtio-vga'
   assert_contains "${rendered}" '-display none'
   assert_contains "${rendered}" '-vnc 127.0.0.1:4'
   assert_contains "${rendered}" '-serial mon:stdio'
   assert_contains "${rendered}" 'virtio-net-pci,netdev=net0'
+  rm -rf "${temp_dir}"
+}
+
+test_build_qemu_cmd_uses_spice_qxl_and_tcp_serial() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  ISO_INST="${temp_dir}/test.iso"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  PCI_NETWK=''
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_SERIAL_MODE='tcp'
+  QEMU_SPICE_OPTIONS='port=5930,addr=0.0.0.0,disable-ticketing=on'
+  QEMU_SERIAL_TCP='0.0.0.0:4555,server=on,wait=off,telnet=on'
+  QEMU_VIDEO_DEVICE='auto'
+  : >"${BPOOL_DISK0}"
+  : >"${BPOOL_DISK1}"
+  : >"${RPOOL_DISK0}"
+  : >"${RPOOL_DISK1}"
+  : >"${ISO_INST}"
+  : >"${EFI_FIRM}"
+
+  build_qemu_cmd
+
+  rendered="${QEMU_CMD[*]}"
+  assert_contains "${rendered}" '-device qxl-vga'
+  assert_contains "${rendered}" '-spice port=5930,addr=0.0.0.0,disable-ticketing=on'
+  assert_contains "${rendered}" '-serial tcp:0.0.0.0:4555,server=on,wait=off,telnet=on'
   rm -rf "${temp_dir}"
 }
 
@@ -196,6 +256,7 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   PCI_NETWK=''
   QEMU_DISPLAY_MODE='nographic'
   QEMU_SERIAL_MODE='auto'
+  QEMU_VIDEO_DEVICE='std'
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -206,6 +267,7 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   build_qemu_cmd
 
   rendered="${QEMU_CMD[*]}"
+  assert_contains "${rendered}" '-vga std'
   assert_contains "${rendered}" 'ich9-ahci,id=ahci'
   assert_contains "${rendered}" "file=${BPOOL_DISK0},format=raw,cache=${HOST_DISK_CACHE},aio=${HOST_DISK_AIO}"
   assert_contains "${rendered}" "file=${RPOOL_DISK1},format=raw,cache=${HOST_DISK_CACHE},aio=${HOST_DISK_AIO}"
@@ -259,6 +321,7 @@ test_main_dry_run_prints_command() {
   QEMU_NETDEV_HELP_OUTPUT=$'user\ntap\n'
   QEMU_DISPLAY_MODE='nographic'
   QEMU_SERIAL_MODE='auto'
+  QEMU_VIDEO_DEVICE='std'
   PCI_NETWK=''
   : >"${ISO_INST}"
   : >"${EFI_FIRM}"
@@ -285,9 +348,13 @@ test_validate_net_backend_rejects_missing_user_backend
 test_validate_net_backend_accepts_tap_backend
 test_validate_display_backend_rejects_missing_spice
 test_validate_display_backend_accepts_gtk
+test_video_device_defaults_to_qxl_for_spice
+test_video_device_defaults_to_virtio_vga_for_gtk
+test_validate_video_device_rejects_missing_qxl
 test_serial_mode_defaults_to_integrated_in_nographic
 test_serial_mode_defaults_to_stdio_for_graphical_modes
 test_build_qemu_cmd_uses_vnc_and_stdio_serial
+test_build_qemu_cmd_uses_spice_qxl_and_tcp_serial
 test_build_qemu_cmd_uses_host_disks_and_virtio_net
 test_blank_env_overrides_defaults_in_fresh_process
 test_validate_passthrough_devices_rejects_vfio_noiommu_group
