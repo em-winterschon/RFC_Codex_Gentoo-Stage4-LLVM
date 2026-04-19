@@ -30,6 +30,7 @@ Notes:
   `qxl-vga` for `spice`, `virtio-vga` for `gtk`/`sdl`/`vnc`, and `std` VGA for text-oriented modes. Override with `QEMU_VIDEO_DEVICE=` if needed.
 - `QEMU_DISPLAY_MODE=vnc` requires QEMU built with `USE=vnc`; `QEMU_DISPLAY_MODE=spice` requires QEMU built with `USE=spice` and is intended to be paired with `app-emulation/virt-viewer`.
 - `QEMU_SERIAL_MODE` controls the serial path: `auto`, `stdio`, `pty`, `tcp`, or `none`. In `auto`, `nographic` uses QEMU's integrated stdio console, while graphical/remote display modes add `-serial mon:stdio`.
+- `QEMU_SERIAL_MODE=tcp` requires this PR #7 launcher revision or later. Older host-local copies such as `/opt/gentoo-virt-qemu/qemu-launch-minimal-vm.sh` may only support `auto`, `stdio`, `pty`, and `none`.
 - `PCI_NETWK` is optional and blank by default. If you set it, the launcher validates that the device is on real IOMMU-backed VFIO before adding `vfio-pci,host=...`.
 - `qemu-launch-minimal-vm.sh` explicitly rejects devices that only appear as `/dev/vfio/noiommu-<group>` because that is not the real IOMMU-backed VFIO path this workflow needs.
 - `app-emulation/virt-viewer` is the right client-side package for SPICE or VNC console access on Gentoo.
