@@ -6,7 +6,7 @@ if [[ "${QEMU_LAUNCH_TRACE:-0}" == "1" ]]; then
 fi
 
 # Launch a basic VM with selected PCI passthrough devices.
-# Version: 0.0.3
+# Version: 0.0.4
 # MBoard: X12SPL-F
 #
 # Example device inventory reference:
@@ -22,9 +22,9 @@ fi
 # c3:00.0 Ethernet controller [0200]: Mellanox Technologies MT42822 BlueField-2 integrated ConnectX-6 Dx network controller [15b3:a2d6] (rev 01)
 # c3:00.1 Ethernet controller [0200]: Mellanox Technologies MT42822 BlueField-2 integrated ConnectX-6 Dx network controller [15b3:a2d6] (rev 01)
 
-PCI_NVME0="${PCI_NVME0:-53:00.0}"
-PCI_NVME1="${PCI_NVME1:-54:00.0}"
-PCI_NETWK="${PCI_NETWK:-02:00.0}"
+PCI_NVME0="${PCI_NVME0-53:00.0}"
+PCI_NVME1="${PCI_NVME1-54:00.0}"
+PCI_NETWK="${PCI_NETWK-02:00.0}"
 BASE_DIR="${BASE_DIR:-/opt/gentoo-virt-qemu/iso}"
 ISO_ORIG="${ISO_ORIG:-${BASE_DIR}/install-amd64-minimal-20260412T164603Z.iso}"
 ISO_INST="${ISO_INST:-${BASE_DIR}/gentoo-amd64-minimal.iso}"
