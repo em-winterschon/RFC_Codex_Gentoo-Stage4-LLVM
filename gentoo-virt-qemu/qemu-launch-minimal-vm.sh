@@ -7,7 +7,7 @@ fi
 
 # Launch a basic VM with the host disks intended for the test ZFS boot pool and
 # root pool, plus a virtio-net interface for connectivity.
-# Version: 0.1.0
+# Version: 0.1.1
 # MBoard: X12SPL-F
 
 BPOOL_DISK0="${BPOOL_DISK0-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305}"
@@ -32,6 +32,7 @@ HOST_DISK_AIO="${HOST_DISK_AIO:-native}"
 QEMU_NETDEV_ID="${QEMU_NETDEV_ID:-net0}"
 QEMU_NETDEV_BACKEND="${QEMU_NETDEV_BACKEND:-user}"
 QEMU_NETDEV_MODEL="${QEMU_NETDEV_MODEL:-virtio-net-pci}"
+QEMU_NETDEV_HELP_OUTPUT="${QEMU_NETDEV_HELP_OUTPUT-}"
 QEMU_CMD=()
 
 log() {
@@ -55,6 +56,10 @@ canonicalize_pci_bdf() {
   else
     printf '0000:%s' "${dev}"
   fi
+}
+
+network_backend_name() {
+  printf '%s' "${QEMU_NETDEV_BACKEND%%,*}"
 }
 
 device_path() {
@@ -113,6 +118,26 @@ validate_host_disks() {
   require_host_disk_ready "${BPOOL_DISK1}" 'BPOOL_DISK1'
   require_host_disk_ready "${RPOOL_DISK0}" 'RPOOL_DISK0'
   require_host_disk_ready "${RPOOL_DISK1}" 'RPOOL_DISK1'
+}
+
+validate_net_backend() {
+  local backend help_output
+
+  backend="$(network_backend_name)"
+  [[ -n "${backend}" ]] || fail 'QEMU_NETDEV_BACKEND is empty'
+
+  help_output="${QEMU_NETDEV_HELP_OUTPUT}"
+  if [[ -z "${help_output}" ]]; then
+    help_output="$("${QEMU_BIN}" -netdev help 2>&1 || true)"
+  fi
+
+  if [[ "${help_output}" != *"${backend}"* ]]; then
+    if [[ "${backend}" == 'user' ]]; then
+      fail "QEMU net backend '${backend}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=slirp or set QEMU_NETDEV_BACKEND to a supported backend such as tap,ifname=tap0,script=no,downscript=no"
+    fi
+
+    fail "QEMU net backend '${backend}' is not available in ${QEMU_BIN}; inspect '${QEMU_BIN} -netdev help' and set QEMU_NETDEV_BACKEND to a supported backend"
+  fi
 }
 
 require_vfio_passthrough_ready() {
@@ -216,6 +241,7 @@ main() {
   ensure_base_dir
   prepare_iso
   validate_host_disks
+  validate_net_backend
   validate_passthrough_devices
   log 'Launching QEMU VM'
   run_qemu_cmd
