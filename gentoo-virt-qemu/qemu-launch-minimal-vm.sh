@@ -7,7 +7,7 @@ fi
 
 # Launch a basic VM with the host disks intended for the test ZFS boot pool and
 # root pool, plus configurable console and display options.
-# Version: 0.3.0
+# Version: 0.3.1
 # MBoard: X12SPL-F
 
 BPOOL_DISK0="${BPOOL_DISK0-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305}"
@@ -87,6 +87,10 @@ serial_mode_name() {
   else
     printf 'stdio'
   fi
+}
+
+supported_serial_modes() {
+  printf 'auto, stdio, pty, tcp, none'
 }
 
 video_device_name() {
@@ -362,7 +366,7 @@ append_serial_args() {
       QEMU_CMD+=( -serial "tcp:${QEMU_SERIAL_TCP}" )
       ;;
     *)
-      fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name)"
+      fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name) (supported: $(supported_serial_modes))"
       ;;
   esac
 }
@@ -397,6 +401,11 @@ build_qemu_cmd() {
   append_serial_args
 }
 
+log_runtime_config() {
+  log "Resolved display mode: $(display_mode_name) (video: $(video_device_name))"
+  log "Resolved serial mode: $(serial_mode_name)"
+}
+
 print_qemu_cmd() {
   printf '%q ' "${QEMU_CMD[@]}"
   printf '\n'
@@ -421,6 +430,7 @@ main() {
   validate_display_backend
   validate_video_device
   validate_passthrough_devices
+  log_runtime_config
   log 'Launching QEMU VM'
   run_qemu_cmd
   log '[COMPLETE]'
