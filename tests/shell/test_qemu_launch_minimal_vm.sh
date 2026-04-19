@@ -117,6 +117,25 @@ test_validate_host_disks_rejects_missing_path() {
   rm -rf "${temp_dir}"
 }
 
+test_validate_net_backend_rejects_missing_user_backend() {
+  local output
+
+  QEMU_NETDEV_BACKEND='user'
+  QEMU_NETDEV_HELP_OUTPUT=$'socket\ntap\nvde\n'
+
+  if output="$(validate_net_backend 2>&1)"; then
+    fail 'expected validate_net_backend to fail when user backend is unavailable'
+  fi
+
+  assert_contains "${output}" 'rebuild QEMU with USE=slirp'
+}
+
+test_validate_net_backend_accepts_tap_backend() {
+  QEMU_NETDEV_BACKEND='tap,ifname=tap0,script=no,downscript=no'
+  QEMU_NETDEV_HELP_OUTPUT=$'socket\ntap\nuser\n'
+  validate_net_backend
+}
+
 test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   local temp_dir rendered
   temp_dir="$(mktemp -d)"
@@ -188,6 +207,7 @@ test_main_dry_run_prints_command() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_LAUNCH_DRY_RUN=1
+  QEMU_NETDEV_HELP_OUTPUT=$'user\ntap\n'
   PCI_NETWK=''
   : >"${ISO_INST}"
   : >"${EFI_FIRM}"
@@ -210,6 +230,8 @@ test_main_dry_run_prints_command() {
 test_prepare_iso_moves_original
 test_prepare_iso_accepts_existing_installer_iso
 test_validate_host_disks_rejects_missing_path
+test_validate_net_backend_rejects_missing_user_backend
+test_validate_net_backend_accepts_tap_backend
 test_build_qemu_cmd_uses_host_disks_and_virtio_net
 test_blank_env_overrides_defaults_in_fresh_process
 test_validate_passthrough_devices_rejects_vfio_noiommu_group
