@@ -27,6 +27,12 @@ assert_contains() {
   [[ "${haystack}" == *"${needle}"* ]] || fail "expected to find '${needle}' in '${haystack}'"
 }
 
+assert_equals() {
+  local expected="$1"
+  local actual="$2"
+  [[ "${expected}" == "${actual}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
 setup_vfio_ready_device() {
   local temp_root="$1"
   local dev="$2"
@@ -147,8 +153,8 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
 test_blank_env_overrides_defaults_in_fresh_process() {
   local output
 
-  output="$(bash -lc 'PCI_NETWK= source "$1"; printf "NET=%s\n" "$PCI_NETWK"' _ "${LAUNCH_SCRIPT}")"
-  assert_contains "${output}" 'NET='
+  output="$(bash -lc 'PCI_NETWK= source "$1"; printf "%s\n" "$PCI_NETWK"' _ "${LAUNCH_SCRIPT}")"
+  assert_equals '' "${output}"
 }
 
 test_validate_passthrough_devices_rejects_vfio_noiommu_group() {
