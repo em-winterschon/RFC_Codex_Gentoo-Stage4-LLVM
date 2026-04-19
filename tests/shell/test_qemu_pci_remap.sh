@@ -83,12 +83,14 @@ test_bind_device_uses_driver_override_and_probe() (
     local path="$2"
 
     recorded_writes+=("${value}|${path}")
-    mkdir -p "$(dirname "${path}")"
-    printf '%s' "${value}" >"${path}"
 
     if [[ "${path}" == "${device_root}/driver/unbind" ]]; then
       rm -f "${device_root}/driver"
+      return 0
     fi
+
+    mkdir -p "$(dirname "${path}")"
+    printf '%s' "${value}" >"${path}"
 
     if [[ "${path}" == "${SYSFS_ROOT}/bus/pci/drivers_probe" ]]; then
       ln -s "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" "${device_root}/driver"
