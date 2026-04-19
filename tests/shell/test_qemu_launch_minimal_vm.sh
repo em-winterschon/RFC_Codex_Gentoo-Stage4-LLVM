@@ -94,66 +94,61 @@ test_prepare_iso_accepts_existing_installer_iso() {
   rm -rf "${temp_dir}"
 }
 
-test_build_qemu_cmd_uses_configured_passthrough_devices() {
-  PCI_NETWK="11:22.3"
-  PCI_NVME0="44:55.6"
-  PCI_NVME1="77:88.9"
-  ISO_INST="/tmp/test.iso"
-  EFI_FIRM="/tmp/OVMF_CODE.fd"
-  QEMU_BIN="/usr/bin/qemu-system-x86_64"
+test_validate_host_disks_rejects_missing_path() {
+  local temp_dir output
+  temp_dir="$(mktemp -d)"
 
-  build_qemu_cmd
+  BPOOL_DISK0="${temp_dir}/missing-bpool0"
+  BPOOL_DISK1="${temp_dir}/missing-bpool1"
+  RPOOL_DISK0="${temp_dir}/missing-rpool0"
+  RPOOL_DISK1="${temp_dir}/missing-rpool1"
 
-  local rendered
-  rendered="${QEMU_CMD[*]}"
-  assert_contains "${rendered}" "vfio-pci,host=${PCI_NETWK}"
-  assert_contains "${rendered}" "vfio-pci,host=${PCI_NVME0}"
-  assert_contains "${rendered}" "vfio-pci,host=${PCI_NVME1}"
-  assert_contains "${rendered}" "file=${ISO_INST},media=cdrom"
+  if output="$(validate_host_disks 2>&1)"; then
+    fail 'expected validate_host_disks to fail for missing paths'
+  fi
+
+  assert_contains "${output}" 'BPOOL_DISK0 is missing'
+  rm -rf "${temp_dir}"
 }
 
-test_build_qemu_cmd_skips_blank_passthrough_devices() {
+test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  ISO_INST="${temp_dir}/test.iso"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  QEMU_BIN="/usr/bin/qemu-system-x86_64"
   PCI_NETWK=''
-  PCI_NVME0='44:55.6'
-  PCI_NVME1=''
-  ISO_INST='/tmp/test.iso'
-  EFI_FIRM='/tmp/OVMF_CODE.fd'
-  QEMU_BIN='/usr/bin/qemu-system-x86_64'
+  : >"${BPOOL_DISK0}"
+  : >"${BPOOL_DISK1}"
+  : >"${RPOOL_DISK0}"
+  : >"${RPOOL_DISK1}"
+  : >"${ISO_INST}"
+  : >"${EFI_FIRM}"
 
   build_qemu_cmd
 
-  local rendered
   rendered="${QEMU_CMD[*]}"
-  assert_contains "${rendered}" "vfio-pci,host=${PCI_NVME0}"
-  [[ "${rendered}" != *"vfio-pci,host=11:22.3"* ]] || fail 'unexpected stale NIC passthrough argument'
-  [[ "${rendered}" != *"vfio-pci,host=${PCI_NVME1}"* ]] || fail 'unexpected blank NVMe passthrough argument'
+  assert_contains "${rendered}" 'ich9-ahci,id=ahci'
+  assert_contains "${rendered}" "file=${BPOOL_DISK0},format=raw,cache=${HOST_DISK_CACHE},aio=${HOST_DISK_AIO}"
+  assert_contains "${rendered}" "file=${RPOOL_DISK1},format=raw,cache=${HOST_DISK_CACHE},aio=${HOST_DISK_AIO}"
+  assert_contains "${rendered}" 'serial=bpool-0'
+  assert_contains "${rendered}" 'serial=rpool-1'
+  assert_contains "${rendered}" "${QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
+  assert_contains "${rendered}" "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
+  [[ "${rendered}" != *'vfio-pci,host='* ]] || fail 'unexpected default PCI passthrough NIC'
+  rm -rf "${temp_dir}"
 }
 
 test_blank_env_overrides_defaults_in_fresh_process() {
   local output
 
-  output="$(bash -lc 'PCI_NETWK= PCI_NVME1= source "$1"; printf "NET=%s NVME1=%s\n" "$PCI_NETWK" "$PCI_NVME1"' _ "${LAUNCH_SCRIPT}")"
-  assert_contains "${output}" 'NET= NVME1='
-}
-
-test_validate_passthrough_devices_rejects_missing_iommu_group() {
-  local temp_dir output
-  temp_dir="$(mktemp -d)"
-
-  SYSFS_ROOT="${temp_dir}/sys"
-  VFIO_DEV_ROOT="${temp_dir}/dev/vfio"
-  PCI_NETWK='02:00.0'
-  PCI_NVME0=''
-  PCI_NVME1=''
-  mkdir -p "$(device_path "${PCI_NETWK}")" "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" "${VFIO_DEV_ROOT}"
-  ln -s "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" "$(device_path "${PCI_NETWK}")/driver"
-
-  if output="$(validate_passthrough_devices 2>&1)"; then
-    fail 'expected validate_passthrough_devices to fail without an IOMMU group'
-  fi
-
-  assert_contains "${output}" 'has no IOMMU group'
-  rm -rf "${temp_dir}"
+  output="$(bash -lc 'PCI_NETWK= source "$1"; printf "NET=%s\n" "$PCI_NETWK"' _ "${LAUNCH_SCRIPT}")"
+  assert_contains "${output}" 'NET='
 }
 
 test_validate_passthrough_devices_rejects_vfio_noiommu_group() {
@@ -162,17 +157,15 @@ test_validate_passthrough_devices_rejects_vfio_noiommu_group() {
 
   SYSFS_ROOT="${temp_dir}/sys"
   VFIO_DEV_ROOT="${temp_dir}/dev/vfio"
-  PCI_NETWK=''
-  PCI_NVME0='53:00.0'
-  PCI_NVME1=''
-  setup_vfio_noiommu_device "${temp_dir}" "${PCI_NVME0}" '0'
+  PCI_NETWK='02:00.0'
+  setup_vfio_noiommu_device "${temp_dir}" "${PCI_NETWK}" '2'
 
   if output="$(validate_passthrough_devices 2>&1)"; then
     fail 'expected validate_passthrough_devices to fail for vfio-noiommu only devices'
   fi
 
-  assert_contains "${output}" '/dev/vfio/noiommu-0'
-  assert_contains "${output}" 'requires a real IOMMU-backed /dev/vfio/0 device'
+  assert_contains "${output}" '/dev/vfio/noiommu-2'
+  assert_contains "${output}" 'requires a real IOMMU-backed /dev/vfio/2 device'
   rm -rf "${temp_dir}"
 }
 
@@ -183,33 +176,36 @@ test_main_dry_run_prints_command() {
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/missing.iso"
   ISO_INST="${temp_dir}/gentoo.iso"
-  SYSFS_ROOT="${temp_dir}/sys"
-  VFIO_DEV_ROOT="${temp_dir}/dev/vfio"
-  PCI_NETWK='02:00.0'
-  PCI_NVME0='53:00.0'
-  PCI_NVME1=''
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_LAUNCH_DRY_RUN=1
+  PCI_NETWK=''
   : >"${ISO_INST}"
-  setup_vfio_ready_device "${temp_dir}" "${PCI_NETWK}" '2'
-  setup_vfio_ready_device "${temp_dir}" "${PCI_NVME0}" '53'
+  : >"${EFI_FIRM}"
+  : >"${BPOOL_DISK0}"
+  : >"${BPOOL_DISK1}"
+  : >"${RPOOL_DISK0}"
+  : >"${RPOOL_DISK1}"
 
   output="$(main 2>&1)"
 
   assert_contains "${output}" 'Launching QEMU VM'
   assert_contains "${output}" 'qemu-system-x86_64'
-  assert_contains "${output}" "vfio-pci,host=${PCI_NETWK}"
-  assert_contains "${output}" "vfio-pci,host=${PCI_NVME0}"
-  assert_contains "${output}" "file=${ISO_INST},media=cdrom"
+  assert_contains "${output}" "file=${BPOOL_DISK0},format=raw"
+  assert_contains "${output}" "file=${RPOOL_DISK1},format=raw"
+  assert_contains "${output}" "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
   assert_contains "${output}" '[COMPLETE]'
   rm -rf "${temp_dir}"
 }
 
 test_prepare_iso_moves_original
 test_prepare_iso_accepts_existing_installer_iso
-test_build_qemu_cmd_uses_configured_passthrough_devices
-test_build_qemu_cmd_skips_blank_passthrough_devices
+test_validate_host_disks_rejects_missing_path
+test_build_qemu_cmd_uses_host_disks_and_virtio_net
 test_blank_env_overrides_defaults_in_fresh_process
-test_validate_passthrough_devices_rejects_missing_iommu_group
 test_validate_passthrough_devices_rejects_vfio_noiommu_group
 test_main_dry_run_prints_command
 
