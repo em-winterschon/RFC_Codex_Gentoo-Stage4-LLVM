@@ -41,7 +41,8 @@ Notes:
 What to connect to:
 - SPICE is a graphics/display channel. It does not replace the guest serial console by itself.
 - For reliable text interaction during install, use one of the serial modes (`stdio`, `pty`, or `tcp`) in addition to or instead of SPICE/VNC.
-- If SPICE shows corrupted or useless output, the first things to verify are that QEMU actually has `USE=spice`, the launcher is using `qxl-vga`, and the guest is not relying solely on a serial console that SPICE will never show.
+- If SPICE shows corrupted or useless output, the transport may still be fine. The first things to verify are that QEMU actually has `USE=spice`, the launcher is using the expected video device, and the guest is not relying solely on a serial console that SPICE will never show.
+- If the SPICE window shows garbled text or obviously corrupted frames with `qxl-vga`, keep the TCP serial console enabled and retry the same launch with `QEMU_VIDEO_DEVICE=virtio-vga`.
 
 Exact connection commands:
 - Local text-mode installer on the launching terminal:
@@ -57,6 +58,8 @@ Exact connection commands:
   then either `remote-viewer vnc://127.0.0.1:5901` or a VNC client pointed at `127.0.0.1:5901`
 - SPICE on the QEMU host, listening on all interfaces port `5930`, plus a TCP serial console on port `4555`:
   `QEMU_DISPLAY_MODE=spice QEMU_SPICE_OPTIONS='port=5930,addr=0.0.0.0,disable-ticketing=on' QEMU_SERIAL_MODE=tcp QEMU_SERIAL_TCP='0.0.0.0:4555,server=on,wait=off,telnet=on' bash gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
+- SPICE plus TCP serial, but force `virtio-vga` instead of the default `qxl-vga`:
+  `QEMU_DISPLAY_MODE=spice QEMU_VIDEO_DEVICE=virtio-vga QEMU_SPICE_OPTIONS='port=5930,addr=0.0.0.0,disable-ticketing=on' QEMU_SERIAL_MODE=tcp QEMU_SERIAL_TCP='0.0.0.0:4555,server=on,wait=off,telnet=on' bash gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
 - Connect to that SPICE session from another host:
   `remote-viewer spice://qemu-host:5930`
   If you prefer an encrypted hop, tunnel it instead:
@@ -74,6 +77,8 @@ Exact connection commands:
 Raw QEMU equivalents:
 - SPICE graphics with QXL and TCP serial:
   `-device qxl-vga -display none -spice port=5930,addr=0.0.0.0,disable-ticketing=on -serial tcp:0.0.0.0:4555,server=on,wait=off,telnet=on`
+- SPICE graphics with virtio VGA and TCP serial:
+  `-device virtio-vga -display none -spice port=5930,addr=0.0.0.0,disable-ticketing=on -serial tcp:0.0.0.0:4555,server=on,wait=off,telnet=on`
 - VNC graphics with virtio VGA and stdio serial:
   `-device virtio-vga -display none -vnc 127.0.0.1:1 -serial mon:stdio`
 
@@ -96,7 +101,8 @@ Sources:
 - Gentoo `app-emulation/virt-viewer`: https://packages.gentoo.org/packages/app-emulation/virt-viewer
 - Gentoo `app-emulation/libvirt`: https://packages.gentoo.org/packages/app-emulation/libvirt
 - Gentoo `dev-python/pyvirtualdisplay`: https://packages.gentoo.org/packages/dev-python/pyvirtualdisplay
-- QEMU virtio-gpu docs: https://www.qemu.org/docs/master/system/devices/virtio-gpu.html
+- QEMU `VirtIO Devices`: https://www.qemu.org/docs/master/system/devices/virtio/index.html
+- QEMU `virtio-gpu` docs: https://www.qemu.org/docs/master/system/devices/virtio-gpu.html
 - SPICE user manual: https://www.spice-space.org/spice-user-manual.html
 - `virsh console` manual: https://www.libvirt.org/manpages/virsh.html
 - libvirt domain graphics formats: https://libvirt.org/formatdomaincaps.html
