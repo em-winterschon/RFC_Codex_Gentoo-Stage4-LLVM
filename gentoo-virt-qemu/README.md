@@ -43,6 +43,7 @@ What to connect to:
 - For reliable text interaction during install, use one of the serial modes (`stdio`, `pty`, or `tcp`) in addition to or instead of SPICE/VNC.
 - If SPICE shows corrupted or useless output, the transport may still be fine. The first things to verify are that QEMU actually has `USE=spice`, the launcher is using the expected video device, and the guest is not relying solely on a serial console that SPICE will never show.
 - If the SPICE window shows garbled text or obviously corrupted frames with `qxl-vga`, keep the TCP serial console enabled and retry the same launch with `QEMU_VIDEO_DEVICE=virtio-vga`.
+- If GRUB renders correctly but the screen breaks as soon as the kernel starts, the failure is in the guest kernel handoff from firmware or GRUB video to the Linux console or DRM stack. In that case, use the TCP serial console as the authoritative installer console and consider adding `console=ttyS0,115200 console=tty0 nomodeset` to the kernel command line for debugging.
 
 Exact connection commands:
 - Local text-mode installer on the launching terminal:
@@ -70,6 +71,7 @@ Exact connection commands:
   or over SSH tunnel:
   `ssh -L 4555:127.0.0.1:4555 qemu-host`
   then `telnet 127.0.0.1 4555`
+- When the bootloader menu is visible, press `e` and append `console=ttyS0,115200 console=tty0 nomodeset` to the kernel command line before booting. This forces kernel messages onto the emulated serial port and disables kernel modesetting as a fallback.
 - PTY serial console with no graphics on the QEMU host:
   `QEMU_DISPLAY_MODE=none QEMU_SERIAL_MODE=pty bash gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
   QEMU will print the allocated PTY path, which you can open locally with `screen`, `minicom`, or `picocom`.
@@ -101,6 +103,8 @@ Sources:
 - Gentoo `app-emulation/virt-viewer`: https://packages.gentoo.org/packages/app-emulation/virt-viewer
 - Gentoo `app-emulation/libvirt`: https://packages.gentoo.org/packages/app-emulation/libvirt
 - Gentoo `dev-python/pyvirtualdisplay`: https://packages.gentoo.org/packages/dev-python/pyvirtualdisplay
+- Linux kernel serial console docs: https://www.kernel.org/doc/html/next/admin-guide/serial-console.html
+- Linux kernel `nomodeset` parameter docs: https://www.kernel.org/doc/html/v6.5/admin-guide/kernel-parameters.html
 - QEMU `VirtIO Devices`: https://www.qemu.org/docs/master/system/devices/virtio/index.html
 - QEMU `virtio-gpu` docs: https://www.qemu.org/docs/master/system/devices/virtio-gpu.html
 - SPICE user manual: https://www.spice-space.org/spice-user-manual.html
