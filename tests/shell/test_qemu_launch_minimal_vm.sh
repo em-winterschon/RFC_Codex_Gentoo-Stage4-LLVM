@@ -45,6 +45,24 @@ setup_vfio_ready_device() {
   : >"${vfio_root}/${group_id}"
 }
 
+setup_vfio_noiommu_device() {
+  local temp_root="$1"
+  local dev="$2"
+  local group_id="$3"
+  local canonical_dev driver_root device_root group_root vfio_root
+
+  canonical_dev="$(canonicalize_pci_bdf "${dev}")"
+  driver_root="${temp_root}/sys/bus/pci/drivers/vfio-pci"
+  device_root="${temp_root}/sys/bus/pci/devices/${canonical_dev}"
+  group_root="${temp_root}/sys/kernel/iommu_groups/${group_id}"
+  vfio_root="${temp_root}/dev/vfio"
+
+  mkdir -p "${driver_root}" "${device_root}" "${group_root}" "${vfio_root}"
+  ln -s "${driver_root}" "${device_root}/driver"
+  ln -s "${group_root}" "${device_root}/iommu_group"
+  : >"${vfio_root}/noiommu-${group_id}"
+}
+
 test_prepare_iso_moves_original() {
   local temp_dir
   temp_dir="$(mktemp -d)"
@@ -138,6 +156,26 @@ test_validate_passthrough_devices_rejects_missing_iommu_group() {
   rm -rf "${temp_dir}"
 }
 
+test_validate_passthrough_devices_rejects_vfio_noiommu_group() {
+  local temp_dir output
+  temp_dir="$(mktemp -d)"
+
+  SYSFS_ROOT="${temp_dir}/sys"
+  VFIO_DEV_ROOT="${temp_dir}/dev/vfio"
+  PCI_NETWK=''
+  PCI_NVME0='53:00.0'
+  PCI_NVME1=''
+  setup_vfio_noiommu_device "${temp_dir}" "${PCI_NVME0}" '0'
+
+  if output="$(validate_passthrough_devices 2>&1)"; then
+    fail 'expected validate_passthrough_devices to fail for vfio-noiommu only devices'
+  fi
+
+  assert_contains "${output}" '/dev/vfio/noiommu-0'
+  assert_contains "${output}" 'requires a real IOMMU-backed /dev/vfio/0 device'
+  rm -rf "${temp_dir}"
+}
+
 test_main_dry_run_prints_command() {
   local temp_dir output
   temp_dir="$(mktemp -d)"
@@ -172,6 +210,7 @@ test_build_qemu_cmd_uses_configured_passthrough_devices
 test_build_qemu_cmd_skips_blank_passthrough_devices
 test_blank_env_overrides_defaults_in_fresh_process
 test_validate_passthrough_devices_rejects_missing_iommu_group
+test_validate_passthrough_devices_rejects_vfio_noiommu_group
 test_main_dry_run_prints_command
 
 printf 'PASS: %s\n' "$(basename "$0")"
