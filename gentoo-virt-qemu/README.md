@@ -1,21 +1,23 @@
 # gentoo-virt-qemu
 
-Host-side helper files for bringing up a Gentoo QEMU/KVM VM with EDK2 firmware and selected PCIe passthrough devices.
+Host-side helper files for bringing up a Gentoo QEMU/KVM VM with EDK2 firmware and selected host storage devices.
 
 Contents:
 - `gentoo-install-qemu-edk2.sh`: installs the basic QEMU/EDK2/minicom package set on the host
 - `qemu-pci-remap.sh`: binds selected host PCI devices to `vfio-pci` for passthrough
-- `qemu-launch-minimal-vm.sh`: launches a minimal QEMU/KVM VM with EDK2 firmware and the hard-coded passthrough devices
+- `qemu-launch-minimal-vm.sh`: launches a minimal QEMU/KVM VM with EDK2 firmware, four host disks, and `virtio-net`
 - `etc_portage_make.conf`: host-side `make.conf` snippet tuned for the QEMU/EDK2 workflow used here
 
 Notes:
 - `qemu-pci-remap.sh` is machine-specific as committed. Review and edit the PCI BDFs and device expectations before running it on another host.
 - `qemu-pci-remap.sh` now detects devices that are already unbound, refuses to continue when a device has no visible IOMMU group and unsafe no-IOMMU mode is disabled, and prints bind diagnostics when `vfio-pci` does not attach.
 - Use `QEMU_PCI_REMAP_DRY_RUN=1 bash gentoo-virt-qemu/qemu-pci-remap.sh` to inspect the remap sequence without writing to sysfs.
-- `qemu-launch-minimal-vm.sh` validates that each non-empty passthrough device is already bound to `vfio-pci`, has a visible IOMMU group, and has a matching `/dev/vfio/<group>` node before launching QEMU.
+- `qemu-launch-minimal-vm.sh` now defaults to the four host disks from the current test layout:
+  `BPOOL_DISK0` and `BPOOL_DISK1` for the mirrored SATADOM boot pool, plus `RPOOL_DISK0` and `RPOOL_DISK1` for the mirrored SATA root pool.
+- The launcher presents those disks over AHCI so the guest sees SATA-style disks, and it always adds a `virtio-net` interface for networking.
+- `PCI_NETWK` is now optional and blank by default. If you set it, the launcher validates that the device is on real IOMMU-backed VFIO before adding `vfio-pci,host=...`.
 - `qemu-launch-minimal-vm.sh` explicitly rejects devices that only appear as `/dev/vfio/noiommu-<group>` because that is not the real IOMMU-backed VFIO path this workflow needs.
-- If a host-specific device is not usable for this VM, set its env var to an empty string when launching. Example: `PCI_NETWK= PCI_NVME1= bash gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
-- `qemu-launch-minimal-vm.sh` is also host-specific as committed. Review the passthrough device BDFs, ISO paths, firmware path, CPU/memory sizing, and console settings before using it elsewhere.
+- `qemu-launch-minimal-vm.sh` is also host-specific as committed. Review the disk paths, firmware path, CPU/memory sizing, and console settings before using it elsewhere.
 - The `make.conf` fragment is policy-specific; treat it as a starting point rather than a universal default.
 
 Validation and debugging:
