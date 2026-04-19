@@ -7,7 +7,7 @@ fi
 
 # Launch a basic VM with the host disks intended for the test ZFS boot pool and
 # root pool, plus configurable console and display options.
-# Version: 0.2.0
+# Version: 0.3.0
 # MBoard: X12SPL-F
 
 BPOOL_DISK0="${BPOOL_DISK0-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305}"
@@ -39,7 +39,10 @@ QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-nographic}"
 QEMU_SERIAL_MODE="${QEMU_SERIAL_MODE:-auto}"
 QEMU_VNC_ADDRESS="${QEMU_VNC_ADDRESS:-127.0.0.1:1}"
 QEMU_SPICE_PORT="${QEMU_SPICE_PORT:-5930}"
-QEMU_SPICE_OPTIONS="${QEMU_SPICE_OPTIONS:-port=${QEMU_SPICE_PORT},disable-ticketing=on}"
+QEMU_SPICE_OPTIONS="${QEMU_SPICE_OPTIONS:-port=${QEMU_SPICE_PORT},addr=127.0.0.1,disable-ticketing=on}"
+QEMU_SERIAL_TCP="${QEMU_SERIAL_TCP:-127.0.0.1:4555,server=on,wait=off,telnet=on}"
+QEMU_VIDEO_DEVICE="${QEMU_VIDEO_DEVICE:-auto}"
+QEMU_VIDEO_DEVICE_HELP_OUTPUT="${QEMU_VIDEO_DEVICE_HELP_OUTPUT-}"
 QEMU_CMD=()
 
 log() {
@@ -86,6 +89,25 @@ serial_mode_name() {
   fi
 }
 
+video_device_name() {
+  if [[ "${QEMU_VIDEO_DEVICE}" != 'auto' ]]; then
+    printf '%s' "${QEMU_VIDEO_DEVICE}"
+    return 0
+  fi
+
+  case "$(display_mode_name)" in
+    spice)
+      printf 'qxl-vga'
+      ;;
+    none|nographic)
+      printf 'std'
+      ;;
+    *)
+      printf 'virtio-vga'
+      ;;
+  esac
+}
+
 qemu_help_output() {
   if [[ -n "${QEMU_HELP_OUTPUT}" ]]; then
     printf '%s' "${QEMU_HELP_OUTPUT}"
@@ -102,6 +124,15 @@ qemu_display_help_output() {
   fi
 
   "${QEMU_BIN}" -display help 2>&1 || true
+}
+
+qemu_device_help_output() {
+  if [[ -n "${QEMU_VIDEO_DEVICE_HELP_OUTPUT}" ]]; then
+    printf '%s' "${QEMU_VIDEO_DEVICE_HELP_OUTPUT}"
+    return 0
+  fi
+
+  "${QEMU_BIN}" -device help 2>&1 || true
 }
 
 device_path() {
@@ -208,6 +239,22 @@ validate_display_backend() {
   esac
 }
 
+validate_video_device() {
+  local device_name help_output
+
+  device_name="$(video_device_name)"
+  [[ -n "${device_name}" ]] || fail 'QEMU video device resolved to an empty name'
+
+  case "${device_name}" in
+    std|virtio-vga|qxl-vga)
+      help_output="$(qemu_device_help_output)"
+      [[ "${help_output}" == *"name \"${device_name}\""* ]] || fail "QEMU video device '${device_name}' is not available in ${QEMU_BIN}; inspect '${QEMU_BIN} -device help' and choose a supported QEMU_VIDEO_DEVICE"
+      ;;
+    *)
+      ;;
+  esac
+}
+
 require_vfio_passthrough_ready() {
   local dev="$1"
   local canonical_dev group_id group_dev noiommu_group_dev driver_name
@@ -260,6 +307,26 @@ append_optional_passthrough_nic() {
   fi
 }
 
+append_video_args() {
+  local device_name
+
+  device_name="$(video_device_name)"
+  case "${device_name}" in
+    std)
+      QEMU_CMD+=( -vga std )
+      ;;
+    qxl-vga|virtio-vga)
+      QEMU_CMD+=( -device "${device_name}" )
+      ;;
+    none)
+      return 0
+      ;;
+    *)
+      QEMU_CMD+=( -device "${device_name}" )
+      ;;
+  esac
+}
+
 append_display_args() {
   case "$(display_mode_name)" in
     nographic)
@@ -291,6 +358,9 @@ append_serial_args() {
     pty)
       QEMU_CMD+=( -serial pty )
       ;;
+    tcp)
+      QEMU_CMD+=( -serial "tcp:${QEMU_SERIAL_TCP}" )
+      ;;
     *)
       fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name)"
       ;;
@@ -311,6 +381,7 @@ build_qemu_cmd() {
     -device 'ide-cd,drive=installer,bus=ahci.0'
   )
 
+  append_video_args
   append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
   append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
   append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
@@ -348,6 +419,7 @@ main() {
   validate_host_disks
   validate_net_backend
   validate_display_backend
+  validate_video_device
   validate_passthrough_devices
   log 'Launching QEMU VM'
   run_qemu_cmd
