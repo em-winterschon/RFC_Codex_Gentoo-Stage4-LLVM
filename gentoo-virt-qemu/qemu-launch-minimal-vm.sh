@@ -65,7 +65,7 @@ build_qemu_cmd() {
     -smp "${QEMU_SMP}"
     -m "${QEMU_MEMORY_MIB}"
     -bios "${EFI_FIRM}"
-    -drive "file=${ISO_INST},medium=cdrom"
+    -drive "file=${ISO_INST},media=cdrom"
     -device "vfio-pci,host=${PCI_NETWK}"
     -device "vfio-pci,host=${PCI_NVME0}"
     -device "vfio-pci,host=${PCI_NVME1}"
