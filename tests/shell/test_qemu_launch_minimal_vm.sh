@@ -153,7 +153,7 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
 test_blank_env_overrides_defaults_in_fresh_process() {
   local output
 
-  output="$(bash -lc 'PCI_NETWK= source "$1"; printf "%s\n" "$PCI_NETWK"' _ "${LAUNCH_SCRIPT}")"
+  output="$(bash -lc 'PCI_NETWK=; source "$1"; printf "%s\n" "$PCI_NETWK"' _ "${LAUNCH_SCRIPT}")"
   assert_equals '' "${output}"
 }
 
