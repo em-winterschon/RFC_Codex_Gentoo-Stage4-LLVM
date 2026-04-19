@@ -6,7 +6,7 @@ if [[ "${QEMU_LAUNCH_TRACE:-0}" == "1" ]]; then
 fi
 
 # Launch a basic VM with selected PCI passthrough devices.
-# Version: 0.0.4
+# Version: 0.0.5
 # MBoard: X12SPL-F
 #
 # Example device inventory reference:
@@ -101,7 +101,7 @@ prepare_iso() {
 
 require_vfio_passthrough_ready() {
   local dev="$1"
-  local canonical_dev group_id group_dev driver_name
+  local canonical_dev group_id group_dev noiommu_group_dev driver_name
 
   if [[ -z "${dev}" ]]; then
     return 0
@@ -121,6 +121,11 @@ require_vfio_passthrough_ready() {
   fi
 
   group_dev="${VFIO_DEV_ROOT}/${group_id}"
+  noiommu_group_dev="${VFIO_DEV_ROOT}/noiommu-${group_id}"
+  if [[ -e "${noiommu_group_dev}" && ! -e "${group_dev}" ]]; then
+    fail "${canonical_dev} is only available as ${noiommu_group_dev}; QEMU vfio-pci requires a real IOMMU-backed ${group_dev} device"
+  fi
+
   [[ -e "${group_dev}" ]] || fail "${canonical_dev} is in IOMMU group ${group_id}, but ${group_dev} is missing"
 }
 
