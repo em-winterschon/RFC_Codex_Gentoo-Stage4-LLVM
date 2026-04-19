@@ -159,7 +159,7 @@ bind_device_to_vfio() {
   ensure_device_exists "${dev}"
   ensure_vfio_attach_preconditions "${dev}"
 
-  if [[ "$(current_driver "${dev}")" == "vfio-pci" ]]; then
+  if [[ "$(current_driver "${dev}")" == 'vfio-pci' ]]; then
     log "${dev} is already bound to vfio-pci"
     return 0
   fi
@@ -189,7 +189,7 @@ main() {
   log "Binding SM981/PM981/PM983 [144d:a808] ${PCI_NVME1}"
   bind_device_to_vfio "${PCI_NVME1}"
 
-  log 'Binding Ethernet I210 Gigabit Network Connection [8086:1533] 0000:02:00.0'
+  log "Binding Ethernet I210 Gigabit Network Connection [8086:1533] ${PCI_NETWK}"
   bind_device_to_vfio "${PCI_NETWK}"
 
   log '[COMPLETE]'
