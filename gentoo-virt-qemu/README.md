@@ -15,6 +15,7 @@ Notes:
 - `qemu-launch-minimal-vm.sh` now defaults to the four host disks from the current test layout:
   `BPOOL_DISK0` and `BPOOL_DISK1` for the mirrored SATADOM boot pool, plus `RPOOL_DISK0` and `RPOOL_DISK1` for the mirrored SATA root pool.
 - The launcher presents those disks over AHCI so the guest sees SATA-style disks, and it always adds a `virtio-net` interface for networking.
+- The default net backend is `user`, which requires QEMU to be built with `USE=slirp`. The launcher now checks backend support up front and suggests an alternate `QEMU_NETDEV_BACKEND` when that support is missing.
 - `PCI_NETWK` is now optional and blank by default. If you set it, the launcher validates that the device is on real IOMMU-backed VFIO before adding `vfio-pci,host=...`.
 - `qemu-launch-minimal-vm.sh` explicitly rejects devices that only appear as `/dev/vfio/noiommu-<group>` because that is not the real IOMMU-backed VFIO path this workflow needs.
 - `qemu-launch-minimal-vm.sh` is also host-specific as committed. Review the disk paths, firmware path, CPU/memory sizing, and console settings before using it elsewhere.
