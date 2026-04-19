@@ -5,8 +5,8 @@ if [[ "${QEMU_LAUNCH_TRACE:-0}" == "1" ]]; then
   set -x
 fi
 
-# Launch a basic VM with 2x NVMe + 1x NIC passthrough.
-# Version: 0.0.2
+# Launch a basic VM with selected PCI passthrough devices.
+# Version: 0.0.3
 # MBoard: X12SPL-F
 #
 # Example device inventory reference:
@@ -35,10 +35,53 @@ QEMU_CPU="${QEMU_CPU:-host}"
 QEMU_SMP="${QEMU_SMP:-8}"
 QEMU_MEMORY_MIB="${QEMU_MEMORY_MIB:-16384}"
 QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
+SYSFS_ROOT="${SYSFS_ROOT:-/sys}"
+VFIO_DEV_ROOT="${VFIO_DEV_ROOT:-/dev/vfio}"
 QEMU_CMD=()
 
 log() {
   printf '[qemu-launch-minimal-vm] %s\n' "$*"
+}
+
+fail() {
+  printf '[qemu-launch-minimal-vm] ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+canonicalize_pci_bdf() {
+  local dev="$1"
+
+  if [[ -z "${dev}" ]]; then
+    return 0
+  fi
+
+  if [[ "${dev}" == 0000:* ]]; then
+    printf '%s' "${dev}"
+  else
+    printf '0000:%s' "${dev}"
+  fi
+}
+
+device_path() {
+  printf '%s/bus/pci/devices/%s' "${SYSFS_ROOT}" "$(canonicalize_pci_bdf "$1")"
+}
+
+current_driver() {
+  local driver_link
+
+  driver_link="$(readlink -f "$(device_path "$1")/driver" 2>/dev/null || true)"
+  if [[ -n "${driver_link}" && -e "${driver_link}" ]]; then
+    basename "${driver_link}"
+  fi
+}
+
+iommu_group_id() {
+  local group_link
+
+  group_link="$(readlink -f "$(device_path "$1")/iommu_group" 2>/dev/null || true)"
+  if [[ -n "${group_link}" && -e "${group_link}" ]]; then
+    basename "${group_link}"
+  fi
 }
 
 ensure_base_dir() {
@@ -56,6 +99,45 @@ prepare_iso() {
   fi
 }
 
+require_vfio_passthrough_ready() {
+  local dev="$1"
+  local canonical_dev group_id group_dev driver_name
+
+  if [[ -z "${dev}" ]]; then
+    return 0
+  fi
+
+  canonical_dev="$(canonicalize_pci_bdf "${dev}")"
+  [[ -d "$(device_path "${dev}")" ]] || fail "PCI device not found: ${canonical_dev}"
+
+  driver_name="$(current_driver "${dev}")"
+  if [[ "${driver_name}" != 'vfio-pci' ]]; then
+    fail "${canonical_dev} is not bound to vfio-pci (current driver: ${driver_name:-<unbound>})"
+  fi
+
+  group_id="$(iommu_group_id "${dev}")"
+  if [[ -z "${group_id}" ]]; then
+    fail "${canonical_dev} has no IOMMU group; QEMU vfio-pci cannot use unsafe no-IOMMU bindings here"
+  fi
+
+  group_dev="${VFIO_DEV_ROOT}/${group_id}"
+  [[ -e "${group_dev}" ]] || fail "${canonical_dev} is in IOMMU group ${group_id}, but ${group_dev} is missing"
+}
+
+validate_passthrough_devices() {
+  require_vfio_passthrough_ready "${PCI_NETWK}"
+  require_vfio_passthrough_ready "${PCI_NVME0}"
+  require_vfio_passthrough_ready "${PCI_NVME1}"
+}
+
+append_passthrough_device() {
+  local dev="$1"
+
+  if [[ -n "${dev}" ]]; then
+    QEMU_CMD+=( -device "vfio-pci,host=${dev}" )
+  fi
+}
+
 build_qemu_cmd() {
   QEMU_CMD=(
     "${QEMU_BIN}"
@@ -66,11 +148,13 @@ build_qemu_cmd() {
     -m "${QEMU_MEMORY_MIB}"
     -bios "${EFI_FIRM}"
     -drive "file=${ISO_INST},media=cdrom"
-    -device "vfio-pci,host=${PCI_NETWK}"
-    -device "vfio-pci,host=${PCI_NVME0}"
-    -device "vfio-pci,host=${PCI_NVME1}"
-    -nographic
   )
+
+  append_passthrough_device "${PCI_NETWK}"
+  append_passthrough_device "${PCI_NVME0}"
+  append_passthrough_device "${PCI_NVME1}"
+
+  QEMU_CMD+=( -nographic )
 }
 
 print_qemu_cmd() {
@@ -92,6 +176,7 @@ run_qemu_cmd() {
 main() {
   ensure_base_dir
   prepare_iso
+  validate_passthrough_devices
   log 'Launching QEMU VM'
   run_qemu_cmd
   log '[COMPLETE]'
