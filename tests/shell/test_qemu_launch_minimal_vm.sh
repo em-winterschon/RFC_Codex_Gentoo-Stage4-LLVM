@@ -176,6 +176,20 @@ test_serial_mode_defaults_to_stdio_for_graphical_modes() {
   assert_equals 'stdio' "$(serial_mode_name)"
 }
 
+test_append_serial_args_rejects_unknown_mode() {
+  local output
+
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_SERIAL_MODE='bogus'
+
+  if output="$(append_serial_args 2>&1)"; then
+    fail 'expected append_serial_args to fail for an unknown serial mode'
+  fi
+
+  assert_contains "${output}" 'Unsupported QEMU_SERIAL_MODE: bogus'
+  assert_contains "${output}" 'supported: auto, stdio, pty, tcp, none'
+}
+
 test_build_qemu_cmd_uses_vnc_and_stdio_serial() {
   local temp_dir rendered
   temp_dir="$(mktemp -d)"
@@ -332,6 +346,8 @@ test_main_dry_run_prints_command() {
 
   output="$(main 2>&1)"
 
+  assert_contains "${output}" 'Resolved display mode: nographic (video: std)'
+  assert_contains "${output}" 'Resolved serial mode: integrated'
   assert_contains "${output}" 'Launching QEMU VM'
   assert_contains "${output}" 'qemu-system-x86_64'
   assert_contains "${output}" "file=${BPOOL_DISK0},format=raw"
@@ -353,6 +369,7 @@ test_video_device_defaults_to_virtio_vga_for_gtk
 test_validate_video_device_rejects_missing_qxl
 test_serial_mode_defaults_to_integrated_in_nographic
 test_serial_mode_defaults_to_stdio_for_graphical_modes
+test_append_serial_args_rejects_unknown_mode
 test_build_qemu_cmd_uses_vnc_and_stdio_serial
 test_build_qemu_cmd_uses_spice_qxl_and_tcp_serial
 test_build_qemu_cmd_uses_host_disks_and_virtio_net
