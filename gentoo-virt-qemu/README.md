@@ -12,6 +12,8 @@ Notes:
 - `qemu-pci-remap.sh` is machine-specific as committed. Review and edit the PCI BDFs and device expectations before running it on another host.
 - `qemu-pci-remap.sh` now detects devices that are already unbound, refuses to continue when a device has no visible IOMMU group and unsafe no-IOMMU mode is disabled, and prints bind diagnostics when `vfio-pci` does not attach.
 - Use `QEMU_PCI_REMAP_DRY_RUN=1 bash gentoo-virt-qemu/qemu-pci-remap.sh` to inspect the remap sequence without writing to sysfs.
+- `qemu-launch-minimal-vm.sh` validates that each non-empty passthrough device is already bound to `vfio-pci`, has a visible IOMMU group, and has a matching `/dev/vfio/<group>` node before launching QEMU.
+- If a host-specific device is not usable for this VM, leave it blank when launching. Example: `PCI_NETWK= PCI_NVME1= bash gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
 - `qemu-launch-minimal-vm.sh` is also host-specific as committed. Review the passthrough device BDFs, ISO paths, firmware path, CPU/memory sizing, and console settings before using it elsewhere.
 - The `make.conf` fragment is policy-specific; treat it as a starting point rather than a universal default.
 
