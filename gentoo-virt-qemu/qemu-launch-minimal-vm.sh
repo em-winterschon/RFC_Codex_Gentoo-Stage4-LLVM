@@ -6,8 +6,8 @@ if [[ "${QEMU_LAUNCH_TRACE:-0}" == "1" ]]; then
 fi
 
 # Launch a basic VM with the host disks intended for the test ZFS boot pool and
-# root pool, plus a virtio-net interface for connectivity.
-# Version: 0.1.1
+# root pool, plus configurable console and display options.
+# Version: 0.2.0
 # MBoard: X12SPL-F
 
 BPOOL_DISK0="${BPOOL_DISK0-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305}"
@@ -33,6 +33,13 @@ QEMU_NETDEV_ID="${QEMU_NETDEV_ID:-net0}"
 QEMU_NETDEV_BACKEND="${QEMU_NETDEV_BACKEND:-user}"
 QEMU_NETDEV_MODEL="${QEMU_NETDEV_MODEL:-virtio-net-pci}"
 QEMU_NETDEV_HELP_OUTPUT="${QEMU_NETDEV_HELP_OUTPUT-}"
+QEMU_HELP_OUTPUT="${QEMU_HELP_OUTPUT-}"
+QEMU_DISPLAY_HELP_OUTPUT="${QEMU_DISPLAY_HELP_OUTPUT-}"
+QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-nographic}"
+QEMU_SERIAL_MODE="${QEMU_SERIAL_MODE:-auto}"
+QEMU_VNC_ADDRESS="${QEMU_VNC_ADDRESS:-127.0.0.1:1}"
+QEMU_SPICE_PORT="${QEMU_SPICE_PORT:-5930}"
+QEMU_SPICE_OPTIONS="${QEMU_SPICE_OPTIONS:-port=${QEMU_SPICE_PORT},disable-ticketing=on}"
 QEMU_CMD=()
 
 log() {
@@ -60,6 +67,41 @@ canonicalize_pci_bdf() {
 
 network_backend_name() {
   printf '%s' "${QEMU_NETDEV_BACKEND%%,*}"
+}
+
+display_mode_name() {
+  printf '%s' "${QEMU_DISPLAY_MODE}"
+}
+
+serial_mode_name() {
+  if [[ "${QEMU_SERIAL_MODE}" != 'auto' ]]; then
+    printf '%s' "${QEMU_SERIAL_MODE}"
+    return 0
+  fi
+
+  if [[ "$(display_mode_name)" == 'nographic' ]]; then
+    printf 'integrated'
+  else
+    printf 'stdio'
+  fi
+}
+
+qemu_help_output() {
+  if [[ -n "${QEMU_HELP_OUTPUT}" ]]; then
+    printf '%s' "${QEMU_HELP_OUTPUT}"
+    return 0
+  fi
+
+  "${QEMU_BIN}" -help 2>&1 || true
+}
+
+qemu_display_help_output() {
+  if [[ -n "${QEMU_DISPLAY_HELP_OUTPUT}" ]]; then
+    printf '%s' "${QEMU_DISPLAY_HELP_OUTPUT}"
+    return 0
+  fi
+
+  "${QEMU_BIN}" -display help 2>&1 || true
 }
 
 device_path() {
@@ -140,6 +182,32 @@ validate_net_backend() {
   fi
 }
 
+validate_display_backend() {
+  local mode help_output
+
+  mode="$(display_mode_name)"
+  case "${mode}" in
+    nographic|none)
+      return 0
+      ;;
+    gtk|sdl)
+      help_output="$(qemu_display_help_output)"
+      [[ "${help_output}" == *"${mode}"* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=${mode} or choose a supported display mode"
+      ;;
+    vnc)
+      help_output="$(qemu_help_output)"
+      [[ "${help_output}" == *'-vnc '* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=vnc or choose another display mode"
+      ;;
+    spice)
+      help_output="$(qemu_help_output)"
+      [[ "${help_output}" == *'-spice '* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=spice and use app-emulation/virt-viewer as the client"
+      ;;
+    *)
+      fail "Unsupported QEMU_DISPLAY_MODE: ${mode}"
+      ;;
+  esac
+}
+
 require_vfio_passthrough_ready() {
   local dev="$1"
   local canonical_dev group_id group_dev noiommu_group_dev driver_name
@@ -192,6 +260,43 @@ append_optional_passthrough_nic() {
   fi
 }
 
+append_display_args() {
+  case "$(display_mode_name)" in
+    nographic)
+      QEMU_CMD+=( -nographic )
+      ;;
+    none)
+      QEMU_CMD+=( -display none )
+      ;;
+    gtk|sdl)
+      QEMU_CMD+=( -display "$(display_mode_name)" )
+      ;;
+    vnc)
+      QEMU_CMD+=( -display none -vnc "${QEMU_VNC_ADDRESS}" )
+      ;;
+    spice)
+      QEMU_CMD+=( -display none -spice "${QEMU_SPICE_OPTIONS}" )
+      ;;
+  esac
+}
+
+append_serial_args() {
+  case "$(serial_mode_name)" in
+    integrated|none)
+      return 0
+      ;;
+    stdio)
+      QEMU_CMD+=( -serial mon:stdio )
+      ;;
+    pty)
+      QEMU_CMD+=( -serial pty )
+      ;;
+    *)
+      fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name)"
+      ;;
+  esac
+}
+
 build_qemu_cmd() {
   QEMU_CMD=(
     "${QEMU_BIN}"
@@ -217,8 +322,8 @@ build_qemu_cmd() {
   )
 
   append_optional_passthrough_nic
-
-  QEMU_CMD+=( -nographic )
+  append_display_args
+  append_serial_args
 }
 
 print_qemu_cmd() {
@@ -242,6 +347,7 @@ main() {
   prepare_iso
   validate_host_disks
   validate_net_backend
+  validate_display_backend
   validate_passthrough_devices
   log 'Launching QEMU VM'
   run_qemu_cmd
