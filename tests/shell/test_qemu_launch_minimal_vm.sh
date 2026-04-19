@@ -3,9 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-minimal-vm.sh"
 
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-minimal-vm.sh
-source "${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-minimal-vm.sh"
+source "${LAUNCH_SCRIPT}"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -110,6 +111,13 @@ test_build_qemu_cmd_skips_blank_passthrough_devices() {
   [[ "${rendered}" != *"vfio-pci,host=${PCI_NVME1}"* ]] || fail 'unexpected blank NVMe passthrough argument'
 }
 
+test_blank_env_overrides_defaults_in_fresh_process() {
+  local output
+
+  output="$(bash -lc 'PCI_NETWK= PCI_NVME1= source "$1"; printf "NET=%s NVME1=%s\n" "$PCI_NETWK" "$PCI_NVME1"' _ "${LAUNCH_SCRIPT}")"
+  assert_contains "${output}" 'NET= NVME1='
+}
+
 test_validate_passthrough_devices_rejects_missing_iommu_group() {
   local temp_dir output
   temp_dir="$(mktemp -d)"
@@ -162,6 +170,7 @@ test_prepare_iso_moves_original
 test_prepare_iso_accepts_existing_installer_iso
 test_build_qemu_cmd_uses_configured_passthrough_devices
 test_build_qemu_cmd_skips_blank_passthrough_devices
+test_blank_env_overrides_defaults_in_fresh_process
 test_validate_passthrough_devices_rejects_missing_iommu_group
 test_main_dry_run_prints_command
 
