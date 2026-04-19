@@ -8,6 +8,14 @@ Contents:
 - `qemu-launch-minimal-vm.sh`: launches a minimal QEMU/KVM VM with EDK2 firmware, four host disks, and configurable console/display settings
 - `etc_portage_make.conf`: host-side `make.conf` snippet tuned for the QEMU/EDK2 workflow used here
 
+Recommended USE flags:
+- `app-emulation/qemu`: `X gtk sdl slirp spice vnc`
+  Why: `slirp` keeps `-netdev user` available, `gtk` and `sdl` cover local display modes, and `vnc`/`spice` cover remote graphics output.
+- `app-emulation/virt-viewer`: `libvirt spice vnc`
+  Why: `spice` and `vnc` let `virt-viewer` or `remote-viewer` connect to those QEMU backends, while `libvirt` keeps the client compatible if we later move this VM under libvirt management.
+
+The prep script writes those flags into `${PACKAGE_USE_FILE:-/etc/portage/package.use/codex-qemu}` before the initial `emerge`. Override them with `QEMU_USE_FLAGS=...` or `VIRT_VIEWER_USE_FLAGS=...` if this host needs a different mix.
+
 Notes:
 - `qemu-pci-remap.sh` is machine-specific as committed. Review and edit the PCI BDFs and device expectations before running it on another host.
 - `qemu-pci-remap.sh` now detects devices that are already unbound, refuses to continue when a device has no visible IOMMU group and unsafe no-IOMMU mode is disabled, and prints bind diagnostics when `vfio-pci` does not attach.
@@ -22,7 +30,7 @@ Notes:
 - `QEMU_SERIAL_MODE` controls the serial path: `auto`, `stdio`, `pty`, or `none`. In `auto`, `nographic` uses QEMU's integrated stdio console, while graphical/remote display modes add `-serial mon:stdio`.
 - `PCI_NETWK` is optional and blank by default. If you set it, the launcher validates that the device is on real IOMMU-backed VFIO before adding `vfio-pci,host=...`.
 - `qemu-launch-minimal-vm.sh` explicitly rejects devices that only appear as `/dev/vfio/noiommu-<group>` because that is not the real IOMMU-backed VFIO path this workflow needs.
-- `app-emulation/virt-viewer` is the right client-side package for SPICE or VNC console access on Gentoo. Current Gentoo metadata shows optional `libvirt`, `spice`, and `vnc` USE flags on `virt-viewer` itself.
+- `app-emulation/virt-viewer` is the right client-side package for SPICE or VNC console access on Gentoo.
 - `app-emulation/libvirt` is only needed if the workflow moves to libvirt-managed domains and you specifically want `virsh console <vmname>`. The current launcher is raw QEMU, so `virsh console` does not apply yet.
 - `dev-python/pyvirtualdisplay` is not part of the recommended workflow here. It is a Python wrapper around Xvfb/Xephyr/Xvnc for host-side application displays, not a VM console transport.
 - The `make.conf` fragment is policy-specific; treat it as a starting point rather than a universal default.
@@ -46,6 +54,7 @@ Validation and debugging:
 - `bash tests/shell/debug-qemu-launch-minimal-vm.sh` launches `qemu-launch-minimal-vm.sh` under `bashdb` with dry-run mode enabled by default
 
 Sources:
+- Gentoo `app-emulation/qemu`: https://packages.gentoo.org/packages/app-emulation/qemu
 - Gentoo `app-emulation/virt-viewer`: https://packages.gentoo.org/packages/app-emulation/virt-viewer
 - Gentoo `app-emulation/libvirt`: https://packages.gentoo.org/packages/app-emulation/libvirt
 - Gentoo `dev-python/pyvirtualdisplay`: https://packages.gentoo.org/packages/dev-python/pyvirtualdisplay
