@@ -15,6 +15,8 @@ for script in "${shell_scripts[@]}"; do
 done
 
 "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
+"${SCRIPT_DIR}/test_generate_cloud_init_seed.sh"
+"${SCRIPT_DIR}/test_qemu_launch_cloudinit_vm.sh"
 "${SCRIPT_DIR}/test_qemu_launch_minimal_vm.sh"
 "${SCRIPT_DIR}/test_qemu_pci_remap.sh"
 
