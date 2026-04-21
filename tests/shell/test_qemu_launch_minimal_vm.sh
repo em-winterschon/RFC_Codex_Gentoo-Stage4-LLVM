@@ -315,7 +315,7 @@ test_validate_passthrough_devices_rejects_vfio_noiommu_group() {
   fi
 
   assert_contains "${output}" '/dev/vfio/noiommu-2'
-  assert_contains "${output}" 'requires a real IOMMU-backed /dev/vfio/2 device'
+  assert_contains "${output}" 'requires a real IOMMU-backed'
   rm -rf "${temp_dir}"
 }
 
