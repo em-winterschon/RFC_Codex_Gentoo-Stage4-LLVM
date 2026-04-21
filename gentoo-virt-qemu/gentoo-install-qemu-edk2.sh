@@ -11,7 +11,9 @@ VIRT_VIEWER_USE_FLAGS="${VIRT_VIEWER_USE_FLAGS:-libvirt spice vnc}"
 packages=(
   sys-firmware/edk2-bin
   app-emulation/qemu
+  app-cdr/cdrtools
   net-dialup/minicom
+  net-misc/curl
 )
 
 mkdir -p "${PACKAGE_USE_DIR}"
