@@ -361,6 +361,7 @@ extract_stage3() {
   run_cmd "${TAR_BIN}" xpf "${STAGE3_STAGE_TARBALL_PATH}" --xattrs-include='*.*' --numeric-owner -C "${TARGET_ROOT_MNT}"
   if [[ -f "${HOST_RESOLV_CONF}" ]]; then
     run_cmd cp "${HOST_RESOLV_CONF}" "${TARGET_ROOT_MNT}/etc/resolv.conf"
+    run_cmd chmod 0644 "${TARGET_ROOT_MNT}/etc/resolv.conf"
   fi
 }
 
@@ -380,6 +381,10 @@ FSTAB
 
 mkdir -p /boot/efi /root/.ssh /etc/portage
 mkdir -p /etc/default
+
+if [[ -f /etc/resolv.conf ]]; then
+  chmod 0644 /etc/resolv.conf || true
+fi
 
 cat >> /etc/portage/make.conf <<'MAKECONF'
 CC="clang"

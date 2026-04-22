@@ -138,10 +138,12 @@ EOF
   assert_contains "${output}" 'sgdisk --zap-all /dev/nbd0'
   assert_contains "${output}" 'sgdisk --new=1:0:+512MiB --typecode=1:ef00'
   assert_contains "${output}" 'partx -u /dev/nbd0'
+  assert_contains "${output}" 'chmod 0644'
   assert_contains "${output}" '[COMPLETE]'
   bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
   assert_contains "${bootstrap}" 'grub-install --target=x86_64-efi'
   assert_contains "${bootstrap}" 'CC="clang"'
+  assert_contains "${bootstrap}" 'chmod 0644 /etc/resolv.conf'
   rm -rf "${temp_dir}"
 }
 
