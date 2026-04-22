@@ -61,6 +61,8 @@ STAGE3_STAGE_SHA256_URL=''
 STAGE3_STAGE_TARBALL_PATH=''
 STAGE3_STAGE_SHA256_PATH=''
 STAGE3_STAGE_SHA256=''
+GPT_ESP_TYPE_GUID='c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
+GPT_LINUX_FS_TYPE_GUID='0fc63daf-8483-4772-8e79-3d69d8477de4'
 
 resolve_host_tool_paths() {
   local tool_name resolved_path
@@ -339,8 +341,8 @@ partition_qcow_image() {
   local sfdisk_input
 
   sfdisk_input=$'label: gpt\n'
-  sfdisk_input+="size=${QCOW_ESP_SIZE_MIB}MiB,type=uefi\n"
-  sfdisk_input+=$'type=linux\n'
+  sfdisk_input+="size=${QCOW_ESP_SIZE_MIB}MiB,type=${GPT_ESP_TYPE_GUID}\n"
+  sfdisk_input+="type=${GPT_LINUX_FS_TYPE_GUID}\n"
   run_shell "printf '%s' ${sfdisk_input@Q} | ${SFDISK_BIN@Q} ${NBD_DEVICE@Q}"
   run_cmd "${PARTPROBE_BIN}" "${NBD_DEVICE}"
 }

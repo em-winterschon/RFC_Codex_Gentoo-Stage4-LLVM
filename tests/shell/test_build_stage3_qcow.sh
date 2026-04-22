@@ -134,6 +134,7 @@ EOF
   assert_contains "${output}" 'current-stage3-amd64-llvm-openrc'
   assert_contains "${output}" 'qemu-img create -f qcow2'
   assert_contains "${output}" 'qemu-nbd --connect'
+  assert_contains "${output}" 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
   assert_contains "${output}" '[COMPLETE]'
   bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
   assert_contains "${bootstrap}" 'grub-install --target=x86_64-efi'
