@@ -22,6 +22,8 @@ Contents:
   downloads a supported OpenRC stage3, validates the enum target, creates a QCOW image, and prepares a bootstrap plan to turn that stage3 into a bootable VM image
 - `qemu-launch-stage3-vm.sh`
   launches the custom stage3 QCOW image with the four target disks attached, strict UEFI boot, SSH forwarding, and selectable serial-console transport
+- `validate-llvm-qcow-builder.sh`
+  runs repeatable builder and launcher validation sequences for iterative host-side development
 - `qemu-launch-cloudinit-vm.sh`
   legacy reference workflow for the official Gentoo `cloud-init` image; kept for comparison, not the preferred path
 - `qemu-launch-minimal-vm.sh`
@@ -171,6 +173,40 @@ Useful overrides:
 - disable launcher log file setup:
   `LAUNCHER_LOG_ENABLE=0`
 
+## Iterative Validation
+
+`validate-llvm-qcow-builder.sh` is the host-side sequence runner for this workflow. It is intended as the base for broader integration validation while keeping the existing shell test suite fast.
+
+Supported modes:
+- `build-dry-run`
+  dry-runs `build-stage3-qcow.sh`
+- `build`
+  performs the real stage3 QCOW build
+- `launch`
+  launches the stage3 VM from an existing QCOW image
+- `full`
+  runs dry-run builder, real builder, then launcher
+- `suite`
+  alias for `build-dry-run`
+
+Examples:
+```bash
+bash gentoo-virt-qemu/validate-llvm-qcow-builder.sh --mode build-dry-run
+```
+
+```bash
+bash gentoo-virt-qemu/validate-llvm-qcow-builder.sh \
+  --mode full \
+  --ssh-pubkey /root/.ssh/id_ed25519.pub \
+  --serial-mode pty \
+  --wait-for-ssh 0
+```
+
+The validator writes its own log file to:
+- `/tmp/validate-llvm-qcow-builder.sh.${PPID}-${PID}.$(date +'%Y-%m%d-%H%M_%s.UTC%z').log`
+
+Actionable next tasks are tracked in the validator source so they can be promoted into the broader pre-merge validation path later.
+
 ## Legacy Paths
 
 The cloud-image path is still in-tree for reference, but it is no longer the preferred route:
@@ -183,6 +219,8 @@ The cloud-image path is still in-tree for reference, but it is no longer the pre
 
 - `bash tests/shell/test_build_stage3_qcow.sh`
   unit tests for `build-stage3-qcow.sh`
+- `bash tests/shell/test_validate_llvm_qcow_builder.sh`
+  unit tests for `validate-llvm-qcow-builder.sh`
 - `bash tests/shell/test_qemu_launch_stage3_vm.sh`
   unit tests for `qemu-launch-stage3-vm.sh`
 - `bash tests/shell/test_generate_cloud_init_seed.sh`
