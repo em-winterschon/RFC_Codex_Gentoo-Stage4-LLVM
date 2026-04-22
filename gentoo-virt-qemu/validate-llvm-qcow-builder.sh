@@ -196,8 +196,8 @@ require_real_mode_root() {
 
 validate_inputs() {
   [[ -d "${WORKING_DIR}" ]] || fail "${EXIT_PREREQ}" "Working directory does not exist: ${WORKING_DIR}"
-  [[ -x "${BUILDER_SCRIPT}" ]] || fail "${EXIT_PREREQ}" "Builder script is missing or not executable: ${BUILDER_SCRIPT}"
-  [[ -x "${LAUNCHER_SCRIPT}" ]] || fail "${EXIT_PREREQ}" "Launcher script is missing or not executable: ${LAUNCHER_SCRIPT}"
+  [[ -f "${BUILDER_SCRIPT}" && -r "${BUILDER_SCRIPT}" ]] || fail "${EXIT_PREREQ}" "Builder script is missing or not readable: ${BUILDER_SCRIPT}"
+  [[ -f "${LAUNCHER_SCRIPT}" && -r "${LAUNCHER_SCRIPT}" ]] || fail "${EXIT_PREREQ}" "Launcher script is missing or not readable: ${LAUNCHER_SCRIPT}"
 
   case "${MODE}" in
     build-dry-run|build|full)

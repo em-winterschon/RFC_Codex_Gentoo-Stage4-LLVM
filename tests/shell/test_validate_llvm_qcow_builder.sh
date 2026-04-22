@@ -41,6 +41,12 @@ EOF
   chmod +x "${temp_dir}/gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
 }
 
+remove_execute_bits() {
+  local temp_dir="$1"
+  chmod 0644 "${temp_dir}/gentoo-virt-qemu/build-stage3-qcow.sh"
+  chmod 0644 "${temp_dir}/gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
+}
+
 test_build_dry_run_mode_invokes_builder_with_expected_env() {
   local temp_dir key_file state_file log_file output status
   temp_dir="$(mktemp -d)"
@@ -50,6 +56,7 @@ test_build_dry_run_mode_invokes_builder_with_expected_env() {
   printf 'ssh-ed25519 AAAATestKey codex@test\n' >"${key_file}"
   : >"${state_file}"
   make_fake_repo "${temp_dir}"
+  remove_execute_bits "${temp_dir}"
 
   set +e
   output="$(
@@ -78,6 +85,7 @@ test_full_mode_runs_builder_and_launcher_sequence() {
   printf 'ssh-ed25519 AAAATestKey codex@test\n' >"${key_file}"
   : >"${state_file}"
   make_fake_repo "${temp_dir}"
+  remove_execute_bits "${temp_dir}"
 
   set +e
   output="$(
@@ -109,6 +117,7 @@ test_invalid_mode_fails_with_usage_code() {
   key_file="${temp_dir}/id_ed25519.pub"
   printf 'ssh-ed25519 AAAATestKey codex@test\n' >"${key_file}"
   make_fake_repo "${temp_dir}"
+  remove_execute_bits "${temp_dir}"
 
   set +e
   output="$(
