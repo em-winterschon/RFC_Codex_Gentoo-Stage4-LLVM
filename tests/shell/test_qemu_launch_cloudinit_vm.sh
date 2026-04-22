@@ -35,6 +35,10 @@ reset_launcher_state() {
   QEMU_DEVICE_HELP_OUTPUT=''
   QEMU_NETDEV_HELP_OUTPUT=$'user\ntap\n'
   QEMU_DISPLAY_HELP_OUTPUT=''
+  QEMU_BOOT_STRICT='1'
+  QEMU_BOOTDISK_ID='bootdisk'
+  QEMU_BOOTDISK_MODEL='virtio-blk-pci'
+  QEMU_BOOTDISK_BOOTINDEX='1'
   QEMU_SERIAL_MODE='file'
   QEMU_DISPLAY_MODE='none'
   QEMU_DAEMONIZE='1'
@@ -96,7 +100,9 @@ test_build_qemu_cmd_uses_cloud_boot_disk_seed_and_host_disks() {
   build_qemu_cmd
 
   rendered="${QEMU_CMD[*]}"
-  assert_contains "${rendered}" "if=virtio,file=${OVERLAY_IMAGE},format=qcow2"
+  assert_contains "${rendered}" "-boot strict=on"
+  assert_contains "${rendered}" "if=none,id=${QEMU_BOOTDISK_ID},file=${OVERLAY_IMAGE},format=qcow2"
+  assert_contains "${rendered}" "${QEMU_BOOTDISK_MODEL},drive=${QEMU_BOOTDISK_ID},bootindex=${QEMU_BOOTDISK_BOOTINDEX},serial=cloud-boot"
   assert_contains "${rendered}" "file=${SEED_ISO},format=raw,media=cdrom,readonly=on"
   assert_contains "${rendered}" "hostfwd=tcp:127.0.0.1:2222-:22,id=${QEMU_NETDEV_ID}"
   assert_contains "${rendered}" "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
@@ -150,6 +156,7 @@ test_main_dry_run_prints_overlay_and_qemu_commands() {
   assert_contains "${output}" 'Creating writable overlay'
   assert_contains "${output}" '/usr/bin/qemu-img create -f qcow2 -F qcow2'
   assert_contains "${output}" '/usr/bin/qemu-system-x86_64'
+  assert_contains "${output}" '-boot strict=on'
   assert_contains "${output}" 'ssh -p 2222 root@127.0.0.1'
   assert_contains "${output}" '[COMPLETE]'
   rm -rf "${temp_dir}"

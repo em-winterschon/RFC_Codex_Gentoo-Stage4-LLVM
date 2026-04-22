@@ -37,6 +37,10 @@ QEMU_MACHINE="${QEMU_MACHINE:-q35,accel=kvm}"
 QEMU_CPU="${QEMU_CPU:-host}"
 QEMU_SMP="${QEMU_SMP:-8}"
 QEMU_MEMORY_MIB="${QEMU_MEMORY_MIB:-16384}"
+QEMU_BOOT_STRICT="${QEMU_BOOT_STRICT:-1}"
+QEMU_BOOTDISK_ID="${QEMU_BOOTDISK_ID:-bootdisk}"
+QEMU_BOOTDISK_MODEL="${QEMU_BOOTDISK_MODEL:-virtio-blk-pci}"
+QEMU_BOOTDISK_BOOTINDEX="${QEMU_BOOTDISK_BOOTINDEX:-1}"
 QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
 QEMU_DAEMONIZE="${QEMU_DAEMONIZE:-1}"
 QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-none}"
@@ -326,6 +330,12 @@ append_vsock_args() {
   fi
 }
 
+append_boot_args() {
+  if [[ "${QEMU_BOOT_STRICT}" == '1' ]]; then
+    QEMU_CMD+=( -boot strict=on )
+  fi
+}
+
 append_display_args() {
   case "$(display_mode_name)" in
     none)
@@ -368,7 +378,8 @@ build_qemu_cmd() {
     -bios "${EFI_FIRM}"
     -smbios 'type=0,uefi=on'
     -device 'ich9-ahci,id=ahci'
-    -drive "if=virtio,file=${OVERLAY_IMAGE},format=qcow2"
+    -drive "if=none,id=${QEMU_BOOTDISK_ID},file=${OVERLAY_IMAGE},format=qcow2"
+    -device "${QEMU_BOOTDISK_MODEL},drive=${QEMU_BOOTDISK_ID},bootindex=${QEMU_BOOTDISK_BOOTINDEX},serial=cloud-boot"
     -drive "if=none,id=seed,file=${SEED_ISO},format=raw,media=cdrom,readonly=on"
     -device 'ide-cd,drive=seed,bus=ahci.0'
   )
@@ -384,9 +395,9 @@ build_qemu_cmd() {
   )
 
   append_vsock_args
+  append_boot_args
   append_display_args
   append_serial_args
-
   if [[ "${QEMU_DAEMONIZE}" == '1' ]]; then
     QEMU_CMD+=( -daemonize )
   fi
