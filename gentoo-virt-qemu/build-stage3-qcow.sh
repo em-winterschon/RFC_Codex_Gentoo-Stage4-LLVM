@@ -401,6 +401,10 @@ cat > /etc/portage/package.use/stage3-qcow-kernel <<'PKGUSE'
 sys-kernel/installkernel dracut
 PKGUSE
 
+cat > /etc/cmdline <<CMDLINE
+root=LABEL=gentooroot rootfstype=ext4 console=tty0 console=ttyS0,${VM_SERIAL_BAUD}
+CMDLINE
+
 printf '%s\n' 'hostname="${VM_HOSTNAME}"' > /etc/conf.d/hostname
 printf '%s\n' '${VM_TIMEZONE}' > /etc/timezone
 printf '%s\n' '${VM_KEYMAP}' > /etc/conf.d/keymaps

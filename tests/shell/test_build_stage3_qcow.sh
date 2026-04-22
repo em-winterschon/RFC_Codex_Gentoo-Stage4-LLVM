@@ -145,6 +145,7 @@ EOF
   assert_contains "${bootstrap}" 'CC="clang"'
   assert_contains "${bootstrap}" 'chmod 0644 /etc/resolv.conf'
   assert_contains "${bootstrap}" 'sys-kernel/installkernel dracut'
+  assert_contains "${bootstrap}" 'root=LABEL=gentooroot rootfstype=ext4 console=tty0 console=ttyS0,115200'
   rm -rf "${temp_dir}"
 }
 
