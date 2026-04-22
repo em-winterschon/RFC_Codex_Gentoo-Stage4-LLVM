@@ -15,8 +15,10 @@ for script in "${shell_scripts[@]}"; do
 done
 
 bash "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
+bash "${SCRIPT_DIR}/test_build_stage3_qcow.sh"
 bash "${SCRIPT_DIR}/test_generate_cloud_init_seed.sh"
 bash "${SCRIPT_DIR}/test_qemu_launch_cloudinit_vm.sh"
+bash "${SCRIPT_DIR}/test_qemu_launch_stage3_vm.sh"
 bash "${SCRIPT_DIR}/test_qemu_launch_minimal_vm.sh"
 bash "${SCRIPT_DIR}/test_qemu_pci_remap.sh"
 

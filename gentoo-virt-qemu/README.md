@@ -3,28 +3,41 @@
 Host-side helper files for bringing up Gentoo QEMU/KVM test VMs for the Stage4 install workflow.
 
 Preferred workflow:
-- use the official Gentoo `di-amd64-cloudinit` QCOW2 image instead of the minimal ISO
-- inject instance configuration through a NoCloud seed ISO
+- build a custom QCOW image from an official Gentoo OpenRC stage3 instead of using the official `cloud-init` QCOW image
+- default to the LLVM/Clang OpenRC stage3 for `amd64`
 - attach the four host disks intended for the eventual `bpool` and `rpool`
-- boot headless, wait for SSH, and run the Ansible validation flow without touching GRUB or a local console
-- fail fast if the forwarded TCP socket opens but the guest never emits an actual SSH banner
-- boot only from the explicit cloud-image disk by default, with PXE and fallback device boot disabled unless you opt back in later
+- boot only from the explicit QCOW boot disk by default, with PXE and fallback device boot disabled
+- keep both network SSH access and serial-console access available
+
+Why this path is now preferred:
+- the official Gentoo `cloud-init` QCOW images are `systemd` based, which does not match this infrastructure
+- the repo already treats `llvm-openrc` as the stage3 source of truth for installs
+- the QCOW builder can enforce upstream stage3 target enums instead of letting callers request non-existent images
+- the stage3 launcher can expose a serial transport suitable for either TCP or a local PTY that tools like `minicom` can attach to
 
 Contents:
-- `gentoo-install-qemu-edk2.sh`: installs the host package set for QEMU, EDK2, cloud-image download, and seed ISO creation
-- `generate-cloud-init-seed.sh`: renders `meta-data`, `user-data`, and optional `network-config`, then builds a NoCloud seed ISO labeled `cidata`
-- `qemu-launch-cloudinit-vm.sh`: downloads or reuses the official Gentoo cloud-init QCOW2, creates a writable overlay, attaches the four target disks, and boots the VM headlessly with SSH forwarded to the host
-- `qemu-pci-remap.sh`: binds selected host PCI devices to `vfio-pci` for passthrough
-- `qemu-launch-minimal-vm.sh`: legacy manual ISO launcher kept for comparison and debugging, not the recommended unattended path
-- `etc_portage_make.conf`: host-side `make.conf` snippet tuned for the QEMU/EDK2 workflow used here
+- `gentoo-install-qemu-edk2.sh`
+  installs the host package set for QEMU, EDK2, image download, ISO creation, and filesystem tooling
+- `build-stage3-qcow.sh`
+  downloads a supported OpenRC stage3, validates the enum target, creates a QCOW image, and prepares a bootstrap plan to turn that stage3 into a bootable VM image
+- `qemu-launch-stage3-vm.sh`
+  launches the custom stage3 QCOW image with the four target disks attached, strict UEFI boot, SSH forwarding, and selectable serial-console transport
+- `qemu-launch-cloudinit-vm.sh`
+  legacy reference workflow for the official Gentoo `cloud-init` image; kept for comparison, not the preferred path
+- `qemu-launch-minimal-vm.sh`
+  legacy manual ISO launcher kept for comparison and debugging
+- `qemu-pci-remap.sh`
+  binds selected host PCI devices to `vfio-pci` for passthrough experiments
+- `etc_portage_make.conf`
+  host-side `make.conf` snippet tuned for the QEMU workflow used here
 
 Recommended USE flags:
 - `app-emulation/qemu`: `X gtk sdl slirp spice vnc`
-  Why: `slirp` keeps `-netdev user` available for the unattended SSH-forwarded path, while the display flags remain available for optional local debugging.
+  `slirp` keeps `-netdev user` available, while the display flags stay available for optional debugging
 - `app-emulation/virt-viewer`: `libvirt spice vnc`
-  Why: useful if you still want graphics experiments, but the unattended validation path does not depend on it.
+  still useful for graphics experiments, but no longer required for the preferred path
 
-The prep script writes those flags into `${PACKAGE_USE_FILE:-/etc/portage/package.use/codex-qemu}` before the initial `emerge`.
+The prep script writes those flags into `${PACKAGE_USE_FILE:-/etc/portage/package.use/codex-qemu}` before `emerge`.
 
 Host packages installed by `gentoo-install-qemu-edk2.sh`:
 - `sys-firmware/edk2-bin`
@@ -32,124 +45,161 @@ Host packages installed by `gentoo-install-qemu-edk2.sh`:
 - `app-cdr/cdrtools`
 - `net-dialup/minicom`
 - `net-misc/curl`
+- `sys-fs/dosfstools`
 - optional `app-emulation/virt-viewer`
 - optional `app-emulation/libvirt`
 
-Why the cloud-image path is now preferred:
-- no GRUB editing or kernel command line surgery is needed just to get a usable guest
-- no dependency on SPICE or VNC behaving correctly with the Gentoo installer framebuffer
-- no human race to connect a serial console before the bootloader continues
-- the VM can be launched headlessly and reached over SSH with a key injected by cloud-init
-- this fits the actual validation goal: run Ansible against a disposable VM that exposes the target disk topology
+## Stage3 Builder
 
-Official Gentoo cloud-image context:
-- Gentoo publishes weekly bootable QCOW2 images, including `cloud-init` variants for amd64
-- the launcher resolves the latest amd64 cloud-init image from `latest-di-amd64-cloudinit.txt` unless you override `CLOUD_IMAGE_URL` or `CLOUD_IMAGE_PATH`
-- the image source is the official Gentoo distfiles mirror, not an ad-hoc external image
+`build-stage3-qcow.sh` validates `STAGE3_TARGET` as an enum. Supported values are:
+- `amd64-llvm-openrc`
+- `arm64-llvm-openrc`
+- `power9le-openrc`
 
-Exact unattended launch flow:
-1. Install the host dependencies:
-   `bash gentoo-virt-qemu/gentoo-install-qemu-edk2.sh`
-2. Launch the VM with an SSH key for cloud-init:
-   `SSH_AUTHORIZED_KEY_FILE=$HOME/.ssh/id_ed25519.pub bash gentoo-virt-qemu/qemu-launch-cloudinit-vm.sh`
-3. Connect after the script reports completion:
-   `ssh -o StrictHostKeyChecking=no -p 2222 root@127.0.0.1`
+The builder rejects any other value before it tries to request upstream stage3 resources.
 
-What `qemu-launch-cloudinit-vm.sh` does:
-- downloads the latest official `di-amd64-cloudinit` QCOW2 if it is not already cached locally
-- creates a writable QCOW2 overlay so the cached base image stays immutable
-- calls `generate-cloud-init-seed.sh` to build a NoCloud seed ISO with your SSH public key
-- attaches the seed ISO and the four host disks
-- configures user-mode networking with `hostfwd=tcp:127.0.0.1:2222-:22`
-- boots QEMU headlessly by default, pins UEFI boot to the cloud-image disk, and waits for a real SSH banner rather than an open forwarded TCP port
+Current target mapping:
+- `amd64-llvm-openrc`
+  upstream directory: `releases/amd64/autobuilds/current-stage3-amd64-llvm-openrc`
+- `arm64-llvm-openrc`
+  upstream directory: `releases/arm64/autobuilds/current-stage3-arm64-llvm-openrc`
+- `power9le-openrc`
+  upstream directory: `releases/ppc/autobuilds/current-stage3-power9le-openrc`
 
-Default disk topology exposed to the guest:
-- `BPOOL_DISK0` and `BPOOL_DISK1` for the mirrored SATADOM boot pool
-- `RPOOL_DISK0` and `RPOOL_DISK1` for the mirrored SATA root pool
-- the cloud image itself is a separate boot disk used only to start the disposable validation VM
+Important constraint:
+- non-dry-run QCOW assembly is currently guarded to same-arch hosts only
+- on the current x86_64 host, the builder is operational for `amd64-llvm-openrc`
+- the `arm64` and `power9le-openrc` enum values are wired for valid upstream discovery and future expansion, but not yet cross-bootstrapped on this host
 
-Important defaults in the cloud-image launcher:
+Builder defaults:
+- `STAGE3_TARGET=amd64-llvm-openrc`
+- `QCOW_IMAGE=/opt/gentoo-virt-qemu/stage3/images/gentoo-stage4-testvm.qcow2`
+- `QCOW_SIZE_GIB=24`
+- `PORTAGE_SYNC_COMMAND=emerge-webrsync`
+- `STAGE3_KERNEL_PACKAGE=sys-kernel/gentoo-kernel-bin`
+- `STAGE3_BOOTLOADER_PACKAGE=sys-boot/grub`
+- `STAGE3_NETWORK_PACKAGE=net-misc/dhcpcd`
+- `STAGE3_SSH_PACKAGE=net-misc/openssh`
+
+Builder example:
+```bash
+bash gentoo-virt-qemu/build-stage3-qcow.sh
+```
+
+Dry-run example:
+```bash
+QEMU_STAGE3_BUILD_DRY_RUN=1 \
+SSH_AUTHORIZED_KEY_FILE=$HOME/.ssh/id_ed25519.pub \
+bash gentoo-virt-qemu/build-stage3-qcow.sh
+```
+
+The builder writes an OpenRC-oriented bootstrap plan that:
+- keeps `clang`/`clang++`/`ld.lld` in guest `make.conf`
+- enables a serial `ttyS0` login
+- installs a kernel, GRUB, `dhcpcd`, and `openssh`
+- prepares an EFI boot path and a serial-friendly GRUB config
+
+## Stage3 Launcher
+
+`qemu-launch-stage3-vm.sh` is the preferred launcher for the custom stage3 QCOW image.
+
+What it does:
+- boots the explicit QCOW boot disk as `virtio-blk-pci`
+- attaches the four target disks for `bpool` and `rpool`
+- runs QEMU with `-boot strict=on` by default so OVMF does not wander into SATADOM, PXE, or HTTP boot
+- forwards guest SSH to `127.0.0.1:2222` by default
+- supports serial transport via `file`, `tcp`, `pty`, `stdio`, or `none`
+- can log launcher activity to `/tmp/${script}.${PPID}-${PID}.$(date ...).log`
+
+Important launcher defaults:
+- `QEMU_BOOT_STRICT=1`
 - `QEMU_DISPLAY_MODE=none`
 - `QEMU_SERIAL_MODE=file`
-- `QEMU_DAEMONIZE=1`
-- `QEMU_BOOT_STRICT=1`
+- `QEMU_SERIAL_FILE=/opt/gentoo-virt-qemu/stage3/state/gentoo-stage4-testvm.serial.log`
+- `QEMU_NETDEV_BACKEND=user,hostfwd=tcp:127.0.0.1:2222-:22`
 - `WAIT_FOR_SSH=1`
 - `SSH_READY_PROBE=banner`
-- `SSH_FORWARD_HOST=127.0.0.1`
-- `SSH_FORWARD_PORT=2222`
+- `LAUNCHER_LOG_ENABLE=1`
+
+Preferred launch sequence:
+1. Build the QCOW image:
+   `SSH_AUTHORIZED_KEY_FILE=$HOME/.ssh/id_ed25519.pub bash gentoo-virt-qemu/build-stage3-qcow.sh`
+2. Launch the VM:
+   `bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh`
+3. Connect with SSH after the banner check passes:
+   `ssh -o StrictHostKeyChecking=no -p 2222 root@127.0.0.1`
+
+Serial transport options:
+- `QEMU_SERIAL_MODE=file`
+  writes the guest serial console to `QEMU_SERIAL_FILE`
+- `QEMU_SERIAL_MODE=tcp`
+  exports the guest serial console at `QEMU_SERIAL_TCP`, default:
+  `127.0.0.1:4555,server=on,wait=off,telnet=on`
+- `QEMU_SERIAL_MODE=pty`
+  asks QEMU to allocate a local PTY for the guest serial port, which is the path intended for `minicom`-style local attachment
+- `QEMU_SERIAL_MODE=stdio`
+  keeps the guest serial console on the invoking terminal and requires `QEMU_DAEMONIZE=0`
+
+Minicom-style local serial example:
+```bash
+QEMU_SERIAL_MODE=pty \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+TCP serial example:
+```bash
+QEMU_SERIAL_MODE=tcp \
+QEMU_SERIAL_TCP='127.0.0.1:4555,server=on,wait=off,telnet=on' \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Launcher log naming:
+- default path:
+  `/tmp/qemu-launch-stage3-vm.sh.${PPID}-${PID}.$(date +'%Y-%m%d-%H%M_%s.UTC%z').log`
+- override with:
+  `LAUNCHER_LOG_FILE=/tmp/custom-stage3-vm.log`
 
 Useful overrides:
-- pin a specific image URL:
-  `CLOUD_IMAGE_URL=https://distfiles.gentoo.org/releases/amd64/autobuilds/20260419T164601Z/di-amd64-cloudinit-20260419T164601Z.qcow2`
-- reuse a pre-downloaded image:
-  `CLOUD_IMAGE_PATH=/var/cache/gentoo-vm/di-amd64-cloudinit.qcow2`
-- recreate the writable overlay from scratch:
-  `RECREATE_OVERLAY=1`
-- keep serial output on the terminal instead of a file:
-  `QEMU_SERIAL_MODE=stdio QEMU_DAEMONIZE=0 WAIT_FOR_SSH=0`
-- use an alternate SSH key file:
-  `SSH_AUTHORIZED_KEY_FILE=/path/to/key.pub`
-- set an explicit password hash in cloud-init as a fallback:
-  `CLOUD_INIT_PASSWORD_HASH='${6}$examplehash' CLOUD_INIT_LOCK_PASSWD=0`
-- disable generated network-config if you want the image defaults only:
-  `CREATE_NETWORK_CONFIG=0`
-- skip the SSH readiness gate entirely:
-  `WAIT_FOR_SSH=0`
-- only wait for the TCP listener instead of a real SSH banner:
-  `SSH_READY_PROBE=tcp-port`
-- enable the guest vsock device for images that advertise vsock-backed SSH:
-  `QEMU_ENABLE_VSOCK=1 QEMU_VSOCK_CID=3`
-- disable strict firmware boot policy if you intentionally want UEFI fallback scanning again:
+- disable strict boot fallback scanning:
   `QEMU_BOOT_STRICT=0`
+- skip SSH readiness checks entirely:
+  `WAIT_FOR_SSH=0`
+- wait only for the TCP listener, not the SSH banner:
+  `SSH_READY_PROBE=tcp-port`
+- disable launcher log file setup:
+  `LAUNCHER_LOG_ENABLE=0`
 
-Raw unattended example with local serial logs:
-`SSH_AUTHORIZED_KEY_FILE=$HOME/.ssh/id_ed25519.pub QEMU_SERIAL_MODE=file QEMU_DAEMONIZE=1 WAIT_FOR_SSH=1 bash gentoo-virt-qemu/qemu-launch-cloudinit-vm.sh`
+## Legacy Paths
 
-After boot, the serial log lives at:
-- `${STATE_DIR}/${INSTANCE_NAME}.serial.log` by default
+The cloud-image path is still in-tree for reference, but it is no longer the preferred route:
+- the official Gentoo `cloud-init` QCOW images are `systemd` based
+- that diverges from the repo’s `llvm-openrc` install target
 
-SSH readiness notes:
-- the launcher now treats success as an actual SSH banner on the forwarded TCP socket, not merely QEMU listening on `127.0.0.1:2222`
-- if the guest boots but TCP SSH never becomes real, the launcher fails and points you at the serial log instead of printing a false success
-- if the serial log advertises an `ssh vsock%...` target, that image is signaling that it may prefer vsock-backed SSH over the forwarded TCP socket
-- for that case, relaunch with `QEMU_ENABLE_VSOCK=1`; the launcher adds `vhost-vsock-pci` and logs the guest CID
-- use the exact `ssh vsock%...` target string emitted by the guest banner on serial, rather than guessing the AF_VSOCK syntax by hand
+`qemu-launch-minimal-vm.sh` also remains for manual experiments, but it is not the preferred validation route.
 
-UEFI boot policy notes:
-- the launcher now presents the QCOW2 cloud image as an explicit `virtio-blk-pci` boot device with `bootindex=1`
-- QEMU runs with strict firmware boot by default, which prevents OVMF from wandering into SATADOM, PXE, or HTTP boot when the validation target is the cloud-image disk
-- that means the attached `bpool` and `rpool` target disks stay visible to the guest for validation, but they are not considered boot candidates during this disposable cloud-image phase
-- if you intentionally want UEFI to scan fallback devices again for a future PXE workflow, set `QEMU_BOOT_STRICT=0`
+## Validation
 
-Cloud-init seed notes:
-- `generate-cloud-init-seed.sh` requires an SSH public key through `SSH_AUTHORIZED_KEY`, `SSH_AUTHORIZED_KEY_FILE`, or a default key under `$HOME/.ssh/`
-- it writes:
-  - `meta-data`
-  - `user-data`
-  - optional `network-config`
-- it builds the seed ISO with `mkisofs` from `app-cdr/cdrtools`, falling back to `xorriso` if available
-
-About libvirt:
-- `app-emulation/libvirt` remains optional
-- the current unattended implementation is raw QEMU, because that is enough to validate the guest boot and Ansible workflow without adding another management layer
-- if you later want libvirt-managed domains, the same cloud-init seed content and QCOW2 image approach still apply
-
-Legacy ISO path:
-- `qemu-launch-minimal-vm.sh` is still in the tree for manual experiments
-- it is no longer the recommended validation route because it requires installer-console workarounds that do not fit unattended execution
-
-Validation and debugging:
-- `bash tests/shell/test_generate_cloud_init_seed.sh` runs the unit tests for `generate-cloud-init-seed.sh`
-- `bash tests/shell/test_qemu_launch_cloudinit_vm.sh` runs the unit tests for `qemu-launch-cloudinit-vm.sh`
-- `bash tests/shell/test_qemu_launch_minimal_vm.sh` runs the unit tests for the legacy ISO launcher
-- `bash tests/shell/test_qemu_pci_remap.sh` runs the unit tests for `qemu-pci-remap.sh`
-- `bash tests/shell/run-tests.sh` runs the shell validation sequence used in CI
-- `bash tests/shell/debug-qemu-launch-minimal-vm.sh` still exists for debugging the legacy launcher
+- `bash tests/shell/test_build_stage3_qcow.sh`
+  unit tests for `build-stage3-qcow.sh`
+- `bash tests/shell/test_qemu_launch_stage3_vm.sh`
+  unit tests for `qemu-launch-stage3-vm.sh`
+- `bash tests/shell/test_generate_cloud_init_seed.sh`
+  unit tests for the legacy cloud-init seed helper
+- `bash tests/shell/test_qemu_launch_cloudinit_vm.sh`
+  unit tests for the legacy cloud-init launcher
+- `bash tests/shell/test_qemu_launch_minimal_vm.sh`
+  unit tests for the legacy ISO launcher
+- `bash tests/shell/test_qemu_pci_remap.sh`
+  unit tests for `qemu-pci-remap.sh`
+- `bash tests/shell/run-tests.sh`
+  the shell validation sequence used in CI
 
 Sources:
-- Gentoo news: bootable QCOW2 images, including cloud-init variants: https://www.gentoo.org/news/2025/02/20/gentoo-qcow2-images.html
-- Gentoo distfiles amd64 autobuilds index, including `current-di-amd64-cloudinit`: https://distfiles.gentoo.org/releases/amd64/autobuilds/
-- Gentoo `app-emulation/cloud-init`: https://packages.gentoo.org/packages/app-emulation/cloud-init
+- Gentoo `current-stage3-amd64-llvm-openrc`: https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-llvm-openrc/
+- Gentoo `current-stage3-arm64-llvm-openrc`: https://distfiles.gentoo.org/releases/arm64/autobuilds/current-stage3-arm64-llvm-openrc/
+- Gentoo `current-stage3-power9le-openrc`: https://distfiles.gentoo.org/releases/ppc/autobuilds/current-stage3-power9le-openrc/
+- Gentoo downloads page showing the official QCOW `cloud-init` image track separately from stage3 archives: https://www.gentoo.org/downloads/?info=EXLINK
 - Gentoo `app-emulation/qemu`: https://packages.gentoo.org/packages/app-emulation/qemu
-- Gentoo `app-emulation/libvirt`: https://packages.gentoo.org/packages/app-emulation/libvirt
 - Gentoo `app-cdr/cdrtools`: https://packages.gentoo.org/packages/app-cdr/cdrtools

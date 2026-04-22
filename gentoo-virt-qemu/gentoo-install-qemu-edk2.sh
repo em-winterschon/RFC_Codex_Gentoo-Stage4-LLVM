@@ -14,6 +14,7 @@ packages=(
   app-cdr/cdrtools
   net-dialup/minicom
   net-misc/curl
+  sys-fs/dosfstools
 )
 
 mkdir -p "${PACKAGE_USE_DIR}"
