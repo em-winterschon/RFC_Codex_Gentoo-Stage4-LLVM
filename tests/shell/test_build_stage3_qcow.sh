@@ -146,6 +146,8 @@ EOF
   assert_contains "${bootstrap}" 'chmod 0644 /etc/resolv.conf'
   assert_contains "${bootstrap}" 'sys-kernel/installkernel dracut'
   assert_contains "${bootstrap}" 'root=LABEL=gentooroot rootfstype=ext4 console=tty0 console=ttyS0,115200'
+  assert_contains "${bootstrap}" 'rc-update add dhcpcd default'
+  assert_contains "${bootstrap}" 'rc-update add sshd default'
   rm -rf "${temp_dir}"
 }
 
