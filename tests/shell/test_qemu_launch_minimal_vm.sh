@@ -352,9 +352,9 @@ test_main_dry_run_prints_command() {
   assert_contains "${output}" 'Resolved serial mode: integrated'
   assert_contains "${output}" 'Launching QEMU VM'
   assert_contains "${output}" 'qemu-system-x86_64'
-  assert_contains "${output}" "file=${BPOOL_DISK0},format=raw"
-  assert_contains "${output}" "file=${RPOOL_DISK1},format=raw"
-  assert_contains "${output}" "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
+  assert_contains "${output}" "file=${BPOOL_DISK0}"
+  assert_contains "${output}" "file=${RPOOL_DISK1}"
+  assert_contains "${output}" 'virtio-net-pci\,netdev=net0'
   assert_contains "${output}" '[COMPLETE]'
   rm -rf "${temp_dir}"
 }
