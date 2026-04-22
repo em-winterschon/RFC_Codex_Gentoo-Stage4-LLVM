@@ -55,6 +55,17 @@ reset_builder_state() {
   STAGE3_STAGE_TARBALL_PATH=''
   STAGE3_STAGE_SHA256_PATH=''
   STAGE3_STAGE_SHA256=''
+  QEMU_IMG_BIN='/usr/bin/qemu-img'
+  QEMU_NBD_BIN='/usr/bin/qemu-nbd'
+  MODPROBE_BIN='/sbin/modprobe'
+  SFDISK_BIN='/usr/sbin/sfdisk'
+  PARTPROBE_BIN='/usr/sbin/partprobe'
+  MKFS_VFAT_BIN='/usr/sbin/mkfs.vfat'
+  MKFS_EXT4_BIN='/usr/sbin/mkfs.ext4'
+  MOUNT_BIN='/usr/bin/mount'
+  UMOUNT_BIN='/usr/bin/umount'
+  TAR_BIN='/usr/bin/tar'
+  CHROOT_BIN='/usr/sbin/chroot'
 }
 
 test_resolve_stage3_target_maps_supported_enums() {
@@ -130,8 +141,30 @@ EOF
   rm -rf "${temp_dir}"
 }
 
+test_resolve_host_tool_paths_falls_back_to_command_v() {
+  reset_builder_state
+  QEMU_IMG_BIN='/not-real/qemu-img'
+  QEMU_NBD_BIN='/not-real/qemu-nbd'
+  MODPROBE_BIN='/not-real/modprobe'
+  SFDISK_BIN='/not-real/sfdisk'
+  PARTPROBE_BIN='/not-real/partprobe'
+  MKFS_VFAT_BIN='/not-real/mkfs.vfat'
+  MKFS_EXT4_BIN='/not-real/mkfs.ext4'
+  MOUNT_BIN='/not-real/mount'
+  UMOUNT_BIN='/not-real/umount'
+  TAR_BIN='/not-real/tar'
+  CHROOT_BIN='/not-real/chroot'
+
+  resolve_host_tool_paths
+
+  [[ "${QEMU_IMG_BIN}" == */qemu-img ]] || fail "QEMU_IMG_BIN was not resolved"
+  [[ "${MOUNT_BIN}" == */mount ]] || fail "MOUNT_BIN was not resolved"
+  [[ "${CHROOT_BIN}" == */chroot ]] || fail "CHROOT_BIN was not resolved"
+}
+
 test_resolve_stage3_target_maps_supported_enums
 test_resolve_stage3_target_rejects_invalid_enum
 test_main_dry_run_prints_stage3_build_plan
+test_resolve_host_tool_paths_falls_back_to_command_v
 
 printf 'PASS: %s\n' "$(basename "$0")"

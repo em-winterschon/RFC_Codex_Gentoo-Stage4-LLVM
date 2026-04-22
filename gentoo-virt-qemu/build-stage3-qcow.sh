@@ -62,6 +62,32 @@ STAGE3_STAGE_TARBALL_PATH=''
 STAGE3_STAGE_SHA256_PATH=''
 STAGE3_STAGE_SHA256=''
 
+resolve_host_tool_paths() {
+  local tool_name resolved_path
+
+  for tool_name in \
+    QEMU_IMG_BIN \
+    QEMU_NBD_BIN \
+    MODPROBE_BIN \
+    SFDISK_BIN \
+    PARTPROBE_BIN \
+    MKFS_VFAT_BIN \
+    MKFS_EXT4_BIN \
+    MOUNT_BIN \
+    UMOUNT_BIN \
+    TAR_BIN \
+    CHROOT_BIN; do
+    resolved_path="${!tool_name}"
+    if [[ -x "${resolved_path}" ]]; then
+      continue
+    fi
+
+    resolved_path="$(command -v "$(basename "${resolved_path}")" 2>/dev/null || true)"
+    [[ -n "${resolved_path}" ]] || fail "Required host tool is not available: ${tool_name}"
+    printf -v "${tool_name}" '%s' "${resolved_path}"
+  done
+}
+
 log() {
   printf '[build-stage3-qcow] %s\n' "$*"
 }
@@ -351,6 +377,7 @@ LABEL=gentooefi /boot/efi vfat umask=0077 0 2
 FSTAB
 
 mkdir -p /boot/efi /root/.ssh /etc/portage
+mkdir -p /etc/default
 
 cat >> /etc/portage/make.conf <<'MAKECONF'
 CC="clang"
@@ -417,6 +444,7 @@ run_bootstrap() {
 
 main() {
   trap cleanup EXIT
+  resolve_host_tool_paths
   resolve_stage3_target
   validate_host_arch
   ensure_dirs
