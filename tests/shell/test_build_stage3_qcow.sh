@@ -43,7 +43,7 @@ reset_builder_state() {
   SSH_AUTHORIZED_KEY_FILE=''
   STAGE3_ROOT_PASSWORD_HASH=''
   PORTAGE_SYNC_COMMAND='emerge-webrsync'
-  SFDISK_OPTIONS='--no-reread'
+  SFDISK_OPTIONS='--no-tell-kernel'
   STAGE3_RELEASE_ARCH=''
   STAGE3_CURRENT_DIR=''
   STAGE3_LATEST_TXT=''
@@ -136,7 +136,7 @@ EOF
   assert_contains "${output}" 'qemu-img create -f qcow2'
   assert_contains "${output}" 'qemu-nbd --connect'
   assert_contains "${output}" 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
-  assert_contains "${output}" "sfdisk' --no-reread '/dev/nbd0"
+  assert_contains "${output}" "sfdisk' --no-tell-kernel '/dev/nbd0"
   assert_contains "${output}" '[COMPLETE]'
   bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
   assert_contains "${bootstrap}" 'grub-install --target=x86_64-efi'
