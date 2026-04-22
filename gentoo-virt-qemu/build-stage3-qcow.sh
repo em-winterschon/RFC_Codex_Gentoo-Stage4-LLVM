@@ -22,9 +22,9 @@ QCOW_ESP_SIZE_MIB="${QCOW_ESP_SIZE_MIB:-512}"
 QEMU_IMG_BIN="${QEMU_IMG_BIN:-/usr/bin/qemu-img}"
 QEMU_NBD_BIN="${QEMU_NBD_BIN:-/usr/bin/qemu-nbd}"
 MODPROBE_BIN="${MODPROBE_BIN:-/sbin/modprobe}"
-SFDISK_BIN="${SFDISK_BIN:-/usr/sbin/sfdisk}"
-SFDISK_OPTIONS="${SFDISK_OPTIONS:---no-tell-kernel}"
+SGDISK_BIN="${SGDISK_BIN:-/usr/bin/sgdisk}"
 PARTPROBE_BIN="${PARTPROBE_BIN:-/usr/sbin/partprobe}"
+PARTX_BIN="${PARTX_BIN:-/usr/bin/partx}"
 MKFS_VFAT_BIN="${MKFS_VFAT_BIN:-/usr/sbin/mkfs.vfat}"
 MKFS_EXT4_BIN="${MKFS_EXT4_BIN:-/usr/sbin/mkfs.ext4}"
 NBD_DEVICE="${NBD_DEVICE:-/dev/nbd0}"
@@ -72,8 +72,9 @@ resolve_host_tool_paths() {
     QEMU_IMG_BIN \
     QEMU_NBD_BIN \
     MODPROBE_BIN \
-    SFDISK_BIN \
+    SGDISK_BIN \
     PARTPROBE_BIN \
+    PARTX_BIN \
     MKFS_VFAT_BIN \
     MKFS_EXT4_BIN \
     MOUNT_BIN \
@@ -339,13 +340,11 @@ attach_qcow_image() {
 }
 
 partition_qcow_image() {
-  local sfdisk_input
-
-  sfdisk_input=$'label: gpt\n'
-  sfdisk_input+="size=${QCOW_ESP_SIZE_MIB}MiB,type=${GPT_ESP_TYPE_GUID}\n"
-  sfdisk_input+="type=${GPT_LINUX_FS_TYPE_GUID}\n"
-  run_shell "printf '%s' ${sfdisk_input@Q} | ${SFDISK_BIN@Q} ${SFDISK_OPTIONS} ${NBD_DEVICE@Q}"
+  run_cmd "${SGDISK_BIN}" --zap-all "${NBD_DEVICE}"
+  run_cmd "${SGDISK_BIN}" --new=1:0:+"${QCOW_ESP_SIZE_MIB}"MiB --typecode=1:ef00 --change-name=1:gentooefi "${NBD_DEVICE}"
+  run_cmd "${SGDISK_BIN}" --new=2:0:0 --typecode=2:8300 --change-name=2:gentooroot "${NBD_DEVICE}"
   run_cmd "${PARTPROBE_BIN}" "${NBD_DEVICE}"
+  run_cmd "${PARTX_BIN}" -u "${NBD_DEVICE}"
 }
 
 format_qcow_image() {
