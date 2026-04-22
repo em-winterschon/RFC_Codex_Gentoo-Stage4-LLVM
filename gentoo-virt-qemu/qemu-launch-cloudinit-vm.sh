@@ -284,7 +284,7 @@ ensure_seed_iso() {
   SEED_DIR="${SEED_DIR}" \
   SEED_ISO="${SEED_ISO}" \
   CLOUD_INIT_SEED_DRY_RUN="${QEMU_LAUNCH_DRY_RUN}" \
-  "${SEED_SCRIPT}"
+  bash "${SEED_SCRIPT}"
 }
 
 append_host_disk() {
