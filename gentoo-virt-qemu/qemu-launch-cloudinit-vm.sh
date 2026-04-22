@@ -24,6 +24,8 @@ SSH_FORWARD_HOST="${SSH_FORWARD_HOST:-127.0.0.1}"
 SSH_FORWARD_PORT="${SSH_FORWARD_PORT:-2222}"
 WAIT_FOR_SSH="${WAIT_FOR_SSH:-1}"
 SSH_WAIT_TIMEOUT="${SSH_WAIT_TIMEOUT:-120}"
+SSH_READY_PROBE="${SSH_READY_PROBE:-banner}"
+SSH_BANNER_TIMEOUT="${SSH_BANNER_TIMEOUT:-5}"
 BPOOL_DISK0="${BPOOL_DISK0-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305}"
 BPOOL_DISK1="${BPOOL_DISK1-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382932}"
 RPOOL_DISK0="${RPOOL_DISK0-/dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A5659}"
@@ -43,8 +45,12 @@ QEMU_SERIAL_FILE="${QEMU_SERIAL_FILE:-${STATE_DIR}/${INSTANCE_NAME}.serial.log}"
 QEMU_NETDEV_ID="${QEMU_NETDEV_ID:-net0}"
 QEMU_NETDEV_BACKEND="${QEMU_NETDEV_BACKEND:-user,hostfwd=tcp:${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}-:22}"
 QEMU_NETDEV_MODEL="${QEMU_NETDEV_MODEL:-virtio-net-pci}"
+QEMU_ENABLE_VSOCK="${QEMU_ENABLE_VSOCK:-0}"
+QEMU_VSOCK_MODEL="${QEMU_VSOCK_MODEL:-vhost-vsock-pci}"
+QEMU_VSOCK_CID="${QEMU_VSOCK_CID:-3}"
 QEMU_NETDEV_HELP_OUTPUT="${QEMU_NETDEV_HELP_OUTPUT-}"
 QEMU_DISPLAY_HELP_OUTPUT="${QEMU_DISPLAY_HELP_OUTPUT-}"
+QEMU_DEVICE_HELP_OUTPUT="${QEMU_DEVICE_HELP_OUTPUT-}"
 SYSFS_ROOT="${SYSFS_ROOT:-/sys}"
 HOST_DISK_CACHE="${HOST_DISK_CACHE:-none}"
 HOST_DISK_AIO="${HOST_DISK_AIO:-native}"
@@ -135,6 +141,21 @@ validate_display_backend() {
       fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
       ;;
   esac
+}
+
+validate_vsock_backend() {
+  local help_output
+
+  if [[ "${QEMU_ENABLE_VSOCK}" != '1' ]]; then
+    return 0
+  fi
+
+  help_output="${QEMU_DEVICE_HELP_OUTPUT}"
+  if [[ -z "${help_output}" ]]; then
+    help_output="$("${QEMU_BIN}" -device help 2>&1 || true)"
+  fi
+
+  [[ "${help_output}" == *"${QEMU_VSOCK_MODEL}"* ]] || fail "QEMU vsock device '${QEMU_VSOCK_MODEL}' is not available in ${QEMU_BIN}"
 }
 
 find_fetch_tool() {
@@ -299,6 +320,12 @@ append_host_disk() {
   )
 }
 
+append_vsock_args() {
+  if [[ "${QEMU_ENABLE_VSOCK}" == '1' ]]; then
+    QEMU_CMD+=( -device "${QEMU_VSOCK_MODEL},guest-cid=${QEMU_VSOCK_CID}" )
+  fi
+}
+
 append_display_args() {
   case "$(display_mode_name)" in
     none)
@@ -356,6 +383,7 @@ build_qemu_cmd() {
     -device "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
   )
 
+  append_vsock_args
   append_display_args
   append_serial_args
 
@@ -368,20 +396,64 @@ port_is_open() {
   exec 3<>"/dev/tcp/${SSH_FORWARD_HOST}/${SSH_FORWARD_PORT}" && exec 3>&- 3<&-
 }
 
-wait_for_ssh_port() {
+probe_ssh_banner() {
+  local banner=''
+
+  exec 3<>"/dev/tcp/${SSH_FORWARD_HOST}/${SSH_FORWARD_PORT}" || return 1
+  if ! IFS= read -r -t "${SSH_BANNER_TIMEOUT}" banner <&3; then
+    exec 3>&- 3<&-
+    return 1
+  fi
+  exec 3>&- 3<&-
+
+  [[ "${banner}" == SSH-* ]]
+}
+
+serial_log_vsock_hint() {
+  local hint=''
+
+  [[ -f "${QEMU_SERIAL_FILE}" ]] || return 0
+  hint="$(grep -Eo "ssh vsock%[^']+" "${QEMU_SERIAL_FILE}" | tail -n1 || true)"
+  printf '%s' "${hint}"
+}
+
+wait_for_ssh_ready() {
   local deadline
+  local hint=''
 
   if [[ "${WAIT_FOR_SSH}" != '1' || "${QEMU_DAEMONIZE}" != '1' ]]; then
     return 0
   fi
 
   deadline=$((SECONDS + SSH_WAIT_TIMEOUT))
-  until port_is_open; do
-    if (( SECONDS >= deadline )); then
-      fail "Timed out waiting for SSH on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}"
-    fi
-    sleep 1
-  done
+  case "${SSH_READY_PROBE}" in
+    none)
+      return 0
+      ;;
+    tcp-port)
+      until port_is_open; do
+        if (( SECONDS >= deadline )); then
+          fail "Timed out waiting for TCP port ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}"
+        fi
+        sleep 1
+      done
+      ;;
+    banner)
+      until probe_ssh_banner; do
+        if (( SECONDS >= deadline )); then
+          hint="$(serial_log_vsock_hint)"
+          if [[ -n "${hint}" ]]; then
+            fail "Timed out waiting for an SSH banner on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}; serial log advertises '${hint}'. If this image prefers vsock SSH, relaunch with QEMU_ENABLE_VSOCK=1 and use the guest-advertised command."
+          fi
+          fail "Timed out waiting for an SSH banner on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}; inspect ${QEMU_SERIAL_FILE} for guest boot status"
+        fi
+        sleep 1
+      done
+      ;;
+    *)
+      fail "Unsupported SSH_READY_PROBE: ${SSH_READY_PROBE}"
+      ;;
+  esac
 }
 
 run_qemu_cmd() {
@@ -400,14 +472,18 @@ main() {
   validate_host_disks
   validate_net_backend
   validate_display_backend
+  validate_vsock_backend
   ensure_base_image
   ensure_overlay_image
   ensure_seed_iso
   log "Using base image: ${BASE_IMAGE_PATH}"
   log "Overlay image: ${OVERLAY_IMAGE}"
   log "SSH target after boot: ssh -p ${SSH_FORWARD_PORT} root@${SSH_FORWARD_HOST}"
+  if [[ "${QEMU_ENABLE_VSOCK}" == '1' ]]; then
+    log "Guest vsock enabled with CID ${QEMU_VSOCK_CID}; if the serial log advertises an 'ssh vsock%%...' target, use the guest banner's exact command"
+  fi
   run_qemu_cmd
-  wait_for_ssh_port
+  wait_for_ssh_ready
   log '[COMPLETE]'
 }
 

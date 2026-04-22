@@ -7,6 +7,7 @@ Preferred workflow:
 - inject instance configuration through a NoCloud seed ISO
 - attach the four host disks intended for the eventual `bpool` and `rpool`
 - boot headless, wait for SSH, and run the Ansible validation flow without touching GRUB or a local console
+- fail fast if the forwarded TCP socket opens but the guest never emits an actual SSH banner
 
 Contents:
 - `gentoo-install-qemu-edk2.sh`: installs the host package set for QEMU, EDK2, cloud-image download, and seed ISO creation
@@ -59,7 +60,7 @@ What `qemu-launch-cloudinit-vm.sh` does:
 - calls `generate-cloud-init-seed.sh` to build a NoCloud seed ISO with your SSH public key
 - attaches the seed ISO and the four host disks
 - configures user-mode networking with `hostfwd=tcp:127.0.0.1:2222-:22`
-- boots QEMU headlessly by default and waits for SSH readiness
+- boots QEMU headlessly by default and waits for a real SSH banner, not just an open forwarded TCP port
 
 Default disk topology exposed to the guest:
 - `BPOOL_DISK0` and `BPOOL_DISK1` for the mirrored SATADOM boot pool
@@ -71,6 +72,7 @@ Important defaults in the cloud-image launcher:
 - `QEMU_SERIAL_MODE=file`
 - `QEMU_DAEMONIZE=1`
 - `WAIT_FOR_SSH=1`
+- `SSH_READY_PROBE=banner`
 - `SSH_FORWARD_HOST=127.0.0.1`
 - `SSH_FORWARD_PORT=2222`
 
@@ -89,12 +91,25 @@ Useful overrides:
   `CLOUD_INIT_PASSWORD_HASH='${6}$examplehash' CLOUD_INIT_LOCK_PASSWD=0`
 - disable generated network-config if you want the image defaults only:
   `CREATE_NETWORK_CONFIG=0`
+- skip the SSH readiness gate entirely:
+  `WAIT_FOR_SSH=0`
+- only wait for the TCP listener instead of a real SSH banner:
+  `SSH_READY_PROBE=tcp-port`
+- enable the guest vsock device for images that advertise vsock-backed SSH:
+  `QEMU_ENABLE_VSOCK=1 QEMU_VSOCK_CID=3`
 
 Raw unattended example with local serial logs:
 `SSH_AUTHORIZED_KEY_FILE=$HOME/.ssh/id_ed25519.pub QEMU_SERIAL_MODE=file QEMU_DAEMONIZE=1 WAIT_FOR_SSH=1 bash gentoo-virt-qemu/qemu-launch-cloudinit-vm.sh`
 
 After boot, the serial log lives at:
 - `${STATE_DIR}/${INSTANCE_NAME}.serial.log` by default
+
+SSH readiness notes:
+- the launcher now treats success as an actual SSH banner on the forwarded TCP socket, not merely QEMU listening on `127.0.0.1:2222`
+- if the guest boots but TCP SSH never becomes real, the launcher fails and points you at the serial log instead of printing a false success
+- if the serial log advertises an `ssh vsock%...` target, that image is signaling that it may prefer vsock-backed SSH over the forwarded TCP socket
+- for that case, relaunch with `QEMU_ENABLE_VSOCK=1`; the launcher adds `vhost-vsock-pci` and logs the guest CID
+- use the exact `ssh vsock%...` target string emitted by the guest banner on serial, rather than guessing the AF_VSOCK syntax by hand
 
 Cloud-init seed notes:
 - `generate-cloud-init-seed.sh` requires an SSH public key through `SSH_AUTHORIZED_KEY`, `SSH_AUTHORIZED_KEY_FILE`, or a default key under `$HOME/.ssh/`
