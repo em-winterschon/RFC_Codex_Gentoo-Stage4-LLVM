@@ -23,6 +23,7 @@ QEMU_IMG_BIN="${QEMU_IMG_BIN:-/usr/bin/qemu-img}"
 QEMU_NBD_BIN="${QEMU_NBD_BIN:-/usr/bin/qemu-nbd}"
 MODPROBE_BIN="${MODPROBE_BIN:-/sbin/modprobe}"
 SFDISK_BIN="${SFDISK_BIN:-/usr/sbin/sfdisk}"
+SFDISK_OPTIONS="${SFDISK_OPTIONS:---no-reread}"
 PARTPROBE_BIN="${PARTPROBE_BIN:-/usr/sbin/partprobe}"
 MKFS_VFAT_BIN="${MKFS_VFAT_BIN:-/usr/sbin/mkfs.vfat}"
 MKFS_EXT4_BIN="${MKFS_EXT4_BIN:-/usr/sbin/mkfs.ext4}"
@@ -343,7 +344,7 @@ partition_qcow_image() {
   sfdisk_input=$'label: gpt\n'
   sfdisk_input+="size=${QCOW_ESP_SIZE_MIB}MiB,type=${GPT_ESP_TYPE_GUID}\n"
   sfdisk_input+="type=${GPT_LINUX_FS_TYPE_GUID}\n"
-  run_shell "printf '%s' ${sfdisk_input@Q} | ${SFDISK_BIN@Q} ${NBD_DEVICE@Q}"
+  run_shell "printf '%s' ${sfdisk_input@Q} | ${SFDISK_BIN@Q} ${SFDISK_OPTIONS} ${NBD_DEVICE@Q}"
   run_cmd "${PARTPROBE_BIN}" "${NBD_DEVICE}"
 }
 
