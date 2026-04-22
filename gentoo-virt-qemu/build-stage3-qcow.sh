@@ -381,6 +381,7 @@ FSTAB
 
 mkdir -p /boot/efi /root/.ssh /etc/portage
 mkdir -p /etc/default
+mkdir -p /etc/portage/package.use
 
 if [[ -f /etc/resolv.conf ]]; then
   chmod 0644 /etc/resolv.conf || true
@@ -395,6 +396,10 @@ COMMON_FLAGS="-O2 -pipe"
 COMMON_CFLAGS="\${COMMON_FLAGS}"
 COMMON_CXXFLAGS="\${COMMON_FLAGS}"
 MAKECONF
+
+cat > /etc/portage/package.use/stage3-qcow-kernel <<'PKGUSE'
+sys-kernel/installkernel dracut
+PKGUSE
 
 printf '%s\n' 'hostname="${VM_HOSTNAME}"' > /etc/conf.d/hostname
 printf '%s\n' '${VM_TIMEZONE}' > /etc/timezone

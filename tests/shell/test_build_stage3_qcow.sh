@@ -144,6 +144,7 @@ EOF
   assert_contains "${bootstrap}" 'grub-install --target=x86_64-efi'
   assert_contains "${bootstrap}" 'CC="clang"'
   assert_contains "${bootstrap}" 'chmod 0644 /etc/resolv.conf'
+  assert_contains "${bootstrap}" 'sys-kernel/installkernel dracut'
   rm -rf "${temp_dir}"
 }
 
