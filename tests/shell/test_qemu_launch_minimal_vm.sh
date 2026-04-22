@@ -332,10 +332,12 @@ test_main_dry_run_prints_command() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_LAUNCH_DRY_RUN=1
+  QEMU_NETDEV_BACKEND='user'
   QEMU_NETDEV_HELP_OUTPUT=$'user\ntap\n'
   QEMU_DISPLAY_MODE='nographic'
   QEMU_SERIAL_MODE='auto'
   QEMU_VIDEO_DEVICE='std'
+  QEMU_VIDEO_DEVICE_HELP_OUTPUT='name "std"'
   PCI_NETWK=''
   : >"${ISO_INST}"
   : >"${EFI_FIRM}"
