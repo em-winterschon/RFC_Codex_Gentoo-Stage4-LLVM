@@ -9,6 +9,7 @@ SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 INSTANCE_NAME="${INSTANCE_NAME:-gentoo-stage4-testvm}"
 STAGE3_IMAGE_DIR="${STAGE3_IMAGE_DIR:-/opt/gentoo-virt-qemu/stage3}"
 QCOW_IMAGE="${QCOW_IMAGE:-${STAGE3_IMAGE_DIR}/images/${INSTANCE_NAME}.qcow2}"
+QEMU_BOOT_SOURCE="${QEMU_BOOT_SOURCE:-qcow}"
 BPOOL_DISK0="${BPOOL_DISK0-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305}"
 BPOOL_DISK1="${BPOOL_DISK1-/dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382932}"
 RPOOL_DISK0="${RPOOL_DISK0-/dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A5659}"
@@ -76,6 +77,10 @@ serial_mode_name() {
   printf '%s' "${QEMU_SERIAL_MODE}"
 }
 
+boot_source_name() {
+  printf '%s' "${QEMU_BOOT_SOURCE}"
+}
+
 launcher_log_timestamp() {
   if [[ -n "${LAUNCHER_LOG_TIMESTAMP}" ]]; then
     printf '%s' "${LAUNCHER_LOG_TIMESTAMP}"
@@ -130,7 +135,21 @@ validate_host_disks() {
   require_host_disk_ready "${RPOOL_DISK1}" 'RPOOL_DISK1'
 }
 
+validate_boot_source() {
+  case "$(boot_source_name)" in
+    qcow|target-disks)
+      ;;
+    *)
+      fail "Unsupported QEMU_BOOT_SOURCE: $(boot_source_name) (supported: qcow, target-disks)"
+      ;;
+  esac
+}
+
 validate_qcow_image() {
+  if [[ "$(boot_source_name)" != 'qcow' ]]; then
+    return 0
+  fi
+
   [[ -f "${QCOW_IMAGE}" ]] || fail "QCOW_IMAGE is missing: ${QCOW_IMAGE}"
 }
 
@@ -193,10 +212,16 @@ append_host_disk() {
   local drive_path="$2"
   local ahci_port="$3"
   local serial="$4"
+  local bootindex="${5-}"
+  local device_args="ide-hd,drive=${drive_id},bus=ahci.${ahci_port},serial=${serial}"
+
+  if [[ -n "${bootindex}" ]]; then
+    device_args+=",bootindex=${bootindex}"
+  fi
 
   QEMU_CMD+=(
     -drive "if=none,id=${drive_id},file=${drive_path},format=raw,cache=${HOST_DISK_CACHE},aio=${HOST_DISK_AIO}"
-    -device "ide-hd,drive=${drive_id},bus=ahci.${ahci_port},serial=${serial}"
+    -device "${device_args}"
   )
 }
 
@@ -249,11 +274,20 @@ build_qemu_cmd() {
     -bios "${EFI_FIRM}"
     -smbios 'type=0,uefi=on'
     -device 'ich9-ahci,id=ahci'
-    -drive "if=none,id=${QEMU_BOOTDISK_ID},file=${QCOW_IMAGE},format=qcow2"
-    -device "${QEMU_BOOTDISK_MODEL},drive=${QEMU_BOOTDISK_ID},bootindex=${QEMU_BOOTDISK_BOOTINDEX},serial=stage3-boot"
   )
 
-  append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
+  if [[ "$(boot_source_name)" == 'qcow' ]]; then
+    QEMU_CMD+=(
+      -drive "if=none,id=${QEMU_BOOTDISK_ID},file=${QCOW_IMAGE},format=qcow2"
+      -device "${QEMU_BOOTDISK_MODEL},drive=${QEMU_BOOTDISK_ID},bootindex=${QEMU_BOOTDISK_BOOTINDEX},serial=stage3-boot"
+    )
+  fi
+
+  if [[ "$(boot_source_name)" == 'target-disks' ]]; then
+    append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0' '1'
+  else
+    append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
+  fi
   append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
   append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
   append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
@@ -363,12 +397,18 @@ run_qemu_cmd() {
 
 main() {
   setup_launcher_logging
+  validate_boot_source
   validate_qcow_image
   validate_host_disks
   validate_net_backend
   validate_display_backend
   validate_serial_mode
-  log "QCOW image: ${QCOW_IMAGE}"
+  log "Boot source: $(boot_source_name)"
+  if [[ "$(boot_source_name)" == 'qcow' ]]; then
+    log "QCOW image: ${QCOW_IMAGE}"
+  else
+    log "Target-disk boot: prioritizing ${BPOOL_DISK0} via UEFI removable path"
+  fi
   log "SSH target after boot: ssh -p ${SSH_READY_PORT} root@${SSH_READY_HOST}"
   run_qemu_cmd
   wait_for_ssh_ready

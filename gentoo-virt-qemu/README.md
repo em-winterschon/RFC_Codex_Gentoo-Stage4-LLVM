@@ -108,12 +108,14 @@ The builder writes an OpenRC-oriented bootstrap plan that:
 What it does:
 - boots the explicit QCOW boot disk as `virtio-blk-pci`
 - attaches the four target disks for `bpool` and `rpool`
+- can boot directly from the target `bpool`/`rpool` disks after the installer has populated the ESP and ZFS datasets
 - runs QEMU with `-boot strict=on` by default so OVMF does not wander into SATADOM, PXE, or HTTP boot
 - forwards guest SSH to `127.0.0.1:2222` by default
 - supports serial transport via `file`, `tcp`, `pty`, `stdio`, or `none`
 - can log launcher activity to `/tmp/${script}.${PPID}-${PID}.$(date ...).log`
 
 Important launcher defaults:
+- `QEMU_BOOT_SOURCE=qcow`
 - `QEMU_BOOT_STRICT=1`
 - `QEMU_DISPLAY_MODE=none`
 - `QEMU_SERIAL_MODE=file`
@@ -130,6 +132,28 @@ Preferred launch sequence:
    `bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh`
 3. Connect with SSH after the banner check passes:
    `ssh -o StrictHostKeyChecking=no -p 2222 root@127.0.0.1`
+
+Boot-source modes:
+- `QEMU_BOOT_SOURCE=qcow`
+  boots the disposable stage3 QCOW image and attaches the four target disks for installation work
+- `QEMU_BOOT_SOURCE=target-disks`
+  skips the QCOW image entirely and boots directly from the target disks, prioritizing `BPOOL_DISK0`
+  so OVMF loads `EFI/BOOT/BOOTX64.EFI` from the installed ESP
+
+Direct target-disk boot example:
+```bash
+QEMU_BOOT_SOURCE=target-disks \
+QEMU_SERIAL_MODE=stdio \
+QEMU_DAEMONIZE=0 \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+This mode is intended for post-install validation once the installer has created:
+- the ESP on the first `bpool` disk
+- `EFI/BOOT/BOOTX64.EFI` for ZFSBootMenu
+- `bpool/BOOT/gentoo`
+- `rpool/ROOT/gentoo`
 
 Serial transport options:
 - `QEMU_SERIAL_MODE=file`

@@ -29,6 +29,7 @@ reset_launcher_state() {
   INSTANCE_NAME='gentoo-stage4-testvm'
   STAGE3_IMAGE_DIR='/tmp/stage3'
   QCOW_IMAGE="${STAGE3_IMAGE_DIR}/images/${INSTANCE_NAME}.qcow2"
+  QEMU_BOOT_SOURCE='qcow'
   BPOOL_DISK0='/tmp/bpool0.img'
   BPOOL_DISK1='/tmp/bpool1.img'
   RPOOL_DISK0='/tmp/rpool0.img'
@@ -136,6 +137,49 @@ test_build_qemu_cmd_supports_pty_serial() {
   rm -rf "${temp_dir}"
 }
 
+test_build_qemu_cmd_supports_target_disk_boot() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/vm.qcow2"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  QEMU_BOOT_SOURCE='target-disks'
+  : >"${EFI_FIRM}"
+  : >"${BPOOL_DISK0}"
+  : >"${BPOOL_DISK1}"
+  : >"${RPOOL_DISK0}"
+  : >"${RPOOL_DISK1}"
+
+  build_qemu_cmd
+  rendered="${QEMU_CMD[*]}"
+
+  [[ "${rendered}" != *"file=${QCOW_IMAGE},format=qcow2"* ]] || fail 'target-disks boot should not attach the QCOW boot disk'
+  assert_contains "${rendered}" 'ide-hd,drive=bpool0,bus=ahci.1,serial=bpool-0,bootindex=1'
+  assert_contains "${rendered}" 'ide-hd,drive=bpool1,bus=ahci.2,serial=bpool-1'
+  assert_contains "${rendered}" '-boot strict=on'
+  rm -rf "${temp_dir}"
+}
+
+test_validate_boot_source_rejects_invalid_value() {
+  local output status
+
+  reset_launcher_state
+  QEMU_BOOT_SOURCE='nope'
+
+  set +e
+  output="$(validate_boot_source 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '1'
+  assert_contains "${output}" 'Unsupported QEMU_BOOT_SOURCE'
+}
+
 test_main_dry_run_prints_stage3_vm_command() {
   local temp_dir output status
   temp_dir="$(mktemp -d)"
@@ -168,9 +212,42 @@ test_main_dry_run_prints_stage3_vm_command() {
   rm -rf "${temp_dir}"
 }
 
+test_main_dry_run_prints_target_disk_boot_plan() {
+  local temp_dir output status
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  QEMU_BOOT_SOURCE='target-disks'
+  : >"${EFI_FIRM}"
+  : >"${BPOOL_DISK0}"
+  : >"${BPOOL_DISK1}"
+  : >"${RPOOL_DISK0}"
+  : >"${RPOOL_DISK1}"
+
+  set +e
+  output="$(main 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '0'
+  assert_contains "${output}" 'Boot source: target-disks'
+  assert_contains "${output}" 'Target-disk boot: prioritizing'
+  assert_contains "${output}" 'bootindex=1'
+  [[ "${output}" != *"QCOW image:"* ]] || fail 'target-disk boot should not log a QCOW image'
+  rm -rf "${temp_dir}"
+}
+
 test_default_launcher_log_file_uses_requested_format
 test_build_qemu_cmd_uses_boot_disk_and_tcp_serial
 test_build_qemu_cmd_supports_pty_serial
+test_build_qemu_cmd_supports_target_disk_boot
+test_validate_boot_source_rejects_invalid_value
 test_main_dry_run_prints_stage3_vm_command
+test_main_dry_run_prints_target_disk_boot_plan
 
 printf 'PASS: %s\n' "$(basename "$0")"
