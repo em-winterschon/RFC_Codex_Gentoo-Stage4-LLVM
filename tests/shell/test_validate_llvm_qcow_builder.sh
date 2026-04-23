@@ -61,6 +61,7 @@ test_build_dry_run_mode_invokes_builder_with_expected_env() {
   set +e
   output="$(
     VALIDATOR_STATE_FILE="${state_file}" \
+    STAGE3_IMAGE_DIR="${temp_dir}" \
     bash "${VALIDATOR_SCRIPT}" \
       --mode build-dry-run \
       --working-dir "${temp_dir}" \
@@ -90,6 +91,7 @@ test_full_mode_runs_builder_and_launcher_sequence() {
   set +e
   output="$(
     VALIDATOR_STATE_FILE="${state_file}" \
+    STAGE3_IMAGE_DIR="${temp_dir}" \
     bash "${VALIDATOR_SCRIPT}" \
       --mode full \
       --working-dir "${temp_dir}" \
@@ -121,6 +123,7 @@ test_invalid_mode_fails_with_usage_code() {
 
   set +e
   output="$(
+    STAGE3_IMAGE_DIR="${temp_dir}" \
     bash "${VALIDATOR_SCRIPT}" \
       --mode nonsense \
       --working-dir "${temp_dir}" \
@@ -135,8 +138,59 @@ test_invalid_mode_fails_with_usage_code() {
   rm -rf "${temp_dir}"
 }
 
+test_build_mode_rejects_running_qcow_conflict() {
+  local temp_dir key_file output status
+  temp_dir="$(mktemp -d)"
+  key_file="${temp_dir}/id_ed25519.pub"
+  printf 'ssh-ed25519 AAAATestKey codex@test\n' >"${key_file}"
+  make_fake_repo "${temp_dir}"
+  remove_execute_bits "${temp_dir}"
+
+  set +e
+  output="$(
+    QEMU_PROCESS_LIST="1234 /usr/bin/qemu-system-x86_64 -drive if=none,id=bootdisk,file=${temp_dir}/images/gentoo-stage4-testvm.qcow2,format=qcow2" \
+    STAGE3_IMAGE_DIR="${temp_dir}" \
+    bash "${VALIDATOR_SCRIPT}" \
+      --mode build \
+      --working-dir "${temp_dir}" \
+      --ssh-pubkey "${key_file}" \
+      --log-dir "${temp_dir}" 2>&1
+  )"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '65'
+  assert_contains "${output}" 'QCOW image is in use by a running QEMU process'
+  rm -rf "${temp_dir}"
+}
+
+test_launch_mode_rejects_running_qcow_conflict() {
+  local temp_dir output status
+  temp_dir="$(mktemp -d)"
+  make_fake_repo "${temp_dir}"
+  remove_execute_bits "${temp_dir}"
+
+  set +e
+  output="$(
+    QEMU_PROCESS_LIST="1234 /usr/bin/qemu-system-x86_64 -drive if=none,id=bootdisk,file=${temp_dir}/images/gentoo-stage4-testvm.qcow2,format=qcow2" \
+    STAGE3_IMAGE_DIR="${temp_dir}" \
+    bash "${VALIDATOR_SCRIPT}" \
+      --mode launch \
+      --working-dir "${temp_dir}" \
+      --log-dir "${temp_dir}" 2>&1
+  )"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '65'
+  assert_contains "${output}" 'Stage3 VM is already running from QCOW image'
+  rm -rf "${temp_dir}"
+}
+
 test_build_dry_run_mode_invokes_builder_with_expected_env
 test_full_mode_runs_builder_and_launcher_sequence
 test_invalid_mode_fails_with_usage_code
+test_build_mode_rejects_running_qcow_conflict
+test_launch_mode_rejects_running_qcow_conflict
 
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -15,6 +15,9 @@ MODE="${MODE:-build-dry-run}"
 WORKING_DIR="${WORKING_DIR:-${REPO_ROOT}}"
 BUILDER_SCRIPT_REL="${BUILDER_SCRIPT_REL:-gentoo-virt-qemu/build-stage3-qcow.sh}"
 LAUNCHER_SCRIPT_REL="${LAUNCHER_SCRIPT_REL:-gentoo-virt-qemu/qemu-launch-stage3-vm.sh}"
+INSTANCE_NAME="${INSTANCE_NAME:-gentoo-stage4-testvm}"
+STAGE3_IMAGE_DIR="${STAGE3_IMAGE_DIR:-/opt/gentoo-virt-qemu/stage3}"
+QCOW_IMAGE="${QCOW_IMAGE:-${STAGE3_IMAGE_DIR}/images/${INSTANCE_NAME}.qcow2}"
 SSH_PUBKEY="${SSH_PUBKEY:-/root/.ssh/id_ed25519.pub}"
 QEMU_SERIAL_MODE="${QEMU_SERIAL_MODE:-pty}"
 WAIT_FOR_SSH="${WAIT_FOR_SSH:-0}"
@@ -206,6 +209,39 @@ validate_inputs() {
   esac
 }
 
+current_qemu_processes() {
+  if [[ -n "${QEMU_PROCESS_LIST-}" ]]; then
+    printf '%s\n' "${QEMU_PROCESS_LIST}"
+    return 0
+  fi
+
+  pgrep -af qemu-system-x86_64 2>/dev/null || true
+}
+
+running_qemu_for_qcow() {
+  local process_list
+  process_list="$(current_qemu_processes)"
+  [[ "${process_list}" == *"file=${QCOW_IMAGE},"* ]]
+}
+
+validate_runtime_state() {
+  case "${MODE}" in
+    build|full)
+      if running_qemu_for_qcow; then
+        fail "${EXIT_PREREQ}" "QCOW image is in use by a running QEMU process: ${QCOW_IMAGE}"
+      fi
+      ;;
+  esac
+
+  case "${MODE}" in
+    launch)
+      if running_qemu_for_qcow; then
+        fail "${EXIT_PREREQ}" "Stage3 VM is already running from QCOW image: ${QCOW_IMAGE}"
+      fi
+      ;;
+  esac
+}
+
 print_cmd() {
   printf '%q ' "$@"
   printf '\n'
@@ -285,12 +321,14 @@ main() {
   resolve_scripts
   require_real_mode_root
   validate_inputs
+  validate_runtime_state
 
   log "Version: ${VERSION_DATE}.${VERSION_NUMBER}"
   log "Mode: ${MODE}"
   log "Working directory: ${WORKING_DIR}"
   log "Builder: ${BUILDER_SCRIPT}"
   log "Launcher: ${LAUNCHER_SCRIPT}"
+  log "QCOW image: ${QCOW_IMAGE}"
 
   run_mode
 
