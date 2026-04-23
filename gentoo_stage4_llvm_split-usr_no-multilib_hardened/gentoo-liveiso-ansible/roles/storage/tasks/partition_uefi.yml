@@ -1,5 +1,5 @@
 ---
-- name: Partition each storage device
+- name: Partition each storage device for single-pool UEFI layouts
   ansible.builtin.shell: |
     set -euo pipefail
     sgdisk -n 1:1MiB:+{{ esp_size_mib }}MiB -t 1:EF00 -c 1:EFI_SYSTEM_{{ storage_index + 1 }} "{{ item }}"
@@ -12,11 +12,40 @@
   loop: "{{ storage_devices }}"
   loop_control:
     index_var: storage_index
+  when: storage_layout != 'zfs-boot-root-mirror'
+
+- name: Partition boot-pool devices for split boot/root ZFS layouts
+  ansible.builtin.shell: |
+    set -euo pipefail
+    sgdisk -n 1:1MiB:+{{ esp_size_mib }}MiB -t 1:EF00 -c 1:EFI_SYSTEM_{{ storage_index + 1 }} "{{ item }}"
+    sgdisk -n 2:0:0 -t 2:BF01 -c 2:ZFS_BOOT_{{ storage_index + 1 }} "{{ item }}"
+    partprobe "{{ item }}"
+    udevadm settle
+  args:
+    executable: /bin/bash
+  loop: "{{ zfs_boot_pool_devices }}"
+  loop_control:
+    index_var: storage_index
+  when: storage_layout == 'zfs-boot-root-mirror'
+
+- name: Partition root-pool devices for split boot/root ZFS layouts
+  ansible.builtin.shell: |
+    set -euo pipefail
+    sgdisk -n 1:1MiB:+{{ swap_size_gib }}GiB -t 1:8200 -c 1:SWAP_{{ storage_index + 1 }} "{{ item }}"
+    sgdisk -n 2:0:0 -t 2:BF01 -c 2:ZFS_ROOT_{{ storage_index + 1 }} "{{ item }}"
+    partprobe "{{ item }}"
+    udevadm settle
+  args:
+    executable: /bin/bash
+  loop: "{{ zfs_root_pool_devices }}"
+  loop_control:
+    index_var: storage_index
+  when: storage_layout == 'zfs-boot-root-mirror'
 
 - name: Resolve EFI partition device paths by GPT PARTLABEL
   ansible.builtin.shell: |
     set -euo pipefail
-    for n in $(seq 1 {{ storage_devices | length }}); do
+    for n in $(seq 1 {{ (storage_layout == 'zfs-boot-root-mirror') | ternary(zfs_boot_pool_devices | length, storage_devices | length) }}); do
       blkid -t PARTLABEL="EFI_SYSTEM_${n}" -o device
     done
   args:
@@ -27,7 +56,7 @@
 - name: Resolve swap partition device paths by GPT PARTLABEL
   ansible.builtin.shell: |
     set -euo pipefail
-    for n in $(seq 1 {{ storage_devices | length }}); do
+    for n in $(seq 1 {{ (storage_layout == 'zfs-boot-root-mirror') | ternary(zfs_root_pool_devices | length, storage_devices | length) }}); do
       blkid -t PARTLABEL="SWAP_${n}" -o device
     done
   args:
@@ -38,7 +67,7 @@
 - name: Resolve root partition device paths by GPT PARTLABEL
   ansible.builtin.shell: |
     set -euo pipefail
-    for n in $(seq 1 {{ storage_devices | length }}); do
+    for n in $(seq 1 {{ (storage_layout == 'zfs-boot-root-mirror') | ternary(zfs_root_pool_devices | length, storage_devices | length) }}); do
       blkid -t PARTLABEL="ZFS_ROOT_${n}" -o device
     done
   args:
@@ -46,11 +75,24 @@
   register: root_partition_lookup
   changed_when: false
 
+- name: Resolve boot-pool partition device paths by GPT PARTLABEL
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ zfs_boot_pool_devices | length }}); do
+      blkid -t PARTLABEL="ZFS_BOOT_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: boot_partition_lookup
+  changed_when: false
+  when: storage_layout == 'zfs-boot-root-mirror'
+
 - name: Build partition path lists
   ansible.builtin.set_fact:
     esp_partitions: "{{ esp_partition_lookup.stdout_lines }}"
     swap_partitions: "{{ swap_partition_lookup.stdout_lines }}"
     root_partitions: "{{ root_partition_lookup.stdout_lines }}"
+    boot_pool_partitions: "{{ boot_partition_lookup.stdout_lines | default([]) }}"
 
 - name: Format all EFI system partitions
   ansible.builtin.command: "mkfs.vfat -F 32 {{ item }}"

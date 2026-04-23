@@ -1,3 +1,8 @@
-{% for parent in profile_parents -%}
+{% for parent in profile_parents %}
+{% if ':' in parent %}
+{% set repo_name, repo_profile = parent.split(':', 1) %}
+../../../{{ repo_name }}/profiles/{{ repo_profile }}
+{% else %}
 {{ parent }}
-{% endfor -%}
+{% endif %}
+{% endfor %}

@@ -22,6 +22,7 @@ install_root_password_hash: ""
 #   raid-1
 #   raid-10
 #   zfs-mirror
+#   zfs-boot-root-mirror
 #   zraid1
 #   zraid2
 #   zraid3
@@ -32,7 +33,7 @@ storage_devices:
 esp_size_mib: 1024
 swap_size_gib: 16
 zpool_name: rpool
-zpool_compatibility: off
+zpool_compatibility: 'off'
 zpool_altroot: "{{ install_target_root }}"
 
 # dRAID tuning (only used when storage_layout == draid)
@@ -55,6 +56,13 @@ profile_name: install-target
 profile_parents:
   - gentoo:default/linux/amd64/23.0/llvm
   - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
+# Optional repo-local YAML profile definitions. These can add overlay repository
+# enable/sync operations plus extra make.conf, package.use, and package.mask
+# fragments without editing the roles themselves.
+profile_definition_files: []
+# Example:
+# profile_definition_files:
+#   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
 
 # Toolchain and tuning
 portage_cpu_profile: amd_ryzen_z1_extreme
@@ -76,6 +84,7 @@ kernel_package_map:
 boot_strategy: zfsbootmenu
 zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
 zfsbootmenu_boot_label: ZFSBootMenu
+install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
 
 # Installed services and finalization
 install_openssh: true

@@ -65,9 +65,14 @@
     mode: '0755'
 
 - name: Mount first EFI partition
-  ansible.posix.mount:
-    src: "{{ esp_partitions[0] }}"
-    path: "{{ install_target_root }}/efi"
-    fstype: vfat
-    opts: defaults,noatime
-    state: mounted
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if mountpoint -q "{{ install_target_root }}/efi"; then
+      exit 0
+    fi
+    mount -t vfat -o defaults,noatime "{{ esp_partitions[0] }}" "{{ install_target_root }}/efi"
+    echo mounted
+  args:
+    executable: /bin/bash
+  register: efi_mount_result
+  changed_when: "'mounted' in efi_mount_result.stdout"

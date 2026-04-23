@@ -1,4 +1,45 @@
 ---
+- name: Resolve EFI partition device paths by GPT PARTLABEL when needed
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ (storage_layout == 'zfs-boot-root-mirror') | ternary(zfs_boot_pool_devices | length, storage_devices | length) }}); do
+      blkid -t PARTLABEL="EFI_SYSTEM_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: boot_esp_partition_lookup
+  changed_when: false
+  when: esp_partitions is not defined
+
+- name: Cache EFI partition paths for the boot role
+  ansible.builtin.set_fact:
+    esp_partitions: "{{ boot_esp_partition_lookup.stdout_lines }}"
+  when: esp_partitions is not defined
+
+- name: Resolve swap partition device paths by GPT PARTLABEL when needed
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ (storage_layout == 'zfs-boot-root-mirror') | ternary(zfs_root_pool_devices | length, storage_devices | length) }}); do
+      blkid -t PARTLABEL="SWAP_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: boot_swap_partition_lookup
+  changed_when: false
+  when: swap_partitions is not defined
+
+- name: Cache swap partition paths for the boot role
+  ansible.builtin.set_fact:
+    swap_partitions: "{{ boot_swap_partition_lookup.stdout_lines }}"
+  when: swap_partitions is not defined
+
+- name: Assert that boot partitions were resolved
+  ansible.builtin.assert:
+    that:
+      - esp_partitions | length > 0
+      - swap_partitions is defined
+    fail_msg: Boot role could not resolve EFI or swap partitions. Run the storage role first or provision matching GPT labels.
+
 - name: Write fstab for EFI and swap
   ansible.builtin.template:
     src: fstab.j2
@@ -8,11 +49,20 @@
 - name: Configure OpenRC ZFS services
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ item | quote }}
+    {{ boot_service_command | quote }}
   loop:
     - rc-update add zfs-import sysinit
     - rc-update add zfs-mount sysinit
     - rc-update add zfs-zed default
+  loop_control:
+    loop_var: boot_service_command
+
+- name: Ensure the EFI boot directory exists for ZFSBootMenu
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/efi/EFI/BOOT"
+    state: directory
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
 
 - name: Download prebuilt ZFSBootMenu EFI executable
   ansible.builtin.get_url:

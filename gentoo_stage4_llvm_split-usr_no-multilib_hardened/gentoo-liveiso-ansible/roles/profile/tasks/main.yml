@@ -15,6 +15,12 @@
     content: "{{ profile_overlay_name }}\n"
     mode: '0644'
 
+- name: Write overlay profiles.desc
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/profiles/profiles.desc"
+    content: "{{ install_arch }} {{ profile_name }} stable\n"
+    mode: '0644'
+
 - name: Write overlay layout.conf
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/var/db/repos/{{ profile_overlay_name }}/metadata/layout.conf"

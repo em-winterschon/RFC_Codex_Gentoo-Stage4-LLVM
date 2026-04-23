@@ -28,6 +28,7 @@ assert_equals() {
 reset_builder_state() {
   INSTANCE_NAME='gentoo-stage4-testvm'
   STAGE3_TARGET='amd64-llvm-openrc'
+  STAGE3_PROFILE_PRESET='base'
   STAGE3_MIRROR_ROOT='https://distfiles.gentoo.org/releases'
   STAGE3_IMAGE_DIR='/tmp/stage3'
   STAGE3_CACHE_DIR="${STAGE3_IMAGE_DIR}/cache"
@@ -104,6 +105,21 @@ test_resolve_stage3_target_rejects_invalid_enum() {
   assert_contains "${output}" 'Unsupported STAGE3_TARGET'
 }
 
+test_validate_stage3_profile_preset_rejects_invalid_enum() {
+  local output status
+
+  reset_builder_state
+  STAGE3_PROFILE_PRESET='definitely-not-real'
+
+  set +e
+  output="$(validate_stage3_profile_preset 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '1'
+  assert_contains "${output}" 'Unsupported STAGE3_PROFILE_PRESET'
+}
+
 test_main_dry_run_prints_stage3_build_plan() {
   local temp_dir output status bootstrap
   temp_dir="$(mktemp -d)"
@@ -145,9 +161,47 @@ EOF
   assert_contains "${bootstrap}" 'CC="clang"'
   assert_contains "${bootstrap}" 'chmod 0644 /etc/resolv.conf'
   assert_contains "${bootstrap}" 'sys-kernel/installkernel dracut'
+  assert_contains "${bootstrap}" 'sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod'
   assert_contains "${bootstrap}" 'root=LABEL=gentooroot rootfstype=ext4 console=tty0 console=ttyS0,115200'
+  assert_contains "${bootstrap}" 'emerge --oneshot sys-apps/portage app-eselect/eselect-repository'
   assert_contains "${bootstrap}" 'rc-update add dhcpcd default'
   assert_contains "${bootstrap}" 'rc-update add sshd default'
+  rm -rf "${temp_dir}"
+}
+
+test_hardened_profile_preset_renders_profile_specific_portage_config() {
+  local temp_dir bootstrap output status
+  temp_dir="$(mktemp -d)"
+
+  reset_builder_state
+  STAGE3_PROFILE_PRESET='hardened-llvm-stage4'
+  STAGE3_IMAGE_DIR="${temp_dir}"
+  STAGE3_CACHE_DIR="${STAGE3_IMAGE_DIR}/cache"
+  STAGE3_IMAGE_OUTPUT_DIR="${STAGE3_IMAGE_DIR}/images"
+  STAGE3_BUILD_DIR="${STAGE3_IMAGE_DIR}/build/${INSTANCE_NAME}"
+  TARGET_ROOT_MNT="${STAGE3_BUILD_DIR}/rootfs"
+  TARGET_EFI_MNT="${TARGET_ROOT_MNT}/boot/efi"
+  WORK_BOOTSTRAP_SCRIPT="${STAGE3_BUILD_DIR}/bootstrap-stage3-vm.sh"
+  QCOW_IMAGE="${STAGE3_IMAGE_OUTPUT_DIR}/${INSTANCE_NAME}.qcow2"
+
+  fetch_text() {
+    cat <<'EOF'
+stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
+EOF
+  }
+
+  set +e
+  output="$(main 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '0'
+  bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
+  assert_contains "${bootstrap}" 'FEATURES="${FEATURES} ccache distcc fail-clean"'
+  assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/00-llvm-stage4'
+  assert_contains "${bootstrap}" 'cat > /etc/portage/package.mask/00-no-systemd'
+  assert_contains "${bootstrap}" 'eselect repository enable "${gentoo_overlay_repo}"'
+  assert_contains "${bootstrap}" 'guru xira without-systemd'
   rm -rf "${temp_dir}"
 }
 
@@ -175,7 +229,9 @@ test_resolve_host_tool_paths_falls_back_to_command_v() {
 
 test_resolve_stage3_target_maps_supported_enums
 test_resolve_stage3_target_rejects_invalid_enum
+test_validate_stage3_profile_preset_rejects_invalid_enum
 test_main_dry_run_prints_stage3_build_plan
+test_hardened_profile_preset_renders_profile_specific_portage_config
 test_resolve_host_tool_paths_falls_back_to_command_v
 
 printf 'PASS: %s\n' "$(basename "$0")"

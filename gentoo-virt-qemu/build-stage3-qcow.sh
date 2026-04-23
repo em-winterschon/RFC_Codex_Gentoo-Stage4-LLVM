@@ -8,6 +8,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTANCE_NAME="${INSTANCE_NAME:-gentoo-stage4-testvm}"
 STAGE3_TARGET="${STAGE3_TARGET:-amd64-llvm-openrc}"
+STAGE3_PROFILE_PRESET="${STAGE3_PROFILE_PRESET:-base}"
 STAGE3_MIRROR_ROOT="${STAGE3_MIRROR_ROOT:-https://distfiles.gentoo.org/releases}"
 STAGE3_IMAGE_DIR="${STAGE3_IMAGE_DIR:-/opt/gentoo-virt-qemu/stage3}"
 STAGE3_CACHE_DIR="${STAGE3_CACHE_DIR:-${STAGE3_IMAGE_DIR}/cache}"
@@ -40,7 +41,7 @@ STAGE3_NETWORK_PACKAGE="${STAGE3_NETWORK_PACKAGE:-net-misc/dhcpcd}"
 STAGE3_SSH_PACKAGE="${STAGE3_SSH_PACKAGE:-net-misc/openssh}"
 STAGE3_NETWORK_SERVICE="${STAGE3_NETWORK_SERVICE:-dhcpcd}"
 STAGE3_SSH_SERVICE="${STAGE3_SSH_SERVICE:-sshd}"
-STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools}"
+STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod}"
 VM_HOSTNAME="${VM_HOSTNAME:-${INSTANCE_NAME}}"
 VM_TIMEZONE="${VM_TIMEZONE:-UTC}"
 VM_LOCALE="${VM_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -132,6 +133,20 @@ supported_stage3_targets() {
   printf '%s\n' 'amd64-llvm-openrc arm64-llvm-openrc power9le-openrc'
 }
 
+supported_stage3_profile_presets() {
+  printf '%s\n' 'base hardened-llvm-stage4'
+}
+
+validate_stage3_profile_preset() {
+  case "${STAGE3_PROFILE_PRESET}" in
+    base|hardened-llvm-stage4)
+      ;;
+    *)
+      fail "Unsupported STAGE3_PROFILE_PRESET: ${STAGE3_PROFILE_PRESET} (supported: $(supported_stage3_profile_presets))"
+      ;;
+  esac
+}
+
 resolve_stage3_target() {
   case "${STAGE3_TARGET}" in
     amd64-llvm-openrc)
@@ -160,6 +175,80 @@ resolve_stage3_target() {
       ;;
     *)
       fail "Unsupported STAGE3_TARGET: ${STAGE3_TARGET} (supported: $(supported_stage3_targets))"
+      ;;
+  esac
+}
+
+stage3_profile_bootstrap_fragment() {
+  case "${STAGE3_PROFILE_PRESET}" in
+    base)
+      return 0
+      ;;
+    hardened-llvm-stage4)
+      cat <<'EOF'
+cat >> /etc/portage/make.conf <<'MAKECONF_HARDENED'
+COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3"
+CFLAGS="${COMMON_FLAGS} -flto=thin"
+CXXFLAGS="${COMMON_FLAGS} -flto=thin"
+FCFLAGS="${COMMON_FLAGS}"
+FFLAGS="${COMMON_FLAGS}"
+LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld"
+USE="${USE} -systemd"
+FEATURES="${FEATURES} ccache distcc fail-clean"
+QA_STRICT_EXECSTACK="set"
+QA_STRICT_TEXTRELS="set"
+QA_STRICT_FLAGS_IGNORED="set"
+PORTAGE_TMPDIR="/var/tmp/portage-tmpfs"
+PORTAGE_LOGDIR="/var/log/portage"
+CCACHE_DIR="/var/cache/ccache"
+CCACHE_SIZE="20G"
+CCACHE_TEMPDIR="/var/tmp/portage-tmpfs/ccache-tmp"
+CCACHE_PREFIX="distcc"
+MAKECONF_HARDENED
+
+cat > /etc/portage/package.use/00-llvm-stage4 <<'PKGUSE_LLVM'
+llvm-core/clang-toolchain-symlinks native-symlinks -gcc-symlinks
+llvm-core/lld-toolchain-symlinks native-symlinks
+llvm-core/clang-linker-config default-lld
+llvm-runtimes/clang-runtime compiler-rt default-compiler-rt default-lld sanitize
+dev-util/ccache static-c++
+sys-libs/glibc -clang
+www-client/firefox clang
+mail-client/thunderbird clang
+dev-lang/spidermonkey clang
+PKGUSE_LLVM
+
+cat > /etc/portage/package.use/10-no-systemd <<'PKGUSE_NOSYSTEMD'
+sys-auth/pambase elogind
+net-misc/networkmanager elogind
+sys-apps/accountsservice elogind
+x11-base/xorg-server elogind
+media-video/pipewire elogind
+media-video/wireplumber elogind
+sys-fs/udisks elogind
+sys-process/procps elogind
+PKGUSE_NOSYSTEMD
+
+mkdir -p /etc/portage/package.mask
+cat > /etc/portage/package.mask/00-no-systemd <<'PKGMASK_NOSYSTEMD'
+sys-apps/systemd
+PKGMASK_NOSYSTEMD
+
+cat > /etc/portage/package.mask/20-gcc-required <<'PKGMASK_GCC'
+# Add package atoms here only after LLVM/Clang and xira were attempted
+# or were already known to be unsupported.
+PKGMASK_GCC
+EOF
+      ;;
+  esac
+}
+
+stage3_profile_repository_enable_list() {
+  case "${STAGE3_PROFILE_PRESET}" in
+    base)
+      ;;
+    hardened-llvm-stage4)
+      printf '%s\n' guru xira without-systemd
       ;;
   esac
 }
@@ -369,8 +458,12 @@ extract_stage3() {
 
 render_bootstrap_script() {
   local ssh_key
+  local stage3_profile_fragment
+  local stage3_profile_repositories
 
   ssh_key="$(resolve_ssh_authorized_key)"
+  stage3_profile_fragment="$(stage3_profile_bootstrap_fragment)"
+  stage3_profile_repositories="$(stage3_profile_repository_enable_list | tr '\n' ' ')"
   mkdir -p "$(dirname "${WORK_BOOTSTRAP_SCRIPT}")"
   cat >"${WORK_BOOTSTRAP_SCRIPT}" <<EOF
 #!/usr/bin/env bash
@@ -384,6 +477,7 @@ FSTAB
 mkdir -p /boot/efi /root/.ssh /etc/portage
 mkdir -p /etc/default
 mkdir -p /etc/portage/package.use
+mkdir -p /etc/portage/package.mask
 
 if [[ -f /etc/resolv.conf ]]; then
   chmod 0644 /etc/resolv.conf || true
@@ -402,6 +496,8 @@ MAKECONF
 cat > /etc/portage/package.use/stage3-qcow-kernel <<'PKGUSE'
 sys-kernel/installkernel dracut
 PKGUSE
+
+${stage3_profile_fragment}
 
 cat > /etc/cmdline <<CMDLINE
 root=LABEL=gentooroot rootfstype=ext4 console=tty0 console=ttyS0,${VM_SERIAL_BAUD}
@@ -430,7 +526,11 @@ else
 fi
 
 ${PORTAGE_SYNC_COMMAND}
-emerge --oneshot sys-apps/portage
+emerge --oneshot sys-apps/portage app-eselect/eselect-repository
+for gentoo_overlay_repo in ${stage3_profile_repositories}; do
+  eselect repository enable "\${gentoo_overlay_repo}"
+  emaint sync -r "\${gentoo_overlay_repo}"
+done
 emerge ${STAGE3_KERNEL_PACKAGE} ${STAGE3_BOOTLOADER_PACKAGE} ${STAGE3_NETWORK_PACKAGE} ${STAGE3_SSH_PACKAGE} ${STAGE3_EXTRA_PACKAGES}
 
 rc-update add ${STAGE3_NETWORK_SERVICE} default
@@ -463,6 +563,7 @@ run_bootstrap() {
 main() {
   trap cleanup EXIT
   resolve_host_tool_paths
+  validate_stage3_profile_preset
   resolve_stage3_target
   validate_host_arch
   ensure_dirs

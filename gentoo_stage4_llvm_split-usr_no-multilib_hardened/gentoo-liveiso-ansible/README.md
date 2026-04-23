@@ -41,6 +41,7 @@ Supported `storage_layout` values:
 - `raid-1`
 - `raid-10`
 - `zfs-mirror`
+- `zfs-boot-root-mirror`
 - `zraid1`
 - `zraid2`
 - `zraid3`
@@ -218,6 +219,36 @@ The pieces most likely to need local policy refinement are:
 - your exact `USE`, `CPU_FLAGS_X86`, and package masks
 - any encrypted storage workflow
 - multi-ESP synchronization on multi-disk installs
+
+## YAML profile definitions
+
+If you want to carry house policy as data instead of editing the roles, set
+`profile_definition_files` to one or more YAML files with a top-level
+`gentoo_profile_definition` mapping. Supported keys are:
+
+- `repository_enable`
+- `make_conf_append`
+- `package_use_files`
+- `package_mask_files`
+- `package_mask_symlinks`
+
+The included preset:
+
+- `profile-definitions/hardened-llvm-stage4.yml`
+
+adds the Hardened LLVM/OpenRC stage4 policy from the separate setup draft:
+
+- enables `guru`, `xira`, and `without-systemd`
+- appends hardened LLVM-oriented `make.conf` settings
+- installs extra `package.use` fragments for LLVM and elogind replacements
+- installs `package.mask` fragments including the `without-systemd` mask link
+
+Example:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+```
 - per-interface network policy beyond enabling NetworkManager
 
 ## Suggested next steps
