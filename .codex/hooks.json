@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/codex_ntfy_hook.py",
+            "timeout": 600,
+            "statusMessage": "Waiting for remote ntfy approval"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 scripts/codex_ntfy_hook.py",
+            "timeout": 600,
+            "statusMessage": "Waiting for remote ntfy reply"
+          }
+        ]
+      }
+    ]
+  }
+}

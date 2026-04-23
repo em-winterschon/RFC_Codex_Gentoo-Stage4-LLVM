@@ -21,6 +21,27 @@ bash scripts/codex-ntfy.sh info "Codex started work"
 bash scripts/codex-ntfy.sh action-required "Need operator input"
 ```
 
+Codex integration files:
+
+- `scripts/codex_notify_event.py`
+  handles Codex `notify` events such as `agent-turn-complete`
+- `scripts/codex_ntfy_hook.py`
+  handles hook-driven remote approvals and reply prompts over ntfy
+- `.codex/hooks.json`
+  repo-local example hook wiring for `PermissionRequest` and `Stop`
+
+To enable the remote-approval flow in a Codex environment:
+
+1. enable Codex hooks in `~/.codex/config.toml`
+2. set `notify = ["python3", "/path/to/scripts/codex_notify_event.py"]`
+3. configure `CODEX_NTFY_ALERT_TOPIC` and `CODEX_NTFY_REPLY_TOPIC`
+
+The hook handler accepts replies in these forms:
+
+- `allow <id>`
+- `deny <id>`
+- `<id>: <free-form answer>`
+
 Shared environment keys are documented in:
 
 - `ntfy.env.example`
