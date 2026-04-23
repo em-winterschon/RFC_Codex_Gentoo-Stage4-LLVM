@@ -1,25 +1,25 @@
 ---
 gpu_profiles:
   amdgpu:
-    video_cards: "-* amdgpu radeonsi"
+    video_cards: "amdgpu radeonsi"
     extra_use:
       - vaapi
       - vulkan
     packages: []
   nvidia:
-    video_cards: "-* nvidia"
+    video_cards: "nvidia"
     extra_use:
       - X
       - tools
     packages:
       - x11-drivers/nvidia-drivers
   intel:
-    video_cards: "-* intel i915"
+    video_cards: "intel i915"
     extra_use:
       - vaapi
       - vulkan
     packages: []
   none:
-    video_cards: "-*"
+    video_cards: ""
     extra_use: []
     packages: []

@@ -7,17 +7,23 @@
     mode: '0644'
 
 - name: Ensure chroot pseudo-filesystems are mounted
-  ansible.posix.mount:
-    src: "{{ item.src }}"
-    path: "{{ install_target_root }}{{ item.path }}"
-    fstype: "{{ item.fstype }}"
-    opts: "{{ item.opts | default('') }}"
-    state: mounted
+  ansible.builtin.shell: |
+    set -euo pipefail
+    target="{{ install_target_root }}{{ item.path }}"
+    if mountpoint -q "${target}"; then
+      exit 0
+    fi
+    mount {{ item.mount_flag }} "{{ item.src }}" "${target}"
+    echo mounted
+  args:
+    executable: /bin/bash
+  register: chroot_mount_result
+  changed_when: "'mounted' in chroot_mount_result.stdout"
   loop:
-    - { src: /proc, path: /proc, fstype: none, opts: bind }
-    - { src: /sys, path: /sys, fstype: none, opts: rbind }
-    - { src: /dev, path: /dev, fstype: none, opts: rbind }
-    - { src: /run, path: /run, fstype: none, opts: rbind }
+    - { src: /proc, path: /proc, mount_flag: '--bind' }
+    - { src: /sys, path: /sys, mount_flag: '--rbind' }
+    - { src: /dev, path: /dev, mount_flag: '--rbind' }
+    - { src: /run, path: /run, mount_flag: '--rbind' }
 
 - name: Create chroot helper script
   ansible.builtin.template:
@@ -33,10 +39,26 @@
     {{ liveiso_work_dir }}/chroot-runner.sh
     {{ 'emerge --oneshot app-eselect/eselect-repository' | quote }}
 
-- name: Enable and sync guru repository in target
+- name: Enable configured repositories in target
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ 'eselect repository enable guru && emaint sync -r guru && emerge --oneshot sys-apps/portage' | quote }}
+    {{ ('eselect repository enable ' + portage_repository_name) | quote }}
+  loop: "{{ resolved_portage_enable_repositories | default(['guru']) }}"
+  loop_control:
+    loop_var: portage_repository_name
+
+- name: Sync configured repositories in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('emaint sync -r ' + portage_repository_name) | quote }}
+  loop: "{{ resolved_portage_enable_repositories | default(['guru']) }}"
+  loop_control:
+    loop_var: portage_repository_name
+
+- name: Refresh Portage after repository changes
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ 'emerge --oneshot sys-apps/portage' | quote }}
 
 - name: Select combined local profile in target
   ansible.builtin.command: >-
@@ -76,3 +98,10 @@
     content: |
       keymap="{{ install_keymap }}"
     mode: '0644'
+
+- name: Write kernel command line for installkernel/dracut
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/cmdline"
+    mode: '0644'
+    content: |
+      {{ install_kernel_cmdline | default('root=ZFS=' + zpool_name + '/ROOT/gentoo ro console=tty0 console=ttyS0,115200') }}

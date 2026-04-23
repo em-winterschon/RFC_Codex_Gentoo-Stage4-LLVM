@@ -41,6 +41,7 @@ Supported `storage_layout` values:
 - `raid-1`
 - `raid-10`
 - `zfs-mirror`
+- `zfs-boot-root-mirror`
 - `zraid1`
 - `zraid2`
 - `zraid3`
@@ -113,6 +114,7 @@ The installer runs a default ordered role sequence:
 - `system_packages`
 - `boot`
 - `network`
+- `services`
 
 Override `selected_roles` in inventory or at the command line if you need to rerun only a
 subset while iterating on one part of the install flow.
@@ -143,7 +145,7 @@ The external `/opt/gentoo-liveiso-ansible` scaffolding used placeholder roles na
 - `kernel`: wraps the current `system_packages` role
 - `bootloader`: wraps the current `boot` role
 - `finalize`: applies the optional root password hash, enables target services and SSH keys via
-  `network`, and can optionally unmount or reboot the live environment
+  `services` and `network`, and can optionally unmount or reboot the live environment
 
 For native ZFS layouts, you can use this alternate modular sequence:
 
@@ -166,7 +168,61 @@ Do not mix these wrapper roles with their underlying roles in the same list:
 
 - `kernel` with `system_packages`
 - `bootloader` with `boot`
-- `finalize` with `network`
+- `finalize` with `network` or `services`
+
+## Managed OpenRC action services
+
+The `services` role installs generic daemonizable OpenRC actions into the target system.
+Each `openrc_action_services` item creates:
+
+- `/usr/local/libexec/<name>`
+- `/etc/conf.d/<name>`
+- `/etc/init.d/<name>`
+
+and enables the service with `rc-update` unless `enabled: false` is set.
+
+Example:
+
+```yaml
+openrc_action_services:
+  - name: stage4-example
+    description: Example managed daemon action
+    command: /usr/sbin/crond -f
+    runlevel: default
+    user: root
+    group: root
+    enabled: false
+```
+
+Included service-definition data files:
+
+- `service-definitions/stage4-heartbeat.yml`
+
+`stage4-heartbeat` is a disabled-by-default long-running logger that appends
+periodic host and uptime markers to `/var/log/stage4-heartbeat.log`. It is
+meant as a concrete validation target for the managed-service facility.
+
+Example invocation:
+
+```bash
+ansible-playbook playbooks/install.yml -l remote-liveiso -e @service-definitions/stage4-heartbeat.yml
+```
+
+Optional tuning keys:
+
+- `workdir`
+- `env_file`
+- `umask`
+- `output_log`
+- `error_log`
+- `retry`
+- `respawn_delay`
+- `respawn_max`
+- `reload_signal`
+- `dependencies_need`
+- `dependencies_use`
+- `dependencies_after`
+- `dependencies_before`
 
 `zfs` only applies to native ZFS layouts. For `raid-1` and `raid-10`, keep using the `storage`
 role by itself because it owns the mdadm-backed provisioning path.
@@ -218,6 +274,36 @@ The pieces most likely to need local policy refinement are:
 - your exact `USE`, `CPU_FLAGS_X86`, and package masks
 - any encrypted storage workflow
 - multi-ESP synchronization on multi-disk installs
+
+## YAML profile definitions
+
+If you want to carry house policy as data instead of editing the roles, set
+`profile_definition_files` to one or more YAML files with a top-level
+`gentoo_profile_definition` mapping. Supported keys are:
+
+- `repository_enable`
+- `make_conf_append`
+- `package_use_files`
+- `package_mask_files`
+- `package_mask_symlinks`
+
+The included preset:
+
+- `profile-definitions/hardened-llvm-stage4.yml`
+
+adds the Hardened LLVM/OpenRC stage4 policy from the separate setup draft:
+
+- enables `guru`, `xira`, and `without-systemd`
+- appends hardened LLVM-oriented `make.conf` settings
+- installs extra `package.use` fragments for LLVM and elogind replacements
+- installs `package.mask` fragments including the `without-systemd` mask link
+
+Example:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+```
 - per-interface network policy beyond enabling NetworkManager
 
 ## Suggested next steps

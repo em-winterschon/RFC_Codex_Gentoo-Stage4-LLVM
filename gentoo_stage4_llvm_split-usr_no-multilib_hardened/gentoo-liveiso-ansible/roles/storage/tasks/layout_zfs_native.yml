@@ -20,6 +20,11 @@
       {{ root_partitions | join(' ') }}
       {% endif %}
 
+- name: Build boot pool vdev specification for split boot/root native ZFS
+  ansible.builtin.set_fact:
+    zpool_boot_vdev_spec: "mirror {{ boot_pool_partitions | join(' ') }}"
+  when: storage_layout == 'zfs-boot-root-mirror'
+
 - name: Create swap on the first swap partition only
   ansible.builtin.command: "mkswap {{ swap_partitions[0] }}"
   when: swap_partitions | length > 0
@@ -30,6 +35,26 @@
 
 - name: Generate hostid for root-on-ZFS
   ansible.builtin.command: "zgenhostid -f"
+
+- name: Create native ZFS boot pool
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zpool create -f \
+      -R {{ install_target_root }} \
+      -o ashift={{ zfs_boot_pool_properties.ashift }} \
+      -o autotrim={{ zfs_boot_pool_properties.autotrim }} \
+      -o compatibility={{ zfs_boot_pool_properties.compatibility }} \
+      -O acltype={{ zfs_boot_fs_properties.acltype }} \
+      -O compression={{ zfs_boot_fs_properties.compression }} \
+      -O dnodesize={{ zfs_boot_fs_properties.dnodesize }} \
+      -O relatime={{ zfs_boot_fs_properties.relatime }} \
+      -O xattr={{ zfs_boot_fs_properties.xattr }} \
+      -O mountpoint={{ zfs_boot_fs_properties.mountpoint }} \
+      -m none \
+      {{ zfs_boot_pool_name }} {{ zpool_boot_vdev_spec }}
+  args:
+    executable: /bin/bash
+  when: storage_layout == 'zfs-boot-root-mirror'
 
 - name: Create native ZFS root pool
   ansible.builtin.shell: |
@@ -50,6 +75,15 @@
   args:
     executable: /bin/bash
 
+- name: Create base ZFS boot datasets
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zfs create {{ item.extra }} {{ item.name }}
+  loop: "{{ zfs_boot_datasets }}"
+  args:
+    executable: /bin/bash
+  when: storage_layout == 'zfs-boot-root-mirror'
+
 - name: Create base ZFS datasets
   ansible.builtin.shell: |
     set -euo pipefail
@@ -62,7 +96,31 @@
   ansible.builtin.command: "zpool set bootfs={{ zpool_name }}/ROOT/gentoo {{ zpool_name }}"
 
 - name: Mount root dataset
-  ansible.builtin.command: "zfs mount {{ zpool_name }}/ROOT/gentoo"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [[ "$(zfs get -H -o value mounted {{ zpool_name }}/ROOT/gentoo)" == 'yes' ]]; then
+      exit 0
+    fi
+    zfs mount {{ zpool_name }}/ROOT/gentoo
+    echo mounted
+  args:
+    executable: /bin/bash
+  register: root_dataset_mount_result
+  changed_when: "'mounted' in root_dataset_mount_result.stdout"
+
+- name: Mount boot dataset for split boot/root ZFS
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [[ "$(zfs get -H -o value mounted {{ zfs_boot_pool_name }}/BOOT/gentoo)" == 'yes' ]]; then
+      exit 0
+    fi
+    zfs mount {{ zfs_boot_pool_name }}/BOOT/gentoo
+    echo mounted
+  args:
+    executable: /bin/bash
+  register: boot_dataset_mount_result
+  changed_when: "'mounted' in boot_dataset_mount_result.stdout"
+  when: storage_layout == 'zfs-boot-root-mirror'
 
 - name: Create EFI mountpoint in target root
   ansible.builtin.file:
@@ -71,9 +129,14 @@
     mode: '0755'
 
 - name: Mount first EFI partition
-  ansible.posix.mount:
-    src: "{{ esp_partitions[0] }}"
-    path: "{{ install_target_root }}/efi"
-    fstype: vfat
-    opts: defaults,noatime
-    state: mounted
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if mountpoint -q "{{ install_target_root }}/efi"; then
+      exit 0
+    fi
+    mount -t vfat -o defaults,noatime "{{ esp_partitions[0] }}" "{{ install_target_root }}/efi"
+    echo mounted
+  args:
+    executable: /bin/bash
+  register: efi_mount_result
+  changed_when: "'mounted' in efi_mount_result.stdout"

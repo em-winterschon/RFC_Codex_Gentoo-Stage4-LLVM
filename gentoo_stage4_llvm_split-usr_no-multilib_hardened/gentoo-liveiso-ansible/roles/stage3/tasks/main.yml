@@ -38,8 +38,15 @@
   ansible.builtin.set_fact:
     stage3_sha256_checksum: >-
       {{ stage3_sha256_sidecar.content
-         | regex_search('([A-Fa-f0-9]{64})', '\\1')
-         | first }}
+         | regex_search('[A-Fa-f0-9]{64}')
+         | default('') }}
+  when: stage3_verify_checksum | bool
+
+- name: Fail if the stage3 sha256 checksum could not be parsed
+  ansible.builtin.assert:
+    that:
+      - stage3_sha256_checksum | length == 64
+    fail_msg: "Unable to parse a SHA256 checksum from {{ stage3_sha256_url }}."
   when: stage3_verify_checksum | bool
 
 - name: Download stage3 tarball

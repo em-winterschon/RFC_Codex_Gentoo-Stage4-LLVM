@@ -11,9 +11,50 @@
     state: directory
     mode: '0755'
 
+- name: Ensure package.mask directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.mask"
+    state: directory
+    mode: '0755'
+
 - name: Force installkernel to keep kernels on ZFS /boot instead of ESP
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/etc/portage/package.use/installkernel"
     mode: '0644'
     content: |
-      sys-kernel/installkernel -systemd
+      sys-kernel/installkernel dracut -systemd
+
+- name: Enable D-Bus support for wpa_supplicant when NetworkManager is requested
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.use/networkmanager"
+    mode: '0644'
+    content: |
+      net-wireless/wpa_supplicant dbus
+  when: install_networkmanager | bool
+
+- name: Write extra package.use fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.use/{{ portage_package_use_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_use_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_use_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_use_file
+
+- name: Write extra package.mask fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.mask/{{ portage_package_mask_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_mask_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_mask_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_mask_file
+
+- name: Link package.mask fragments from selected profile definitions
+  ansible.builtin.file:
+    src: "{{ portage_package_mask_link.src }}"
+    dest: "{{ install_target_root }}/etc/portage/package.mask/{{ portage_package_mask_link.name }}"
+    state: link
+  loop: "{{ resolved_portage_package_mask_symlinks | default([]) }}"
+  loop_control:
+    loop_var: portage_package_mask_link

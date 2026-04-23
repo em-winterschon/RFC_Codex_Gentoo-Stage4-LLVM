@@ -14,7 +14,9 @@ EMERGE_DEFAULT_OPTS="--jobs={{ portage_emerge_jobs }}{% if portage_load_average 
 ACCEPT_LICENSE="{{ portage_accept_license }}"
 FEATURES="{{ portage_features | join(' ') }}"
 LLVM_TARGETS="{{ selected_cpu_profile.llvm_targets }}"
+{% if selected_gpu_profile.video_cards | length > 0 -%}
 VIDEO_CARDS="{{ selected_gpu_profile.video_cards }}"
+{% endif -%}
 USE="{{ (portage_global_use + selected_gpu_profile.extra_use + portage_extra_use) | unique | join(' ') }}"
 
 CC="clang"
@@ -23,6 +25,11 @@ AR="llvm-ar"
 NM="llvm-nm"
 RANLIB="llvm-ranlib"
 
-{% if cpu_flags_x86_override | length > 0 -%}
-CPU_FLAGS_X86="{{ cpu_flags_x86_override | join(' ') }}"
+{% set resolved_cpu_flags_x86 = cpu_flags_x86_override | default(selected_cpu_profile.cpu_flags_x86_override | default([])) %}
+{% if resolved_cpu_flags_x86 | length > 0 -%}
+CPU_FLAGS_X86="{{ resolved_cpu_flags_x86 | join(' ') }}"
+{% endif -%}
+{% if resolved_portage_make_conf_append | default('') | trim | length > 0 %}
+
+{{ resolved_portage_make_conf_append | trim }}
 {% endif -%}

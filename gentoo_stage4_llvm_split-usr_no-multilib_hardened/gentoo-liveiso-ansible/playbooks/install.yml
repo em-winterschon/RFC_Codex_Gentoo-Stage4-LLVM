@@ -18,6 +18,7 @@
       - system_packages
       - boot
       - network
+      - services
 
   tasks:
     - name: Include selected roles

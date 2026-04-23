@@ -11,6 +11,10 @@
 
 - name: Apply final network and service configuration
   ansible.builtin.include_role:
+    name: services
+
+- name: Apply final network and service configuration
+  ansible.builtin.include_role:
     name: network
 
 - name: Unmount the target root when requested

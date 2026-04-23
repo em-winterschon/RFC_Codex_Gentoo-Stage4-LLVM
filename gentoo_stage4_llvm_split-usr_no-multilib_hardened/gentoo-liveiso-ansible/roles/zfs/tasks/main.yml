@@ -56,11 +56,33 @@
     root_partitions: "{{ zfs_root_partition_lookup.stdout_lines }}"
   when: root_partitions is not defined
 
+- name: Resolve boot-pool partition device paths by GPT PARTLABEL when needed
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for n in $(seq 1 {{ zfs_boot_pool_devices | length }}); do
+      blkid -t PARTLABEL="ZFS_BOOT_${n}" -o device
+    done
+  args:
+    executable: /bin/bash
+  register: zfs_boot_partition_lookup
+  changed_when: false
+  when:
+    - storage_layout == 'zfs-boot-root-mirror'
+    - boot_pool_partitions is not defined
+
+- name: Cache boot-pool partition paths for the zfs role
+  ansible.builtin.set_fact:
+    boot_pool_partitions: "{{ zfs_boot_partition_lookup.stdout_lines }}"
+  when:
+    - storage_layout == 'zfs-boot-root-mirror'
+    - boot_pool_partitions is not defined
+
 - name: Assert that native ZFS partitions were resolved
   ansible.builtin.assert:
     that:
       - esp_partitions | length > 0
       - root_partitions | length > 0
+      - storage_layout != 'zfs-boot-root-mirror' or boot_pool_partitions | length > 0
     fail_msg: Native ZFS partition labels were not found. Run the storage role first or provision matching GPT labels.
 
 - name: Create native ZFS layout

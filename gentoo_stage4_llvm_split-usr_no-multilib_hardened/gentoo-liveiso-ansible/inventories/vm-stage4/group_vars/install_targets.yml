@@ -1,0 +1,74 @@
+---
+storage_confirm_destroy: true
+storage_allow_mdadm_under_zfs: false
+
+liveiso_work_dir: /root/gentoo-liveiso-work
+install_target_root: /mnt/gentoo
+install_arch: amd64
+install_boot_mode: uefi
+
+install_hostname: gentoo-stage4-installed
+install_timezone: America/Los_Angeles
+install_keymap: us
+install_locale: en_US.UTF-8 UTF-8
+install_root_password_hash: ""
+
+storage_layout: zfs-boot-root-mirror
+storage_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-1
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-1
+zfs_boot_pool_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-1
+zfs_root_pool_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-1
+esp_size_mib: 1024
+swap_size_gib: 16
+zpool_name: rpool
+zfs_boot_pool_name: bpool
+zpool_compatibility: 'off'
+zpool_altroot: "{{ install_target_root }}"
+
+stage3_flavor: llvm-openrc
+stage3_base_url: https://distfiles.gentoo.org/releases/amd64/autobuilds
+stage3_verify_checksum: true
+portage_sync_command: emerge-webrsync
+
+profile_overlay_name: local-install-profile
+profile_name: install-target
+profile_parents:
+  - gentoo:default/linux/amd64/23.0/llvm
+  - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
+
+portage_cpu_profile: intel_xeon_8370c
+gpu_stack: none
+
+kernel_strategy: gentoo-kernel-bin
+boot_strategy: zfsbootmenu
+install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
+install_openssh: true
+install_networkmanager: true
+root_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@livecd
+finalize_unmount_target: false
+finalize_reboot_host: false
+
+portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
+portage_features:
+  - parallel-install
+  - merge-sync
+portage_global_use:
+  - bindist
+  - bzip2
+  - cli
+  - ipv6
+  - lld
+  - zstd
+portage_extra_use: []
+portage_makeopts_jobs: "{{ ansible_processor_vcpus | default(8) }}"
+portage_emerge_jobs: 4
+portage_load_average: 0
+portage_gpg_key_refresh: false

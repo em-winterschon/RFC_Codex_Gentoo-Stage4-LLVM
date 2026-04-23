@@ -11,7 +11,19 @@
   ansible.builtin.shell: |
     set -euo pipefail
     zpool export {{ zpool_name }} >/dev/null 2>&1 || true
+    zpool export {{ zfs_boot_pool_name }} >/dev/null 2>&1 || true
   changed_when: false
+
+- name: Validate explicit device groups for split boot/root ZFS
+  ansible.builtin.assert:
+    that:
+      - zfs_boot_pool_devices | length > 0
+      - zfs_root_pool_devices | length > 0
+      - (zfs_boot_pool_devices | intersect(zfs_root_pool_devices) | length) == 0
+      - (zfs_boot_pool_devices | difference(storage_devices) | length) == 0
+      - (zfs_root_pool_devices | difference(storage_devices) | length) == 0
+    fail_msg: Split boot/root ZFS requires non-overlapping zfs_boot_pool_devices and zfs_root_pool_devices drawn from storage_devices.
+  when: storage_layout == 'zfs-boot-root-mirror'
 
 - name: Wipe selected devices
   ansible.builtin.shell: |

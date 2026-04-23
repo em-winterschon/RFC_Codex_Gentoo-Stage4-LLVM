@@ -1,0 +1,54 @@
+---
+- name: Load profile definition data
+  ansible.builtin.include_vars:
+    file: "{{ profile_definition_file }}"
+    name: loaded_profile_definition_file
+
+- name: Assert profile definition schema
+  ansible.builtin.assert:
+    that:
+      - loaded_profile_definition_file.gentoo_profile_definition is defined
+      - loaded_profile_definition_file.gentoo_profile_definition is mapping
+    fail_msg: >-
+      Profile definition {{ profile_definition_file }} must define a top-level
+      gentoo_profile_definition mapping.
+
+- name: Merge loaded profile definition into resolved installer settings
+  ansible.builtin.set_fact:
+    resolved_portage_enable_repositories: >-
+      {{
+        (
+          resolved_portage_enable_repositories
+          + (loaded_profile_definition_file.gentoo_profile_definition.repository_enable | default([]))
+        ) | unique
+      }}
+    resolved_portage_make_conf_append: >-
+      {{
+        [
+          resolved_portage_make_conf_append,
+          loaded_profile_definition_file.gentoo_profile_definition.make_conf_append | default('')
+        ]
+        | reject('equalto', '')
+        | join('\n\n')
+      }}
+    resolved_portage_package_use_files: >-
+      {{
+        resolved_portage_package_use_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_use_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_mask_files: >-
+      {{
+        resolved_portage_package_mask_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_mask_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_mask_symlinks: >-
+      {{
+        resolved_portage_package_mask_symlinks
+        + (loaded_profile_definition_file.gentoo_profile_definition.package_mask_symlinks | default([]))
+      }}

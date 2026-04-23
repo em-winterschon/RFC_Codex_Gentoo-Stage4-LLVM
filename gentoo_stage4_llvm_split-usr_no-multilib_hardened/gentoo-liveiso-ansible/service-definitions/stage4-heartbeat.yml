@@ -1,0 +1,22 @@
+---
+openrc_action_services:
+  - name: stage4-heartbeat
+    description: Periodic Stage4 heartbeat logger
+    command: |
+      while :; do
+        printf '%s stage4-heartbeat host=%s uptime=%s\n' \
+          "$(date -Is)" \
+          "$(hostname -f 2>/dev/null || hostname)" \
+          "$(cut -d' ' -f1 /proc/uptime)" >> /var/log/stage4-heartbeat.log
+        sleep 300
+      done
+    runlevel: default
+    user: root
+    group: root
+    enabled: false
+    output_log: /var/log/stage4-heartbeat.stdout.log
+    error_log: /var/log/stage4-heartbeat.stderr.log
+    dependencies_need:
+      - localmount
+    dependencies_after:
+      - zfs-mount
