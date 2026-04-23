@@ -42,6 +42,13 @@ The hook handler accepts replies in these forms:
 - `deny <id>`
 - `<id>: <free-form answer>`
 
+Archive-derived local operator tools now included:
+
+- `scripts/ntfy_pubsub_tui.py`
+  terminal pub/sub client for subscribing to topics and publishing messages
+- `scripts/slack_webhook.py`
+  optional Slack incoming-webhook bridge for the same operator workflow
+
 Shared environment keys are documented in:
 
 - `ntfy.env.example`
@@ -55,6 +62,27 @@ The repository event workflow is designed to send notifications for:
 - completion of the `Validate` workflow
 
 Messages are formatted as RFC 5424-style syslog lines and mapped onto ntfy priorities.
+
+### Local operator tools
+
+Inspect the resolved ntfy pub/sub configuration:
+
+```bash
+python3 scripts/ntfy_pubsub_tui.py --print-config
+```
+
+Launch the terminal pub/sub client:
+
+```bash
+python3 scripts/ntfy_pubsub_tui.py
+```
+
+Send a Slack webhook message with the optional helper:
+
+```bash
+export SLACK_WEBHOOK_URL='https://hooks.slack.com/services/...'
+python3 scripts/slack_webhook.py "Codex finished a run" --title "RFC_Codex_Gentoo-Stage4-LLVM"
+```
 
 ## Validation
 

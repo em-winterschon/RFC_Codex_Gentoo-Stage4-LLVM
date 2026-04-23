@@ -7,6 +7,8 @@ NTFY_NOTIFY="${REPO_ROOT}/scripts/ntfy_notify.py"
 CODEX_NOTIFY="${REPO_ROOT}/scripts/codex-ntfy.sh"
 CODEX_NOTIFY_EVENT="${REPO_ROOT}/scripts/codex_notify_event.py"
 CODEX_NTFY_HOOK="${REPO_ROOT}/scripts/codex_ntfy_hook.py"
+NTFY_PUBSUB_TUI="${REPO_ROOT}/scripts/ntfy_pubsub_tui.py"
+SLACK_WEBHOOK="${REPO_ROOT}/scripts/slack_webhook.py"
 GITHUB_NOTIFY="${REPO_ROOT}/.github/scripts/ntfy_repo_event.py"
 
 fail() {
@@ -31,6 +33,8 @@ test_python_sources_compile() {
     "${NTFY_NOTIFY}" \
     "${CODEX_NOTIFY_EVENT}" \
     "${CODEX_NTFY_HOOK}" \
+    "${NTFY_PUBSUB_TUI}" \
+    "${SLACK_WEBHOOK}" \
     "${GITHUB_NOTIFY}" \
     "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/action_plugins/ntfy.py" \
     "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/callback_plugins/ntfy.py"
@@ -152,11 +156,44 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
   assert_contains "${reply_output}" '"allow"'
 }
 
+test_ntfy_pubsub_tui_prints_config() {
+  local output
+
+  output="$(
+    NTFY_URL=https://ntfy.example.invalid \
+    NTFY_ALERT_TOPIC=alerts-topic \
+    NTFY_REPLY_TOPIC=replies-topic \
+    python3 "${NTFY_PUBSUB_TUI}" --print-config
+  )"
+
+  assert_contains "${output}" '"server": "https://ntfy.example.invalid"'
+  assert_contains "${output}" '"alert_topic": "alerts-topic"'
+  assert_contains "${output}" '"reply_topic": "replies-topic"'
+}
+
+test_slack_webhook_dry_run_renders_payload() {
+  local output
+
+  output="$(
+    python3 "${SLACK_WEBHOOK}" \
+      --webhook-url https://hooks.slack.example.invalid/services/test \
+      --title "Codex update" \
+      --dry-run \
+      "validation complete"
+  )"
+
+  assert_contains "${output}" '"webhook_url": "https://hooks.slack.example.invalid/services/test"'
+  assert_contains "${output}" '"text": "*Codex update*'
+  assert_contains "${output}" 'validation complete"'
+}
+
 test_python_sources_compile
 test_ntfy_notify_dry_run_renders_payload
 test_codex_ntfy_wrapper_uses_coded_env
 test_github_event_formatter_renders_pull_request_message
 test_codex_notify_event_renders_turn_complete_payload
 test_codex_ntfy_hook_permission_dry_run_and_reply
+test_ntfy_pubsub_tui_prints_config
+test_slack_webhook_dry_run_renders_payload
 
 printf 'PASS: %s\n' "$(basename "$0")"
