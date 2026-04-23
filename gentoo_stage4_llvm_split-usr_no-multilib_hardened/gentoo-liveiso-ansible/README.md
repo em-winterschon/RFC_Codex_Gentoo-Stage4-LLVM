@@ -194,6 +194,20 @@ openrc_action_services:
     enabled: false
 ```
 
+Included service-definition data files:
+
+- `service-definitions/stage4-heartbeat.yml`
+
+`stage4-heartbeat` is a disabled-by-default long-running logger that appends
+periodic host and uptime markers to `/var/log/stage4-heartbeat.log`. It is
+meant as a concrete validation target for the managed-service facility.
+
+Example invocation:
+
+```bash
+ansible-playbook playbooks/install.yml -l remote-liveiso -e @service-definitions/stage4-heartbeat.yml
+```
+
 Optional tuning keys:
 
 - `workdir`

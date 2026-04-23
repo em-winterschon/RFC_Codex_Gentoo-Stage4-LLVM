@@ -106,6 +106,9 @@ finalize_reboot_host: false
 #     user: root
 #     group: root
 #     enabled: false
+#
+# Or load a repo-managed definition file at runtime:
+# ansible-playbook ... -e @service-definitions/stage4-heartbeat.yml
 
 # Optional explicit CPU_FLAGS_X86 override. Leave empty to omit from make.conf.
 cpu_flags_x86_override: []
