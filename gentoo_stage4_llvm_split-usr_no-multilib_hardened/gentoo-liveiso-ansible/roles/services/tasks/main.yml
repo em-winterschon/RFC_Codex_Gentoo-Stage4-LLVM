@@ -1,0 +1,62 @@
+---
+- name: Assert OpenRC action service definitions are valid
+  ansible.builtin.assert:
+    that:
+      - openrc_action_service.name is defined
+      - openrc_action_service.name | length > 0
+      - openrc_action_service.command is defined
+      - openrc_action_service.command | length > 0
+    fail_msg: >-
+      Each openrc_action_services item requires at least name and command.
+  loop: "{{ openrc_action_services }}"
+  loop_control:
+    loop_var: openrc_action_service
+
+- name: Ensure service support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ service_support_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /usr/local/libexec
+    - /etc/init.d
+    - /etc/conf.d
+  loop_control:
+    loop_var: service_support_dir
+  when: openrc_action_services | length > 0
+
+- name: Install action wrapper scripts
+  ansible.builtin.template:
+    src: action-wrapper.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/{{ openrc_action_service.name }}"
+    mode: '0755'
+  loop: "{{ openrc_action_services }}"
+  loop_control:
+    loop_var: openrc_action_service
+
+- name: Install OpenRC conf.d files
+  ansible.builtin.template:
+    src: conf.d.j2
+    dest: "{{ install_target_root }}/etc/conf.d/{{ openrc_action_service.name }}"
+    mode: '0644'
+  loop: "{{ openrc_action_services }}"
+  loop_control:
+    loop_var: openrc_action_service
+
+- name: Install OpenRC init.d scripts
+  ansible.builtin.template:
+    src: init.d.j2
+    dest: "{{ install_target_root }}/etc/init.d/{{ openrc_action_service.name }}"
+    mode: '0755'
+  loop: "{{ openrc_action_services }}"
+  loop_control:
+    loop_var: openrc_action_service
+
+- name: Enable managed OpenRC action services
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('rc-update add ' + openrc_action_service.name + ' ' + (openrc_action_service.runlevel | default('default'))) | quote }}
+  loop: "{{ openrc_action_services }}"
+  loop_control:
+    loop_var: openrc_action_service
+  when: openrc_action_service.enabled | default(true) | bool

@@ -93,6 +93,20 @@ root_authorized_keys: []
 finalize_unmount_target: false
 finalize_reboot_host: false
 
+# Optional managed OpenRC services. Each item installs:
+#   /usr/local/libexec/<name>
+#   /etc/conf.d/<name>
+#   /etc/init.d/<name>
+# and enables the service with rc-update when enabled=true.
+# openrc_action_services:
+#   - name: stage4-example
+#     description: Example managed daemon action
+#     command: /usr/sbin/crond -f
+#     runlevel: default
+#     user: root
+#     group: root
+#     enabled: false
+
 # Optional explicit CPU_FLAGS_X86 override. Leave empty to omit from make.conf.
 cpu_flags_x86_override: []
 
@@ -127,6 +141,7 @@ portage_gpg_key_refresh: false
 #   - system_packages
 #   - boot
 #   - network
+#   - services
 #
 # Alternate modular sequence translated from the external /opt scaffolding:
 # selected_roles:
@@ -145,4 +160,4 @@ portage_gpg_key_refresh: false
 # Do not mix the compatibility wrapper roles with their underlying roles in the same list:
 #   kernel <-> system_packages
 #   bootloader <-> boot
-#   finalize <-> network
+#   finalize <-> network, services

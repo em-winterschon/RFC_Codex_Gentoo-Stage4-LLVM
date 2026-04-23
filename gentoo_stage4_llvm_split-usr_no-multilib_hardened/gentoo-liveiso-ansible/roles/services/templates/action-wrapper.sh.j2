@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "/etc/conf.d/{{ openrc_action_service.name }}"
+
+if [[ -n "${openrc_action_env_file:-}" && -f "${openrc_action_env_file}" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "${openrc_action_env_file}"
+  set +a
+fi
+
+if [[ -n "${openrc_action_umask:-}" ]]; then
+  umask "${openrc_action_umask}"
+fi
+
+if [[ -n "${openrc_action_workdir:-}" ]]; then
+  cd "${openrc_action_workdir}"
+fi
+
+exec /bin/bash -lc "${openrc_action_command}"

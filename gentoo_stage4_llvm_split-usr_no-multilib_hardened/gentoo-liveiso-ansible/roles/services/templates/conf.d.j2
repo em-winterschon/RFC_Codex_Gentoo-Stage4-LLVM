@@ -1,0 +1,14 @@
+# Managed by gentoo-liveiso-ansible
+openrc_action_description={{ (openrc_action_service.description | default('Managed action service ' + openrc_action_service.name)) | quote }}
+openrc_action_command={{ openrc_action_service.command | quote }}
+openrc_action_workdir={{ (openrc_action_service.workdir | default('/')) | quote }}
+openrc_action_env_file={{ (openrc_action_service.env_file | default('')) | quote }}
+openrc_action_umask={{ (openrc_action_service.umask | default('022')) | quote }}
+openrc_action_user={{ (openrc_action_service.user | default('root')) | quote }}
+openrc_action_group={{ (openrc_action_service.group | default(openrc_action_service.user | default('root'))) | quote }}
+openrc_action_output_log={{ (openrc_action_service.output_log | default('/var/log/' + openrc_action_service.name + '.log')) | quote }}
+openrc_action_error_log={{ (openrc_action_service.error_log | default('/var/log/' + openrc_action_service.name + '.err.log')) | quote }}
+openrc_action_retry={{ (openrc_action_service.retry | default('TERM/30/KILL/5')) | quote }}
+openrc_action_respawn_delay={{ (openrc_action_service.respawn_delay | default('5')) | quote }}
+openrc_action_respawn_max={{ (openrc_action_service.respawn_max | default('0')) | quote }}
+openrc_action_reload_signal={{ (openrc_action_service.reload_signal | default('HUP')) | quote }}

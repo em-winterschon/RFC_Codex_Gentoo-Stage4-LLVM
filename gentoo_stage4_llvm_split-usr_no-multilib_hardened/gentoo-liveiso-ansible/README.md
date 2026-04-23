@@ -114,6 +114,7 @@ The installer runs a default ordered role sequence:
 - `system_packages`
 - `boot`
 - `network`
+- `services`
 
 Override `selected_roles` in inventory or at the command line if you need to rerun only a
 subset while iterating on one part of the install flow.
@@ -144,7 +145,7 @@ The external `/opt/gentoo-liveiso-ansible` scaffolding used placeholder roles na
 - `kernel`: wraps the current `system_packages` role
 - `bootloader`: wraps the current `boot` role
 - `finalize`: applies the optional root password hash, enables target services and SSH keys via
-  `network`, and can optionally unmount or reboot the live environment
+  `services` and `network`, and can optionally unmount or reboot the live environment
 
 For native ZFS layouts, you can use this alternate modular sequence:
 
@@ -167,7 +168,47 @@ Do not mix these wrapper roles with their underlying roles in the same list:
 
 - `kernel` with `system_packages`
 - `bootloader` with `boot`
-- `finalize` with `network`
+- `finalize` with `network` or `services`
+
+## Managed OpenRC action services
+
+The `services` role installs generic daemonizable OpenRC actions into the target system.
+Each `openrc_action_services` item creates:
+
+- `/usr/local/libexec/<name>`
+- `/etc/conf.d/<name>`
+- `/etc/init.d/<name>`
+
+and enables the service with `rc-update` unless `enabled: false` is set.
+
+Example:
+
+```yaml
+openrc_action_services:
+  - name: stage4-example
+    description: Example managed daemon action
+    command: /usr/sbin/crond -f
+    runlevel: default
+    user: root
+    group: root
+    enabled: false
+```
+
+Optional tuning keys:
+
+- `workdir`
+- `env_file`
+- `umask`
+- `output_log`
+- `error_log`
+- `retry`
+- `respawn_delay`
+- `respawn_max`
+- `reload_signal`
+- `dependencies_need`
+- `dependencies_use`
+- `dependencies_after`
+- `dependencies_before`
 
 `zfs` only applies to native ZFS layouts. For `raid-1` and `raid-10`, keep using the `storage`
 role by itself because it owns the mdadm-backed provisioning path.

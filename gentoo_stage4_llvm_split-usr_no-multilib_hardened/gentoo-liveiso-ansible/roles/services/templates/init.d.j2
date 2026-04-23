@@ -1,0 +1,57 @@
+#!/sbin/openrc-run
+
+description="${openrc_action_description}"
+pidfile="/run/${RC_SVCNAME}.pid"
+command="/usr/local/libexec/{{ openrc_action_service.name }}"
+extra_started_commands="reload"
+
+depend() {
+{% if openrc_action_service.dependencies_need | default([]) | length > 0 %}
+  need {{ openrc_action_service.dependencies_need | join(' ') }}
+{% endif %}
+{% if openrc_action_service.dependencies_use | default([]) | length > 0 %}
+  use {{ openrc_action_service.dependencies_use | join(' ') }}
+{% endif %}
+{% if openrc_action_service.dependencies_after | default([]) | length > 0 %}
+  after {{ openrc_action_service.dependencies_after | join(' ') }}
+{% endif %}
+{% if openrc_action_service.dependencies_before | default([]) | length > 0 %}
+  before {{ openrc_action_service.dependencies_before | join(' ') }}
+{% endif %}
+}
+
+start_pre() {
+  checkpath --directory --mode 0755 /run
+  checkpath --directory --owner "${openrc_action_user}:${openrc_action_group}" --mode 0755 "$(dirname "${openrc_action_output_log}")"
+  checkpath --directory --owner "${openrc_action_user}:${openrc_action_group}" --mode 0755 "$(dirname "${openrc_action_error_log}")"
+  checkpath --file --owner "${openrc_action_user}:${openrc_action_group}" --mode 0644 "${openrc_action_output_log}"
+  checkpath --file --owner "${openrc_action_user}:${openrc_action_group}" --mode 0644 "${openrc_action_error_log}"
+}
+
+start() {
+  ebegin "Starting ${RC_SVCNAME}"
+  supervise-daemon "${RC_SVCNAME}" \
+    --start \
+    --pidfile "${pidfile}" \
+    --stdout "${openrc_action_output_log}" \
+    --stderr "${openrc_action_error_log}" \
+    --respawn-delay "${openrc_action_respawn_delay}" \
+    --respawn-max "${openrc_action_respawn_max}" \
+    --user "${openrc_action_user}:${openrc_action_group}" \
+    -- "${command}"
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping ${RC_SVCNAME}"
+  supervise-daemon "${RC_SVCNAME}" --stop --pidfile "${pidfile}" --retry "${openrc_action_retry}"
+  eend $?
+}
+
+reload() {
+  ebegin "Reloading ${RC_SVCNAME}"
+  if [ -n "${openrc_action_reload_signal}" ]; then
+    start-stop-daemon --signal "${openrc_action_reload_signal}" --pidfile "${pidfile}"
+  fi
+  eend $?
+}
