@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 scripts/codex_ntfy_hook.py",
+            "command": "bash scripts/codex_hook_with_env.sh",
             "timeout": 600,
             "statusMessage": "Waiting for remote ntfy approval"
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 scripts/codex_ntfy_hook.py",
+            "command": "bash scripts/codex_hook_with_env.sh",
             "timeout": 600,
             "statusMessage": "Waiting for remote ntfy reply"
           }

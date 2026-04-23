@@ -27,14 +27,19 @@ Codex integration files:
   handles Codex `notify` events such as `agent-turn-complete`
 - `scripts/codex_ntfy_hook.py`
   handles hook-driven remote approvals and reply prompts over ntfy
+- `scripts/codex_notify_with_env.sh`
+  sources `CODEX_NTFY_ENV_FILE`, then `~/.codex/ntfy-pub-subs.export.sh`, then `/opt/codex/ntfy-pub-subs.export.sh` before invoking the notify handler
+- `scripts/codex_hook_with_env.sh`
+  sources `CODEX_NTFY_ENV_FILE`, then `~/.codex/ntfy-pub-subs.export.sh`, then `/opt/codex/ntfy-pub-subs.export.sh` before invoking the hook handler
 - `.codex/hooks.json`
   repo-local example hook wiring for `PermissionRequest` and `Stop`
 
 To enable the remote-approval flow in a Codex environment:
 
 1. enable Codex hooks in `~/.codex/config.toml`
-2. set `notify = ["python3", "/path/to/scripts/codex_notify_event.py"]`
+2. set `notify = ["bash", "/path/to/scripts/codex_notify_with_env.sh"]`
 3. configure `CODEX_NTFY_ALERT_TOPIC` and `CODEX_NTFY_REPLY_TOPIC`
+4. optionally point `CODEX_NTFY_ENV_FILE` at an export file, or place one at `~/.codex/ntfy-pub-subs.export.sh`
 
 The hook handler accepts replies in these forms:
 
@@ -75,6 +80,13 @@ Launch the terminal pub/sub client:
 
 ```bash
 python3 scripts/ntfy_pubsub_tui.py
+```
+
+Use the repo-provided wrappers with a live export file:
+
+```bash
+export CODEX_NTFY_ENV_FILE=/root/.codex/ntfy-pub-subs.export.sh
+bash scripts/codex_notify_with_env.sh --dry-run '{"type":"agent-turn-complete","thread-id":"demo","turn-id":"1","cwd":"/root","input-messages":["ping"],"last-assistant-message":"done"}'
 ```
 
 Send a Slack webhook message with the optional helper:

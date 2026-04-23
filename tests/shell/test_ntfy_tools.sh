@@ -7,6 +7,8 @@ NTFY_NOTIFY="${REPO_ROOT}/scripts/ntfy_notify.py"
 CODEX_NOTIFY="${REPO_ROOT}/scripts/codex-ntfy.sh"
 CODEX_NOTIFY_EVENT="${REPO_ROOT}/scripts/codex_notify_event.py"
 CODEX_NTFY_HOOK="${REPO_ROOT}/scripts/codex_ntfy_hook.py"
+CODEX_NOTIFY_WITH_ENV="${REPO_ROOT}/scripts/codex_notify_with_env.sh"
+CODEX_HOOK_WITH_ENV="${REPO_ROOT}/scripts/codex_hook_with_env.sh"
 NTFY_PUBSUB_TUI="${REPO_ROOT}/scripts/ntfy_pubsub_tui.py"
 SLACK_WEBHOOK="${REPO_ROOT}/scripts/slack_webhook.py"
 GITHUB_NOTIFY="${REPO_ROOT}/.github/scripts/ntfy_repo_event.py"
@@ -38,6 +40,10 @@ test_python_sources_compile() {
     "${GITHUB_NOTIFY}" \
     "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/action_plugins/ntfy.py" \
     "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/callback_plugins/ntfy.py"
+}
+
+test_shell_wrappers_parse() {
+  bash -n "${CODEX_NOTIFY_WITH_ENV}" "${CODEX_HOOK_WITH_ENV}"
 }
 
 test_ntfy_notify_dry_run_renders_payload() {
@@ -131,6 +137,43 @@ test_codex_notify_event_renders_turn_complete_payload() {
   assert_contains "${output}" 'assistant=done'
 }
 
+test_codex_notify_wrapper_sources_env_file() {
+  local temp_dir env_file output
+  temp_dir="$(mktemp -d)"
+  env_file="${temp_dir}/ntfy.env"
+  cat >"${env_file}" <<'EOF'
+export CODEX_NTFY_URL='https://ntfy.sh'
+export CODEX_NTFY_TOPIC='codex-wrapper-topic'
+EOF
+
+  output="$(
+    CODEX_NTFY_ENV_FILE="${env_file}" \
+    bash "${CODEX_NOTIFY_WITH_ENV}" --dry-run '{"type":"agent-turn-complete","thread-id":"thread-1","turn-id":"turn-2","cwd":"/root/project","input-messages":["do work"],"last-assistant-message":"done"}'
+  )"
+
+  assert_contains "${output}" '"topic": "codex-wrapper-topic"'
+  rm -rf "${temp_dir}"
+}
+
+test_codex_hook_wrapper_sources_env_file() {
+  local temp_dir env_file output
+  temp_dir="$(mktemp -d)"
+  env_file="${temp_dir}/ntfy.env"
+  cat >"${env_file}" <<'EOF'
+export CODEX_NTFY_ALERT_TOPIC='codex-alerts-wrapper'
+export CODEX_NTFY_REPLY_TOPIC='codex-replies-wrapper'
+EOF
+
+  output="$(
+    CODEX_NTFY_ENV_FILE="${env_file}" \
+    CODEX_NTFY_TEST_REQUEST_ID='12345678' \
+    bash "${CODEX_HOOK_WITH_ENV}" --dry-run <<<'{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
+  )"
+
+  assert_contains "${output}" '"topic": "codex-alerts-wrapper"'
+  rm -rf "${temp_dir}"
+}
+
 test_codex_ntfy_hook_permission_dry_run_and_reply() {
   local payload dry_output reply_output
   payload='{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
@@ -188,10 +231,13 @@ test_slack_webhook_dry_run_renders_payload() {
 }
 
 test_python_sources_compile
+test_shell_wrappers_parse
 test_ntfy_notify_dry_run_renders_payload
 test_codex_ntfy_wrapper_uses_coded_env
 test_github_event_formatter_renders_pull_request_message
 test_codex_notify_event_renders_turn_complete_payload
+test_codex_notify_wrapper_sources_env_file
+test_codex_hook_wrapper_sources_env_file
 test_codex_ntfy_hook_permission_dry_run_and_reply
 test_ntfy_pubsub_tui_prints_config
 test_slack_webhook_dry_run_renders_payload
