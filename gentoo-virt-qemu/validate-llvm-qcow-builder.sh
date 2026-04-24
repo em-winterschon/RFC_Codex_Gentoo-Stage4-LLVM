@@ -45,7 +45,7 @@ LAUNCHER_SCRIPT=''
 # 4. Emit machine-readable validation summaries (JSON or JUnit XML) for CI ingestion.
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: ${SCRIPT_NAME} [options]
 
 Validate the llvm/openrc stage3 qcow builder and stage3 VM launcher.
@@ -120,14 +120,13 @@ supported_modes() {
 
 validate_mode() {
   case "${MODE}" in
-    suite)
-      MODE='build-dry-run'
-      ;;
-    build-dry-run|build|launch|full)
-      ;;
-    *)
-      fail "${EXIT_USAGE}" "Unsupported mode: ${MODE} (supported: $(supported_modes))"
-      ;;
+  suite)
+    MODE='build-dry-run'
+    ;;
+  build-dry-run | build | launch | full) ;;
+  *)
+    fail "${EXIT_USAGE}" "Unsupported mode: ${MODE} (supported: $(supported_modes))"
+    ;;
   esac
 }
 
@@ -195,9 +194,9 @@ require_real_mode_root() {
   fi
 
   case "${MODE}" in
-    build|launch|full)
-      [[ "${EUID}" -eq 0 ]] || fail "${EXIT_PREREQ}" "Mode ${MODE} requires root"
-      ;;
+  build | launch | full)
+    [[ "${EUID}" -eq 0 ]] || fail "${EXIT_PREREQ}" "Mode ${MODE} requires root"
+    ;;
   esac
 }
 
@@ -207,9 +206,9 @@ validate_inputs() {
   [[ -f "${LAUNCHER_SCRIPT}" && -r "${LAUNCHER_SCRIPT}" ]] || fail "${EXIT_PREREQ}" "Launcher script is missing or not readable: ${LAUNCHER_SCRIPT}"
 
   case "${MODE}" in
-    build-dry-run|build|full)
-      [[ -f "${SSH_PUBKEY}" ]] || fail "${EXIT_PREREQ}" "SSH public key does not exist: ${SSH_PUBKEY}"
-      ;;
+  build-dry-run | build | full)
+    [[ -f "${SSH_PUBKEY}" ]] || fail "${EXIT_PREREQ}" "SSH public key does not exist: ${SSH_PUBKEY}"
+    ;;
   esac
 }
 
@@ -219,7 +218,7 @@ current_qemu_processes() {
     return 0
   fi
 
-  pgrep -af qemu-system-x86_64 2>/dev/null || true
+  pgrep -af qemu-system-x86_64 2> /dev/null || true
 }
 
 running_qemu_for_qcow() {

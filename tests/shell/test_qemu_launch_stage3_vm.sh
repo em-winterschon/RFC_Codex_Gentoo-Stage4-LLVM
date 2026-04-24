@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 source "${LAUNCH_SCRIPT}"
 
@@ -23,6 +24,27 @@ assert_equals() {
   local actual="$1"
   local expected="$2"
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+mark_stage3_launch_globals_used() {
+  : "${QEMU_BIN-}" \
+    "${QEMU_MACHINE-}" \
+    "${QEMU_CPU-}" \
+    "${QEMU_SMP-}" \
+    "${QEMU_MEMORY_MIB-}" \
+    "${QEMU_BOOT_STRICT-}" \
+    "${QEMU_LAUNCH_DRY_RUN-}" \
+    "${QEMU_DAEMONIZE-}" \
+    "${QEMU_DISPLAY_MODE-}" \
+    "${QEMU_SERIAL_FILE-}" \
+    "${QEMU_NETDEV_BACKEND-}" \
+    "${QEMU_NETDEV_HELP_OUTPUT-}" \
+    "${QEMU_DISPLAY_HELP_OUTPUT-}" \
+    "${SSH_READY_PROBE-}" \
+    "${SSH_READY_HOST-}" \
+    "${SSH_READY_PORT-}" \
+    "${SSH_WAIT_TIMEOUT-}" \
+    "${SSH_BANNER_TIMEOUT-}"
 }
 
 reset_launcher_state() {
@@ -72,6 +94,7 @@ reset_launcher_state() {
   LAUNCHER_LOG_INITIALIZED=0
   ALLOCATED_SERIAL_PTY=''
   QEMU_CMD=()
+  mark_stage3_launch_globals_used
 }
 
 test_default_launcher_log_file_uses_requested_format() {

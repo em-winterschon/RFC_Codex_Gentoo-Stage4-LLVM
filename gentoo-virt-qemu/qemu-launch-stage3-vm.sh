@@ -124,7 +124,7 @@ require_host_disk_ready() {
   [[ -n "${path}" ]] || fail "${label} is empty"
   [[ -e "${path}" ]] || fail "${label} is missing: ${path}"
 
-  resolved_path="$(readlink -f "${path}" 2>/dev/null || true)"
+  resolved_path="$(readlink -f "${path}" 2> /dev/null || true)"
   if [[ "${path}" == /dev/* || "${resolved_path}" == /dev/* ]]; then
     [[ -n "${resolved_path}" && -b "${resolved_path}" ]] || fail "${label} is not a block device: ${path}"
   fi
@@ -139,11 +139,10 @@ validate_host_disks() {
 
 validate_boot_source() {
   case "$(boot_source_name)" in
-    qcow|target-disks)
-      ;;
-    *)
-      fail "Unsupported QEMU_BOOT_SOURCE: $(boot_source_name) (supported: qcow, target-disks)"
-      ;;
+  qcow | target-disks) ;;
+  *)
+    fail "Unsupported QEMU_BOOT_SOURCE: $(boot_source_name) (supported: qcow, target-disks)"
+    ;;
   esac
 }
 
@@ -184,29 +183,28 @@ validate_display_backend() {
   local help_output
 
   case "$(display_mode_name)" in
-    none)
-      return 0
-      ;;
-    gtk|sdl)
-      help_output="${QEMU_DISPLAY_HELP_OUTPUT}"
-      if [[ -z "${help_output}" ]]; then
-        help_output="$("${QEMU_BIN}" -display help 2>&1 || true)"
-      fi
-      [[ "${help_output}" == *"$(display_mode_name)"* ]] || fail "QEMU display mode '$(display_mode_name)' is not available in ${QEMU_BIN}"
-      ;;
-    *)
-      fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
-      ;;
+  none)
+    return 0
+    ;;
+  gtk | sdl)
+    help_output="${QEMU_DISPLAY_HELP_OUTPUT}"
+    if [[ -z "${help_output}" ]]; then
+      help_output="$("${QEMU_BIN}" -display help 2>&1 || true)"
+    fi
+    [[ "${help_output}" == *"$(display_mode_name)"* ]] || fail "QEMU display mode '$(display_mode_name)' is not available in ${QEMU_BIN}"
+    ;;
+  *)
+    fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
+    ;;
   esac
 }
 
 validate_serial_mode() {
   case "$(serial_mode_name)" in
-    none|stdio|pty|tcp|file)
-      ;;
-    *)
-      fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name) (supported: none, stdio, pty, tcp, file)"
-      ;;
+  none | stdio | pty | tcp | file) ;;
+  *)
+    fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name) (supported: none, stdio, pty, tcp, file)"
+    ;;
   esac
 
   if [[ "$(serial_mode_name)" == 'stdio' && "${QEMU_DAEMONIZE}" == '1' ]]; then
@@ -234,39 +232,39 @@ append_host_disk() {
 
 append_boot_args() {
   if [[ "${QEMU_BOOT_STRICT}" == '1' ]]; then
-    QEMU_CMD+=( -boot strict=on )
+    QEMU_CMD+=(-boot strict=on)
   fi
 }
 
 append_display_args() {
   case "$(display_mode_name)" in
-    none)
-      QEMU_CMD+=( -display none )
-      ;;
-    gtk|sdl)
-      QEMU_CMD+=( -display "$(display_mode_name)" )
-      ;;
+  none)
+    QEMU_CMD+=(-display none)
+    ;;
+  gtk | sdl)
+    QEMU_CMD+=(-display "$(display_mode_name)")
+    ;;
   esac
 }
 
 append_serial_args() {
   case "$(serial_mode_name)" in
-    none)
-      return 0
-      ;;
-    stdio)
-      QEMU_CMD+=( -serial mon:stdio )
-      ;;
-    pty)
-      QEMU_CMD+=( -serial pty )
-      ;;
-    tcp)
-      QEMU_CMD+=( -serial "tcp:${QEMU_SERIAL_TCP}" )
-      ;;
-    file)
-      mkdir -p "$(dirname "${QEMU_SERIAL_FILE}")"
-      QEMU_CMD+=( -serial "file:${QEMU_SERIAL_FILE}" )
-      ;;
+  none)
+    return 0
+    ;;
+  stdio)
+    QEMU_CMD+=(-serial mon:stdio)
+    ;;
+  pty)
+    QEMU_CMD+=(-serial pty)
+    ;;
+  tcp)
+    QEMU_CMD+=(-serial "tcp:${QEMU_SERIAL_TCP}")
+    ;;
+  file)
+    mkdir -p "$(dirname "${QEMU_SERIAL_FILE}")"
+    QEMU_CMD+=(-serial "file:${QEMU_SERIAL_FILE}")
+    ;;
   esac
 }
 
@@ -318,18 +316,18 @@ build_qemu_cmd() {
   append_serial_args
 
   if [[ "${QEMU_DAEMONIZE}" == '1' ]]; then
-    QEMU_CMD+=( -daemonize )
+    QEMU_CMD+=(-daemonize)
   fi
 }
 
 port_is_open() {
-  exec 3<>"/dev/tcp/${SSH_READY_HOST}/${SSH_READY_PORT}" && exec 3>&- 3<&-
+  exec 3<> "/dev/tcp/${SSH_READY_HOST}/${SSH_READY_PORT}" && exec 3>&- 3<&-
 }
 
 probe_ssh_banner() {
   local banner=''
 
-  exec 3<>"/dev/tcp/${SSH_READY_HOST}/${SSH_READY_PORT}" || return 1
+  exec 3<> "/dev/tcp/${SSH_READY_HOST}/${SSH_READY_PORT}" || return 1
   if ! IFS= read -r -t "${SSH_BANNER_TIMEOUT}" banner <&3; then
     exec 3>&- 3<&-
     return 1
@@ -348,28 +346,28 @@ wait_for_ssh_ready() {
 
   deadline=$((SECONDS + SSH_WAIT_TIMEOUT))
   case "${SSH_READY_PROBE}" in
-    none)
-      return 0
-      ;;
-    tcp-port)
-      until port_is_open; do
-        if (( SECONDS >= deadline )); then
-          fail "Timed out waiting for TCP port ${SSH_READY_HOST}:${SSH_READY_PORT}"
-        fi
-        sleep 1
-      done
-      ;;
-    banner)
-      until probe_ssh_banner; do
-        if (( SECONDS >= deadline )); then
-          fail "Timed out waiting for an SSH banner on ${SSH_READY_HOST}:${SSH_READY_PORT}; inspect the serial console for guest boot status"
-        fi
-        sleep 1
-      done
-      ;;
-    *)
-      fail "Unsupported SSH_READY_PROBE: ${SSH_READY_PROBE}"
-      ;;
+  none)
+    return 0
+    ;;
+  tcp-port)
+    until port_is_open; do
+      if ((SECONDS >= deadline)); then
+        fail "Timed out waiting for TCP port ${SSH_READY_HOST}:${SSH_READY_PORT}"
+      fi
+      sleep 1
+    done
+    ;;
+  banner)
+    until probe_ssh_banner; do
+      if ((SECONDS >= deadline)); then
+        fail "Timed out waiting for an SSH banner on ${SSH_READY_HOST}:${SSH_READY_PORT}; inspect the serial console for guest boot status"
+      fi
+      sleep 1
+    done
+    ;;
+  *)
+    fail "Unsupported SSH_READY_PROBE: ${SSH_READY_PROBE}"
+    ;;
   esac
 }
 
@@ -385,7 +383,7 @@ capture_qemu_startup_output() {
     printf '%s\n' "${qemu_output}"
   fi
 
-  if (( status != 0 )); then
+  if ((status != 0)); then
     return "${status}"
   fi
 
