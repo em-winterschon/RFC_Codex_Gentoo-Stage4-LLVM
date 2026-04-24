@@ -37,14 +37,24 @@ mark_stage3_launch_globals_used() {
     "${QEMU_DAEMONIZE-}" \
     "${QEMU_DISPLAY_MODE-}" \
     "${QEMU_SERIAL_FILE-}" \
+    "${QEMU_NETDEV_MODEL-}" \
     "${QEMU_NETDEV_BACKEND-}" \
     "${QEMU_NETDEV_HELP_OUTPUT-}" \
     "${QEMU_DISPLAY_HELP_OUTPUT-}" \
+    "${HOST_DISK_CACHE-}" \
+    "${HOST_DISK_AIO-}" \
+    "${WAIT_FOR_SSH-}" \
     "${SSH_READY_PROBE-}" \
     "${SSH_READY_HOST-}" \
     "${SSH_READY_PORT-}" \
     "${SSH_WAIT_TIMEOUT-}" \
-    "${SSH_BANNER_TIMEOUT-}"
+    "${SSH_BANNER_TIMEOUT-}" \
+    "${LAUNCHER_LOG_ENABLE-}" \
+    "${LAUNCHER_LOG_DIR-}" \
+    "${LAUNCHER_LOG_FILE-}" \
+    "${LAUNCHER_LOG_TIMESTAMP-}" \
+    "${LAUNCHER_LOG_INITIALIZED-}" \
+    "${ALLOCATED_SERIAL_PTY-}"
 }
 
 reset_launcher_state() {
