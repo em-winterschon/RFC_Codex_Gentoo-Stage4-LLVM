@@ -222,7 +222,9 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
 def handle_stop(payload: dict, *, dry_run: bool) -> int:
     if payload.get("stop_hook_active"):
         return 0
-    last_message = str(payload.get("last_assistant_message") or payload.get("last-assistant-message") or "").strip()
+    last_message = str(
+        payload.get("last_assistant_message") or payload.get("last-assistant-message") or ""
+    ).strip()
     if not last_message or "?" not in last_message:
         return 0
     request_id = os.getenv("CODEX_NTFY_TEST_REQUEST_ID", uuid.uuid4().hex[:8])

@@ -28,7 +28,9 @@ MAX_QUEUE = 32
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log-file", default=str(Path.home() / ".codex/log/codex-tui.log"))
-    parser.add_argument("--state-file", default=str(Path.home() / ".codex/approval-watcher-state.json"))
+    parser.add_argument(
+        "--state-file", default=str(Path.home() / ".codex/approval-watcher-state.json")
+    )
     parser.add_argument("--poll-interval", type=float, default=1.0)
     parser.add_argument("--from-start", action="store_true")
     parser.add_argument("--once", action="store_true")

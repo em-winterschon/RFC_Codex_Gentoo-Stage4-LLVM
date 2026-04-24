@@ -37,6 +37,20 @@ EOF
   chmod +x "${path}"
 }
 
+mark_seed_globals_used() {
+  : "${CLOUD_INIT_USERNAME-}" \
+    "${INSTANCE_NAME-}" \
+    "${LOCAL_HOSTNAME-}" \
+    "${INSTANCE_ID-}" \
+    "${SEED_BASE_DIR-}" \
+    "${SEED_ISO-}" \
+    "${SSH_AUTHORIZED_KEY-}" \
+    "${MKISOFS_BIN-}" \
+    "${XORRISO_BIN-}" \
+    "${CLOUD_INIT_SEED_DRY_RUN-}" \
+    "${CREATE_NETWORK_CONFIG-}"
+}
+
 test_render_user_data_uses_explicit_ssh_key_file() {
   local temp_dir ssh_key
   temp_dir="$(mktemp -d)"
@@ -50,6 +64,7 @@ test_render_user_data_uses_explicit_ssh_key_file() {
   SSH_AUTHORIZED_KEY=''
   SSH_AUTHORIZED_KEY_FILE="${temp_dir}/id_ed25519.pub"
   CLOUD_INIT_USERNAME='root'
+  mark_seed_globals_used
   printf '%s\n' "${ssh_key}" > "${SSH_AUTHORIZED_KEY_FILE}"
 
   ensure_seed_dir
@@ -69,6 +84,7 @@ test_render_meta_data_contains_instance_and_hostname() {
   SEED_BASE_DIR="${temp_dir}"
   SEED_DIR="${temp_dir}/seed"
   META_DATA_PATH="${SEED_DIR}/meta-data"
+  mark_seed_globals_used
 
   ensure_seed_dir
   render_meta_data
@@ -86,6 +102,7 @@ test_render_network_config_can_be_disabled() {
   SEED_BASE_DIR="${temp_dir}"
   SEED_DIR="${temp_dir}/seed"
   NETWORK_CONFIG_PATH="${SEED_DIR}/network-config"
+  mark_seed_globals_used
 
   ensure_seed_dir
   render_network_config
@@ -111,6 +128,7 @@ test_build_seed_iso_cmd_uses_mkisofs() {
   CREATE_NETWORK_CONFIG='1'
   MKISOFS_BIN="${mkisofs_bin}"
   XORRISO_BIN="${temp_dir}/missing-xorriso"
+  mark_seed_globals_used
 
   make_fake_iso_builder "${mkisofs_bin}"
 
@@ -149,6 +167,7 @@ test_main_dry_run_prints_iso_command() {
   XORRISO_BIN="${temp_dir}/missing-xorriso"
   CLOUD_INIT_SEED_DRY_RUN='1'
   CREATE_NETWORK_CONFIG='1'
+  mark_seed_globals_used
 
   make_fake_iso_builder "${mkisofs_bin}"
 

@@ -1,9 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
-__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
@@ -59,7 +54,6 @@ from ansible.module_utils.six import string_types
 from ansible.module_utils.urls import open_url
 from ansible.plugins.action import ActionBase
 
-
 SYSLOG_SEVERITIES = {
     "emerg": 0,
     "alert": 1,
@@ -101,9 +95,14 @@ def _syslog_body(app_name, state, severity, message):
     timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     hostname = socket.gethostname()
     sanitized = " ".join(message.splitlines()).replace('"', "'")
-    return (
-        '<%d>1 %s %s %s - - - state="%s" severity_code="%d" message="%s"'
-        % (pri, timestamp, hostname, app_name, state, severity, sanitized)
+    return '<%d>1 %s %s %s - - - state="%s" severity_code="%d" message="%s"' % (
+        pri,
+        timestamp,
+        hostname,
+        app_name,
+        state,
+        severity,
+        sanitized,
     )
 
 
@@ -122,8 +121,13 @@ class ActionModule(ActionBase):
         if not isinstance(msg, string_types) or not msg:
             raise AnsibleActionFail("msg must be a non-empty string")
 
-        url = self._task.args.get("url", os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh")))
-        topic = _state_topic(self._task.args.get("state", "info"), self._task.args.get("topic", task_vars.get("topic")))
+        url = self._task.args.get(
+            "url", os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh"))
+        )
+        topic = _state_topic(
+            self._task.args.get("state", "info"),
+            self._task.args.get("topic", task_vars.get("topic")),
+        )
         if not topic:
             raise AnsibleActionFail("No ntfy topic configured")
 
@@ -145,7 +149,9 @@ class ActionModule(ActionBase):
         if token:
             headers["Authorization"] = "Bearer %s" % token
 
-        response = open_url(url, data=json.dumps(data), method="POST", headers=headers, http_agent="Ansible/ntfy")
+        response = open_url(
+            url, data=json.dumps(data), method="POST", headers=headers, http_agent="Ansible/ntfy"
+        )
         response_data = json.loads(to_text(response.read()))
 
         result.update(

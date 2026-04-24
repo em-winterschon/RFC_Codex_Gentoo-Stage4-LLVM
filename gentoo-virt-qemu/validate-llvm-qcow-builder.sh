@@ -134,52 +134,52 @@ validate_mode() {
 parse_args() {
   while (($# > 0)); do
     case "$1" in
-      --mode)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--mode requires a value'
-        MODE="$2"
-        shift 2
-        ;;
-      --working-dir)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--working-dir requires a value'
-        WORKING_DIR="$2"
-        shift 2
-        ;;
-      --ssh-pubkey)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--ssh-pubkey requires a value'
-        SSH_PUBKEY="$2"
-        shift 2
-        ;;
-      --serial-mode)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--serial-mode requires a value'
-        QEMU_SERIAL_MODE="$2"
-        shift 2
-        ;;
-      --wait-for-ssh)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--wait-for-ssh requires a value'
-        WAIT_FOR_SSH="$2"
-        shift 2
-        ;;
-      --log-dir)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--log-dir requires a value'
-        LOG_DIR="$2"
-        shift 2
-        ;;
-      --log-file)
-        [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--log-file requires a value'
-        LOG_FILE="$2"
-        shift 2
-        ;;
-      --trace)
-        VALIDATOR_TRACE=1
-        shift
-        ;;
-      --help|-h)
-        usage
-        exit 0
-        ;;
-      *)
-        fail "${EXIT_USAGE}" "Unknown argument: $1"
-        ;;
+    --mode)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--mode requires a value'
+      MODE="$2"
+      shift 2
+      ;;
+    --working-dir)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--working-dir requires a value'
+      WORKING_DIR="$2"
+      shift 2
+      ;;
+    --ssh-pubkey)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--ssh-pubkey requires a value'
+      SSH_PUBKEY="$2"
+      shift 2
+      ;;
+    --serial-mode)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--serial-mode requires a value'
+      QEMU_SERIAL_MODE="$2"
+      shift 2
+      ;;
+    --wait-for-ssh)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--wait-for-ssh requires a value'
+      WAIT_FOR_SSH="$2"
+      shift 2
+      ;;
+    --log-dir)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--log-dir requires a value'
+      LOG_DIR="$2"
+      shift 2
+      ;;
+    --log-file)
+      [[ $# -ge 2 ]] || fail "${EXIT_USAGE}" '--log-file requires a value'
+      LOG_FILE="$2"
+      shift 2
+      ;;
+    --trace)
+      VALIDATOR_TRACE=1
+      shift
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "${EXIT_USAGE}" "Unknown argument: $1"
+      ;;
     esac
   done
 }
@@ -230,19 +230,19 @@ running_qemu_for_qcow() {
 
 validate_runtime_state() {
   case "${MODE}" in
-    build|full)
-      if running_qemu_for_qcow; then
-        fail "${EXIT_PREREQ}" "QCOW image is in use by a running QEMU process: ${QCOW_IMAGE}"
-      fi
-      ;;
+  build | full)
+    if running_qemu_for_qcow; then
+      fail "${EXIT_PREREQ}" "QCOW image is in use by a running QEMU process: ${QCOW_IMAGE}"
+    fi
+    ;;
   esac
 
   case "${MODE}" in
-    launch)
-      if running_qemu_for_qcow; then
-        fail "${EXIT_PREREQ}" "Stage3 VM is already running from QCOW image: ${QCOW_IMAGE}"
-      fi
-      ;;
+  launch)
+    if running_qemu_for_qcow; then
+      fail "${EXIT_PREREQ}" "Stage3 VM is already running from QCOW image: ${QCOW_IMAGE}"
+    fi
+    ;;
   esac
 }
 
@@ -298,20 +298,20 @@ run_launch() {
 
 run_mode() {
   case "${MODE}" in
-    build-dry-run)
-      run_build_dry_run
-      ;;
-    build)
-      run_build
-      ;;
-    launch)
-      run_launch
-      ;;
-    full)
-      run_build_dry_run
-      run_build
-      run_launch
-      ;;
+  build-dry-run)
+    run_build_dry_run
+    ;;
+  build)
+    run_build
+    ;;
+  launch)
+    run_launch
+    ;;
+  full)
+    run_build_dry_run
+    run_build
+    run_launch
+    ;;
   esac
 }
 

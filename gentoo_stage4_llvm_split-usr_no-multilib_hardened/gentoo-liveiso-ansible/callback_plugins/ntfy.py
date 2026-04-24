@@ -1,9 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
-__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
@@ -77,7 +72,9 @@ class CallbackModule(CallbackBase):
         self.warnings = []
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
-        super(CallbackModule, self).set_options(task_keys=task_keys, var_options=var_options, direct=direct)
+        super(CallbackModule, self).set_options(
+            task_keys=task_keys, var_options=var_options, direct=direct
+        )
 
     def _enabled(self):
         enabled = self.get_option("ntfy_enabled")
@@ -90,7 +87,9 @@ class CallbackModule(CallbackBase):
         env_key = "ANSIBLE_NTFY_TOPIC_%s" % state.strip().upper().replace("-", "_")
         return os.getenv(
             env_key,
-            os.getenv("ANSIBLE_NTFY_TOPIC", os.getenv("NTFY_TOPIC", self.get_option("ntfy_topic") or "")),
+            os.getenv(
+                "ANSIBLE_NTFY_TOPIC", os.getenv("NTFY_TOPIC", self.get_option("ntfy_topic") or "")
+            ),
         )
 
     def _severity_value(self, state):
@@ -107,9 +106,13 @@ class CallbackModule(CallbackBase):
         timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         hostname = socket.gethostname()
         sanitized = " ".join(str(message).splitlines()).replace('"', "'")
-        return (
-            '<%d>1 %s %s ansible-callback - - - state="%s" severity_code="%d" message="%s"'
-            % (pri, timestamp, hostname, state, severity, sanitized)
+        return '<%d>1 %s %s ansible-callback - - - state="%s" severity_code="%d" message="%s"' % (
+            pri,
+            timestamp,
+            hostname,
+            state,
+            severity,
+            sanitized,
         )
 
     def _notify(self, state, title, message, tags=None):
@@ -143,7 +146,12 @@ class CallbackModule(CallbackBase):
 
     def v2_playbook_on_start(self, playbook):
         self.playbook_name = getattr(playbook, "_file_name", None) or "ansible-playbook"
-        self._notify("start", "Ansible started: %s" % self.playbook_name, "playbook=%s" % self.playbook_name, ["ansible", "start"])
+        self._notify(
+            "start",
+            "Ansible started: %s" % self.playbook_name,
+            "playbook=%s" % self.playbook_name,
+            ["ansible", "start"],
+        )
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         self.failures.append(result)
@@ -152,7 +160,8 @@ class CallbackModule(CallbackBase):
         self._notify(
             "fail",
             "Ansible task failed: %s" % task_name,
-            "playbook=%s host=%s task=%s ignore_errors=%s" % (self.playbook_name, host, task_name, ignore_errors),
+            "playbook=%s host=%s task=%s ignore_errors=%s"
+            % (self.playbook_name, host, task_name, ignore_errors),
             ["ansible", "failure"],
         )
 
@@ -199,5 +208,5 @@ class CallbackModule(CallbackBase):
 
         state = "fail" if has_failures else "success"
         title = "Ansible %s: %s" % (state, self.playbook_name)
-        message = "playbook=%s hosts=\"%s\"" % (self.playbook_name, "; ".join(summary))
+        message = 'playbook=%s hosts="%s"' % (self.playbook_name, "; ".join(summary))
         self._notify(state, title, message, ["ansible", state])
