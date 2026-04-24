@@ -1,0 +1,14 @@
+# Configuration for codex-approval-watcher
+
+codex_approval_watcher_description="Codex ntfy approval watcher"
+codex_approval_watcher_user="root"
+codex_approval_watcher_group="root"
+codex_approval_watcher_repo_root="/root/RFC_Codex_Gentoo-Stage4-LLVM"
+codex_approval_watcher_env_file="/root/.codex/ntfy-pub-subs.export.sh"
+codex_approval_watcher_log_file="/root/.codex/log/codex-tui.log"
+codex_approval_watcher_state_file="/root/.codex/approval-watcher-state.json"
+codex_approval_watcher_output_log="/var/log/codex-approval-watcher.log"
+codex_approval_watcher_error_log="/var/log/codex-approval-watcher.err.log"
+codex_approval_watcher_retry="TERM/30/KILL/5"
+codex_approval_watcher_respawn_delay="5"
+codex_approval_watcher_respawn_max="0"

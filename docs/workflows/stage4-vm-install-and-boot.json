@@ -1,0 +1,196 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage4-vm-install-and-boot",
+    "description": "Build the LLVM/OpenRC stage3 QCOW, launch the installer VM, run the Ansible install, and validate boot from bpool+rpool target disks.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "repo_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM",
+      "description": "Primary repository checkout."
+    },
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible subtree used for install orchestration."
+    },
+    {
+      "name": "ssh_public_key_file",
+      "required": true,
+      "description": "Authorized public key injected into the QCOW builder and used for SSH login."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/vm-stage4/hosts.yml",
+      "description": "Inventory for the local stage4 validation VM."
+    },
+    {
+      "name": "ansible_ssh_args",
+      "required": true,
+      "default": "-o ControlMaster=no -o ControlPath=none -o StrictHostKeyChecking=no -o ConnectTimeout=10",
+      "description": "SSH arguments used by Ansible against the validation VM."
+    }
+  ],
+  "stages": [
+    {
+      "id": "validate-shell-suite",
+      "summary": "Run repo shell validation before host or VM operations.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "tests/shell/run-tests.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "build-stage3-qcow",
+      "summary": "Build the LLVM/OpenRC QCOW image used as the installer VM boot disk.",
+      "cwd": "${repo_root}",
+      "env": {
+        "SSH_AUTHORIZED_KEY_FILE": "${ssh_public_key_file}"
+      },
+      "command": [
+        "bash",
+        "gentoo-virt-qemu/build-stage3-qcow.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/opt/gentoo-virt-qemu/stage3/images/gentoo-stage4-testvm.qcow2"
+      ]
+    },
+    {
+      "id": "launch-installer-vm",
+      "summary": "Launch the installer VM from the QCOW image and wait for SSH.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/opt/gentoo-virt-qemu/stage3/state/gentoo-stage4-testvm.serial.log"
+      ],
+      "notes": [
+        "Default launcher settings use QEMU_BOOT_SOURCE=qcow and SSH forwarding to 127.0.0.1:2222."
+      ]
+    },
+    {
+      "id": "ansible-ping",
+      "summary": "Confirm Ansible connectivity to the installer VM.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_STDOUT_CALLBACK": "default",
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}"
+      },
+      "command": [
+        "ansible",
+        "stage4-vm",
+        "-i",
+        "${inventory}",
+        "-m",
+        "ping"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "ansible-install",
+      "summary": "Run the full installer workflow against the validation VM target disks.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_STDOUT_CALLBACK": "default",
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}"
+      },
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/install.yml"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "notes": [
+        "This stage is destructive to the target disks described by the vm-stage4 inventory."
+      ]
+    },
+    {
+      "id": "repair-boot-role",
+      "summary": "Optional targeted rerun when iterating on ZFSBootMenu, EFI, or network boot state.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_STDOUT_CALLBACK": "default",
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}"
+      },
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/install.yml",
+        "-e",
+        "@/tmp/ansible-resume-roles.json"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "notes": [
+        "/tmp/ansible-resume-roles.json is expected to contain selected_roles such as preflight, boot, and network."
+      ]
+    },
+    {
+      "id": "boot-target-disks",
+      "summary": "Boot directly from the installed bpool+rpool disks instead of the installer QCOW.",
+      "cwd": "${repo_root}",
+      "env": {
+        "QEMU_BOOT_SOURCE": "target-disks",
+        "QEMU_SERIAL_MODE": "stdio",
+        "QEMU_DAEMONIZE": "0",
+        "WAIT_FOR_SSH": "0"
+      },
+      "command": [
+        "bash",
+        "gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "serial output from ZFSBootMenu and the installed target system"
+      ]
+    },
+    {
+      "id": "verify-installed-target-ssh",
+      "summary": "Verify the installed target responds on the forwarded SSH port.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=10",
+        "-p",
+        "2222",
+        "root@127.0.0.1"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

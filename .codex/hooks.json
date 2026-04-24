@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/codex_hook_with_env.sh",
+            "timeout": 600,
+            "statusMessage": "Waiting for remote ntfy approval"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/codex_hook_with_env.sh",
+            "timeout": 600,
+            "statusMessage": "Waiting for remote ntfy reply"
+          }
+        ]
+      }
+    ]
+  }
+}

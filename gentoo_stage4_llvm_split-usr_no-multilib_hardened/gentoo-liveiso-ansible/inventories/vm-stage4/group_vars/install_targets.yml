@@ -48,6 +48,8 @@ gpu_stack: none
 
 kernel_strategy: gentoo-kernel-bin
 boot_strategy: zfsbootmenu
+zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
+zfsbootmenu_timeout: 0
 install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
 install_openssh: true
 install_networkmanager: true

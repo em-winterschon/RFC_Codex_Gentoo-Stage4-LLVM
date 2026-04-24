@@ -4,7 +4,7 @@
     zpool_root_vdev_spec: >-
       {% if storage_layout == 'single-drive' %}
       {{ root_partitions | join(' ') }}
-      {% elif storage_layout == 'zfs-mirror' %}
+      {% elif storage_layout in ['zfs-mirror', 'zfs-boot-root-mirror'] %}
       mirror {{ root_partitions | join(' ') }}
       {% elif storage_layout == 'zraid1' %}
       raidz1 {{ root_partitions | join(' ') }}

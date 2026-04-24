@@ -1,0 +1,56 @@
+# Workflow Manifests
+
+This repository keeps repeatable operational procedures in machine-readable JSON
+under `docs/workflows/`.
+
+Goals:
+- make host and VM workflows reproducible
+- keep stage ordering explicit
+- capture command lines, required environment, expected exit codes, and major artifacts
+- allow external tooling to consume the same workflow definitions that humans read
+
+## Manifest format
+
+Each workflow manifest uses:
+
+- `apiVersion`
+- `kind`
+- `metadata`
+- `variables`
+- `stages`
+
+Each stage may define:
+
+- `id`
+- `summary`
+- `cwd`
+- `env`
+- `command`
+- `expectedExitCodes`
+- `artifacts`
+- `notes`
+
+Variable interpolation is shell-style documentation only. Values such as
+`${repo_root}` or `${ssh_public_key_file}` are placeholders for the operator or
+the calling automation layer.
+
+## Included manifests
+
+- [codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
+  persistent ntfy approval-watcher installation and validation on a Gentoo/OpenRC host
+- [stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
+  Stage4 VM build, launch, Ansible install, and target-disk boot validation flow
+
+## Validation
+
+Workflow manifests are validated by:
+
+```bash
+bash tests/shell/test_workflow_manifests.sh
+```
+
+The repo-wide shell suite includes that check:
+
+```bash
+bash tests/shell/run-tests.sh
+```

@@ -16,6 +16,8 @@ RPOOL_DISK0="${RPOOL_DISK0-/dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A5659}"
 RPOOL_DISK1="${RPOOL_DISK1-/dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A58E2}"
 QEMU_BIN="${QEMU_BIN:-/usr/bin/qemu-system-x86_64}"
 EFI_FIRM="${EFI_FIRM:-/usr/share/edk2-ovmf/OVMF_CODE.fd}"
+EFI_VARS_TEMPLATE="${EFI_VARS_TEMPLATE:-/usr/share/edk2-ovmf/OVMF_VARS.fd}"
+EFI_VARS_FILE="${EFI_VARS_FILE:-${STAGE3_IMAGE_DIR}/state/${INSTANCE_NAME}.OVMF_VARS.fd}"
 QEMU_MACHINE="${QEMU_MACHINE:-q35,accel=kvm}"
 QEMU_CPU="${QEMU_CPU:-host}"
 QEMU_SMP="${QEMU_SMP:-8}"
@@ -153,6 +155,11 @@ validate_qcow_image() {
   [[ -f "${QCOW_IMAGE}" ]] || fail "QCOW_IMAGE is missing: ${QCOW_IMAGE}"
 }
 
+validate_efi_firmware() {
+  [[ -f "${EFI_FIRM}" ]] || fail "EFI_FIRM is missing: ${EFI_FIRM}"
+  [[ -f "${EFI_VARS_TEMPLATE}" ]] || fail "EFI_VARS_TEMPLATE is missing: ${EFI_VARS_TEMPLATE}"
+}
+
 validate_net_backend() {
   local backend help_output
 
@@ -263,7 +270,15 @@ append_serial_args() {
   esac
 }
 
+prepare_ovmf_vars_file() {
+  mkdir -p "$(dirname "${EFI_VARS_FILE}")"
+  if [[ ! -f "${EFI_VARS_FILE}" ]]; then
+    cp "${EFI_VARS_TEMPLATE}" "${EFI_VARS_FILE}"
+  fi
+}
+
 build_qemu_cmd() {
+  prepare_ovmf_vars_file
   QEMU_CMD=(
     "${QEMU_BIN}"
     -enable-kvm
@@ -271,7 +286,8 @@ build_qemu_cmd() {
     -cpu "${QEMU_CPU}"
     -smp "${QEMU_SMP}"
     -m "${QEMU_MEMORY_MIB}"
-    -bios "${EFI_FIRM}"
+    -drive "if=pflash,format=raw,readonly=on,file=${EFI_FIRM}"
+    -drive "if=pflash,format=raw,file=${EFI_VARS_FILE}"
     -smbios 'type=0,uefi=on'
     -device 'ich9-ahci,id=ahci'
   )
@@ -399,6 +415,7 @@ main() {
   setup_launcher_logging
   validate_boot_source
   validate_qcow_image
+  validate_efi_firmware
   validate_host_disks
   validate_net_backend
   validate_display_backend
