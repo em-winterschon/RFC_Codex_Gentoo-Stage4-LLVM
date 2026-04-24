@@ -134,6 +134,28 @@ portage_load_average: 0
 portage_gpg_key_refresh: false
 
 # Optional role override. Leave undefined to run the default role sequence.
+# Preferred staged execution path:
+# install_sequence: full-default
+# install_stage_filter: []
+# install_debug_checkpoints: false
+#
+# Sequence enum values:
+#   full-default
+#   full-modular-zfs
+#   storage-foundation
+#   chroot-bootstrap
+#   target-integration
+#   repair-boot
+#   repair-services
+#
+# Optional stage filter example:
+# install_stage_filter:
+#   - target-integration
+#
+# The run-install-sequence.sh wrapper also enables a structured JSONL
+# control-flow pipeline via ANSIBLE_CONTROL_FLOW_PATH so long-running
+# installs can be tailed remotely.
+#
 # Default sequence:
 # selected_roles:
 #   - preflight

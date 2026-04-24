@@ -11,6 +11,8 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
   persistent ntfy approval-watcher install and validation flow
 - [docs/workflows/stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
   Stage4 VM build, install, and target-disk boot validation flow
+- [docs/workflows/stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)
+  staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
 
 ## Notifications
 
@@ -119,6 +121,20 @@ PR and release validation:
 - `.github/workflows/notify.yml` sends repository event notifications to ntfy when configured
 - the shell validation sequence currently covers shell syntax checks for committed `.sh` files, generator/output parity for the Ansible Python environment helper, and unit tests for `gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
 - Python linting and formatting are enforced through `ruff` and `black`
+
+## Stage4 control flow
+
+The Ansible Stage4 subtree now supports staged installer execution plus a structured JSONL
+control-flow pipeline that can be tailed remotely during imaging work.
+
+Primary operator entry points:
+
+- `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/scripts/run-install-sequence.sh`
+- `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/scripts/watch-control-flow.py`
+
+The control-flow callback logs playbook, play, task, checkpoint, and final stats events into a
+JSONL stream under `/tmp/ansible-control-flow` by default, or an explicit path supplied through
+`ANSIBLE_CONTROL_FLOW_PATH`.
 
 ## Codex ntfy
 

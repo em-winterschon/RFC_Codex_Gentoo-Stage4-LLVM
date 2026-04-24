@@ -6,6 +6,7 @@
   vars_files:
     - ../vars/cpu_profiles.yml
     - ../vars/gpu_profiles.yml
+    - ../vars/install_sequences.yml
   vars:
     default_install_roles:
       - preflight
@@ -21,9 +22,73 @@
       - services
 
   tasks:
-    - name: Include selected roles
-      ansible.builtin.include_role:
-        name: "{{ item }}"
-      loop: "{{ selected_roles | default(default_install_roles) }}"
+    - name: Validate requested install sequence
+      ansible.builtin.assert:
+        that:
+          - selected_roles is defined or install_sequence in install_role_sequences
+        fail_msg: >-
+          Unknown install_sequence={{ install_sequence }}.
+          Supported values: {{ install_role_sequences.keys() | sort | join(', ') }}
+
+    - name: Resolve install stages from selected_roles override or install_sequence
+      ansible.builtin.set_fact:
+        resolved_install_sequence_name: "{{ 'selected-roles' if selected_roles is defined else install_sequence }}"
+        resolved_install_stages: >-
+          {{
+            (
+              [{
+                'id': 'selected-roles',
+                'summary': 'Custom role override supplied through selected_roles',
+                'roles': selected_roles
+              }]
+            )
+            if selected_roles is defined
+            else install_role_sequences[install_sequence].stages
+          }}
+        resolved_install_roles_flat: >-
+          {{
+            (
+              selected_roles
+              if selected_roles is defined
+              else install_role_sequences[install_sequence].stages
+                | map(attribute='roles')
+                | flatten
+                | unique
+                | list
+            )
+          }}
+
+    - name: Filter install stages when install_stage_filter is provided
+      ansible.builtin.set_fact:
+        resolved_install_stages: >-
+          {{
+            resolved_install_stages
+            | selectattr('id', 'in', install_stage_filter)
+            | list
+          }}
+        resolved_install_roles_flat: >-
+          {{
+            (
+              resolved_install_stages
+              | selectattr('id', 'in', install_stage_filter)
+              | map(attribute='roles')
+              | flatten
+              | unique
+              | list
+            )
+          }}
+      when: install_stage_filter | length > 0
+
+    - name: Assert at least one install stage remains after filtering
+      ansible.builtin.assert:
+        that:
+          - resolved_install_stages | length > 0
+        fail_msg: >-
+          No install stages remain after applying install_stage_filter={{ install_stage_filter }}.
+
+    - name: Execute install stages
+      ansible.builtin.include_tasks: tasks/run_install_stage.yml
+      loop: "{{ resolved_install_stages }}"
       loop_control:
-        label: "Running role {{ item }}"
+        loop_var: install_stage
+        label: "{{ resolved_install_sequence_name }} :: {{ install_stage.id }}"

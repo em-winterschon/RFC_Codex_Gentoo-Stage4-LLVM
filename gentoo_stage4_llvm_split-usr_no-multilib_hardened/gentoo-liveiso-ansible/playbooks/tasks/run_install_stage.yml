@@ -1,0 +1,55 @@
+---
+- name: Checkpoint start | {{ resolved_install_sequence_name }} | {{ install_stage.id }}
+  ansible.builtin.debug:
+    msg:
+      checkpoint: start
+      sequence: "{{ resolved_install_sequence_name }}"
+      stage_id: "{{ install_stage.id }}"
+      summary: "{{ install_stage.summary | default('') }}"
+      roles: "{{ install_stage.roles }}"
+  when: install_debug_checkpoints | bool
+
+- name: Stage {{ install_stage.id }} | {{ install_stage.summary | default('') }}
+  block:
+    - name: Set active control-flow stage | {{ install_stage.id }}
+      ansible.builtin.set_stats:
+        data:
+          install_sequence: "{{ resolved_install_sequence_name }}"
+          install_stage_id: "{{ install_stage.id }}"
+          install_stage_summary: "{{ install_stage.summary | default('') }}"
+          install_stage_roles: "{{ install_stage.roles }}"
+        per_host: false
+
+    - name: Include role {{ install_stage_role }} for stage {{ install_stage.id }}
+      ansible.builtin.include_role:
+        name: "{{ install_stage_role }}"
+      loop: "{{ install_stage.roles }}"
+      loop_control:
+        loop_var: install_stage_role
+        label: "{{ resolved_install_sequence_name }} :: {{ install_stage.id }} :: {{ install_stage_role }}"
+  rescue:
+    - name: Checkpoint failure | {{ resolved_install_sequence_name }} | {{ install_stage.id }}
+      ansible.builtin.debug:
+        msg:
+          checkpoint: failure
+          sequence: "{{ resolved_install_sequence_name }}"
+          stage_id: "{{ install_stage.id }}"
+          summary: "{{ install_stage.summary | default('') }}"
+          roles: "{{ install_stage.roles }}"
+      when: install_debug_checkpoints | bool
+
+    - name: Abort on failed install stage | {{ install_stage.id }}
+      ansible.builtin.fail:
+        msg: >-
+          Install sequence {{ resolved_install_sequence_name }} failed in stage
+          {{ install_stage.id }} ({{ install_stage.summary | default('no summary') }}).
+  always:
+    - name: Checkpoint end | {{ resolved_install_sequence_name }} | {{ install_stage.id }}
+      ansible.builtin.debug:
+        msg:
+          checkpoint: end
+          sequence: "{{ resolved_install_sequence_name }}"
+          stage_id: "{{ install_stage.id }}"
+          summary: "{{ install_stage.summary | default('') }}"
+          roles: "{{ install_stage.roles }}"
+      when: install_debug_checkpoints | bool

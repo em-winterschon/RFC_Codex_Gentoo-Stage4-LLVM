@@ -1,0 +1,138 @@
+---
+install_sequence: full-default
+install_stage_filter: []
+install_debug_checkpoints: false
+
+install_role_sequences:
+  full-default:
+    description: Default end-to-end installer sequence using the repo's native roles.
+    stages:
+      - id: preflight
+        summary: Validate operator intent, firmware mode, and selected install profile inputs.
+        roles:
+          - preflight
+      - id: liveiso-prepare
+        summary: Prepare the running LiveISO environment and target mount root.
+        roles:
+          - liveiso_prepare
+      - id: storage-foundation
+        summary: Partition and provision the selected target devices.
+        roles:
+          - storage
+      - id: stage3-bootstrap
+        summary: Extract stage3, compose the local profile overlay, and prepare the chroot.
+        roles:
+          - stage3
+          - profile
+          - portage
+          - chroot_base
+      - id: target-integration
+        summary: Install the target package stack, boot flow, network, and managed services.
+        roles:
+          - system_packages
+          - boot
+          - network
+          - services
+
+  full-modular-zfs:
+    description: Modular installer sequence that keeps native ZFS, kernel, bootloader, and finalize roles explicit.
+    stages:
+      - id: preflight
+        summary: Validate operator intent, firmware mode, and selected install profile inputs.
+        roles:
+          - preflight
+      - id: liveiso-prepare
+        summary: Prepare the running LiveISO environment and target mount root.
+        roles:
+          - liveiso_prepare
+      - id: storage-foundation
+        summary: Partition devices and create native ZFS pools and datasets.
+        roles:
+          - storage
+          - zfs
+      - id: stage3-bootstrap
+        summary: Extract stage3, compose the local profile overlay, and prepare the chroot.
+        roles:
+          - stage3
+          - profile
+          - portage
+          - chroot_base
+      - id: target-integration
+        summary: Install the kernel, configure the bootloader, and apply final network and service state.
+        roles:
+          - kernel
+          - bootloader
+          - finalize
+
+  storage-foundation:
+    description: Destructive storage-only foundation pass for device wiping, partitioning, and ZFS provisioning.
+    stages:
+      - id: preflight
+        summary: Validate operator intent before destructive storage work.
+        roles:
+          - preflight
+      - id: liveiso-prepare
+        summary: Prepare the running LiveISO environment and target mount root.
+        roles:
+          - liveiso_prepare
+      - id: storage-foundation
+        summary: Partition devices and create native ZFS pools and datasets.
+        roles:
+          - storage
+          - zfs
+
+  chroot-bootstrap:
+    description: Populate the target root with stage3, profile overlay, Portage tuning, and chroot helpers.
+    stages:
+      - id: preflight
+        summary: Validate the target state before bootstrapping the chroot.
+        roles:
+          - preflight
+      - id: stage3-bootstrap
+        summary: Extract stage3, compose the local profile overlay, and prepare the chroot.
+        roles:
+          - stage3
+          - profile
+          - portage
+          - chroot_base
+
+  target-integration:
+    description: Install the target package stack, boot configuration, network, and managed services.
+    stages:
+      - id: preflight
+        summary: Validate the target state before target integration.
+        roles:
+          - preflight
+      - id: target-integration
+        summary: Install the target package stack, boot flow, network, and managed services.
+        roles:
+          - system_packages
+          - boot
+          - network
+          - services
+
+  repair-boot:
+    description: Targeted rerun for ZFSBootMenu, kernel/initramfs materialization, and boot-time networking.
+    stages:
+      - id: preflight
+        summary: Validate target state before boot repair.
+        roles:
+          - preflight
+      - id: boot-repair
+        summary: Rebuild boot integration and target networking.
+        roles:
+          - boot
+          - network
+
+  repair-services:
+    description: Targeted rerun for network and managed OpenRC service state.
+    stages:
+      - id: preflight
+        summary: Validate target state before service repair.
+        roles:
+          - preflight
+      - id: service-repair
+        summary: Reapply network and managed OpenRC services.
+        roles:
+          - network
+          - services
