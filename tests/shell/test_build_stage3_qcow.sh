@@ -28,13 +28,23 @@ assert_equals() {
 
 mark_stage3_builder_globals_used() {
   : "${STAGE3_MIRROR_ROOT-}" \
+    "${STAGE3_TARGET-}" \
+    "${STAGE3_PROFILE_PRESET-}" \
+    "${STAGE3_CACHE_DIR-}" \
     "${QEMU_STAGE3_BUILD_DRY_RUN-}" \
     "${STAGE3_VERIFY_CHECKSUM-}" \
     "${SSH_AUTHORIZED_KEY-}" \
     "${SSH_AUTHORIZED_KEY_FILE-}" \
     "${STAGE3_ROOT_PASSWORD_HASH-}" \
     "${PORTAGE_SYNC_COMMAND-}" \
-    "${STAGE3_LATEST_TXT-}"
+    "${STAGE3_LATEST_TXT-}" \
+    "${STAGE3_LLVM_TARGETS-}" \
+    "${STAGE3_STAGE_TARBALL_NAME-}" \
+    "${STAGE3_STAGE_TARBALL_URL-}" \
+    "${STAGE3_STAGE_SHA256_URL-}" \
+    "${STAGE3_STAGE_TARBALL_PATH-}" \
+    "${STAGE3_STAGE_SHA256_PATH-}" \
+    "${STAGE3_STAGE_SHA256-}"
 }
 
 make_fake_host_tools() {
@@ -186,6 +196,7 @@ test_main_dry_run_prints_stage3_build_plan() {
 stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
 EOF
   }
+  fetch_text > /dev/null
 
   set +e
   output="$(main 2>&1)"
@@ -238,6 +249,7 @@ test_hardened_profile_preset_renders_profile_specific_portage_config() {
 stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
 EOF
   }
+  fetch_text > /dev/null
 
   set +e
   output="$(main 2>&1)"
