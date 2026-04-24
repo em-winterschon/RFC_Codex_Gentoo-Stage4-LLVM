@@ -297,21 +297,28 @@ ensure_overlay_image() {
 }
 
 ensure_seed_iso() {
+  local seed_instance_name seed_state_dir seed_dir_path seed_iso_path seed_dry_run
+
   if [[ "${GENERATE_SEED}" != '1' ]]; then
     [[ -f "${SEED_ISO}" || "${QEMU_LAUNCH_DRY_RUN}" == '1' ]] || fail "SEED_ISO is missing and GENERATE_SEED=0: ${SEED_ISO}"
     return 0
   fi
 
-  (
-    INSTANCE_NAME="${INSTANCE_NAME}"
-    LOCAL_HOSTNAME="${INSTANCE_NAME}"
-    INSTANCE_ID="${INSTANCE_NAME}"
-    SEED_BASE_DIR="${STATE_DIR}"
-    SEED_DIR="${SEED_DIR}"
-    SEED_ISO="${SEED_ISO}"
-    CLOUD_INIT_SEED_DRY_RUN="${QEMU_LAUNCH_DRY_RUN}"
+  seed_instance_name="${INSTANCE_NAME}"
+  seed_state_dir="${STATE_DIR}"
+  seed_dir_path="${SEED_DIR}"
+  seed_iso_path="${SEED_ISO}"
+  seed_dry_run="${QEMU_LAUNCH_DRY_RUN}"
+
+  env \
+    INSTANCE_NAME="${seed_instance_name}" \
+    LOCAL_HOSTNAME="${seed_instance_name}" \
+    INSTANCE_ID="${seed_instance_name}" \
+    SEED_BASE_DIR="${seed_state_dir}" \
+    SEED_DIR="${seed_dir_path}" \
+    SEED_ISO="${seed_iso_path}" \
+    CLOUD_INIT_SEED_DRY_RUN="${seed_dry_run}" \
     bash "${SEED_SCRIPT}"
-  )
 }
 
 append_host_disk() {

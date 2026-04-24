@@ -27,15 +27,22 @@ assert_equals() {
 }
 
 mark_cloud_launch_globals_used() {
-  : "${QEMU_NETDEV_HELP_OUTPUT}" \
-    "${QEMU_DISPLAY_HELP_OUTPUT}" \
-    "${QEMU_SERIAL_MODE}" \
-    "${QEMU_DISPLAY_MODE}" \
-    "${QEMU_DEVICE_HELP_OUTPUT}" \
-    "${QEMU_BOOT_STRICT}" \
-    "${QEMU_BOOTDISK_ID}" \
-    "${QEMU_BOOTDISK_MODEL}" \
-    "${QEMU_BOOTDISK_BOOTINDEX}"
+  : "${QEMU_NETDEV_HELP_OUTPUT-}" \
+    "${QEMU_DISPLAY_HELP_OUTPUT-}" \
+    "${QEMU_SERIAL_MODE-}" \
+    "${QEMU_SERIAL_FILE-}" \
+    "${QEMU_DISPLAY_MODE-}" \
+    "${QEMU_DEVICE_HELP_OUTPUT-}" \
+    "${QEMU_BOOT_STRICT-}" \
+    "${QEMU_BOOTDISK_ID-}" \
+    "${QEMU_BOOTDISK_MODEL-}" \
+    "${QEMU_BOOTDISK_BOOTINDEX-}" \
+    "${QEMU_DAEMONIZE-}" \
+    "${WAIT_FOR_SSH-}" \
+    "${SSH_WAIT_TIMEOUT-}" \
+    "${SSH_BANNER_TIMEOUT-}" \
+    "${SSH_READY_HOST-}" \
+    "${SSH_READY_PORT-}"
 }
 
 reset_launcher_state() {
@@ -188,6 +195,7 @@ test_wait_for_ssh_ready_requires_banner_not_just_open_port() {
   QEMU_DAEMONIZE='1'
   SSH_WAIT_TIMEOUT='0'
   SSH_READY_PROBE='banner'
+  mark_cloud_launch_globals_used
 
   probe_ssh_banner() {
     return 1

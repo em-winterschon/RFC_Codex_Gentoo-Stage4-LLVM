@@ -25,7 +25,9 @@ class Config:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--print-config", action="store_true", help="Print resolved configuration as JSON and exit")
+    parser.add_argument(
+        "--print-config", action="store_true", help="Print resolved configuration as JSON and exit"
+    )
     return parser.parse_args()
 
 
@@ -42,7 +44,9 @@ def auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"} if token else {}
 
 
-def poll_topic(server: str, topic: str, token: str, since_ts: int) -> tuple[int, list[dict[str, Any]]]:
+def poll_topic(
+    server: str, topic: str, token: str, since_ts: int
+) -> tuple[int, list[dict[str, Any]]]:
     query = parse.urlencode({"poll": "1", "since": str(since_ts)})
     url = f"{server}/{topic}/json?{query}"
     req = request.Request(url, headers=auth_headers(token), method="GET")
@@ -64,7 +68,9 @@ def poll_topic(server: str, topic: str, token: str, since_ts: int) -> tuple[int,
     return newest_ts, messages
 
 
-def publish_message(server: str, topic: str, token: str, title: str, priority: str, body: str) -> None:
+def publish_message(
+    server: str, topic: str, token: str, title: str, priority: str, body: str
+) -> None:
     headers = {"User-Agent": "codex-ntfy-pubsub"}
     if title:
         headers["Title"] = title
@@ -82,7 +88,9 @@ def publish_message(server: str, topic: str, token: str, title: str, priority: s
 
 
 class Subscriber(threading.Thread):
-    def __init__(self, config: Config, topic: str, logs: list[tuple[str, str]], lock: threading.Lock) -> None:
+    def __init__(
+        self, config: Config, topic: str, logs: list[tuple[str, str]], lock: threading.Lock
+    ) -> None:
         super().__init__(daemon=True)
         self.config = config
         self.topic = topic
@@ -94,7 +102,9 @@ class Subscriber(threading.Thread):
     def run(self) -> None:
         while self.running:
             try:
-                newest_ts, messages = poll_topic(self.config.server, self.topic, self.config.token, self.since_ts)
+                newest_ts, messages = poll_topic(
+                    self.config.server, self.topic, self.config.token, self.since_ts
+                )
                 self.since_ts = newest_ts
                 if messages:
                     with self.lock:

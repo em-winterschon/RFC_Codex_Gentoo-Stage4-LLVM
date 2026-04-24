@@ -44,7 +44,7 @@ make_fake_host_tools() {
     umount \
     tar \
     chroot; do
-    cat > "${tool_dir}/${tool}" <<'EOF'
+    cat > "${tool_dir}/${tool}" << 'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
@@ -166,10 +166,10 @@ test_main_dry_run_prints_stage3_build_plan() {
   WORK_BOOTSTRAP_SCRIPT="${STAGE3_BUILD_DIR}/bootstrap-stage3-vm.sh"
   QCOW_IMAGE="${STAGE3_IMAGE_OUTPUT_DIR}/${INSTANCE_NAME}.qcow2"
   HOST_RESOLV_CONF="${temp_dir}/resolv.conf"
-  printf 'nameserver 1.1.1.1\n' >"${HOST_RESOLV_CONF}"
+  printf 'nameserver 1.1.1.1\n' > "${HOST_RESOLV_CONF}"
 
   fetch_text() {
-    cat <<'EOF'
+    cat << 'EOF'
 stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
 EOF
   }
@@ -221,7 +221,7 @@ test_hardened_profile_preset_renders_profile_specific_portage_config() {
   QCOW_IMAGE="${STAGE3_IMAGE_OUTPUT_DIR}/${INSTANCE_NAME}.qcow2"
 
   fetch_text() {
-    cat <<'EOF'
+    cat << 'EOF'
 stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
 EOF
   }
