@@ -149,6 +149,49 @@ That manifest documents the repeatable operator sequence for:
 - boot-role repair iterations
 - target-disk boot validation
 
+## ntfy notifications
+
+This subtree now includes both a controller-side callback plugin and a task-level
+action plugin for ntfy-compatible notifications:
+
+- `callback_plugins/ntfy.py`
+- `action_plugins/ntfy.py`
+
+The callback plugin is enabled in `ansible.cfg`, but it only emits notifications
+when configured. The lowest-friction setup is environment-based:
+
+```bash
+export ANSIBLE_NTFY_ENABLED=true
+export ANSIBLE_NTFY_URL=https://ntfy.sh
+export ANSIBLE_NTFY_TOPIC=replace-with-your-topic
+```
+
+Optional per-state topics:
+
+- `ANSIBLE_NTFY_TOPIC_SUCCESS`
+- `ANSIBLE_NTFY_TOPIC_FAIL`
+- `ANSIBLE_NTFY_TOPIC_ERROR`
+- `ANSIBLE_NTFY_TOPIC_WARNING`
+
+The callback plugin emits RFC 5424-style syslog lines in the ntfy message body and
+maps playbook states onto syslog-style severities:
+
+- playbook start: `info`
+- warnings: `warning`
+- task failures / unreachable hosts: `err`
+- successful completion: `notice`
+
+The action plugin can be used inside playbooks for explicit controller-side messages:
+
+```yaml
+- name: Notify ntfy that the install entered validation
+  ntfy:
+    msg: "Validation phase reached for {{ inventory_hostname }}"
+    state: notice
+    attrs:
+      tags: [hammer_and_wrench]
+```
+
 ### Translated modular roles
 
 The external `/opt/gentoo-liveiso-ansible` scaffolding used placeholder roles named `zfs`,

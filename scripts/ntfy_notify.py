@@ -258,13 +258,16 @@ def main() -> int:
         detail = exc.read().decode("utf-8", errors="replace")
         print(f"ERROR: ntfy HTTP {exc.code}: {detail}", file=sys.stderr)
         return 1
+    except error.URLError as exc:
+        print(f"ERROR: ntfy transport failed: {exc}", file=sys.stderr)
+        return 1
 
     if args.output == "body":
         print(payload["body"])
     else:
-        print(json.dumps(result, indent=2, sort_keys=True))
+        print(json.dumps({"ok": True, "result": result, "topic": payload["topic"]}, indent=2, sort_keys=True))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
