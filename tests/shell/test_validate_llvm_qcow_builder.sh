@@ -124,7 +124,7 @@ test_invalid_mode_fails_with_usage_code() {
 
   set +e
   output="$(
-      STAGE3_IMAGE_DIR="${temp_dir}" \
+    STAGE3_IMAGE_DIR="${temp_dir}" \
       bash "${VALIDATOR_SCRIPT}" \
       --mode nonsense \
       --working-dir "${temp_dir}" \

@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/qemu-pci-remap.sh
 source "${REPO_ROOT}/gentoo-virt-qemu/qemu-pci-remap.sh"
 
@@ -78,6 +79,7 @@ test_bind_device_uses_driver_override_and_probe() (
   ln -s "${SYSFS_ROOT}/bus/pci/drivers/nvme" "${device_root}/driver"
   ln -s "${SYSFS_ROOT}/kernel/iommu_groups/7" "${device_root}/iommu_group"
 
+  # shellcheck disable=SC2329
   write_sysfs() {
     local value="$1"
     local path="$2"
@@ -124,6 +126,7 @@ test_bind_is_noop_for_device_already_on_vfio() (
   ln -s "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" "${device_root}/driver"
   ln -s "${SYSFS_ROOT}/kernel/iommu_groups/9" "${device_root}/iommu_group"
 
+  # shellcheck disable=SC2329
   write_sysfs() {
     fail 'write_sysfs should not be called for a device already bound to vfio-pci'
   }

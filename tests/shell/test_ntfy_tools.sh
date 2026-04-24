@@ -75,8 +75,8 @@ test_codex_ntfy_wrapper_uses_coded_env() {
 
   output="$(
     CODEX_NTFY_URL=https://ntfy.sh \
-    CODEX_NTFY_TOPIC=codex-topic \
-    bash "${CODEX_NOTIFY}" success "done" --title "Codex done" --dry-run
+      CODEX_NTFY_TOPIC=codex-topic \
+      bash "${CODEX_NOTIFY}" success "done" --title "Codex done" --dry-run
   )"
 
   assert_contains "${output}" '"topic": "codex-topic"'
@@ -89,7 +89,7 @@ test_github_event_formatter_renders_pull_request_message() {
   temp_dir="$(mktemp -d)"
   payload="${temp_dir}/pull_request.json"
 
-  cat >"${payload}" <<'EOF'
+  cat > "${payload}" << 'EOF'
 {
   "action": "opened",
   "repository": {
@@ -132,7 +132,7 @@ test_codex_notify_event_renders_turn_complete_payload() {
 
   output="$(
     CODEX_NTFY_TOPIC=codex-alerts \
-    python3 "${CODEX_NOTIFY_EVENT}" --dry-run "${payload}"
+      python3 "${CODEX_NOTIFY_EVENT}" --dry-run "${payload}"
   )"
 
   assert_contains "${output}" '"topic": "codex-alerts"'
@@ -144,14 +144,14 @@ test_codex_notify_wrapper_sources_env_file() {
   local temp_dir env_file output
   temp_dir="$(mktemp -d)"
   env_file="${temp_dir}/ntfy.env"
-  cat >"${env_file}" <<'EOF'
+  cat > "${env_file}" << 'EOF'
 export CODEX_NTFY_URL='https://ntfy.sh'
 export CODEX_NTFY_TOPIC='codex-wrapper-topic'
 EOF
 
   output="$(
     CODEX_NTFY_ENV_FILE="${env_file}" \
-    bash "${CODEX_NOTIFY_WITH_ENV}" --dry-run '{"type":"agent-turn-complete","thread-id":"thread-1","turn-id":"turn-2","cwd":"/root/project","input-messages":["do work"],"last-assistant-message":"done"}'
+      bash "${CODEX_NOTIFY_WITH_ENV}" --dry-run '{"type":"agent-turn-complete","thread-id":"thread-1","turn-id":"turn-2","cwd":"/root/project","input-messages":["do work"],"last-assistant-message":"done"}'
   )"
 
   assert_contains "${output}" '"topic": "codex-wrapper-topic"'
@@ -162,15 +162,15 @@ test_codex_hook_wrapper_sources_env_file() {
   local temp_dir env_file output
   temp_dir="$(mktemp -d)"
   env_file="${temp_dir}/ntfy.env"
-  cat >"${env_file}" <<'EOF'
+  cat > "${env_file}" << 'EOF'
 export CODEX_NTFY_ALERT_TOPIC='codex-alerts-wrapper'
 export CODEX_NTFY_REPLY_TOPIC='codex-replies-wrapper'
 EOF
 
   output="$(
     CODEX_NTFY_ENV_FILE="${env_file}" \
-    CODEX_NTFY_TEST_REQUEST_ID='12345678' \
-    bash "${CODEX_HOOK_WITH_ENV}" --dry-run <<<'{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
+      CODEX_NTFY_TEST_REQUEST_ID='12345678' \
+      bash "${CODEX_HOOK_WITH_ENV}" --dry-run <<< '{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
   )"
 
   assert_contains "${output}" '"topic": "codex-alerts-wrapper"'
@@ -183,8 +183,8 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
 
   dry_output="$(
     CODEX_NTFY_ALERT_TOPIC=codex-alerts \
-    CODEX_NTFY_REPLY_TOPIC=codex-replies \
-    python3 "${CODEX_NTFY_HOOK}" --dry-run <<<"${payload}"
+      CODEX_NTFY_REPLY_TOPIC=codex-replies \
+      python3 "${CODEX_NTFY_HOOK}" --dry-run <<< "${payload}"
   )"
 
   assert_contains "${dry_output}" '"topic": "codex-alerts"'
@@ -192,10 +192,10 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
 
   reply_output="$(
     CODEX_NTFY_ALERT_TOPIC=codex-alerts \
-    CODEX_NTFY_REPLY_TOPIC=codex-replies \
-    CODEX_NTFY_TEST_REQUEST_ID='12345678' \
-    CODEX_NTFY_TEST_REPLIES='allow 12345678' \
-    python3 "${CODEX_NTFY_HOOK}" <<<'{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
+      CODEX_NTFY_REPLY_TOPIC=codex-replies \
+      CODEX_NTFY_TEST_REQUEST_ID='12345678' \
+      CODEX_NTFY_TEST_REPLIES='allow 12345678' \
+      python3 "${CODEX_NTFY_HOOK}" <<< '{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
   )"
 
   assert_contains "${reply_output}" '"decision"'
@@ -207,14 +207,14 @@ test_approval_watcher_exec_request_dry_run() {
   temp_dir="$(mktemp -d)"
   log_file="${temp_dir}/codex-tui.log"
   state_file="${temp_dir}/state.json"
-  cat >"${log_file}" <<'EOF'
+  cat > "${log_file}" << 'EOF'
 2026-04-24T00:00:00.000000Z  INFO session_loop{thread_id=thread-1}: codex_core::stream_events_utils: ToolCall: exec_command {"cmd":"bash -lc 'emerge -avuDN @world'","justification":"Need to update packages","sandbox_permissions":"require_escalated","workdir":"/root"} thread_id=thread-1
 2026-04-24T00:00:02.000000Z  INFO session_loop{thread_id=thread-1}:submission_dispatch{otel.name="op.dispatch.exec_approval" submission.id="req-123" codex.op="exec_approval"}: codex_core::codex: new
 EOF
 
   output="$(
     CODEX_NTFY_ALERT_TOPIC=codex-alerts \
-    python3 "${CODEX_APPROVAL_WATCHER}" \
+      python3 "${CODEX_APPROVAL_WATCHER}" \
       --dry-run \
       --from-start \
       --once \
@@ -234,14 +234,14 @@ test_approval_watcher_patch_request_dry_run() {
   temp_dir="$(mktemp -d)"
   log_file="${temp_dir}/codex-tui.log"
   state_file="${temp_dir}/state.json"
-  cat >"${log_file}" <<'EOF'
+  cat > "${log_file}" << 'EOF'
 2026-04-24T00:00:00.000000Z  INFO session_loop{thread_id=thread-1}: codex_core::stream_events_utils: ToolCall: apply_patch *** Begin Patch
 2026-04-24T00:00:02.000000Z  INFO session_loop{thread_id=thread-1}:submission_dispatch{otel.name="op.dispatch.patch_approval" submission.id="patch-456" codex.op="patch_approval"}: codex_core::codex: new
 EOF
 
   output="$(
     CODEX_NTFY_ALERT_TOPIC=codex-alerts \
-    python3 "${CODEX_APPROVAL_WATCHER}" \
+      python3 "${CODEX_APPROVAL_WATCHER}" \
       --dry-run \
       --from-start \
       --once \
@@ -259,9 +259,9 @@ test_ntfy_pubsub_tui_prints_config() {
 
   output="$(
     NTFY_URL=https://ntfy.example.invalid \
-    NTFY_ALERT_TOPIC=alerts-topic \
-    NTFY_REPLY_TOPIC=replies-topic \
-    python3 "${NTFY_PUBSUB_TUI}" --print-config
+      NTFY_ALERT_TOPIC=alerts-topic \
+      NTFY_REPLY_TOPIC=replies-topic \
+      python3 "${NTFY_PUBSUB_TUI}" --print-config
   )"
 
   assert_contains "${output}" '"server": "https://ntfy.example.invalid"'

@@ -45,6 +45,8 @@ mark_launch_globals_used() {
     "${QEMU_SERIAL_MODE}" \
     "${QEMU_SERIAL_TCP}" \
     "${QEMU_SPICE_OPTIONS}" \
+    "${QEMU_VIDEO_DEVICE}" \
+    "${QEMU_VIDEO_DEVICE_HELP_OUTPUT}" \
     "${QEMU_VNC_ADDRESS}" \
     "${SYSFS_ROOT}" \
     "${VFIO_DEV_ROOT}"
@@ -65,7 +67,7 @@ setup_vfio_noiommu_device() {
   mkdir -p "${driver_root}" "${device_root}" "${group_root}" "${vfio_root}"
   ln -s "${driver_root}" "${device_root}/driver"
   ln -s "${group_root}" "${device_root}/iommu_group"
-  : >"${vfio_root}/noiommu-${group_id}"
+  : > "${vfio_root}/noiommu-${group_id}"
 }
 
 test_prepare_iso_moves_original() {
@@ -75,7 +77,7 @@ test_prepare_iso_moves_original() {
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/orig.iso"
   ISO_INST="${temp_dir}/dest.iso"
-  : >"${ISO_ORIG}"
+  : > "${ISO_ORIG}"
 
   prepare_iso
 
@@ -91,7 +93,7 @@ test_prepare_iso_accepts_existing_installer_iso() {
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/missing.iso"
   ISO_INST="${temp_dir}/gentoo.iso"
-  : >"${ISO_INST}"
+  : > "${ISO_INST}"
 
   prepare_iso
 
