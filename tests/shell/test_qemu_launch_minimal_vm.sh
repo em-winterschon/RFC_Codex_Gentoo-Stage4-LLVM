@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-minimal-vm.sh"
 
+# shellcheck disable=SC1091,SC2034
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-minimal-vm.sh
 source "${LAUNCH_SCRIPT}"
 

@@ -190,6 +190,10 @@ resolve_scripts() {
 }
 
 require_real_mode_root() {
+  if [[ "${VALIDATOR_SKIP_ROOT_CHECK:-0}" == '1' ]]; then
+    return 0
+  fi
+
   case "${MODE}" in
     build|launch|full)
       [[ "${EUID}" -eq 0 ]] || fail "${EXIT_PREREQ}" "Mode ${MODE} requires root"

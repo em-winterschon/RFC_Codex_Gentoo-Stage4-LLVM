@@ -92,6 +92,7 @@ test_full_mode_runs_builder_and_launcher_sequence() {
   output="$(
     VALIDATOR_STATE_FILE="${state_file}" \
     STAGE3_IMAGE_DIR="${temp_dir}" \
+    VALIDATOR_SKIP_ROOT_CHECK=1 \
     bash "${VALIDATOR_SCRIPT}" \
       --mode full \
       --working-dir "${temp_dir}" \
@@ -150,6 +151,7 @@ test_build_mode_rejects_running_qcow_conflict() {
   output="$(
     QEMU_PROCESS_LIST="1234 /usr/bin/qemu-system-x86_64 -drive if=none,id=bootdisk,file=${temp_dir}/images/gentoo-stage4-testvm.qcow2,format=qcow2" \
     STAGE3_IMAGE_DIR="${temp_dir}" \
+    VALIDATOR_SKIP_ROOT_CHECK=1 \
     bash "${VALIDATOR_SCRIPT}" \
       --mode build \
       --working-dir "${temp_dir}" \
@@ -174,6 +176,7 @@ test_launch_mode_rejects_running_qcow_conflict() {
   output="$(
     QEMU_PROCESS_LIST="1234 /usr/bin/qemu-system-x86_64 -drive if=none,id=bootdisk,file=${temp_dir}/images/gentoo-stage4-testvm.qcow2,format=qcow2" \
     STAGE3_IMAGE_DIR="${temp_dir}" \
+    VALIDATOR_SKIP_ROOT_CHECK=1 \
     bash "${VALIDATOR_SCRIPT}" \
       --mode launch \
       --working-dir "${temp_dir}" \

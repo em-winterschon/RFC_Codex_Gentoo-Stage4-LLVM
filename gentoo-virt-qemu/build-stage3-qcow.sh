@@ -5,7 +5,6 @@ if [[ "${QEMU_STAGE3_BUILD_TRACE:-0}" == '1' ]]; then
   set -x
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTANCE_NAME="${INSTANCE_NAME:-gentoo-stage4-testvm}"
 STAGE3_TARGET="${STAGE3_TARGET:-amd64-llvm-openrc}"
 STAGE3_PROFILE_PRESET="${STAGE3_PROFILE_PRESET:-base}"
@@ -65,9 +64,6 @@ STAGE3_STAGE_SHA256_URL=''
 STAGE3_STAGE_TARBALL_PATH=''
 STAGE3_STAGE_SHA256_PATH=''
 STAGE3_STAGE_SHA256=''
-GPT_ESP_TYPE_GUID='c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
-GPT_LINUX_FS_TYPE_GUID='0fc63daf-8483-4772-8e79-3d69d8477de4'
-
 resolve_host_tool_paths() {
   local tool_name resolved_path
 

@@ -10,7 +10,6 @@ set -euo pipefail
 #   - creates/uses a pipenv and installs requirements.txt
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ANSIBLE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUTPUT_PATH="${1:-${SCRIPT_DIR}/setup-ansible-python-env.sh}"
 
 cat > "${OUTPUT_PATH}" <<'GENERATED'
