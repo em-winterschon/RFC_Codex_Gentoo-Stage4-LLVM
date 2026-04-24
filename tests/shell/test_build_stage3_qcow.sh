@@ -25,6 +25,35 @@ assert_equals() {
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
 }
 
+make_fake_host_tools() {
+  local temp_dir="$1"
+  local tool_dir="${temp_dir}/fake-tools"
+  local tool
+  mkdir -p "${tool_dir}"
+
+  for tool in \
+    qemu-img \
+    qemu-nbd \
+    modprobe \
+    sgdisk \
+    partprobe \
+    partx \
+    mkfs.vfat \
+    mkfs.ext4 \
+    mount \
+    umount \
+    tar \
+    chroot; do
+    cat > "${tool_dir}/${tool}" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "${tool_dir}/${tool}"
+  done
+
+  printf '%s\n' "${tool_dir}"
+}
+
 reset_builder_state() {
   INSTANCE_NAME='gentoo-stage4-testvm'
   STAGE3_TARGET='amd64-llvm-openrc'
@@ -121,8 +150,11 @@ test_validate_stage3_profile_preset_rejects_invalid_enum() {
 }
 
 test_main_dry_run_prints_stage3_build_plan() {
-  local temp_dir output status bootstrap
+  local temp_dir tool_dir old_path output status bootstrap
   temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
 
   reset_builder_state
   STAGE3_IMAGE_DIR="${temp_dir}"
@@ -166,12 +198,16 @@ EOF
   assert_contains "${bootstrap}" 'emerge --oneshot sys-apps/portage app-eselect/eselect-repository'
   assert_contains "${bootstrap}" 'rc-update add dhcpcd default'
   assert_contains "${bootstrap}" 'rc-update add sshd default'
+  PATH="${old_path}"
   rm -rf "${temp_dir}"
 }
 
 test_hardened_profile_preset_renders_profile_specific_portage_config() {
-  local temp_dir bootstrap output status
+  local temp_dir tool_dir old_path bootstrap output status
   temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
 
   reset_builder_state
   STAGE3_PROFILE_PRESET='hardened-llvm-stage4'
@@ -202,10 +238,17 @@ EOF
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.mask/00-no-systemd'
   assert_contains "${bootstrap}" 'eselect repository enable "${gentoo_overlay_repo}"'
   assert_contains "${bootstrap}" 'guru xira without-systemd'
+  PATH="${old_path}"
   rm -rf "${temp_dir}"
 }
 
 test_resolve_host_tool_paths_falls_back_to_command_v() {
+  local temp_dir tool_dir old_path
+  temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
+
   reset_builder_state
   QEMU_IMG_BIN='/not-real/qemu-img'
   QEMU_NBD_BIN='/not-real/qemu-nbd'
@@ -225,6 +268,8 @@ test_resolve_host_tool_paths_falls_back_to_command_v() {
   [[ "${QEMU_IMG_BIN}" == */qemu-img ]] || fail "QEMU_IMG_BIN was not resolved"
   [[ "${MOUNT_BIN}" == */mount ]] || fail "MOUNT_BIN was not resolved"
   [[ "${CHROOT_BIN}" == */chroot ]] || fail "CHROOT_BIN was not resolved"
+  PATH="${old_path}"
+  rm -rf "${temp_dir}"
 }
 
 test_resolve_stage3_target_maps_supported_enums
