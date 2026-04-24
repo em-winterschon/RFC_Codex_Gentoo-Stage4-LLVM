@@ -57,9 +57,21 @@
   loop_control:
     loop_var: boot_service_command
 
-- name: Ensure the EFI boot directory exists for ZFSBootMenu
+- name: Set inherited ZFSBootMenu kernel command line on the root dataset tree
+  ansible.builtin.command: >-
+    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline | quote }} {{ zpool_name }}/ROOT
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Ensure the ZFSBootMenu EFI directory exists
   ansible.builtin.file:
-    path: "{{ install_target_root }}/efi/EFI/BOOT"
+    path: "{{ install_target_root }}{{ zfsbootmenu_efi_directory }}"
+    state: directory
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Ensure the EFI fallback directory exists for ZFSBootMenu
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ zfsbootmenu_fallback_directory }}"
     state: directory
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
@@ -67,13 +79,27 @@
 - name: Download prebuilt ZFSBootMenu EFI executable
   ansible.builtin.get_url:
     url: "{{ zfsbootmenu_efi_url }}"
-    dest: "{{ install_target_root }}/efi/EFI/BOOT/BOOTX64.EFI"
+    dest: "{{ install_target_root }}{{ zfsbootmenu_efi_directory }}/{{ zfsbootmenu_efi_filename }}"
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Install EFI removable-path fallback for ZFSBootMenu
+  ansible.builtin.copy:
+    src: "{{ install_target_root }}{{ zfsbootmenu_efi_directory }}/{{ zfsbootmenu_efi_filename }}"
+    dest: "{{ install_target_root }}{{ zfsbootmenu_fallback_directory }}/{{ zfsbootmenu_fallback_filename }}"
+    remote_src: true
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Create ZFSBootMenu boot entry
   ansible.builtin.command: >-
-    efibootmgr -c -d {{ storage_devices[0] }} -p 1 -L {{ zfsbootmenu_boot_label }} -l \\EFI\\BOOT\\BOOTX64.EFI
+    efibootmgr
+    -c
+    -d {{ storage_devices[0] }}
+    -p 1
+    -L {{ zfsbootmenu_boot_label }}
+    -l \\EFI\\ZBM\\{{ zfsbootmenu_efi_filename }}
+    -u {{ zfsbootmenu_efi_commandline | quote }}
   when: boot_strategy == 'zfsbootmenu' and install_boot_mode == 'uefi'
 
 - name: Install direct EFI stub helper

@@ -84,6 +84,8 @@ kernel_package_map:
 boot_strategy: zfsbootmenu
 zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
 zfsbootmenu_boot_label: ZFSBootMenu
+zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
+zfsbootmenu_timeout: 0
 install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
 
 # Installed services and finalization

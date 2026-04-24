@@ -36,6 +36,8 @@ reset_launcher_state() {
   RPOOL_DISK1='/tmp/rpool1.img'
   QEMU_BIN='/usr/bin/qemu-system-x86_64'
   EFI_FIRM='/tmp/OVMF_CODE.fd'
+  EFI_VARS_TEMPLATE='/tmp/OVMF_VARS.fd'
+  EFI_VARS_FILE='/tmp/stage3/OVMF_VARS.fd'
   QEMU_MACHINE='q35,accel=kvm'
   QEMU_CPU='host'
   QEMU_SMP='8'
@@ -94,6 +96,7 @@ test_build_qemu_cmd_uses_boot_disk_and_tcp_serial() {
   QEMU_SERIAL_MODE='tcp'
   : >"${QCOW_IMAGE}"
   : >"${EFI_FIRM}"
+  : >"${EFI_VARS_TEMPLATE}"
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -103,6 +106,8 @@ test_build_qemu_cmd_uses_boot_disk_and_tcp_serial() {
   rendered="${QEMU_CMD[*]}"
 
   assert_contains "${rendered}" '-boot strict=on'
+  assert_contains "${rendered}" "if=pflash,format=raw,readonly=on,file=${EFI_FIRM}"
+  assert_contains "${rendered}" "if=pflash,format=raw,file=${EFI_VARS_FILE}"
   assert_contains "${rendered}" "if=none,id=${QEMU_BOOTDISK_ID},file=${QCOW_IMAGE},format=qcow2"
   assert_contains "${rendered}" "${QEMU_BOOTDISK_MODEL},drive=${QEMU_BOOTDISK_ID},bootindex=${QEMU_BOOTDISK_BOOTINDEX},serial=stage3-boot"
   assert_contains "${rendered}" "tcp:${QEMU_SERIAL_TCP}"
@@ -125,6 +130,7 @@ test_build_qemu_cmd_supports_pty_serial() {
   QEMU_SERIAL_MODE='pty'
   : >"${QCOW_IMAGE}"
   : >"${EFI_FIRM}"
+  : >"${EFI_VARS_TEMPLATE}"
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -150,6 +156,7 @@ test_build_qemu_cmd_supports_target_disk_boot() {
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_BOOT_SOURCE='target-disks'
   : >"${EFI_FIRM}"
+  : >"${EFI_VARS_TEMPLATE}"
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -193,6 +200,7 @@ test_main_dry_run_prints_stage3_vm_command() {
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   : >"${QCOW_IMAGE}"
   : >"${EFI_FIRM}"
+  : >"${EFI_VARS_TEMPLATE}"
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
@@ -224,6 +232,7 @@ test_main_dry_run_prints_target_disk_boot_plan() {
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_BOOT_SOURCE='target-disks'
   : >"${EFI_FIRM}"
+  : >"${EFI_VARS_TEMPLATE}"
   : >"${BPOOL_DISK0}"
   : >"${BPOOL_DISK1}"
   : >"${RPOOL_DISK0}"
