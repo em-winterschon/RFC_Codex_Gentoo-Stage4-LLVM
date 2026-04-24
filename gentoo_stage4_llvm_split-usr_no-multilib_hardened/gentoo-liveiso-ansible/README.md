@@ -240,6 +240,11 @@ Optional tuning keys:
 `zfs` only applies to native ZFS layouts. For `raid-1` and `raid-10`, keep using the `storage`
 role by itself because it owns the mdadm-backed provisioning path.
 
+`zfs-boot-root-mirror` specifically means:
+
+- `bpool` is created as a mirror from `zfs_boot_pool_devices`
+- `rpool` is created as a mirror from `zfs_root_pool_devices`
+
 ### Python environment setup helper
 
 Generate the ansible Python setup script:

@@ -109,13 +109,15 @@
     mkdir -p "${tmp_dir}"
     cp -a "{{ install_target_root }}/boot/." "${tmp_dir}/"
 
-    zfs unmount {{ zfs_boot_pool_name }}/BOOT/gentoo
+    if mountpoint -q "{{ install_target_root }}/boot"; then
+      umount -l "{{ install_target_root }}/boot" || true
+    fi
     mkdir -p "{{ install_target_root }}/boot"
     find "{{ install_target_root }}/boot" -mindepth 1 -exec rm -rf {} +
     cp -a "${tmp_dir}/." "{{ install_target_root }}/boot/"
 
     trap - EXIT
-    zfs mount {{ zfs_boot_pool_name }}/BOOT/gentoo
+    zfs mount {{ zfs_boot_pool_name }}/BOOT/gentoo || true
   args:
     executable: /bin/bash
   when:
