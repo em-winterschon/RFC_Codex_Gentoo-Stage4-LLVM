@@ -1,0 +1,97 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "codex-approval-watcher-service",
+    "description": "Install and validate the persistent Codex ntfy approval watcher on a Gentoo/OpenRC host.",
+    "owners": [
+      "codex",
+      "host-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "repo_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM",
+      "description": "Local checkout used to install the watcher service."
+    },
+    {
+      "name": "ntfy_env_file",
+      "required": true,
+      "default": "/root/.codex/ntfy-pub-subs.export.sh",
+      "description": "Export file containing NTFY_URL and CODEX_NTFY_* variables."
+    }
+  ],
+  "stages": [
+    {
+      "id": "validate-shell-suite",
+      "summary": "Run the repo shell validation suite before changing host service state.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "tests/shell/run-tests.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "stdout includes PASS: run-tests.sh"
+      ]
+    },
+    {
+      "id": "install-service",
+      "summary": "Install the OpenRC service, enable it in default runlevel, and restart it.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "scripts/install_codex_approval_watcher_service.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/usr/local/libexec/codex-approval-watcher",
+        "/etc/conf.d/codex-approval-watcher",
+        "/etc/init.d/codex-approval-watcher"
+      ],
+      "notes": [
+        "This step is host-mutating and may trigger a sandbox approval dialog in Codex.",
+        "The installer enables the service with rc-update and restarts it with rc-service."
+      ]
+    },
+    {
+      "id": "verify-service-status",
+      "summary": "Confirm the OpenRC service is running.",
+      "cwd": "/root",
+      "command": [
+        "rc-service",
+        "codex-approval-watcher",
+        "status"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "stdout or stderr includes status: started"
+      ]
+    },
+    {
+      "id": "verify-config",
+      "summary": "Inspect the effective service configuration file.",
+      "cwd": "/root",
+      "command": [
+        "sed",
+        "-n",
+        "1,220p",
+        "/etc/conf.d/codex-approval-watcher"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "codex_approval_watcher_env_file=${ntfy_env_file}"
+      ]
+    }
+  ]
+}

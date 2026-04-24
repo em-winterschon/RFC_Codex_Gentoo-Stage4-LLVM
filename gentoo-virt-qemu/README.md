@@ -231,6 +231,21 @@ The validator writes its own log file to:
 
 Actionable next tasks are tracked in the validator source so they can be promoted into the broader pre-merge validation path later.
 
+## Workflow Manifests
+
+Machine-readable workflow definitions for this subtree live under:
+
+- `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json`
+- `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json`
+
+Those manifests capture:
+
+- stage ordering
+- command arrays
+- environment variables
+- expected exit codes
+- major artifacts and notes
+
 ## Legacy Paths
 
 The cloud-image path is still in-tree for reference, but it is no longer the preferred route:

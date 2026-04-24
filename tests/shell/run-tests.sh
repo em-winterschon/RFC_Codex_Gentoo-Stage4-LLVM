@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 mapfile -t shell_scripts < <(find \
   "${REPO_ROOT}/gentoo-virt-qemu" \
+  "${REPO_ROOT}/scripts" \
   "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/scripts" \
   "${REPO_ROOT}/tests/shell" \
   -type f -name '*.sh' | sort)
@@ -15,6 +16,9 @@ for script in "${shell_scripts[@]}"; do
 done
 
 bash "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
+bash "${SCRIPT_DIR}/test_ntfy_tools.sh"
+bash "${SCRIPT_DIR}/test_install_codex_approval_watcher_service.sh"
+bash "${SCRIPT_DIR}/test_workflow_manifests.sh"
 bash "${SCRIPT_DIR}/test_build_stage3_qcow.sh"
 bash "${SCRIPT_DIR}/test_validate_llvm_qcow_builder.sh"
 bash "${SCRIPT_DIR}/test_generate_cloud_init_seed.sh"

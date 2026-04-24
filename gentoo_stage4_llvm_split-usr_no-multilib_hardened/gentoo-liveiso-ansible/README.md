@@ -136,6 +136,19 @@ Example command-line override:
 ansible-playbook playbooks/install.yml -l remote-liveiso -e '{"selected_roles":["boot","network"]}'
 ```
 
+Machine-readable workflow definitions for the VM validation path live under:
+
+- `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json`
+
+That manifest documents the repeatable operator sequence for:
+
+- QCOW build
+- installer VM launch
+- Ansible connectivity checks
+- full install execution
+- boot-role repair iterations
+- target-disk boot validation
+
 ### Translated modular roles
 
 The external `/opt/gentoo-liveiso-ansible` scaffolding used placeholder roles named `zfs`,

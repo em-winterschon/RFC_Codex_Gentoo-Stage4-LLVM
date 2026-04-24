@@ -1,0 +1,37 @@
+#!/sbin/openrc-run
+
+description="${codex_approval_watcher_description:-Codex ntfy approval watcher}"
+pidfile="/run/${RC_SVCNAME}.pid"
+command="/usr/local/libexec/${RC_SVCNAME}"
+
+depend() {
+  use net
+}
+
+start_pre() {
+  checkpath --directory --mode 0755 /run
+  checkpath --directory --owner "${codex_approval_watcher_user}:${codex_approval_watcher_group}" --mode 0755 "$(dirname "${codex_approval_watcher_output_log}")"
+  checkpath --directory --owner "${codex_approval_watcher_user}:${codex_approval_watcher_group}" --mode 0755 "$(dirname "${codex_approval_watcher_error_log}")"
+  checkpath --file --owner "${codex_approval_watcher_user}:${codex_approval_watcher_group}" --mode 0644 "${codex_approval_watcher_output_log}"
+  checkpath --file --owner "${codex_approval_watcher_user}:${codex_approval_watcher_group}" --mode 0644 "${codex_approval_watcher_error_log}"
+}
+
+start() {
+  ebegin "Starting ${RC_SVCNAME}"
+  supervise-daemon "${RC_SVCNAME}" \
+    --start \
+    --pidfile "${pidfile}" \
+    --stdout "${codex_approval_watcher_output_log}" \
+    --stderr "${codex_approval_watcher_error_log}" \
+    --respawn-delay "${codex_approval_watcher_respawn_delay}" \
+    --respawn-max "${codex_approval_watcher_respawn_max}" \
+    --user "${codex_approval_watcher_user}:${codex_approval_watcher_group}" \
+    -- "${command}"
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping ${RC_SVCNAME}"
+  supervise-daemon "${RC_SVCNAME}" --stop --pidfile "${pidfile}" --retry "${codex_approval_watcher_retry}"
+  eend $?
+}
