@@ -10,9 +10,9 @@ fail() {
   exit 1
 }
 
-content="$(<"${LAYOUT_FILE}")"
+content="$(< "${LAYOUT_FILE}")"
 
-[[ "${content}" == *"{% elif storage_layout in ['zfs-mirror', 'zfs-boot-root-mirror'] %}"* ]] || \
+[[ "${content}" == *"{% elif storage_layout in ['zfs-mirror', 'zfs-boot-root-mirror'] %}"* ]] ||
   fail "root vdev spec does not treat zfs-boot-root-mirror as a mirrored root pool"
 
 printf 'PASS: %s\n' "$(basename "$0")"

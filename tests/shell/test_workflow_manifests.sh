@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-python3 - <<'PY' "${REPO_ROOT}"
+python3 - "${REPO_ROOT}" << 'PY'
 import json
 import sys
 from pathlib import Path
