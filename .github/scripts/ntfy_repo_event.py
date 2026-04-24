@@ -33,7 +33,9 @@ def load_payload(path: str) -> dict:
 
 
 def repo_name(payload: dict) -> str:
-    return payload.get("repository", {}).get("full_name", os.getenv("GITHUB_REPOSITORY", "unknown/repo"))
+    return payload.get("repository", {}).get(
+        "full_name", os.getenv("GITHUB_REPOSITORY", "unknown/repo")
+    )
 
 
 def html_url(payload: dict) -> str:
@@ -62,11 +64,21 @@ def event_details(event_name: str, payload: dict) -> tuple[str, str, str, list[s
     if event_name == "create":
         ref_type = payload.get("ref_type", "ref")
         ref = payload.get("ref", "")
-        return "notice", f"Git create: {repo}:{ref}", f"type={ref_type} ref={ref}", ["git", "create"]
+        return (
+            "notice",
+            f"Git create: {repo}:{ref}",
+            f"type={ref_type} ref={ref}",
+            ["git", "create"],
+        )
     if event_name == "delete":
         ref_type = payload.get("ref_type", "ref")
         ref = payload.get("ref", "")
-        return "warning", f"Git delete: {repo}:{ref}", f"type={ref_type} ref={ref}", ["git", "delete"]
+        return (
+            "warning",
+            f"Git delete: {repo}:{ref}",
+            f"type={ref_type} ref={ref}",
+            ["git", "delete"],
+        )
     if event_name == "pull_request":
         pr = payload.get("pull_request", {})
         action = payload.get("action", "updated")

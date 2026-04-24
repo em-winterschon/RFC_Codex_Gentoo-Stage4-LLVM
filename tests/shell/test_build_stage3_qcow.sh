@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BUILD_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/build-stage3-qcow.sh"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/build-stage3-qcow.sh
 source "${BUILD_SCRIPT}"
 
@@ -23,6 +24,17 @@ assert_equals() {
   local actual="$1"
   local expected="$2"
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+mark_stage3_builder_globals_used() {
+  : "${STAGE3_MIRROR_ROOT-}" \
+    "${QEMU_STAGE3_BUILD_DRY_RUN-}" \
+    "${STAGE3_VERIFY_CHECKSUM-}" \
+    "${SSH_AUTHORIZED_KEY-}" \
+    "${SSH_AUTHORIZED_KEY_FILE-}" \
+    "${STAGE3_ROOT_PASSWORD_HASH-}" \
+    "${PORTAGE_SYNC_COMMAND-}" \
+    "${STAGE3_LATEST_TXT-}"
 }
 
 make_fake_host_tools() {
@@ -97,6 +109,7 @@ reset_builder_state() {
   UMOUNT_BIN='/usr/bin/umount'
   TAR_BIN='/usr/bin/tar'
   CHROOT_BIN='/usr/sbin/chroot'
+  mark_stage3_builder_globals_used
 }
 
 test_resolve_stage3_target_maps_supported_enums() {

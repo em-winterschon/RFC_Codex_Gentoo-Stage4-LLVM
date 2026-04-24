@@ -63,7 +63,7 @@ resolve_ssh_authorized_key() {
 }
 
 render_meta_data() {
-  cat >"${META_DATA_PATH}" <<EOF
+  cat > "${META_DATA_PATH}" << EOF
 instance-id: ${INSTANCE_ID}
 local-hostname: ${LOCAL_HOSTNAME}
 EOF
@@ -105,7 +105,7 @@ render_user_data() {
     printf '  mode: auto\n'
     printf "  devices: ['/']\n"
     printf 'resize_rootfs: true\n'
-  } >"${USER_DATA_PATH}"
+  } > "${USER_DATA_PATH}"
 }
 
 render_network_config() {
@@ -114,7 +114,7 @@ render_network_config() {
     return 0
   fi
 
-  cat >"${NETWORK_CONFIG_PATH}" <<'EOF'
+  cat > "${NETWORK_CONFIG_PATH}" << 'EOF'
 version: 2
 ethernets:
   default:

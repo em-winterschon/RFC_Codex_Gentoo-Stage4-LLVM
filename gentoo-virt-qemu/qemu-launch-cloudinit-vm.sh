@@ -163,12 +163,12 @@ validate_vsock_backend() {
 }
 
 find_fetch_tool() {
-  if command -v curl >/dev/null 2>&1; then
+  if command -v curl > /dev/null 2>&1; then
     printf 'curl'
     return 0
   fi
 
-  if command -v wget >/dev/null 2>&1; then
+  if command -v wget > /dev/null 2>&1; then
     printf 'wget'
     return 0
   fi
@@ -180,12 +180,12 @@ fetch_text() {
   local url="$1"
 
   case "$(find_fetch_tool)" in
-    curl)
-      curl -fsSL "${url}"
-      ;;
-    wget)
-      wget -qO- "${url}"
-      ;;
+  curl)
+    curl -fsSL "${url}"
+    ;;
+  wget)
+    wget -qO- "${url}"
+    ;;
   esac
 }
 
@@ -194,12 +194,12 @@ download_file() {
   local dest="$2"
 
   case "$(find_fetch_tool)" in
-    curl)
-      curl -fL -o "${dest}" "${url}"
-      ;;
-    wget)
-      wget -O "${dest}" "${url}"
-      ;;
+  curl)
+    curl -fL -o "${dest}" "${url}"
+    ;;
+  wget)
+    wget -O "${dest}" "${url}"
+    ;;
   esac
 }
 

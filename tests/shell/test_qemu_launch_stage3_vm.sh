@@ -36,6 +36,8 @@ mark_stage3_launch_globals_used() {
     "${QEMU_LAUNCH_DRY_RUN-}" \
     "${QEMU_DAEMONIZE-}" \
     "${QEMU_DISPLAY_MODE-}" \
+    "${QEMU_BOOT_SOURCE-}" \
+    "${QEMU_SERIAL_MODE-}" \
     "${QEMU_SERIAL_FILE-}" \
     "${QEMU_NETDEV_MODEL-}" \
     "${QEMU_NETDEV_BACKEND-}" \
