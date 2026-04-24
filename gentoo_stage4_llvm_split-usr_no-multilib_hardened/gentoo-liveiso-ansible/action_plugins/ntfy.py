@@ -97,7 +97,7 @@ def _syslog_body(app_name, state, severity, message):
     hostname = socket.gethostname()
     sanitized = " ".join(message.splitlines()).replace('"', "'")
     return (
-        f'<{pri}>1 {timestamp} {hostname} {app_name} - - - '
+        f"<{pri}>1 {timestamp} {hostname} {app_name} - - - "
         f'state="{state}" severity_code="{severity}" message="{sanitized}"'
     )
 

@@ -106,7 +106,7 @@ class CallbackModule(CallbackBase):
         hostname = socket.gethostname()
         sanitized = " ".join(str(message).splitlines()).replace('"', "'")
         return (
-            f'<{pri}>1 {timestamp} {hostname} ansible-callback - - - '
+            f"<{pri}>1 {timestamp} {hostname} ansible-callback - - - "
             f'state="{state}" severity_code="{severity}" message="{sanitized}"'
         )
 
@@ -188,12 +188,10 @@ class CallbackModule(CallbackBase):
         for host in hosts:
             s = stats.summarize(host)
             summary.append(
-                (
-                    f"{host} ok={s.get('ok', 0)} changed={s.get('changed', 0)} "
-                    f"failed={s.get('failures', 0)} unreachable={s.get('unreachable', 0)} "
-                    f"skipped={s.get('skipped', 0)} rescued={s.get('rescued', 0)} "
-                    f"ignored={s.get('ignored', 0)}"
-                )
+                f"{host} ok={s.get('ok', 0)} changed={s.get('changed', 0)} "
+                f"failed={s.get('failures', 0)} unreachable={s.get('unreachable', 0)} "
+                f"skipped={s.get('skipped', 0)} rescued={s.get('rescued', 0)} "
+                f"ignored={s.get('ignored', 0)}"
             )
             if s.get("failures", 0) or s.get("unreachable", 0):
                 has_failures = True

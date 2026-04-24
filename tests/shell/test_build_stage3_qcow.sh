@@ -31,6 +31,8 @@ mark_stage3_builder_globals_used() {
     "${STAGE3_TARGET-}" \
     "${STAGE3_PROFILE_PRESET-}" \
     "${STAGE3_CACHE_DIR-}" \
+    "${TARGET_EFI_MNT-}" \
+    "${QCOW_IMAGE-}" \
     "${QEMU_STAGE3_BUILD_DRY_RUN-}" \
     "${STAGE3_VERIFY_CHECKSUM-}" \
     "${SSH_AUTHORIZED_KEY-}" \
@@ -44,7 +46,16 @@ mark_stage3_builder_globals_used() {
     "${STAGE3_STAGE_SHA256_URL-}" \
     "${STAGE3_STAGE_TARBALL_PATH-}" \
     "${STAGE3_STAGE_SHA256_PATH-}" \
-    "${STAGE3_STAGE_SHA256-}"
+    "${STAGE3_STAGE_SHA256-}" \
+    "${QEMU_NBD_BIN-}" \
+    "${MODPROBE_BIN-}" \
+    "${SGDISK_BIN-}" \
+    "${PARTPROBE_BIN-}" \
+    "${PARTX_BIN-}" \
+    "${MKFS_VFAT_BIN-}" \
+    "${MKFS_EXT4_BIN-}" \
+    "${UMOUNT_BIN-}" \
+    "${TAR_BIN-}"
 }
 
 make_fake_host_tools() {
@@ -258,9 +269,11 @@ EOF
 
   assert_equals "${status}" '0'
   bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
+  # shellcheck disable=SC2016
   assert_contains "${bootstrap}" 'FEATURES="${FEATURES} ccache distcc fail-clean"'
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/00-llvm-stage4'
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.mask/00-no-systemd'
+  # shellcheck disable=SC2016
   assert_contains "${bootstrap}" 'eselect repository enable "${gentoo_overlay_repo}"'
   assert_contains "${bootstrap}" 'guru xira without-systemd'
   PATH="${old_path}"
