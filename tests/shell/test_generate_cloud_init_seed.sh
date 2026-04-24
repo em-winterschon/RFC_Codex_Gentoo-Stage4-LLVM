@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SEED_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/generate-cloud-init-seed.sh"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/generate-cloud-init-seed.sh
 source "${SEED_SCRIPT}"
 
@@ -49,7 +50,7 @@ test_render_user_data_uses_explicit_ssh_key_file() {
   SSH_AUTHORIZED_KEY=''
   SSH_AUTHORIZED_KEY_FILE="${temp_dir}/id_ed25519.pub"
   CLOUD_INIT_USERNAME='root'
-  printf '%s\n' "${ssh_key}" >"${SSH_AUTHORIZED_KEY_FILE}"
+  printf '%s\n' "${ssh_key}" > "${SSH_AUTHORIZED_KEY_FILE}"
 
   ensure_seed_dir
   render_user_data

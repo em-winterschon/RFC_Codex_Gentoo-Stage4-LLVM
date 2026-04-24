@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 NOTIFY_BIN="${REPO_ROOT}/scripts/ntfy_notify.py"
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: codex-ntfy.sh <state> <message> [--title TITLE] [--dry-run]
 
 States:
@@ -36,19 +36,19 @@ extra_args=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --title)
-      title="${2:?missing value for --title}"
-      shift 2
-      ;;
-    --dry-run)
-      extra_args+=("--dry-run")
-      shift
-      ;;
-    *)
-      printf 'Unknown option: %s\n' "$1" >&2
-      usage >&2
-      exit 2
-      ;;
+  --title)
+    title="${2:?missing value for --title}"
+    shift 2
+    ;;
+  --dry-run)
+    extra_args+=("--dry-run")
+    shift
+    ;;
+  *)
+    printf 'Unknown option: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
 done
 

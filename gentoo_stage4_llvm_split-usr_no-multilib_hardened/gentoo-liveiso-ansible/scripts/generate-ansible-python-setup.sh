@@ -12,7 +12,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_PATH="${1:-${SCRIPT_DIR}/setup-ansible-python-env.sh}"
 
-cat > "${OUTPUT_PATH}" <<'GENERATED'
+cat > "${OUTPUT_PATH}" << 'GENERATED'
 #!/usr/bin/env bash
 set -euo pipefail
 

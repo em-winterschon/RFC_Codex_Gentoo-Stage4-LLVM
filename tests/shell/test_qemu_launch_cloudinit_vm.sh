@@ -28,21 +28,31 @@ assert_equals() {
 
 mark_cloud_launch_globals_used() {
   : "${QEMU_NETDEV_HELP_OUTPUT-}" \
+    "${CLOUD_IMAGE_URL-}" \
+    "${CLOUD_IMAGE_INFO_URL-}" \
     "${QEMU_DISPLAY_HELP_OUTPUT-}" \
     "${QEMU_SERIAL_MODE-}" \
     "${QEMU_SERIAL_FILE-}" \
     "${QEMU_DISPLAY_MODE-}" \
     "${QEMU_DEVICE_HELP_OUTPUT-}" \
+    "${QEMU_NETDEV_BACKEND-}" \
     "${QEMU_BOOT_STRICT-}" \
     "${QEMU_BOOTDISK_ID-}" \
     "${QEMU_BOOTDISK_MODEL-}" \
     "${QEMU_BOOTDISK_BOOTINDEX-}" \
+    "${SEED_DIR-}" \
+    "${QEMU_BIN-}" \
+    "${QEMU_IMG_BIN-}" \
+    "${QEMU_LAUNCH_DRY_RUN-}" \
+    "${GENERATE_SEED-}" \
     "${QEMU_DAEMONIZE-}" \
     "${WAIT_FOR_SSH-}" \
     "${SSH_WAIT_TIMEOUT-}" \
+    "${SSH_READY_PROBE-}" \
     "${SSH_BANNER_TIMEOUT-}" \
     "${SSH_READY_HOST-}" \
-    "${SSH_READY_PORT-}"
+    "${SSH_READY_PORT-}" \
+    "${QEMU_ENABLE_VSOCK-}"
 }
 
 reset_launcher_state() {
@@ -76,6 +86,7 @@ test_resolve_cloud_image_url_parses_latest_info() {
   reset_launcher_state
   CLOUD_IMAGE_URL=''
   CLOUD_IMAGE_INFO_URL='https://distfiles.gentoo.org/releases/amd64/autobuilds/latest-di-amd64-cloudinit.txt'
+  mark_cloud_launch_globals_used
   fetch_text() {
     cat << 'EOF'
 [ Latest Files ]
@@ -219,6 +230,7 @@ test_validate_vsock_backend_checks_device_help() {
   QEMU_ENABLE_VSOCK='1'
   QEMU_VSOCK_MODEL='vhost-vsock-pci'
   QEMU_DEVICE_HELP_OUTPUT='name "virtio-net-pci"'
+  mark_cloud_launch_globals_used
 
   set +e
   output="$(validate_vsock_backend 2>&1)"

@@ -9,8 +9,8 @@ import os
 import sys
 import time
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 from urllib import error, parse, request
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -26,7 +26,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def ntfy_base_url() -> str:
-    return os.getenv("CODEX_NTFY_URL", os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "https://ntfy.sh"))).rstrip("/")
+    return os.getenv(
+        "CODEX_NTFY_URL",
+        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "https://ntfy.sh")),
+    ).rstrip("/")
 
 
 def ntfy_alert_topic() -> str:
@@ -177,13 +180,29 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
             f"deny {request_id}",
         ]
     )
-    publish_message("action-required", "Codex approval needed", body, ["codex", "approval"], priority="5", dry_run=dry_run)
+    publish_message(
+        "action-required",
+        "Codex approval needed",
+        body,
+        ["codex", "approval"],
+        priority="5",
+        dry_run=dry_run,
+    )
     if dry_run or not ntfy_reply_topic():
         return 0
     for reply in poll_replies(started, wait_secs()):
         normalized = reply.strip().lower()
         if normalized == f"allow {request_id}":
-            print(json.dumps({"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": {"behavior": "allow"}}}))
+            print(
+                json.dumps(
+                    {
+                        "hookSpecificOutput": {
+                            "hookEventName": "PermissionRequest",
+                            "decision": {"behavior": "allow"},
+                        }
+                    }
+                )
+            )
             return 0
         if normalized == f"deny {request_id}":
             print(
@@ -218,7 +237,14 @@ def handle_stop(payload: dict, *, dry_run: bool) -> int:
             f"{request_id}: <your answer>",
         ]
     )
-    publish_message("action-required", "Codex is asking for input", body, ["codex", "question"], priority="4", dry_run=dry_run)
+    publish_message(
+        "action-required",
+        "Codex is asking for input",
+        body,
+        ["codex", "question"],
+        priority="4",
+        dry_run=dry_run,
+    )
     if dry_run or not ntfy_reply_topic():
         return 0
     for reply in poll_replies(started, wait_secs()):

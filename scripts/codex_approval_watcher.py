@@ -168,7 +168,12 @@ def open_at_saved_offset(path: Path, state: dict, from_start: bool) -> tuple[obj
         fh.seek(saved["offset"])
     else:
         fh.seek(0, os.SEEK_END)
-    runtime_state = {"inode": stat.st_ino, "dev": stat.st_dev, "offset": fh.tell(), "state_file": state["state_file"]}
+    runtime_state = {
+        "inode": stat.st_ino,
+        "dev": stat.st_dev,
+        "offset": fh.tell(),
+        "state_file": state["state_file"],
+    }
     return fh, runtime_state
 
 

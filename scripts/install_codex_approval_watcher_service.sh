@@ -67,24 +67,24 @@ write_file() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dry-run)
-      DRY_RUN=1
-      ;;
-    --no-enable)
-      ENABLE_SERVICE=0
-      ;;
-    --no-start)
-      START_SERVICE=0
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      printf 'ERROR: unknown argument: %s\n' "$1" >&2
-      usage >&2
-      exit 2
-      ;;
+  --dry-run)
+    DRY_RUN=1
+    ;;
+  --no-enable)
+    ENABLE_SERVICE=0
+    ;;
+  --no-start)
+    START_SERVICE=0
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: unknown argument: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
   shift
 done
