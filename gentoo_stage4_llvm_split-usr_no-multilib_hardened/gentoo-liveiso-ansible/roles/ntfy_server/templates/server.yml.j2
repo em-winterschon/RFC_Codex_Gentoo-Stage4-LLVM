@@ -1,0 +1,33 @@
+# Managed by Ansible: roles/ntfy_server/templates/server.yml.j2
+listen-http: "{{ ntfy_server_listen_http }}"
+cache-file: "{{ ntfy_server_cache_file }}"
+attachment-cache-dir: "{{ ntfy_server_attachment_cache_dir }}"
+auth-file: "{{ ntfy_server_auth_file }}"
+auth-default-access: "{{ ntfy_server_auth_default_access }}"
+{% if ntfy_server_base_url | length > 0 %}
+base-url: "{{ ntfy_server_base_url }}"
+{% endif %}
+{% if ntfy_server_behind_proxy | bool %}
+behind-proxy: true
+{% endif %}
+{% if ntfy_server_upstream_base_url | length > 0 %}
+upstream-base-url: "{{ ntfy_server_upstream_base_url }}"
+{% endif %}
+{% if ntfy_server_web_root | length > 0 %}
+web-root: "{{ ntfy_server_web_root }}"
+{% endif %}
+{% if ntfy_server_auth_users | length > 0 %}
+auth-users:
+{% for ntfy_auth_user in ntfy_server_auth_users %}
+  - "{{ ntfy_auth_user.username }}:{{ ntfy_auth_user.password_hash }}{% if ntfy_auth_user.role is defined and ntfy_auth_user.role | length > 0 %}:{{ ntfy_auth_user.role }}{% endif %}"
+{% endfor %}
+{% endif %}
+{% if ntfy_server_auth_access | length > 0 %}
+auth-access:
+{% for ntfy_auth_access in ntfy_server_auth_access %}
+  - "{{ ntfy_auth_access.username }}:{{ ntfy_auth_access.topic }}:{{ ntfy_auth_access.permission }}"
+{% endfor %}
+{% endif %}
+{% for ntfy_extra_key, ntfy_extra_value in ntfy_server_extra_config.items() %}
+{{ ntfy_extra_key }}: {{ ntfy_extra_value | to_json }}
+{% endfor %}

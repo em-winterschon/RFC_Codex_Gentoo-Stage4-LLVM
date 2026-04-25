@@ -9,6 +9,7 @@ RFC_Codex_Gentoo-Stage4-LLVM
 │   └── workflows/
 ├── docs/
 │   └── workflows/
+│       ├── ntfy-server-deployment.json
 ├── gentoo-virt-qemu/
 ├── gentoo_stage4_llvm_split-usr_no-multilib_hardened/
 │   ├── gentoo-liveiso-ansible/
@@ -56,6 +57,7 @@ gentoo-liveiso-ansible
 ├── inventories/
 │   ├── examples/
 │   │   ├── group_vars/install_targets.yml
+│   │   ├── group_vars/ntfy_servers.yml
 │   │   └── hosts.yml
 │   ├── qemu-alias/
 │   │   ├── group_vars/install_targets.yml
@@ -65,6 +67,7 @@ gentoo-liveiso-ansible
 │       └── hosts.yml
 ├── playbooks/
 │   ├── install.yml
+│   ├── ntfy-server.yml
 │   └── tasks/run_install_stage.yml
 ├── profile-definitions/
 │   └── hardened-llvm-stage4.yml
@@ -82,6 +85,7 @@ gentoo-liveiso-ansible
 │   ├── boot/
 │   ├── bootloader/
 │   ├── network/
+│   ├── ntfy_server/
 │   ├── services/
 │   └── finalize/
 ├── scripts/
@@ -106,13 +110,17 @@ gentoo-liveiso-ansible
   enables local plugin paths and callback configuration
 - `playbooks/install.yml`
   top-level installer playbook
+- `playbooks/ntfy-server.yml`
+  standalone private ntfy server deployment playbook
 - `playbooks/tasks/run_install_stage.yml`
   named stage block wrapper used by `install_sequence`
 
 ### Inventories
 
 - `inventories/examples/hosts.yml`
-  general examples for local and remote LiveISO targets
+  general examples for local and remote LiveISO targets, plus a standalone `ntfy_servers` group
+- `inventories/examples/group_vars/ntfy_servers.yml`
+  example private ntfy server configuration, auth policy, and listen/base URL settings
 - `inventories/qemu-alias/hosts.yml`
   installer-VM control path through alias mode and forwarded SSH
 - `inventories/qemu-alias/group_vars/install_targets.yml`
@@ -148,6 +156,8 @@ gentoo-liveiso-ansible
   compatibility wrapper around boot orchestration
 - `network`
   OpenRC and network service configuration
+- `ntfy_server`
+  dedicated private ntfy server deployment, config rendering, and OpenRC service management
 - `services`
   data-driven OpenRC service deployment
 - `finalize`
@@ -225,6 +235,7 @@ tests/shell
 ├── test_generate_cloud_init_seed.sh
 ├── test_install_codex_approval_watcher_service.sh
 ├── test_ntfy_tools.sh
+├── test_ntfy_server_role.sh
 ├── test_qemu_launch_cloudinit_vm.sh
 ├── test_qemu_launch_minimal_vm.sh
 ├── test_qemu_launch_stage3_vm.sh

@@ -15,6 +15,8 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
   Stage4 VM build, install, and target-disk boot validation flow
 - [docs/workflows/stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)
   staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
+- [docs/workflows/ntfy-server-deployment.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/ntfy-server-deployment.json)
+  private ntfy server deployment and health validation flow
 
 Wiki publication policy:
 
@@ -33,6 +35,8 @@ This repository now includes ntfy support in three places:
   `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/action_plugins/ntfy.py`
 - GitHub repository event notifications via:
   `.github/workflows/notify.yml`
+- private ntfy server deployment via:
+  `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/ntfy-server.yml`
 
 Local Codex-side notifications can be sent with:
 
@@ -77,6 +81,11 @@ Archive-derived local operator tools now included:
 Shared environment keys are documented in:
 
 - `ntfy.env.example`
+
+Standalone private ntfy server deployment assets live under:
+
+- `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/ntfy_server`
+- `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/group_vars/ntfy_servers.yml`
 
 The repository event workflow is designed to send notifications for:
 

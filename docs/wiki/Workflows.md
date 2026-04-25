@@ -2,12 +2,13 @@
 
 ## Operator Workflow Families
 
-This repository currently has four main workflow families:
+This repository currently has five main workflow families:
 
 - host validation and CI
 - VM build and launch
 - staged installer execution
 - notification and approval visibility
+- private ntfy infrastructure deployment
 
 ## 1. Validate the Repository
 
@@ -123,7 +124,21 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 8. Release and Merge Discipline
+## 8. Private ntfy Server Deployment
+
+Deploy a standalone ntfy server on a dedicated Gentoo/OpenRC host:
+
+```bash
+ansible-playbook -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/ntfy-server.yml \
+  -l ntfy_primary
+```
+
+Machine-readable version:
+
+- `docs/workflows/ntfy-server-deployment.json`
+
+## 9. Release and Merge Discipline
 
 Operational rule:
 

@@ -100,6 +100,20 @@ vim inventories/examples/group_vars/install_targets.yml
 ansible-playbook playbooks/install.yml -l target_system_remote
 ```
 
+### Deploy a private ntfy server
+
+Use the dedicated `ntfy_servers` inventory group for a standalone notification
+endpoint. This is intentionally separate from the imaging workflow so private
+operator messaging can live on an infrastructure host that is not itself being
+reimaged.
+
+```bash
+./scripts/bootstrap-liveiso.sh
+vim inventories/examples/hosts.yml
+vim inventories/examples/group_vars/ntfy_servers.yml
+ansible-playbook -i inventories/examples/hosts.yml playbooks/ntfy-server.yml -l ntfy_primary
+```
+
 ### QEMU alias-mode execution against the installer VM
 
 Use the dedicated alias-mode inventory when the installer VM is launched with
@@ -239,6 +253,7 @@ Machine-readable workflow definitions live under:
 
 - `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json`
 - `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json`
+- `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/ntfy-server-deployment.json`
 
 Those manifests document the repeatable operator sequence for:
 
@@ -248,6 +263,7 @@ Those manifests document the repeatable operator sequence for:
 - control-flow pipeline watching
 - boot-role repair iterations
 - target-disk boot validation
+- private ntfy server deployment and health validation
 
 ## ntfy notifications
 
@@ -299,6 +315,27 @@ The action plugin can be used inside playbooks for explicit controller-side mess
     state: notice
     attrs:
       tags: [hammer_and_wrench]
+```
+
+## Private ntfy server deployment
+
+This subtree now also carries a dedicated private ntfy server role and playbook:
+
+- `playbooks/ntfy-server.yml`
+- `roles/ntfy_server`
+- `inventories/examples/group_vars/ntfy_servers.yml`
+
+The role is OpenRC-oriented and supports:
+
+- `ntfy_server_install_method: binary` (default, upstream release tarball)
+- `ntfy_server_install_method: package` (override for distros with a packaged ntfy)
+- declarative `auth-users` and `auth-access` policy in `server.yml`
+- a repo-managed OpenRC `init.d` and `conf.d`
+
+Run a syntax check before touching a live host:
+
+```bash
+ansible-playbook -i inventories/examples/hosts.yml playbooks/ntfy-server.yml --syntax-check
 ```
 
 ### Translated modular roles

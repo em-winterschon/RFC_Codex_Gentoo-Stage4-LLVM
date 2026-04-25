@@ -1,0 +1,27 @@
+---
+ntfy_server_install_method: binary
+ntfy_server_version: "2.21.0"
+ntfy_server_base_url: https://ntfy.example.invalid
+ntfy_server_listen_http: 127.0.0.1:2586
+ntfy_server_behind_proxy: true
+
+# Keep private deployments closed by default. Replace the bcrypt hashes before use.
+ntfy_server_auth_default_access: deny-all
+ntfy_server_auth_users:
+  - username: codex-admin
+    password_hash: "$2a$10$replace.with.a.real.bcrypt.hash.for.codex.admin"
+    role: admin
+  - username: codex-publisher
+    password_hash: "$2a$10$replace.with.a.real.bcrypt.hash.for.codex.publisher"
+    role: user
+
+ntfy_server_auth_access:
+  - username: codex-publisher
+    topic: codex-*
+    permission: rw
+  - username: codex-publisher
+    topic: repo-*
+    permission: rw
+  - username: codex-publisher
+    topic: ansible-*
+    permission: rw

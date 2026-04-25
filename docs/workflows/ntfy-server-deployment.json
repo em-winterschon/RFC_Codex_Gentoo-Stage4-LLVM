@@ -1,0 +1,88 @@
+{
+  "apiVersion": "codex.openai/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "ntfy-server-deployment",
+    "summary": "Deploy a private ntfy server on a Gentoo/OpenRC host and validate local health."
+  },
+  "variables": [
+    {
+      "name": "repo_root",
+      "description": "Absolute path to the repository root."
+    },
+    {
+      "name": "inventory_path",
+      "description": "Inventory file containing the ntfy_servers host group."
+    },
+    {
+      "name": "limit_host",
+      "description": "Host or group limit for the ntfy server deployment."
+    }
+  ],
+  "stages": [
+    {
+      "id": "syntax-check",
+      "summary": "Validate the ntfy server playbook and inventory wiring.",
+      "cwd": "${repo_root}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "env": [],
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory_path}",
+        "playbooks/ntfy-server.yml",
+        "--syntax-check"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [],
+      "notes": [
+        "Run this before touching a live ntfy server host."
+      ]
+    },
+    {
+      "id": "deploy",
+      "summary": "Apply the ntfy server role to the destination host.",
+      "cwd": "${repo_root}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "env": [],
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory_path}",
+        "playbooks/ntfy-server.yml",
+        "--limit",
+        "${limit_host}"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/etc/ntfy/server.yml",
+        "/etc/init.d/ntfy",
+        "/etc/conf.d/ntfy"
+      ],
+      "notes": [
+        "The binary install path downloads the upstream release tarball and installs /usr/local/bin/ntfy.",
+        "The role assumes an OpenRC-managed destination host."
+      ]
+    },
+    {
+      "id": "validate-health",
+      "summary": "Confirm the ntfy daemon is up and answering health checks.",
+      "cwd": "${repo_root}",
+      "env": [],
+      "command": [
+        "curl",
+        "-fsS",
+        "http://${limit_host}:2586/v1/health"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [],
+      "notes": [
+        "If the service is behind a reverse proxy, validate the proxied base URL instead."
+      ]
+    }
+  ]
+}
