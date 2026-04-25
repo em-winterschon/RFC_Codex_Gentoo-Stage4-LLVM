@@ -245,6 +245,22 @@ test_codex_reply_listener_persists_normalized_queue_entries() {
   rm -rf "${temp_dir}"
 }
 
+test_codex_reply_listener_parses_syslog_wrapped_reply_messages() {
+  local temp_dir state_file content
+  temp_dir="$(mktemp -d)"
+  state_file="${temp_dir}/listener-state.json"
+
+  CODEX_NTFY_REPLY_TOPIC=codex-replies \
+    CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
+    CODEX_NTFY_REPLY_LISTENER_TEST_MESSAGES='<134>1 2026-04-25T18:54:35Z host codex-reply-test 1 - - state="notice" severity="info" severity_code="6" message="allow req-syslog-1"' \
+    python3 "${CODEX_REPLY_LISTENER}" --once --from-start --state-file "${state_file}"
+
+  content="$(find "${temp_dir}/queue/pending" -type f -name '*.json' -print0 | xargs -0 cat)"
+  assert_contains "${content}" '"request_id": "req-syslog-1"'
+  assert_contains "${content}" '"decision": "allow"'
+  rm -rf "${temp_dir}"
+}
+
 test_codex_ntfy_hook_consumes_reply_queue_entries() {
   local temp_dir state_file output
   temp_dir="$(mktemp -d)"
@@ -364,6 +380,7 @@ test_codex_hook_wrapper_sources_env_file
 test_codex_reply_listener_wrapper_sources_env_file
 test_codex_ntfy_hook_permission_dry_run_and_reply
 test_codex_reply_listener_persists_normalized_queue_entries
+test_codex_reply_listener_parses_syslog_wrapped_reply_messages
 test_codex_ntfy_hook_consumes_reply_queue_entries
 test_approval_watcher_exec_request_dry_run
 test_approval_watcher_patch_request_dry_run

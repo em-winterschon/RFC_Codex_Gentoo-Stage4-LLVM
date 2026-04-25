@@ -16,6 +16,7 @@ ALLOW_RE = re.compile(r"^allow\s+([A-Za-z0-9._:-]+)\s*$", re.IGNORECASE)
 DENY_RE = re.compile(r"^deny\s+([A-Za-z0-9._:-]+)\s*$", re.IGNORECASE)
 ANSWER_RE = re.compile(r"^([A-Za-z0-9._:-]+)\s*:\s*(.+)$", re.DOTALL)
 STATUS_RE = re.compile(r"^status(?:\s+([A-Za-z0-9._:-]+))?\s*$", re.IGNORECASE)
+SYSLOG_MESSAGE_RE = re.compile(r'message="([^"]+)"')
 
 
 def reply_queue_root() -> Path:
@@ -54,6 +55,9 @@ def normalize_reply_message(
     topic: str,
 ) -> dict[str, Any] | None:
     stripped = message.strip()
+    syslog_match = SYSLOG_MESSAGE_RE.search(stripped)
+    if syslog_match:
+        stripped = syslog_match.group(1).strip()
     if not stripped:
       return None
 
