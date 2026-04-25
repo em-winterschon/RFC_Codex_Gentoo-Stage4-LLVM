@@ -18,7 +18,7 @@ START_SERVICE="${START_SERVICE:-1}"
 DRY_RUN=0
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: $(basename "$0") [--dry-run] [--no-enable] [--no-start]
 
 Installs the Codex ntfy approval watcher as an OpenRC service.
@@ -61,30 +61,30 @@ write_file() {
     return 0
   fi
   install -d -m 0755 "$(dirname "${path}")"
-  printf '%s' "${content}" >"${path}"
+  printf '%s' "${content}" > "${path}"
   chmod "${mode}" "${path}"
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dry-run)
-      DRY_RUN=1
-      ;;
-    --no-enable)
-      ENABLE_SERVICE=0
-      ;;
-    --no-start)
-      START_SERVICE=0
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      printf 'ERROR: unknown argument: %s\n' "$1" >&2
-      usage >&2
-      exit 2
-      ;;
+  --dry-run)
+    DRY_RUN=1
+    ;;
+  --no-enable)
+    ENABLE_SERVICE=0
+    ;;
+  --no-start)
+    START_SERVICE=0
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: unknown argument: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
   shift
 done
@@ -100,7 +100,8 @@ wrapper_path="${LIBEXEC_DIR}/${SERVICE_NAME}"
 initd_path="${INITD_DIR}/${SERVICE_NAME}"
 confd_path="${CONFD_DIR}/${SERVICE_NAME}"
 
-wrapper_content="$(cat <<EOF
+wrapper_content="$(
+  cat << EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -114,7 +115,8 @@ exec /bin/bash "\${codex_approval_watcher_repo_root}/scripts/codex_approval_watc
 EOF
 )"
 
-confd_content="$(cat <<EOF
+confd_content="$(
+  cat << EOF
 # Configuration for ${SERVICE_NAME}
 
 codex_approval_watcher_description="Codex ntfy approval watcher"

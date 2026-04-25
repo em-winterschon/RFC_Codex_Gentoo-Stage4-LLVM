@@ -1,0 +1,159 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage4-destination-install-sequences",
+    "description": "Execute the staged Ansible installer sequences against a destination test host with structured control-flow logging.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible subtree used for install orchestration."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "description": "Inventory file for the destination test host."
+    },
+    {
+      "name": "limit_target",
+      "required": true,
+      "description": "Destination host limit, such as a single VM or bare-metal host alias."
+    },
+    {
+      "name": "ansible_ssh_args",
+      "required": false,
+      "default": "-o ControlMaster=no -o ControlPath=none -o StrictHostKeyChecking=no -o ConnectTimeout=10",
+      "description": "SSH arguments used by Ansible against the destination host."
+    },
+    {
+      "name": "control_flow_path",
+      "required": false,
+      "default": "/tmp/ansible-control-flow/install.destination.jsonl",
+      "description": "JSONL file that can be tailed remotely during execution."
+    }
+  ],
+  "stages": [
+    {
+      "id": "sequence-storage-foundation",
+      "summary": "Run the destructive storage foundation pass against the destination host.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}",
+        "ANSIBLE_CONTROL_FLOW_PATH": "${control_flow_path}"
+      },
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${limit_target}",
+        "--sequence",
+        "storage-foundation",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_path}"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "sequence-chroot-bootstrap",
+      "summary": "Populate the target root with stage3, profile overlay, Portage tuning, and chroot helpers.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}",
+        "ANSIBLE_CONTROL_FLOW_PATH": "${control_flow_path}"
+      },
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${limit_target}",
+        "--sequence",
+        "chroot-bootstrap",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_path}"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "sequence-target-integration",
+      "summary": "Install the kernel, boot flow, network, and managed services onto the destination host.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}",
+        "ANSIBLE_CONTROL_FLOW_PATH": "${control_flow_path}"
+      },
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${limit_target}",
+        "--sequence",
+        "target-integration",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_path}"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "sequence-repair-boot",
+      "summary": "Optional targeted rerun when iterating on ZFSBootMenu, kernel/initramfs materialization, or target networking.",
+      "cwd": "${ansible_root}",
+      "env": {
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}",
+        "ANSIBLE_CONTROL_FLOW_PATH": "${control_flow_path}"
+      },
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${limit_target}",
+        "--sequence",
+        "repair-boot",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_path}"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "watch-control-flow",
+      "summary": "Tail the structured control-flow stream during a long-running install or repair sequence.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "python3",
+        "scripts/watch-control-flow.py",
+        "--path",
+        "${control_flow_path}",
+        "--follow"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

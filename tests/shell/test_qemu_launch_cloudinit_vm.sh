@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-cloudinit-vm.sh"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-cloudinit-vm.sh
 source "${LAUNCH_SCRIPT}"
 
@@ -23,6 +24,35 @@ assert_equals() {
   local actual="$1"
   local expected="$2"
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+mark_cloud_launch_globals_used() {
+  : "${QEMU_NETDEV_HELP_OUTPUT-}" \
+    "${CLOUD_IMAGE_URL-}" \
+    "${CLOUD_IMAGE_INFO_URL-}" \
+    "${QEMU_DISPLAY_HELP_OUTPUT-}" \
+    "${QEMU_SERIAL_MODE-}" \
+    "${QEMU_SERIAL_FILE-}" \
+    "${QEMU_DISPLAY_MODE-}" \
+    "${QEMU_DEVICE_HELP_OUTPUT-}" \
+    "${QEMU_NETDEV_BACKEND-}" \
+    "${QEMU_BOOT_STRICT-}" \
+    "${QEMU_BOOTDISK_ID-}" \
+    "${QEMU_BOOTDISK_MODEL-}" \
+    "${QEMU_BOOTDISK_BOOTINDEX-}" \
+    "${SEED_DIR-}" \
+    "${QEMU_BIN-}" \
+    "${QEMU_IMG_BIN-}" \
+    "${QEMU_LAUNCH_DRY_RUN-}" \
+    "${GENERATE_SEED-}" \
+    "${QEMU_DAEMONIZE-}" \
+    "${WAIT_FOR_SSH-}" \
+    "${SSH_WAIT_TIMEOUT-}" \
+    "${SSH_READY_PROBE-}" \
+    "${SSH_BANNER_TIMEOUT-}" \
+    "${SSH_READY_HOST-}" \
+    "${SSH_READY_PORT-}" \
+    "${QEMU_ENABLE_VSOCK-}"
 }
 
 reset_launcher_state() {
@@ -56,8 +86,9 @@ test_resolve_cloud_image_url_parses_latest_info() {
   reset_launcher_state
   CLOUD_IMAGE_URL=''
   CLOUD_IMAGE_INFO_URL='https://distfiles.gentoo.org/releases/amd64/autobuilds/latest-di-amd64-cloudinit.txt'
+  mark_cloud_launch_globals_used
   fetch_text() {
-    cat <<'EOF'
+    cat << 'EOF'
 [ Latest Files ]
 https://distfiles.gentoo.org/releases/amd64/autobuilds/20260419T164601Z/di-amd64-cloudinit-20260419T164601Z.qcow2 12345
 EOF
@@ -88,14 +119,15 @@ test_build_qemu_cmd_uses_cloud_boot_disk_seed_and_host_disks() {
   QEMU_ENABLE_VSOCK='1'
   QEMU_VSOCK_CID='42'
   QEMU_NETDEV_BACKEND='user,hostfwd=tcp:127.0.0.1:2222-:22'
-  : >"${BASE_IMAGE_PATH}"
-  : >"${OVERLAY_IMAGE}"
-  : >"${SEED_ISO}"
-  : >"${EFI_FIRM}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  mark_cloud_launch_globals_used
+  : > "${BASE_IMAGE_PATH}"
+  : > "${OVERLAY_IMAGE}"
+  : > "${SEED_ISO}"
+  : > "${EFI_FIRM}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   build_qemu_cmd
 
@@ -139,13 +171,14 @@ test_main_dry_run_prints_overlay_and_qemu_commands() {
   QEMU_SERIAL_MODE='file'
   QEMU_SERIAL_FILE="${temp_dir}/serial.log"
   QEMU_DAEMONIZE='1'
-  : >"${CLOUD_IMAGE_PATH}"
-  : >"${SEED_ISO}"
-  : >"${EFI_FIRM}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  mark_cloud_launch_globals_used
+  : > "${CLOUD_IMAGE_PATH}"
+  : > "${SEED_ISO}"
+  : > "${EFI_FIRM}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   set +e
   output="$(main 2>&1)"
@@ -168,11 +201,12 @@ test_wait_for_ssh_ready_requires_banner_not_just_open_port() {
 
   reset_launcher_state
   QEMU_SERIAL_FILE="${temp_dir}/serial.log"
-  printf "%s\n" "Try contacting this VM's SSH server via 'ssh vsock%4294967295' from host." >"${QEMU_SERIAL_FILE}"
+  printf "%s\n" "Try contacting this VM's SSH server via 'ssh vsock%4294967295' from host." > "${QEMU_SERIAL_FILE}"
   WAIT_FOR_SSH='1'
   QEMU_DAEMONIZE='1'
   SSH_WAIT_TIMEOUT='0'
   SSH_READY_PROBE='banner'
+  mark_cloud_launch_globals_used
 
   probe_ssh_banner() {
     return 1
@@ -196,6 +230,7 @@ test_validate_vsock_backend_checks_device_help() {
   QEMU_ENABLE_VSOCK='1'
   QEMU_VSOCK_MODEL='vhost-vsock-pci'
   QEMU_DEVICE_HELP_OUTPUT='name "virtio-net-pci"'
+  mark_cloud_launch_globals_used
 
   set +e
   output="$(validate_vsock_backend 2>&1)"

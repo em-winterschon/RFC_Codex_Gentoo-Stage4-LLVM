@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BUILD_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/build-stage3-qcow.sh"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/build-stage3-qcow.sh
 source "${BUILD_SCRIPT}"
 
@@ -23,6 +24,67 @@ assert_equals() {
   local actual="$1"
   local expected="$2"
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+mark_stage3_builder_globals_used() {
+  : "${STAGE3_MIRROR_ROOT-}" \
+    "${STAGE3_TARGET-}" \
+    "${STAGE3_PROFILE_PRESET-}" \
+    "${STAGE3_CACHE_DIR-}" \
+    "${TARGET_EFI_MNT-}" \
+    "${QCOW_IMAGE-}" \
+    "${QEMU_STAGE3_BUILD_DRY_RUN-}" \
+    "${STAGE3_VERIFY_CHECKSUM-}" \
+    "${SSH_AUTHORIZED_KEY-}" \
+    "${SSH_AUTHORIZED_KEY_FILE-}" \
+    "${STAGE3_ROOT_PASSWORD_HASH-}" \
+    "${PORTAGE_SYNC_COMMAND-}" \
+    "${STAGE3_LATEST_TXT-}" \
+    "${STAGE3_LLVM_TARGETS-}" \
+    "${STAGE3_STAGE_TARBALL_NAME-}" \
+    "${STAGE3_STAGE_TARBALL_URL-}" \
+    "${STAGE3_STAGE_SHA256_URL-}" \
+    "${STAGE3_STAGE_TARBALL_PATH-}" \
+    "${STAGE3_STAGE_SHA256_PATH-}" \
+    "${STAGE3_STAGE_SHA256-}" \
+    "${QEMU_NBD_BIN-}" \
+    "${MODPROBE_BIN-}" \
+    "${SGDISK_BIN-}" \
+    "${PARTPROBE_BIN-}" \
+    "${PARTX_BIN-}" \
+    "${MKFS_VFAT_BIN-}" \
+    "${MKFS_EXT4_BIN-}" \
+    "${UMOUNT_BIN-}" \
+    "${TAR_BIN-}"
+}
+
+make_fake_host_tools() {
+  local temp_dir="$1"
+  local tool_dir="${temp_dir}/fake-tools"
+  local tool
+  mkdir -p "${tool_dir}"
+
+  for tool in \
+    qemu-img \
+    qemu-nbd \
+    modprobe \
+    sgdisk \
+    partprobe \
+    partx \
+    mkfs.vfat \
+    mkfs.ext4 \
+    mount \
+    umount \
+    tar \
+    chroot; do
+    cat > "${tool_dir}/${tool}" << 'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "${tool_dir}/${tool}"
+  done
+
+  printf '%s\n' "${tool_dir}"
 }
 
 reset_builder_state() {
@@ -68,6 +130,7 @@ reset_builder_state() {
   UMOUNT_BIN='/usr/bin/umount'
   TAR_BIN='/usr/bin/tar'
   CHROOT_BIN='/usr/sbin/chroot'
+  mark_stage3_builder_globals_used
 }
 
 test_resolve_stage3_target_maps_supported_enums() {
@@ -121,8 +184,11 @@ test_validate_stage3_profile_preset_rejects_invalid_enum() {
 }
 
 test_main_dry_run_prints_stage3_build_plan() {
-  local temp_dir output status bootstrap
+  local temp_dir tool_dir old_path output status bootstrap
   temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
 
   reset_builder_state
   STAGE3_IMAGE_DIR="${temp_dir}"
@@ -134,13 +200,14 @@ test_main_dry_run_prints_stage3_build_plan() {
   WORK_BOOTSTRAP_SCRIPT="${STAGE3_BUILD_DIR}/bootstrap-stage3-vm.sh"
   QCOW_IMAGE="${STAGE3_IMAGE_OUTPUT_DIR}/${INSTANCE_NAME}.qcow2"
   HOST_RESOLV_CONF="${temp_dir}/resolv.conf"
-  printf 'nameserver 1.1.1.1\n' >"${HOST_RESOLV_CONF}"
+  printf 'nameserver 1.1.1.1\n' > "${HOST_RESOLV_CONF}"
 
   fetch_text() {
-    cat <<'EOF'
+    cat << 'EOF'
 stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
 EOF
   }
+  fetch_text > /dev/null
 
   set +e
   output="$(main 2>&1)"
@@ -166,12 +233,16 @@ EOF
   assert_contains "${bootstrap}" 'emerge --oneshot sys-apps/portage app-eselect/eselect-repository'
   assert_contains "${bootstrap}" 'rc-update add dhcpcd default'
   assert_contains "${bootstrap}" 'rc-update add sshd default'
+  PATH="${old_path}"
   rm -rf "${temp_dir}"
 }
 
 test_hardened_profile_preset_renders_profile_specific_portage_config() {
-  local temp_dir bootstrap output status
+  local temp_dir tool_dir old_path bootstrap output status
   temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
 
   reset_builder_state
   STAGE3_PROFILE_PRESET='hardened-llvm-stage4'
@@ -185,10 +256,11 @@ test_hardened_profile_preset_renders_profile_specific_portage_config() {
   QCOW_IMAGE="${STAGE3_IMAGE_OUTPUT_DIR}/${INSTANCE_NAME}.qcow2"
 
   fetch_text() {
-    cat <<'EOF'
+    cat << 'EOF'
 stage3-amd64-llvm-openrc-20260420T120000Z.tar.xz 12345
 EOF
   }
+  fetch_text > /dev/null
 
   set +e
   output="$(main 2>&1)"
@@ -197,15 +269,24 @@ EOF
 
   assert_equals "${status}" '0'
   bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
+  # shellcheck disable=SC2016
   assert_contains "${bootstrap}" 'FEATURES="${FEATURES} ccache distcc fail-clean"'
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/00-llvm-stage4'
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.mask/00-no-systemd'
+  # shellcheck disable=SC2016
   assert_contains "${bootstrap}" 'eselect repository enable "${gentoo_overlay_repo}"'
   assert_contains "${bootstrap}" 'guru xira without-systemd'
+  PATH="${old_path}"
   rm -rf "${temp_dir}"
 }
 
 test_resolve_host_tool_paths_falls_back_to_command_v() {
+  local temp_dir tool_dir old_path
+  temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
+
   reset_builder_state
   QEMU_IMG_BIN='/not-real/qemu-img'
   QEMU_NBD_BIN='/not-real/qemu-nbd'
@@ -225,6 +306,8 @@ test_resolve_host_tool_paths_falls_back_to_command_v() {
   [[ "${QEMU_IMG_BIN}" == */qemu-img ]] || fail "QEMU_IMG_BIN was not resolved"
   [[ "${MOUNT_BIN}" == */mount ]] || fail "MOUNT_BIN was not resolved"
   [[ "${CHROOT_BIN}" == */chroot ]] || fail "CHROOT_BIN was not resolved"
+  PATH="${old_path}"
+  rm -rf "${temp_dir}"
 }
 
 test_resolve_stage3_target_maps_supported_enums

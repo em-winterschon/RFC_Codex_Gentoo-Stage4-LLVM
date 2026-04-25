@@ -10,10 +10,9 @@ set -euo pipefail
 #   - creates/uses a pipenv and installs requirements.txt
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ANSIBLE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUTPUT_PATH="${1:-${SCRIPT_DIR}/setup-ansible-python-env.sh}"
 
-cat > "${OUTPUT_PATH}" <<'GENERATED'
+cat > "${OUTPUT_PATH}" << 'GENERATED'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -29,7 +28,7 @@ log() {
 }
 
 ensure_python() {
-  if ! command -v python3 >/dev/null 2>&1; then
+  if ! command -v python3 > /dev/null 2>&1; then
     echo "python3 was not found in PATH. Please install Python 3.${PYTHON_MIN_MINOR}+ first." >&2
     exit 1
   fi
@@ -47,7 +46,7 @@ ensure_python() {
 }
 
 ensure_pip() {
-  if python3 -m pip --version >/dev/null 2>&1; then
+  if python3 -m pip --version > /dev/null 2>&1; then
     log "pip already available."
     return
   fi
@@ -55,7 +54,7 @@ ensure_pip() {
   log "pip not found, attempting bootstrap with ensurepip."
   python3 -m ensurepip --upgrade
 
-  if ! python3 -m pip --version >/dev/null 2>&1; then
+  if ! python3 -m pip --version > /dev/null 2>&1; then
     echo "Unable to bootstrap pip. Install pip manually and re-run." >&2
     exit 1
   fi
@@ -64,7 +63,7 @@ ensure_pip() {
 }
 
 ensure_pipenv() {
-  if command -v pipenv >/dev/null 2>&1; then
+  if command -v pipenv > /dev/null 2>&1; then
     log "pipenv already installed."
     return
   fi
@@ -72,13 +71,13 @@ ensure_pipenv() {
   log "Installing pipenv for current user."
   python3 -m pip install --user --upgrade pipenv
 
-  if ! command -v pipenv >/dev/null 2>&1; then
+  if ! command -v pipenv > /dev/null 2>&1; then
     local userbase_bin
     userbase_bin="$(python3 -m site --user-base)/bin"
     export PATH="${userbase_bin}:${PATH}"
   fi
 
-  if ! command -v pipenv >/dev/null 2>&1; then
+  if ! command -v pipenv > /dev/null 2>&1; then
     echo "pipenv was installed but is not on PATH; add it and re-run." >&2
     exit 1
   fi
@@ -109,11 +108,11 @@ install_ansible_requirements() {
     exit 1
   fi
 
-  pushd "${ansible_dir}" >/dev/null
+  pushd "${ansible_dir}" > /dev/null
   log "Creating/updating pipenv with ${requirements}."
   PIPENV_VENV_IN_PROJECT="${PIPENV_VENV_IN_PROJECT:-1}" \
     pipenv --python "$(command -v python3)" install -r requirements.txt
-  popd >/dev/null
+  popd > /dev/null
 
   log "Done. Activate with: cd ${ansible_dir} && pipenv shell"
 }

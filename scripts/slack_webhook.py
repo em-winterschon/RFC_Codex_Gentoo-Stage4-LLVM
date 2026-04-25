@@ -46,7 +46,11 @@ def main() -> int:
         print("ERROR: Slack webhook URL is not configured", file=sys.stderr)
         return 2
     if args.dry_run:
-        print(json.dumps({"webhook_url": args.webhook_url, "payload": payload}, indent=2, sort_keys=True))
+        print(
+            json.dumps(
+                {"webhook_url": args.webhook_url, "payload": payload}, indent=2, sort_keys=True
+            )
+        )
         return 0
     try:
         result = send_payload(args.webhook_url, payload)

@@ -49,4 +49,4 @@
   ansible.builtin.include_tasks: layout_zfs_native.yml
   when:
     - storage_layout not in ['raid-1', 'raid-10']
-    - "'zfs' not in (selected_roles | default([]))"
+    - "'zfs' not in (selected_roles | default(resolved_install_roles_flat | default([])))"

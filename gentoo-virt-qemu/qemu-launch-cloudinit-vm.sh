@@ -94,7 +94,7 @@ require_host_disk_ready() {
   [[ -n "${path}" ]] || fail "${label} is empty"
   [[ -e "${path}" ]] || fail "${label} is missing: ${path}"
 
-  resolved_path="$(readlink -f "${path}" 2>/dev/null || true)"
+  resolved_path="$(readlink -f "${path}" 2> /dev/null || true)"
   if [[ "${path}" == /dev/* || "${resolved_path}" == /dev/* ]]; then
     [[ -n "${resolved_path}" && -b "${resolved_path}" ]] || fail "${label} is not a block device: ${path}"
   fi
@@ -131,19 +131,19 @@ validate_display_backend() {
   local help_output
 
   case "$(display_mode_name)" in
-    none)
-      return 0
-      ;;
-    gtk|sdl)
-      help_output="${QEMU_DISPLAY_HELP_OUTPUT}"
-      if [[ -z "${help_output}" ]]; then
-        help_output="$("${QEMU_BIN}" -display help 2>&1 || true)"
-      fi
-      [[ "${help_output}" == *"$(display_mode_name)"* ]] || fail "QEMU display mode '$(display_mode_name)' is not available in ${QEMU_BIN}"
-      ;;
-    *)
-      fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
-      ;;
+  none)
+    return 0
+    ;;
+  gtk | sdl)
+    help_output="${QEMU_DISPLAY_HELP_OUTPUT}"
+    if [[ -z "${help_output}" ]]; then
+      help_output="$("${QEMU_BIN}" -display help 2>&1 || true)"
+    fi
+    [[ "${help_output}" == *"$(display_mode_name)"* ]] || fail "QEMU display mode '$(display_mode_name)' is not available in ${QEMU_BIN}"
+    ;;
+  *)
+    fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
+    ;;
   esac
 }
 
@@ -163,12 +163,12 @@ validate_vsock_backend() {
 }
 
 find_fetch_tool() {
-  if command -v curl >/dev/null 2>&1; then
+  if command -v curl > /dev/null 2>&1; then
     printf 'curl'
     return 0
   fi
 
-  if command -v wget >/dev/null 2>&1; then
+  if command -v wget > /dev/null 2>&1; then
     printf 'wget'
     return 0
   fi
@@ -180,12 +180,12 @@ fetch_text() {
   local url="$1"
 
   case "$(find_fetch_tool)" in
-    curl)
-      curl -fsSL "${url}"
-      ;;
-    wget)
-      wget -qO- "${url}"
-      ;;
+  curl)
+    curl -fsSL "${url}"
+    ;;
+  wget)
+    wget -qO- "${url}"
+    ;;
   esac
 }
 
@@ -194,12 +194,12 @@ download_file() {
   local dest="$2"
 
   case "$(find_fetch_tool)" in
-    curl)
-      curl -fL -o "${dest}" "${url}"
-      ;;
-    wget)
-      wget -O "${dest}" "${url}"
-      ;;
+  curl)
+    curl -fL -o "${dest}" "${url}"
+    ;;
+  wget)
+    wget -O "${dest}" "${url}"
+    ;;
   esac
 }
 
@@ -297,19 +297,28 @@ ensure_overlay_image() {
 }
 
 ensure_seed_iso() {
+  local seed_instance_name seed_state_dir seed_dir_path seed_iso_path seed_dry_run
+
   if [[ "${GENERATE_SEED}" != '1' ]]; then
     [[ -f "${SEED_ISO}" || "${QEMU_LAUNCH_DRY_RUN}" == '1' ]] || fail "SEED_ISO is missing and GENERATE_SEED=0: ${SEED_ISO}"
     return 0
   fi
 
-  INSTANCE_NAME="${INSTANCE_NAME}" \
-  LOCAL_HOSTNAME="${INSTANCE_NAME}" \
-  INSTANCE_ID="${INSTANCE_NAME}" \
-  SEED_BASE_DIR="${STATE_DIR}" \
-  SEED_DIR="${SEED_DIR}" \
-  SEED_ISO="${SEED_ISO}" \
-  CLOUD_INIT_SEED_DRY_RUN="${QEMU_LAUNCH_DRY_RUN}" \
-  bash "${SEED_SCRIPT}"
+  seed_instance_name="${INSTANCE_NAME}"
+  seed_state_dir="${STATE_DIR}"
+  seed_dir_path="${SEED_DIR}"
+  seed_iso_path="${SEED_ISO}"
+  seed_dry_run="${QEMU_LAUNCH_DRY_RUN}"
+
+  env \
+    INSTANCE_NAME="${seed_instance_name}" \
+    LOCAL_HOSTNAME="${seed_instance_name}" \
+    INSTANCE_ID="${seed_instance_name}" \
+    SEED_BASE_DIR="${seed_state_dir}" \
+    SEED_DIR="${seed_dir_path}" \
+    SEED_ISO="${seed_iso_path}" \
+    CLOUD_INIT_SEED_DRY_RUN="${seed_dry_run}" \
+    bash "${SEED_SCRIPT}"
 }
 
 append_host_disk() {
@@ -326,44 +335,44 @@ append_host_disk() {
 
 append_vsock_args() {
   if [[ "${QEMU_ENABLE_VSOCK}" == '1' ]]; then
-    QEMU_CMD+=( -device "${QEMU_VSOCK_MODEL},guest-cid=${QEMU_VSOCK_CID}" )
+    QEMU_CMD+=(-device "${QEMU_VSOCK_MODEL},guest-cid=${QEMU_VSOCK_CID}")
   fi
 }
 
 append_boot_args() {
   if [[ "${QEMU_BOOT_STRICT}" == '1' ]]; then
-    QEMU_CMD+=( -boot strict=on )
+    QEMU_CMD+=(-boot strict=on)
   fi
 }
 
 append_display_args() {
   case "$(display_mode_name)" in
-    none)
-      QEMU_CMD+=( -display none )
-      ;;
-    gtk|sdl)
-      QEMU_CMD+=( -display "$(display_mode_name)" )
-      ;;
+  none)
+    QEMU_CMD+=(-display none)
+    ;;
+  gtk | sdl)
+    QEMU_CMD+=(-display "$(display_mode_name)")
+    ;;
   esac
 }
 
 append_serial_args() {
   case "$(serial_mode_name)" in
-    none)
-      return 0
-      ;;
-    stdio)
-      QEMU_CMD+=( -serial mon:stdio )
-      ;;
-    pty)
-      QEMU_CMD+=( -serial pty )
-      ;;
-    file)
-      QEMU_CMD+=( -serial "file:${QEMU_SERIAL_FILE}" )
-      ;;
-    *)
-      fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name)"
-      ;;
+  none)
+    return 0
+    ;;
+  stdio)
+    QEMU_CMD+=(-serial mon:stdio)
+    ;;
+  pty)
+    QEMU_CMD+=(-serial pty)
+    ;;
+  file)
+    QEMU_CMD+=(-serial "file:${QEMU_SERIAL_FILE}")
+    ;;
+  *)
+    fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name)"
+    ;;
   esac
 }
 
@@ -399,18 +408,18 @@ build_qemu_cmd() {
   append_display_args
   append_serial_args
   if [[ "${QEMU_DAEMONIZE}" == '1' ]]; then
-    QEMU_CMD+=( -daemonize )
+    QEMU_CMD+=(-daemonize)
   fi
 }
 
 port_is_open() {
-  exec 3<>"/dev/tcp/${SSH_FORWARD_HOST}/${SSH_FORWARD_PORT}" && exec 3>&- 3<&-
+  exec 3<> "/dev/tcp/${SSH_FORWARD_HOST}/${SSH_FORWARD_PORT}" && exec 3>&- 3<&-
 }
 
 probe_ssh_banner() {
   local banner=''
 
-  exec 3<>"/dev/tcp/${SSH_FORWARD_HOST}/${SSH_FORWARD_PORT}" || return 1
+  exec 3<> "/dev/tcp/${SSH_FORWARD_HOST}/${SSH_FORWARD_PORT}" || return 1
   if ! IFS= read -r -t "${SSH_BANNER_TIMEOUT}" banner <&3; then
     exec 3>&- 3<&-
     return 1
@@ -438,32 +447,32 @@ wait_for_ssh_ready() {
 
   deadline=$((SECONDS + SSH_WAIT_TIMEOUT))
   case "${SSH_READY_PROBE}" in
-    none)
-      return 0
-      ;;
-    tcp-port)
-      until port_is_open; do
-        if (( SECONDS >= deadline )); then
-          fail "Timed out waiting for TCP port ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}"
+  none)
+    return 0
+    ;;
+  tcp-port)
+    until port_is_open; do
+      if ((SECONDS >= deadline)); then
+        fail "Timed out waiting for TCP port ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}"
+      fi
+      sleep 1
+    done
+    ;;
+  banner)
+    until probe_ssh_banner; do
+      if ((SECONDS >= deadline)); then
+        hint="$(serial_log_vsock_hint)"
+        if [[ -n "${hint}" ]]; then
+          fail "Timed out waiting for an SSH banner on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}; serial log advertises '${hint}'. If this image prefers vsock SSH, relaunch with QEMU_ENABLE_VSOCK=1 and use the guest-advertised command."
         fi
-        sleep 1
-      done
-      ;;
-    banner)
-      until probe_ssh_banner; do
-        if (( SECONDS >= deadline )); then
-          hint="$(serial_log_vsock_hint)"
-          if [[ -n "${hint}" ]]; then
-            fail "Timed out waiting for an SSH banner on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}; serial log advertises '${hint}'. If this image prefers vsock SSH, relaunch with QEMU_ENABLE_VSOCK=1 and use the guest-advertised command."
-          fi
-          fail "Timed out waiting for an SSH banner on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}; inspect ${QEMU_SERIAL_FILE} for guest boot status"
-        fi
-        sleep 1
-      done
-      ;;
-    *)
-      fail "Unsupported SSH_READY_PROBE: ${SSH_READY_PROBE}"
-      ;;
+        fail "Timed out waiting for an SSH banner on ${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}; inspect ${QEMU_SERIAL_FILE} for guest boot status"
+      fi
+      sleep 1
+    done
+    ;;
+  *)
+    fail "Unsupported SSH_READY_PROBE: ${SSH_READY_PROBE}"
+    ;;
   esac
 }
 

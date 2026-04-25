@@ -1,9 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
-__metaclass__ = type
+# ruff: noqa: E402
 
 DOCUMENTATION = r"""
 ---
@@ -70,14 +66,14 @@ class CallbackModule(CallbackBase):
     CALLBACK_NEEDS_ENABLED = True
 
     def __init__(self):
-        super(CallbackModule, self).__init__()
+        super().__init__()
         self.playbook_name = "ansible-playbook"
         self.failures = []
         self.unreachable = []
         self.warnings = []
 
     def set_options(self, task_keys=None, var_options=None, direct=None):
-        super(CallbackModule, self).set_options(task_keys=task_keys, var_options=var_options, direct=direct)
+        super().set_options(task_keys=task_keys, var_options=var_options, direct=direct)
 
     def _enabled(self):
         enabled = self.get_option("ntfy_enabled")
@@ -87,10 +83,12 @@ class CallbackModule(CallbackBase):
         return os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", self.get_option("ntfy_url")))
 
     def _topic_for_state(self, state):
-        env_key = "ANSIBLE_NTFY_TOPIC_%s" % state.strip().upper().replace("-", "_")
+        env_key = f"ANSIBLE_NTFY_TOPIC_{state.strip().upper().replace('-', '_')}"
         return os.getenv(
             env_key,
-            os.getenv("ANSIBLE_NTFY_TOPIC", os.getenv("NTFY_TOPIC", self.get_option("ntfy_topic") or "")),
+            os.getenv(
+                "ANSIBLE_NTFY_TOPIC", os.getenv("NTFY_TOPIC", self.get_option("ntfy_topic") or "")
+            ),
         )
 
     def _severity_value(self, state):
@@ -108,8 +106,8 @@ class CallbackModule(CallbackBase):
         hostname = socket.gethostname()
         sanitized = " ".join(str(message).splitlines()).replace('"', "'")
         return (
-            '<%d>1 %s %s ansible-callback - - - state="%s" severity_code="%d" message="%s"'
-            % (pri, timestamp, hostname, state, severity, sanitized)
+            f"<{pri}>1 {timestamp} {hostname} ansible-callback - - - "
+            f'state="{state}" severity_code="{severity}" message="{sanitized}"'
         )
 
     def _notify(self, state, title, message, tags=None):
@@ -129,7 +127,7 @@ class CallbackModule(CallbackBase):
         headers = {"Content-Type": "application/json", "User-Agent": "Ansible/ntfy-callback"}
         token = os.getenv("ANSIBLE_NTFY_TOKEN", os.getenv("NTFY_TOKEN"))
         if token:
-            headers["Authorization"] = "Bearer %s" % token
+            headers["Authorization"] = f"Bearer {token}"
         try:
             open_url(
                 self._url(),
@@ -139,11 +137,16 @@ class CallbackModule(CallbackBase):
                 http_agent="Ansible/ntfy-callback",
             ).read()
         except Exception as exc:  # noqa: BLE001
-            self._display.warning("ntfy callback send failed: %s" % exc)
+            self._display.warning(f"ntfy callback send failed: {exc}")
 
     def v2_playbook_on_start(self, playbook):
         self.playbook_name = getattr(playbook, "_file_name", None) or "ansible-playbook"
-        self._notify("start", "Ansible started: %s" % self.playbook_name, "playbook=%s" % self.playbook_name, ["ansible", "start"])
+        self._notify(
+            "start",
+            f"Ansible started: {self.playbook_name}",
+            f"playbook={self.playbook_name}",
+            ["ansible", "start"],
+        )
 
     def v2_runner_on_failed(self, result, ignore_errors=False):
         self.failures.append(result)
@@ -151,8 +154,11 @@ class CallbackModule(CallbackBase):
         host = result._host.get_name()
         self._notify(
             "fail",
-            "Ansible task failed: %s" % task_name,
-            "playbook=%s host=%s task=%s ignore_errors=%s" % (self.playbook_name, host, task_name, ignore_errors),
+            f"Ansible task failed: {task_name}",
+            (
+                f"playbook={self.playbook_name} host={host} "
+                f"task={task_name} ignore_errors={ignore_errors}"
+            ),
             ["ansible", "failure"],
         )
 
@@ -161,8 +167,8 @@ class CallbackModule(CallbackBase):
         host = result._host.get_name()
         self._notify(
             "error",
-            "Ansible host unreachable: %s" % host,
-            "playbook=%s host=%s" % (self.playbook_name, host),
+            f"Ansible host unreachable: {host}",
+            f"playbook={self.playbook_name} host={host}",
             ["ansible", "unreachable"],
         )
 
@@ -170,8 +176,8 @@ class CallbackModule(CallbackBase):
         self.warnings.append(msg)
         self._notify(
             "warning",
-            "Ansible warning: %s" % self.playbook_name,
-            "playbook=%s warning=%s" % (self.playbook_name, msg),
+            f"Ansible warning: {self.playbook_name}",
+            f"playbook={self.playbook_name} warning={msg}",
             ["ansible", "warning"],
         )
 
@@ -182,22 +188,15 @@ class CallbackModule(CallbackBase):
         for host in hosts:
             s = stats.summarize(host)
             summary.append(
-                "%s ok=%s changed=%s failed=%s unreachable=%s skipped=%s rescued=%s ignored=%s"
-                % (
-                    host,
-                    s.get("ok", 0),
-                    s.get("changed", 0),
-                    s.get("failures", 0),
-                    s.get("unreachable", 0),
-                    s.get("skipped", 0),
-                    s.get("rescued", 0),
-                    s.get("ignored", 0),
-                )
+                f"{host} ok={s.get('ok', 0)} changed={s.get('changed', 0)} "
+                f"failed={s.get('failures', 0)} unreachable={s.get('unreachable', 0)} "
+                f"skipped={s.get('skipped', 0)} rescued={s.get('rescued', 0)} "
+                f"ignored={s.get('ignored', 0)}"
             )
             if s.get("failures", 0) or s.get("unreachable", 0):
                 has_failures = True
 
         state = "fail" if has_failures else "success"
-        title = "Ansible %s: %s" % (state, self.playbook_name)
-        message = "playbook=%s hosts=\"%s\"" % (self.playbook_name, "; ".join(summary))
+        title = f"Ansible {state}: {self.playbook_name}"
+        message = f'playbook={self.playbook_name} hosts="{"; ".join(summary)}"'
         self._notify(state, title, message, ["ansible", state])

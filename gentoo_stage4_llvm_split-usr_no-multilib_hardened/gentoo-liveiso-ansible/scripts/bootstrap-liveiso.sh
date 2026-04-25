@@ -12,5 +12,5 @@ ansible-galaxy collection install -r collections/requirements.yml
 echo
 echo "Bootstrap complete. Review inventories/examples/group_vars/install_targets.yml"
 echo "and then run one of:"
-echo "  ansible-playbook playbooks/install.yml -l liveiso-local --connection=local"
-echo "  ansible-playbook playbooks/install.yml -l remote-liveiso"
+echo "  ansible-playbook playbooks/install.yml -l target_system_local --connection=local"
+echo "  ansible-playbook playbooks/install.yml -l target_system_remote"

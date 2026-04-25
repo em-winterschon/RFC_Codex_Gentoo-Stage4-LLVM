@@ -24,14 +24,14 @@ mkdir -p "${PACKAGE_USE_DIR}"
   if [[ "${INSTALL_VIRT_VIEWER}" == '1' ]]; then
     printf 'app-emulation/virt-viewer %s\n' "${VIRT_VIEWER_USE_FLAGS}"
   fi
-} >"${PACKAGE_USE_FILE}"
+} > "${PACKAGE_USE_FILE}"
 
 if [[ "${INSTALL_VIRT_VIEWER}" == '1' ]]; then
-  packages+=( app-emulation/virt-viewer )
+  packages+=(app-emulation/virt-viewer)
 fi
 
 if [[ "${INSTALL_LIBVIRT}" == '1' ]]; then
-  packages+=( app-emulation/libvirt )
+  packages+=(app-emulation/libvirt)
 fi
 
 emerge "${packages[@]}"

@@ -1,0 +1,97 @@
+---
+# Safety rails
+storage_confirm_destroy: true
+storage_allow_mdadm_under_zfs: false
+
+# LiveISO and target root
+liveiso_work_dir: /root/gentoo-liveiso-work
+install_target_root: /mnt/gentoo
+install_arch: amd64
+install_boot_mode: uefi
+
+# Target identity
+install_hostname: gentoo
+install_timezone: America/Los_Angeles
+install_keymap: us
+install_locale: en_US.UTF-8 UTF-8
+install_root_password_hash: ""
+
+# Storage model
+storage_layout: zfs-boot-root-mirror
+storage_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-1
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-1
+zfs_boot_pool_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-1
+zfs_root_pool_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-1
+esp_size_mib: 1024
+swap_size_gib: 16
+zpool_name: rpool
+zpool_compatibility: 'off'
+zpool_altroot: "{{ install_target_root }}"
+
+# Gentoo base
+stage3_flavor: llvm-openrc
+stage3_base_url: https://distfiles.gentoo.org/releases/amd64/autobuilds
+stage3_verify_checksum: true
+portage_sync_command: emerge-webrsync
+
+# Local profile overlay for combined stable profile axes
+profile_overlay_name: local-install-profile
+profile_name: install-target
+profile_parents:
+  - gentoo:default/linux/amd64/23.0/llvm
+  - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
+profile_definition_files: []
+
+# Toolchain and tuning
+portage_cpu_profile: amd_ryzen_z1_extreme
+gpu_stack: amdgpu
+
+# Package strategy
+kernel_strategy: gentoo-kernel-bin
+kernel_package_map:
+  gentoo-kernel-bin: sys-kernel/gentoo-kernel-bin
+  gentoo-kernel: sys-kernel/gentoo-kernel
+  gentoo-sources: sys-kernel/gentoo-sources
+
+# Boot loader values: zfsbootmenu or efistub
+boot_strategy: zfsbootmenu
+zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
+zfsbootmenu_boot_label: ZFSBootMenu
+zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
+zfsbootmenu_timeout: 0
+install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
+
+# Installed services and finalization
+install_openssh: true
+install_networkmanager: true
+root_authorized_keys: []
+finalize_unmount_target: false
+finalize_reboot_host: false
+
+# Optional explicit CPU_FLAGS_X86 override. Leave empty to omit from make.conf.
+cpu_flags_x86_override: []
+
+# Optional custom make.conf additions
+portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
+portage_features:
+  - parallel-install
+  - merge-sync
+portage_global_use:
+  - bindist
+  - bzip2
+  - cli
+  - ipv6
+  - lld
+  - zstd
+portage_extra_use: []
+portage_makeopts_jobs: "{{ ansible_processor_vcpus | default(8) }}"
+portage_emerge_jobs: 4
+portage_load_average: 0
+portage_gpg_key_refresh: false

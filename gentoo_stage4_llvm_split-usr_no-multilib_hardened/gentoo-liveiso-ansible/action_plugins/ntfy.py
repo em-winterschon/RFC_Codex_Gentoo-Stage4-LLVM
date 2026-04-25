@@ -1,9 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
-__metaclass__ = type
+# ruff: noqa: E402
 
 DOCUMENTATION = r"""
 ---
@@ -59,7 +55,6 @@ from ansible.module_utils.six import string_types
 from ansible.module_utils.urls import open_url
 from ansible.plugins.action import ActionBase
 
-
 SYSLOG_SEVERITIES = {
     "emerg": 0,
     "alert": 1,
@@ -77,7 +72,7 @@ NTFY_PRIORITY_MAP = {0: "5", 1: "5", 2: "4", 3: "4", 4: "3", 5: "3", 6: "2", 7: 
 def _state_topic(state, explicit_topic):
     if explicit_topic:
         return explicit_topic
-    env_key = "ANSIBLE_NTFY_TOPIC_%s" % state.strip().upper().replace("-", "_")
+    env_key = f"ANSIBLE_NTFY_TOPIC_{state.strip().upper().replace('-', '_')}"
     return os.getenv(env_key, os.getenv("ANSIBLE_NTFY_TOPIC", os.getenv("NTFY_TOPIC", "")))
 
 
@@ -85,7 +80,7 @@ def _severity_value(state, explicit):
     if explicit:
         key = explicit.lower()
         if key not in SYSLOG_SEVERITIES:
-            raise ValueError("Unsupported severity: %s" % explicit)
+            raise ValueError(f"Unsupported severity: {explicit}")
         return SYSLOG_SEVERITIES[key]
     return {
         "success": SYSLOG_SEVERITIES["notice"],
@@ -102,8 +97,8 @@ def _syslog_body(app_name, state, severity, message):
     hostname = socket.gethostname()
     sanitized = " ".join(message.splitlines()).replace('"', "'")
     return (
-        '<%d>1 %s %s %s - - - state="%s" severity_code="%d" message="%s"'
-        % (pri, timestamp, hostname, app_name, state, severity, sanitized)
+        f"<{pri}>1 {timestamp} {hostname} {app_name} - - - "
+        f'state="{state}" severity_code="{severity}" message="{sanitized}"'
     )
 
 
@@ -115,15 +110,20 @@ class ActionModule(ActionBase):
         if task_vars is None:
             task_vars = {}
 
-        result = super(ActionModule, self).run(tmp, task_vars)
+        result = super().run(tmp, task_vars)
         del tmp
 
         msg = self._task.args.get("msg")
         if not isinstance(msg, string_types) or not msg:
             raise AnsibleActionFail("msg must be a non-empty string")
 
-        url = self._task.args.get("url", os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh")))
-        topic = _state_topic(self._task.args.get("state", "info"), self._task.args.get("topic", task_vars.get("topic")))
+        url = self._task.args.get(
+            "url", os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh"))
+        )
+        topic = _state_topic(
+            self._task.args.get("state", "info"),
+            self._task.args.get("topic", task_vars.get("topic")),
+        )
         if not topic:
             raise AnsibleActionFail("No ntfy topic configured")
 
@@ -132,7 +132,7 @@ class ActionModule(ActionBase):
         attrs = self._task.args.get("attrs", {}) or {}
         data = {
             "topic": topic,
-            "title": self._task.args.get("title", "Ansible %s" % state),
+            "title": self._task.args.get("title", f"Ansible {state}"),
             "message": _syslog_body("ansible-ntfy", state, severity, msg),
             "priority": attrs.get("priority", NTFY_PRIORITY_MAP[severity]),
             "tags": attrs.get("tags", ["ansible", state]),
@@ -143,9 +143,11 @@ class ActionModule(ActionBase):
         headers = {"Content-Type": "application/json", "User-Agent": "Ansible/ntfy"}
         token = os.getenv("ANSIBLE_NTFY_TOKEN", os.getenv("NTFY_TOKEN"))
         if token:
-            headers["Authorization"] = "Bearer %s" % token
+            headers["Authorization"] = f"Bearer {token}"
 
-        response = open_url(url, data=json.dumps(data), method="POST", headers=headers, http_agent="Ansible/ntfy")
+        response = open_url(
+            url, data=json.dumps(data), method="POST", headers=headers, http_agent="Ansible/ntfy"
+        )
         response_data = json.loads(to_text(response.read()))
 
         result.update(

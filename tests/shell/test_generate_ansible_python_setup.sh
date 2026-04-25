@@ -10,7 +10,7 @@ TEMP_DIR="$(mktemp -d)"
 TEMP_OUTPUT="${TEMP_DIR}/setup-ansible-python-env.sh"
 trap 'rm -rf "${TEMP_DIR}"' EXIT
 
-"${GENERATOR}" "${TEMP_OUTPUT}" >/dev/null
+"${GENERATOR}" "${TEMP_OUTPUT}" > /dev/null
 
 diff -u "${COMMITTED_OUTPUT}" "${TEMP_OUTPUT}"
 

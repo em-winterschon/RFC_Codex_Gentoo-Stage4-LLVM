@@ -50,7 +50,7 @@ iommu_group_path() {
 current_driver() {
   local driver_link
 
-  driver_link="$(readlink -f "$(device_path "$1")/driver" 2>/dev/null || true)"
+  driver_link="$(readlink -f "$(device_path "$1")/driver" 2> /dev/null || true)"
   if [[ -n "${driver_link}" && -e "${driver_link}" ]]; then
     basename "${driver_link}"
   fi
@@ -64,7 +64,7 @@ unsafe_noiommu_enabled() {
   local param_path
 
   param_path="${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
-  [[ -r "${param_path}" ]] && [[ "$(<"${param_path}")" == "Y" ]]
+  [[ -r "${param_path}" ]] && [[ "$(< "${param_path}")" == "Y" ]]
 }
 
 write_sysfs() {

@@ -1,0 +1,242 @@
+# Configurations and Examples
+
+## 1. Local LiveISO Target
+
+Use when Ansible runs directly on the booted target host.
+
+Inventory:
+
+```yaml
+target_system_local:
+  ansible_connection: local
+  ansible_python_interpreter: /usr/bin/python3
+```
+
+Typical command:
+
+```bash
+ansible-playbook playbooks/install.yml -l target_system_local --connection=local
+```
+
+## 2. Remote Bare-Metal LiveISO Target
+
+Use when a host is booted into a Gentoo LiveISO and managed over SSH.
+
+Inventory pattern:
+
+```yaml
+target_system_remote:
+  ansible_host: 10.9.8.7
+  ansible_user: root
+  ansible_python_interpreter: /usr/bin/python3
+```
+
+Recommended staged flow:
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/examples/hosts.yml \
+  --limit target_system_remote \
+  --sequence storage-foundation \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.storage.jsonl
+```
+
+Then:
+
+- `chroot-bootstrap`
+- `target-integration`
+
+## 3. QEMU Alias-Mode Installer VM
+
+Use when validating inside a VM without changing the host’s physical bridge configuration.
+
+Launcher:
+
+```bash
+QEMU_NETWORK_MODE=alias bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Control path:
+
+- guest network: `10.9.8.7/24`
+- host alias: `10.9.8.108/24`
+- SSH target for Ansible: `10.9.8.108:2222`
+
+Inventory:
+
+```yaml
+target_system_remote:
+  ansible_host: 10.9.8.108
+  ansible_port: 2222
+  ansible_user: root
+```
+
+Disk IDs inside the VM:
+
+```yaml
+zfs_boot_pool_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_bpool-1
+zfs_root_pool_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-0
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-1
+```
+
+## 4. Tap Mode
+
+Use when the VM should get a dedicated tap interface without full bridge automation.
+
+Example:
+
+```bash
+QEMU_NETWORK_MODE=tap \
+QEMU_TAP_IFNAME=tap-stage4 \
+QEMU_TAP_HOST_CIDR=10.9.8.108/24 \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+## 5. Bridge Mode
+
+Use when the VM must participate more directly in the external network fabric.
+
+Example:
+
+```bash
+QEMU_NETWORK_MODE=bridge \
+QEMU_TAP_IFNAME=tap-stage4 \
+QEMU_BRIDGE_IFNAME=br0 \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+This is the preferred long-term network model, but alias mode is the safer first validation path on a LiveISO host.
+
+## 6. Boot Source Modes
+
+### Installer QCOW
+
+Used for building and imaging:
+
+```bash
+QEMU_BOOT_SOURCE=qcow bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Expected result:
+
+- root on QCOW `ext4`
+- target disks attached for provisioning
+- no `bpool` / `rpool` mounted as `/` yet
+
+### Target Disks
+
+Used for final validation:
+
+```bash
+QEMU_BOOT_SOURCE=target-disks \
+QEMU_SERIAL_MODE=stdio \
+QEMU_DAEMONIZE=0 \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Expected result:
+
+- UEFI boots from `bpool`
+- ZFSBootMenu loads
+- root on `rpool/ROOT/gentoo`
+- `/boot` on `bpool/BOOT/gentoo`
+
+## 7. Profile Overlay Configuration
+
+The default combined target uses a local overlay profile that composes:
+
+- `default/linux/amd64/23.0/llvm`
+- `default/linux/amd64/23.0/split-usr/no-multilib/hardened`
+
+Additional YAML profile definitions can be layered via:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+```
+
+## 8. Service Definition Configuration
+
+Managed OpenRC services can be defined as data:
+
+```yaml
+openrc_action_services:
+  - name: stage4-example
+    description: Example managed daemon action
+    command: /usr/sbin/crond -f
+    runlevel: default
+    user: root
+    group: root
+    enabled: false
+```
+
+Or loaded from repo-managed definitions such as:
+
+- `service-definitions/stage4-heartbeat.yml`
+
+## 9. Notification Configuration
+
+### Ansible callback
+
+```bash
+export ANSIBLE_NTFY_ENABLED=true
+export ANSIBLE_NTFY_URL=https://ntfy.sh
+export ANSIBLE_NTFY_TOPIC=replace-with-your-topic
+```
+
+### Codex/operator
+
+```bash
+export CODEX_NTFY_ENV_FILE=/root/.codex/ntfy-pub-subs.export.sh
+bash scripts/install_codex_approval_watcher_service.sh
+```
+
+### GitHub workflow
+
+Configure repository secrets or variables for:
+
+- `NTFY_URL`
+- `NTFY_TOPIC`
+- optional state-specific topic keys
+
+## 10. Sequence Examples
+
+### Storage only
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence storage-foundation \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.storage.jsonl
+```
+
+### Bootstrap only
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence chroot-bootstrap \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.bootstrap.jsonl
+```
+
+### Integration only
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence target-integration \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.integration.jsonl
+```

@@ -5,7 +5,6 @@ if [[ "${QEMU_STAGE3_BUILD_TRACE:-0}" == '1' ]]; then
   set -x
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTANCE_NAME="${INSTANCE_NAME:-gentoo-stage4-testvm}"
 STAGE3_TARGET="${STAGE3_TARGET:-amd64-llvm-openrc}"
 STAGE3_PROFILE_PRESET="${STAGE3_PROFILE_PRESET:-base}"
@@ -65,9 +64,6 @@ STAGE3_STAGE_SHA256_URL=''
 STAGE3_STAGE_TARBALL_PATH=''
 STAGE3_STAGE_SHA256_PATH=''
 STAGE3_STAGE_SHA256=''
-GPT_ESP_TYPE_GUID='c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
-GPT_LINUX_FS_TYPE_GUID='0fc63daf-8483-4772-8e79-3d69d8477de4'
-
 resolve_host_tool_paths() {
   local tool_name resolved_path
 
@@ -89,7 +85,7 @@ resolve_host_tool_paths() {
       continue
     fi
 
-    resolved_path="$(command -v "$(basename "${resolved_path}")" 2>/dev/null || true)"
+    resolved_path="$(command -v "$(basename "${resolved_path}")" 2> /dev/null || true)"
     [[ -n "${resolved_path}" ]] || fail "Required host tool is not available: ${tool_name}"
     printf -v "${tool_name}" '%s' "${resolved_path}"
   done
@@ -139,53 +135,52 @@ supported_stage3_profile_presets() {
 
 validate_stage3_profile_preset() {
   case "${STAGE3_PROFILE_PRESET}" in
-    base|hardened-llvm-stage4)
-      ;;
-    *)
-      fail "Unsupported STAGE3_PROFILE_PRESET: ${STAGE3_PROFILE_PRESET} (supported: $(supported_stage3_profile_presets))"
-      ;;
+  base | hardened-llvm-stage4) ;;
+  *)
+    fail "Unsupported STAGE3_PROFILE_PRESET: ${STAGE3_PROFILE_PRESET} (supported: $(supported_stage3_profile_presets))"
+    ;;
   esac
 }
 
 resolve_stage3_target() {
   case "${STAGE3_TARGET}" in
-    amd64-llvm-openrc)
-      STAGE3_RELEASE_ARCH='amd64'
-      STAGE3_CURRENT_DIR='current-stage3-amd64-llvm-openrc'
-      STAGE3_LATEST_TXT='latest-stage3-amd64-llvm-openrc.txt'
-      STAGE3_GRUB_TARGET='x86_64-efi'
-      STAGE3_HOST_ARCH='x86_64'
-      STAGE3_LLVM_TARGETS='X86'
-      ;;
-    arm64-llvm-openrc)
-      STAGE3_RELEASE_ARCH='arm64'
-      STAGE3_CURRENT_DIR='current-stage3-arm64-llvm-openrc'
-      STAGE3_LATEST_TXT='latest-stage3-arm64-llvm-openrc.txt'
-      STAGE3_GRUB_TARGET='arm64-efi'
-      STAGE3_HOST_ARCH='aarch64'
-      STAGE3_LLVM_TARGETS='AArch64'
-      ;;
-    power9le-openrc)
-      STAGE3_RELEASE_ARCH='ppc'
-      STAGE3_CURRENT_DIR='current-stage3-power9le-openrc'
-      STAGE3_LATEST_TXT='latest-stage3-power9le-openrc.txt'
-      STAGE3_GRUB_TARGET='powerpc-ieee1275'
-      STAGE3_HOST_ARCH='ppc64le'
-      STAGE3_LLVM_TARGETS='PowerPC'
-      ;;
-    *)
-      fail "Unsupported STAGE3_TARGET: ${STAGE3_TARGET} (supported: $(supported_stage3_targets))"
-      ;;
+  amd64-llvm-openrc)
+    STAGE3_RELEASE_ARCH='amd64'
+    STAGE3_CURRENT_DIR='current-stage3-amd64-llvm-openrc'
+    STAGE3_LATEST_TXT='latest-stage3-amd64-llvm-openrc.txt'
+    STAGE3_GRUB_TARGET='x86_64-efi'
+    STAGE3_HOST_ARCH='x86_64'
+    STAGE3_LLVM_TARGETS='X86'
+    ;;
+  arm64-llvm-openrc)
+    STAGE3_RELEASE_ARCH='arm64'
+    STAGE3_CURRENT_DIR='current-stage3-arm64-llvm-openrc'
+    STAGE3_LATEST_TXT='latest-stage3-arm64-llvm-openrc.txt'
+    STAGE3_GRUB_TARGET='arm64-efi'
+    STAGE3_HOST_ARCH='aarch64'
+    STAGE3_LLVM_TARGETS='AArch64'
+    ;;
+  power9le-openrc)
+    STAGE3_RELEASE_ARCH='ppc'
+    STAGE3_CURRENT_DIR='current-stage3-power9le-openrc'
+    STAGE3_LATEST_TXT='latest-stage3-power9le-openrc.txt'
+    STAGE3_GRUB_TARGET='powerpc-ieee1275'
+    STAGE3_HOST_ARCH='ppc64le'
+    STAGE3_LLVM_TARGETS='PowerPC'
+    ;;
+  *)
+    fail "Unsupported STAGE3_TARGET: ${STAGE3_TARGET} (supported: $(supported_stage3_targets))"
+    ;;
   esac
 }
 
 stage3_profile_bootstrap_fragment() {
   case "${STAGE3_PROFILE_PRESET}" in
-    base)
-      return 0
-      ;;
-    hardened-llvm-stage4)
-      cat <<'EOF'
+  base)
+    return 0
+    ;;
+  hardened-llvm-stage4)
+    cat << 'EOF'
 cat >> /etc/portage/make.conf <<'MAKECONF_HARDENED'
 COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3"
 CFLAGS="${COMMON_FLAGS} -flto=thin"
@@ -239,17 +234,16 @@ cat > /etc/portage/package.mask/20-gcc-required <<'PKGMASK_GCC'
 # or were already known to be unsupported.
 PKGMASK_GCC
 EOF
-      ;;
+    ;;
   esac
 }
 
 stage3_profile_repository_enable_list() {
   case "${STAGE3_PROFILE_PRESET}" in
-    base)
-      ;;
-    hardened-llvm-stage4)
-      printf '%s\n' guru xira without-systemd
-      ;;
+  base) ;;
+  hardened-llvm-stage4)
+    printf '%s\n' guru xira without-systemd
+    ;;
   esac
 }
 
@@ -262,12 +256,12 @@ stage3_latest_info_url() {
 }
 
 find_fetch_tool() {
-  if command -v curl >/dev/null 2>&1; then
+  if command -v curl > /dev/null 2>&1; then
     printf 'curl'
     return 0
   fi
 
-  if command -v wget >/dev/null 2>&1; then
+  if command -v wget > /dev/null 2>&1; then
     printf 'wget'
     return 0
   fi
@@ -279,12 +273,12 @@ fetch_text() {
   local url="$1"
 
   case "$(find_fetch_tool)" in
-    curl)
-      curl -fsSL "${url}"
-      ;;
-    wget)
-      wget -qO- "${url}"
-      ;;
+  curl)
+    curl -fsSL "${url}"
+    ;;
+  wget)
+    wget -qO- "${url}"
+    ;;
   esac
 }
 
@@ -293,12 +287,12 @@ download_file() {
   local dest="$2"
 
   case "$(find_fetch_tool)" in
-    curl)
-      curl -fL -o "${dest}" "${url}"
-      ;;
-    wget)
-      wget -O "${dest}" "${url}"
-      ;;
+  curl)
+    curl -fL -o "${dest}" "${url}"
+    ;;
+  wget)
+    wget -O "${dest}" "${url}"
+    ;;
   esac
 }
 
@@ -401,7 +395,7 @@ disconnect_nbd() {
     return 0
   fi
 
-  "${QEMU_NBD_BIN}" --disconnect "${NBD_DEVICE}" >/dev/null 2>&1 || true
+  "${QEMU_NBD_BIN}" --disconnect "${NBD_DEVICE}" > /dev/null 2>&1 || true
 }
 
 cleanup_mounts() {
@@ -409,7 +403,7 @@ cleanup_mounts() {
     return 0
   fi
 
-  "${UMOUNT_BIN}" -R "${TARGET_ROOT_MNT}" >/dev/null 2>&1 || true
+  "${UMOUNT_BIN}" -R "${TARGET_ROOT_MNT}" > /dev/null 2>&1 || true
 }
 
 cleanup() {
@@ -465,7 +459,7 @@ render_bootstrap_script() {
   stage3_profile_fragment="$(stage3_profile_bootstrap_fragment)"
   stage3_profile_repositories="$(stage3_profile_repository_enable_list | tr '\n' ' ')"
   mkdir -p "$(dirname "${WORK_BOOTSTRAP_SCRIPT}")"
-  cat >"${WORK_BOOTSTRAP_SCRIPT}" <<EOF
+  cat > "${WORK_BOOTSTRAP_SCRIPT}" << EOF
 #!/usr/bin/env bash
 set -euo pipefail
 

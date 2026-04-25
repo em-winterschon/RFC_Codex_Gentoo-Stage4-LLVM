@@ -33,7 +33,9 @@ def load_payload(path: str) -> dict:
 
 
 def repo_name(payload: dict) -> str:
-    return payload.get("repository", {}).get("full_name", os.getenv("GITHUB_REPOSITORY", "unknown/repo"))
+    return payload.get("repository", {}).get(
+        "full_name", os.getenv("GITHUB_REPOSITORY", "unknown/repo")
+    )
 
 
 def html_url(payload: dict) -> str:
@@ -55,18 +57,30 @@ def event_details(event_name: str, payload: dict) -> tuple[str, str, str, list[s
         title = f"Git push: {repo}:{branch}"
         message = (
             f"pusher={payload.get('pusher', {}).get('name', 'unknown')} "
-            f"commits={len(commits)} before={payload.get('before', '')} after={payload.get('after', '')} "
-            f"url={html_url(payload)}/compare/{payload.get('before', '')}...{payload.get('after', '')}"
+            f"commits={len(commits)} before={payload.get('before', '')} "
+            f"after={payload.get('after', '')} "
+            f"url={html_url(payload)}/compare/"
+            f"{payload.get('before', '')}...{payload.get('after', '')}"
         )
         return "notice", title, message, ["git", "push"]
     if event_name == "create":
         ref_type = payload.get("ref_type", "ref")
         ref = payload.get("ref", "")
-        return "notice", f"Git create: {repo}:{ref}", f"type={ref_type} ref={ref}", ["git", "create"]
+        return (
+            "notice",
+            f"Git create: {repo}:{ref}",
+            f"type={ref_type} ref={ref}",
+            ["git", "create"],
+        )
     if event_name == "delete":
         ref_type = payload.get("ref_type", "ref")
         ref = payload.get("ref", "")
-        return "warning", f"Git delete: {repo}:{ref}", f"type={ref_type} ref={ref}", ["git", "delete"]
+        return (
+            "warning",
+            f"Git delete: {repo}:{ref}",
+            f"type={ref_type} ref={ref}",
+            ["git", "delete"],
+        )
     if event_name == "pull_request":
         pr = payload.get("pull_request", {})
         action = payload.get("action", "updated")
@@ -96,7 +110,8 @@ def event_details(event_name: str, payload: dict) -> tuple[str, str, str, list[s
         severity = "notice" if action in {"published", "released", "prereleased"} else "info"
         title = f"Release {action}: {release.get('tag_name', '')}".strip()
         message = (
-            f"repo={repo} name={release.get('name', '')} author={release.get('author', {}).get('login', 'unknown')} "
+            f"repo={repo} name={release.get('name', '')} "
+            f"author={release.get('author', {}).get('login', 'unknown')} "
             f"url={release.get('html_url', html_url(payload))}"
         )
         return severity, title, message, ["github", "release", action]

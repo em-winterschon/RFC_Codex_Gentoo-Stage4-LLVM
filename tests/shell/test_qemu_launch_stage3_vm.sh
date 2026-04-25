@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 source "${LAUNCH_SCRIPT}"
 
@@ -23,6 +24,50 @@ assert_equals() {
   local actual="$1"
   local expected="$2"
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+mark_stage3_launch_globals_used() {
+  : "${QEMU_BIN-}" \
+    "${QEMU_MACHINE-}" \
+    "${QEMU_CPU-}" \
+    "${QEMU_SMP-}" \
+    "${QEMU_MEMORY_MIB-}" \
+    "${QEMU_BOOT_STRICT-}" \
+    "${QEMU_LAUNCH_DRY_RUN-}" \
+    "${QEMU_DAEMONIZE-}" \
+    "${QEMU_DISPLAY_MODE-}" \
+    "${QEMU_BOOT_SOURCE-}" \
+    "${QEMU_SERIAL_MODE-}" \
+    "${QEMU_NETWORK_MODE-}" \
+    "${QEMU_SERIAL_FILE-}" \
+    "${QEMU_NETDEV_MODEL-}" \
+    "${QEMU_NETDEV_BACKEND-}" \
+    "${QEMU_NET_ALIAS_DEV-}" \
+    "${QEMU_NET_ALIAS_CIDR-}" \
+    "${QEMU_NET_ALIAS_SUBNET-}" \
+    "${QEMU_NET_ALIAS_GUEST_IPV4-}" \
+    "${QEMU_TAP_IFNAME-}" \
+    "${QEMU_BRIDGE_IFNAME-}" \
+    "${QEMU_TAP_HOST_CIDR-}" \
+    "${QEMU_NETDEV_HELP_OUTPUT-}" \
+    "${QEMU_DISPLAY_HELP_OUTPUT-}" \
+    "${IP_BIN-}" \
+    "${HOST_DISK_CACHE-}" \
+    "${HOST_DISK_AIO-}" \
+    "${WAIT_FOR_SSH-}" \
+    "${SSH_READY_PROBE-}" \
+    "${SSH_READY_HOST-}" \
+    "${SSH_READY_PORT-}" \
+    "${SSH_WAIT_TIMEOUT-}" \
+    "${SSH_BANNER_TIMEOUT-}" \
+    "${LAUNCHER_LOG_ENABLE-}" \
+    "${LAUNCHER_LOG_DIR-}" \
+    "${LAUNCHER_LOG_FILE-}" \
+    "${LAUNCHER_LOG_TIMESTAMP-}" \
+    "${LAUNCHER_LOG_INITIALIZED-}" \
+    "${ALLOCATED_SERIAL_PTY-}" \
+    "${RESOLVED_QEMU_NETDEV_BACKEND-}" \
+    "${RESOLVED_SSH_READY_HOST-}"
 }
 
 reset_launcher_state() {
@@ -52,11 +97,20 @@ reset_launcher_state() {
   QEMU_SERIAL_MODE='file'
   QEMU_SERIAL_FILE='/tmp/stage3.serial.log'
   QEMU_SERIAL_TCP='127.0.0.1:4555,server=on,wait=off,telnet=on'
+  QEMU_NETWORK_MODE='user'
   QEMU_NETDEV_ID='net0'
   QEMU_NETDEV_BACKEND='user,hostfwd=tcp:127.0.0.1:2222-:22'
   QEMU_NETDEV_MODEL='virtio-net-pci'
+  QEMU_NET_ALIAS_DEV='lo'
+  QEMU_NET_ALIAS_CIDR='10.9.8.108/24'
+  QEMU_NET_ALIAS_SUBNET='10.9.8.0/24'
+  QEMU_NET_ALIAS_GUEST_IPV4='10.9.8.7'
+  QEMU_TAP_IFNAME='tap-stage4'
+  QEMU_BRIDGE_IFNAME=''
+  QEMU_TAP_HOST_CIDR=''
   QEMU_NETDEV_HELP_OUTPUT=$'user\ntap\n'
   QEMU_DISPLAY_HELP_OUTPUT=''
+  IP_BIN='/usr/sbin/ip'
   HOST_DISK_CACHE='none'
   HOST_DISK_AIO='native'
   WAIT_FOR_SSH='0'
@@ -71,7 +125,10 @@ reset_launcher_state() {
   LAUNCHER_LOG_TIMESTAMP='2026-0421-1830_1234567890.UTC+0000'
   LAUNCHER_LOG_INITIALIZED=0
   ALLOCATED_SERIAL_PTY=''
+  RESOLVED_QEMU_NETDEV_BACKEND=''
+  RESOLVED_SSH_READY_HOST=''
   QEMU_CMD=()
+  mark_stage3_launch_globals_used
 }
 
 test_default_launcher_log_file_uses_requested_format() {
@@ -94,13 +151,13 @@ test_build_qemu_cmd_uses_boot_disk_and_tcp_serial() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_SERIAL_MODE='tcp'
-  : >"${QCOW_IMAGE}"
-  : >"${EFI_FIRM}"
-  : >"${EFI_VARS_TEMPLATE}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  : > "${QCOW_IMAGE}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -128,13 +185,13 @@ test_build_qemu_cmd_supports_pty_serial() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_SERIAL_MODE='pty'
-  : >"${QCOW_IMAGE}"
-  : >"${EFI_FIRM}"
-  : >"${EFI_VARS_TEMPLATE}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  : > "${QCOW_IMAGE}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -155,12 +212,12 @@ test_build_qemu_cmd_supports_target_disk_boot() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_BOOT_SOURCE='target-disks'
-  : >"${EFI_FIRM}"
-  : >"${EFI_VARS_TEMPLATE}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -169,6 +226,34 @@ test_build_qemu_cmd_supports_target_disk_boot() {
   assert_contains "${rendered}" 'ide-hd,drive=bpool0,bus=ahci.1,serial=bpool-0,bootindex=1'
   assert_contains "${rendered}" 'ide-hd,drive=bpool1,bus=ahci.2,serial=bpool-1'
   assert_contains "${rendered}" '-boot strict=on'
+  rm -rf "${temp_dir}"
+}
+
+test_build_qemu_cmd_supports_alias_network_mode() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/vm.qcow2"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  QEMU_NETWORK_MODE='alias'
+  : > "${QCOW_IMAGE}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
+
+  build_qemu_cmd
+  rendered="${QEMU_CMD[*]}"
+
+  assert_contains "${rendered}" 'user,net=10.9.8.0/24,host=10.9.8.108,dhcpstart=10.9.8.7,hostfwd=tcp:10.9.8.108:2222-:22,id=net0'
+  assert_equals "${RESOLVED_SSH_READY_HOST}" '10.9.8.108'
   rm -rf "${temp_dir}"
 }
 
@@ -198,13 +283,13 @@ test_main_dry_run_prints_stage3_vm_command() {
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
-  : >"${QCOW_IMAGE}"
-  : >"${EFI_FIRM}"
-  : >"${EFI_VARS_TEMPLATE}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  : > "${QCOW_IMAGE}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   set +e
   output="$(main 2>&1)"
@@ -231,12 +316,12 @@ test_main_dry_run_prints_target_disk_boot_plan() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_BOOT_SOURCE='target-disks'
-  : >"${EFI_FIRM}"
-  : >"${EFI_VARS_TEMPLATE}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   set +e
   output="$(main 2>&1)"
@@ -255,6 +340,7 @@ test_default_launcher_log_file_uses_requested_format
 test_build_qemu_cmd_uses_boot_disk_and_tcp_serial
 test_build_qemu_cmd_supports_pty_serial
 test_build_qemu_cmd_supports_target_disk_boot
+test_build_qemu_cmd_supports_alias_network_mode
 test_validate_boot_source_rejects_invalid_value
 test_main_dry_run_prints_stage3_vm_command
 test_main_dry_run_prints_target_disk_boot_plan

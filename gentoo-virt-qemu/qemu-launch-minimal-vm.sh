@@ -100,15 +100,15 @@ video_device_name() {
   fi
 
   case "$(display_mode_name)" in
-    spice)
-      printf 'qxl-vga'
-      ;;
-    none|nographic)
-      printf 'std'
-      ;;
-    *)
-      printf 'virtio-vga'
-      ;;
+  spice)
+    printf 'qxl-vga'
+    ;;
+  none | nographic)
+    printf 'std'
+    ;;
+  *)
+    printf 'virtio-vga'
+    ;;
   esac
 }
 
@@ -146,7 +146,7 @@ device_path() {
 current_driver() {
   local driver_link
 
-  driver_link="$(readlink -f "$(device_path "$1")/driver" 2>/dev/null || true)"
+  driver_link="$(readlink -f "$(device_path "$1")/driver" 2> /dev/null || true)"
   if [[ -n "${driver_link}" && -e "${driver_link}" ]]; then
     basename "${driver_link}"
   fi
@@ -155,7 +155,7 @@ current_driver() {
 iommu_group_id() {
   local group_link
 
-  group_link="$(readlink -f "$(device_path "$1")/iommu_group" 2>/dev/null || true)"
+  group_link="$(readlink -f "$(device_path "$1")/iommu_group" 2> /dev/null || true)"
   if [[ -n "${group_link}" && -e "${group_link}" ]]; then
     basename "${group_link}"
   fi
@@ -184,7 +184,7 @@ require_host_disk_ready() {
   [[ -n "${path}" ]] || fail "${label} is empty"
   [[ -e "${path}" ]] || fail "${label} is missing: ${path}"
 
-  resolved_path="$(readlink -f "${path}" 2>/dev/null || true)"
+  resolved_path="$(readlink -f "${path}" 2> /dev/null || true)"
   if [[ "${path}" == /dev/* || "${resolved_path}" == /dev/* ]]; then
     [[ -n "${resolved_path}" && -b "${resolved_path}" ]] || fail "${label} is not a block device: ${path}"
   fi
@@ -222,24 +222,24 @@ validate_display_backend() {
 
   mode="$(display_mode_name)"
   case "${mode}" in
-    nographic|none)
-      return 0
-      ;;
-    gtk|sdl)
-      help_output="$(qemu_display_help_output)"
-      [[ "${help_output}" == *"${mode}"* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=${mode} or choose a supported display mode"
-      ;;
-    vnc)
-      help_output="$(qemu_help_output)"
-      [[ "${help_output}" == *'-vnc '* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=vnc or choose another display mode"
-      ;;
-    spice)
-      help_output="$(qemu_help_output)"
-      [[ "${help_output}" == *'-spice '* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=spice and use app-emulation/virt-viewer as the client"
-      ;;
-    *)
-      fail "Unsupported QEMU_DISPLAY_MODE: ${mode}"
-      ;;
+  nographic | none)
+    return 0
+    ;;
+  gtk | sdl)
+    help_output="$(qemu_display_help_output)"
+    [[ "${help_output}" == *"${mode}"* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=${mode} or choose a supported display mode"
+    ;;
+  vnc)
+    help_output="$(qemu_help_output)"
+    [[ "${help_output}" == *'-vnc '* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=vnc or choose another display mode"
+    ;;
+  spice)
+    help_output="$(qemu_help_output)"
+    [[ "${help_output}" == *'-spice '* ]] || fail "QEMU display mode '${mode}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=spice and use app-emulation/virt-viewer as the client"
+    ;;
+  *)
+    fail "Unsupported QEMU_DISPLAY_MODE: ${mode}"
+    ;;
   esac
 }
 
@@ -250,12 +250,11 @@ validate_video_device() {
   [[ -n "${device_name}" ]] || fail 'QEMU video device resolved to an empty name'
 
   case "${device_name}" in
-    std|virtio-vga|qxl-vga)
-      help_output="$(qemu_device_help_output)"
-      [[ "${help_output}" == *"name \"${device_name}\""* ]] || fail "QEMU video device '${device_name}' is not available in ${QEMU_BIN}; inspect '${QEMU_BIN} -device help' and choose a supported QEMU_VIDEO_DEVICE"
-      ;;
-    *)
-      ;;
+  std | virtio-vga | qxl-vga)
+    help_output="$(qemu_device_help_output)"
+    [[ "${help_output}" == *"name \"${device_name}\""* ]] || fail "QEMU video device '${device_name}' is not available in ${QEMU_BIN}; inspect '${QEMU_BIN} -device help' and choose a supported QEMU_VIDEO_DEVICE"
+    ;;
+  *) ;;
   esac
 }
 
@@ -307,7 +306,7 @@ append_host_disk() {
 
 append_optional_passthrough_nic() {
   if [[ -n "${PCI_NETWK}" ]]; then
-    QEMU_CMD+=( -device "vfio-pci,host=${PCI_NETWK}" )
+    QEMU_CMD+=(-device "vfio-pci,host=${PCI_NETWK}")
   fi
 }
 
@@ -316,58 +315,58 @@ append_video_args() {
 
   device_name="$(video_device_name)"
   case "${device_name}" in
-    std)
-      QEMU_CMD+=( -vga std )
-      ;;
-    qxl-vga|virtio-vga)
-      QEMU_CMD+=( -device "${device_name}" )
-      ;;
-    none)
-      return 0
-      ;;
-    *)
-      QEMU_CMD+=( -device "${device_name}" )
-      ;;
+  std)
+    QEMU_CMD+=(-vga std)
+    ;;
+  qxl-vga | virtio-vga)
+    QEMU_CMD+=(-device "${device_name}")
+    ;;
+  none)
+    return 0
+    ;;
+  *)
+    QEMU_CMD+=(-device "${device_name}")
+    ;;
   esac
 }
 
 append_display_args() {
   case "$(display_mode_name)" in
-    nographic)
-      QEMU_CMD+=( -nographic )
-      ;;
-    none)
-      QEMU_CMD+=( -display none )
-      ;;
-    gtk|sdl)
-      QEMU_CMD+=( -display "$(display_mode_name)" )
-      ;;
-    vnc)
-      QEMU_CMD+=( -display none -vnc "${QEMU_VNC_ADDRESS}" )
-      ;;
-    spice)
-      QEMU_CMD+=( -display none -spice "${QEMU_SPICE_OPTIONS}" )
-      ;;
+  nographic)
+    QEMU_CMD+=(-nographic)
+    ;;
+  none)
+    QEMU_CMD+=(-display none)
+    ;;
+  gtk | sdl)
+    QEMU_CMD+=(-display "$(display_mode_name)")
+    ;;
+  vnc)
+    QEMU_CMD+=(-display none -vnc "${QEMU_VNC_ADDRESS}")
+    ;;
+  spice)
+    QEMU_CMD+=(-display none -spice "${QEMU_SPICE_OPTIONS}")
+    ;;
   esac
 }
 
 append_serial_args() {
   case "$(serial_mode_name)" in
-    integrated|none)
-      return 0
-      ;;
-    stdio)
-      QEMU_CMD+=( -serial mon:stdio )
-      ;;
-    pty)
-      QEMU_CMD+=( -serial pty )
-      ;;
-    tcp)
-      QEMU_CMD+=( -serial "tcp:${QEMU_SERIAL_TCP}" )
-      ;;
-    *)
-      fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name) (supported: $(supported_serial_modes))"
-      ;;
+  integrated | none)
+    return 0
+    ;;
+  stdio)
+    QEMU_CMD+=(-serial mon:stdio)
+    ;;
+  pty)
+    QEMU_CMD+=(-serial pty)
+    ;;
+  tcp)
+    QEMU_CMD+=(-serial "tcp:${QEMU_SERIAL_TCP}")
+    ;;
+  *)
+    fail "Unsupported QEMU_SERIAL_MODE: $(serial_mode_name) (supported: $(supported_serial_modes))"
+    ;;
   esac
 }
 

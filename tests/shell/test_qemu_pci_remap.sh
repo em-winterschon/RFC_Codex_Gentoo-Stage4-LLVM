@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
+# shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/qemu-pci-remap.sh
 source "${REPO_ROOT}/gentoo-virt-qemu/qemu-pci-remap.sh"
 
@@ -46,8 +47,8 @@ test_bind_refuses_missing_iommu_group_without_unsafe_mode() (
   dev='0000:53:00.0'
   SYSFS_ROOT="${temp_dir}/sys"
   mkdir -p "$(device_path "${dev}")" "${SYSFS_ROOT}/module/vfio/parameters" "${SYSFS_ROOT}/bus/pci"
-  : >"${SYSFS_ROOT}/bus/pci/drivers_probe"
-  printf 'N' >"${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
+  : > "${SYSFS_ROOT}/bus/pci/drivers_probe"
+  printf 'N' > "${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
 
   if output="$(bind_device_to_vfio "${dev}" 2>&1)"; then
     fail 'expected bind_device_to_vfio to fail without an IOMMU group'
@@ -73,11 +74,12 @@ test_bind_device_uses_driver_override_and_probe() (
     "${SYSFS_ROOT}/kernel/iommu_groups/7" \
     "${SYSFS_ROOT}/module/vfio/parameters" \
     "${SYSFS_ROOT}/bus/pci"
-  : >"${SYSFS_ROOT}/bus/pci/drivers_probe"
-  printf 'N' >"${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
+  : > "${SYSFS_ROOT}/bus/pci/drivers_probe"
+  printf 'N' > "${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
   ln -s "${SYSFS_ROOT}/bus/pci/drivers/nvme" "${device_root}/driver"
   ln -s "${SYSFS_ROOT}/kernel/iommu_groups/7" "${device_root}/iommu_group"
 
+  # shellcheck disable=SC2329
   write_sysfs() {
     local value="$1"
     local path="$2"
@@ -90,7 +92,7 @@ test_bind_device_uses_driver_override_and_probe() (
     fi
 
     mkdir -p "$(dirname "${path}")"
-    printf '%s' "${value}" >"${path}"
+    printf '%s' "${value}" > "${path}"
 
     if [[ "${path}" == "${SYSFS_ROOT}/bus/pci/drivers_probe" ]]; then
       ln -s "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" "${device_root}/driver"
@@ -120,10 +122,11 @@ test_bind_is_noop_for_device_already_on_vfio() (
     "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" \
     "${SYSFS_ROOT}/kernel/iommu_groups/9" \
     "${SYSFS_ROOT}/module/vfio/parameters"
-  printf 'N' >"${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
+  printf 'N' > "${SYSFS_ROOT}/module/vfio/parameters/enable_unsafe_noiommu_mode"
   ln -s "${SYSFS_ROOT}/bus/pci/drivers/vfio-pci" "${device_root}/driver"
   ln -s "${SYSFS_ROOT}/kernel/iommu_groups/9" "${device_root}/iommu_group"
 
+  # shellcheck disable=SC2329
   write_sysfs() {
     fail 'write_sysfs should not be called for a device already bound to vfio-pci'
   }

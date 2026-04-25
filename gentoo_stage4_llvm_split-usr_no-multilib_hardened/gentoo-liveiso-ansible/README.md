@@ -88,7 +88,7 @@ GPU-specific Portage settings are intentionally separate via `gpu_stack`.
 ```bash
 ./scripts/bootstrap-liveiso.sh
 vim inventories/examples/group_vars/install_targets.yml
-ansible-playbook playbooks/install.yml -l liveiso-local --connection=local
+ansible-playbook playbooks/install.yml -l target_system_local --connection=local
 ```
 
 ### Remote execution against a booted LiveISO
@@ -97,27 +97,56 @@ ansible-playbook playbooks/install.yml -l liveiso-local --connection=local
 ./scripts/bootstrap-liveiso.sh
 vim inventories/examples/hosts.yml
 vim inventories/examples/group_vars/install_targets.yml
-ansible-playbook playbooks/install.yml -l remote-liveiso
+ansible-playbook playbooks/install.yml -l target_system_remote
 ```
 
-### Modular role selection
+### QEMU alias-mode execution against the installer VM
 
-The installer runs a default ordered role sequence:
+Use the dedicated alias-mode inventory when the installer VM is launched with
+`QEMU_NETWORK_MODE=alias`. In that mode, the guest uses `10.9.8.7/24`
+internally, but Ansible must connect to the host-side alias and forwarded SSH
+port.
 
-- `preflight`
-- `liveiso_prepare`
-- `storage`
-- `stage3`
-- `profile`
-- `portage`
-- `chroot_base`
-- `system_packages`
-- `boot`
-- `network`
-- `services`
+```bash
+./scripts/bootstrap-liveiso.sh
+vim inventories/qemu-alias/group_vars/install_targets.yml
+ansible-playbook -i inventories/qemu-alias/hosts.yml playbooks/install.yml -l target_system_remote
+```
 
-Override `selected_roles` in inventory or at the command line if you need to rerun only a
-subset while iterating on one part of the install flow.
+### Install sequences
+
+The installer now supports staged `install_sequence` execution. The default sequence is:
+
+- `full-default`
+
+Available `install_sequence` values:
+
+- `full-default`
+- `full-modular-zfs`
+- `storage-foundation`
+- `chroot-bootstrap`
+- `target-integration`
+- `repair-boot`
+- `repair-services`
+
+Each sequence resolves to named Ansible blocks and optional debug checkpoints, so task
+output and the structured control-flow pipeline can reference the same stage identifiers.
+
+Enable explicit stage checkpoints by setting:
+
+```yaml
+install_debug_checkpoints: true
+```
+
+Optionally constrain a sequence to only certain stage IDs:
+
+```yaml
+install_stage_filter:
+  - target-integration
+```
+
+If you need to bypass sequence enums during repair work, `selected_roles` still works and
+collapses execution into a single `selected-roles` stage.
 
 Example inventory override:
 
@@ -130,22 +159,93 @@ selected_roles:
   - boot
 ```
 
-Example command-line override:
+Example direct role override:
 
 ```bash
-ansible-playbook playbooks/install.yml -l remote-liveiso -e '{"selected_roles":["boot","network"]}'
+ansible-playbook playbooks/install.yml -l target_system_remote -e '{"selected_roles":["boot","network"]}'
 ```
 
-Machine-readable workflow definitions for the VM validation path live under:
+### Sequence wrapper and control-flow pipeline
+
+Use the wrapper script to run a sequence with a tail-able JSONL control-flow stream:
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence full-default \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.install.jsonl
+```
+
+Watch the run remotely in a second terminal or over SSH:
+
+```bash
+python3 scripts/watch-control-flow.py \
+  --path /tmp/ansible-control-flow/target-system-remote.install.jsonl \
+  --follow
+```
+
+Recommended first-pass staged execution for a destination test host:
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence storage-foundation \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.storage.jsonl
+
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence chroot-bootstrap \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.bootstrap.jsonl
+
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence target-integration \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.integration.jsonl
+```
+
+Optional focused repair pass:
+
+```bash
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/qemu-alias/hosts.yml \
+  --limit target_system_remote \
+  --sequence repair-boot \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.repair-boot.jsonl
+```
+
+The control-flow stream is produced by:
+
+- `callback_plugins/control_flow.py`
+
+and writes JSONL events for:
+
+- playbook start
+- play start
+- task start
+- task ok / skipped / failed / unreachable
+- stage checkpoint debug tasks
+- final playbook stats
+
+Machine-readable workflow definitions live under:
 
 - `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json`
+- `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json`
 
-That manifest documents the repeatable operator sequence for:
+Those manifests document the repeatable operator sequence for:
 
 - QCOW build
 - installer VM launch
-- Ansible connectivity checks
-- full install execution
+- staged Ansible execution
+- control-flow pipeline watching
 - boot-role repair iterations
 - target-disk boot validation
 
@@ -155,6 +255,7 @@ This subtree now includes both a controller-side callback plugin and a task-leve
 action plugin for ntfy-compatible notifications:
 
 - `callback_plugins/ntfy.py`
+- `callback_plugins/control_flow.py`
 - `action_plugins/ntfy.py`
 
 The callback plugin is enabled in `ansible.cfg`, but it only emits notifications
@@ -180,6 +281,14 @@ maps playbook states onto syslog-style severities:
 - warnings: `warning`
 - task failures / unreachable hosts: `err`
 - successful completion: `notice`
+
+The control-flow callback is separate from ntfy delivery and is meant to be watched like a
+serial console for long-running imaging jobs. Enable it through the wrapper or directly with:
+
+```bash
+export ANSIBLE_CONTROL_FLOW_ENABLED=true
+export ANSIBLE_CONTROL_FLOW_PATH=/tmp/ansible-control-flow/install.jsonl
+```
 
 The action plugin can be used inside playbooks for explicit controller-side messages:
 
@@ -261,7 +370,7 @@ meant as a concrete validation target for the managed-service facility.
 Example invocation:
 
 ```bash
-ansible-playbook playbooks/install.yml -l remote-liveiso -e @service-definitions/stage4-heartbeat.yml
+ansible-playbook playbooks/install.yml -l target_system_remote -e @service-definitions/stage4-heartbeat.yml
 ```
 
 Optional tuning keys:

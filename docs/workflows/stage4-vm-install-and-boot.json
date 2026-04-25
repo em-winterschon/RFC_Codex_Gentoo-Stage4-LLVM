@@ -111,17 +111,25 @@
     },
     {
       "id": "ansible-install",
-      "summary": "Run the full installer workflow against the validation VM target disks.",
+      "summary": "Run the full installer workflow against the validation VM target disks through the staged sequence wrapper.",
       "cwd": "${ansible_root}",
       "env": {
         "ANSIBLE_STDOUT_CALLBACK": "default",
-        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}"
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}",
+        "ANSIBLE_CONTROL_FLOW_PATH": "/tmp/ansible-control-flow/stage4-vm-install.jsonl"
       },
       "command": [
-        "ansible-playbook",
-        "-i",
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
         "${inventory}",
-        "playbooks/install.yml"
+        "--limit",
+        "stage4-vm",
+        "--sequence",
+        "full-modular-zfs",
+        "--checkpoint",
+        "--control-flow-path",
+        "/tmp/ansible-control-flow/stage4-vm-install.jsonl"
       ],
       "expectedExitCodes": [
         0
@@ -136,21 +144,27 @@
       "cwd": "${ansible_root}",
       "env": {
         "ANSIBLE_STDOUT_CALLBACK": "default",
-        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}"
+        "ANSIBLE_SSH_ARGS": "${ansible_ssh_args}",
+        "ANSIBLE_CONTROL_FLOW_PATH": "/tmp/ansible-control-flow/stage4-vm-repair-boot.jsonl"
       },
       "command": [
-        "ansible-playbook",
-        "-i",
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
         "${inventory}",
-        "playbooks/install.yml",
-        "-e",
-        "@/tmp/ansible-resume-roles.json"
+        "--limit",
+        "stage4-vm",
+        "--sequence",
+        "repair-boot",
+        "--checkpoint",
+        "--control-flow-path",
+        "/tmp/ansible-control-flow/stage4-vm-repair-boot.jsonl"
       ],
       "expectedExitCodes": [
         0
       ],
       "notes": [
-        "/tmp/ansible-resume-roles.json is expected to contain selected_roles such as preflight, boot, and network."
+        "Use scripts/watch-control-flow.py to tail the JSONL control-flow stream during long-running repair passes."
       ]
     },
     {

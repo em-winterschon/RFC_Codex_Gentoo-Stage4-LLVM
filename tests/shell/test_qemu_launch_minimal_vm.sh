@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-minimal-vm.sh"
 
+# shellcheck disable=SC1091,SC2034
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-minimal-vm.sh
 source "${LAUNCH_SCRIPT}"
 
@@ -33,6 +34,24 @@ assert_equals() {
   [[ "${expected}" == "${actual}" ]] || fail "expected '${expected}', got '${actual}'"
 }
 
+mark_launch_globals_used() {
+  : "${BASE_DIR}" \
+    "${QEMU_BIN}" \
+    "${QEMU_DISPLAY_HELP_OUTPUT}" \
+    "${QEMU_DISPLAY_MODE}" \
+    "${QEMU_HELP_OUTPUT}" \
+    "${QEMU_LAUNCH_DRY_RUN}" \
+    "${QEMU_NETDEV_HELP_OUTPUT}" \
+    "${QEMU_SERIAL_MODE}" \
+    "${QEMU_SERIAL_TCP}" \
+    "${QEMU_SPICE_OPTIONS}" \
+    "${QEMU_VIDEO_DEVICE}" \
+    "${QEMU_VIDEO_DEVICE_HELP_OUTPUT}" \
+    "${QEMU_VNC_ADDRESS}" \
+    "${SYSFS_ROOT}" \
+    "${VFIO_DEV_ROOT}"
+}
+
 setup_vfio_noiommu_device() {
   local temp_root="$1"
   local dev="$2"
@@ -48,7 +67,7 @@ setup_vfio_noiommu_device() {
   mkdir -p "${driver_root}" "${device_root}" "${group_root}" "${vfio_root}"
   ln -s "${driver_root}" "${device_root}/driver"
   ln -s "${group_root}" "${device_root}/iommu_group"
-  : >"${vfio_root}/noiommu-${group_id}"
+  : > "${vfio_root}/noiommu-${group_id}"
 }
 
 test_prepare_iso_moves_original() {
@@ -58,7 +77,7 @@ test_prepare_iso_moves_original() {
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/orig.iso"
   ISO_INST="${temp_dir}/dest.iso"
-  : >"${ISO_ORIG}"
+  : > "${ISO_ORIG}"
 
   prepare_iso
 
@@ -74,7 +93,7 @@ test_prepare_iso_accepts_existing_installer_iso() {
   BASE_DIR="${temp_dir}"
   ISO_ORIG="${temp_dir}/missing.iso"
   ISO_INST="${temp_dir}/gentoo.iso"
-  : >"${ISO_INST}"
+  : > "${ISO_INST}"
 
   prepare_iso
 
@@ -104,6 +123,7 @@ test_validate_net_backend_rejects_missing_user_backend() {
 
   QEMU_NETDEV_BACKEND='user'
   QEMU_NETDEV_HELP_OUTPUT=$'socket\ntap\nvde\n'
+  mark_launch_globals_used
 
   if output="$(validate_net_backend 2>&1)"; then
     fail 'expected validate_net_backend to fail when user backend is unavailable'
@@ -115,6 +135,7 @@ test_validate_net_backend_rejects_missing_user_backend() {
 test_validate_net_backend_accepts_tap_backend() {
   QEMU_NETDEV_BACKEND='tap,ifname=tap0,script=no,downscript=no'
   QEMU_NETDEV_HELP_OUTPUT=$'socket\ntap\nuser\n'
+  mark_launch_globals_used
   validate_net_backend
 }
 
@@ -123,6 +144,7 @@ test_validate_display_backend_rejects_missing_spice() {
 
   QEMU_DISPLAY_MODE='spice'
   QEMU_HELP_OUTPUT=$'-machine\n-vnc\n'
+  mark_launch_globals_used
 
   if output="$(validate_display_backend 2>&1)"; then
     fail 'expected validate_display_backend to fail when spice support is unavailable'
@@ -135,18 +157,21 @@ test_validate_display_backend_rejects_missing_spice() {
 test_validate_display_backend_accepts_gtk() {
   QEMU_DISPLAY_MODE='gtk'
   QEMU_DISPLAY_HELP_OUTPUT=$'none\ngtk\nsdl\n'
+  mark_launch_globals_used
   validate_display_backend
 }
 
 test_video_device_defaults_to_qxl_for_spice() {
   QEMU_DISPLAY_MODE='spice'
   QEMU_VIDEO_DEVICE='auto'
+  mark_launch_globals_used
   assert_equals 'qxl-vga' "$(video_device_name)"
 }
 
 test_video_device_defaults_to_virtio_vga_for_gtk() {
   QEMU_DISPLAY_MODE='gtk'
   QEMU_VIDEO_DEVICE='auto'
+  mark_launch_globals_used
   assert_equals 'virtio-vga' "$(video_device_name)"
 }
 
@@ -156,6 +181,7 @@ test_validate_video_device_rejects_missing_qxl() {
   QEMU_DISPLAY_MODE='spice'
   QEMU_VIDEO_DEVICE='auto'
   QEMU_VIDEO_DEVICE_HELP_OUTPUT=$'name "virtio-vga"\nname "virtio-net-pci"\n'
+  mark_launch_globals_used
 
   if output="$(validate_video_device 2>&1)"; then
     fail 'expected validate_video_device to fail when qxl-vga is unavailable'
@@ -167,12 +193,14 @@ test_validate_video_device_rejects_missing_qxl() {
 test_serial_mode_defaults_to_integrated_in_nographic() {
   QEMU_DISPLAY_MODE='nographic'
   QEMU_SERIAL_MODE='auto'
+  mark_launch_globals_used
   assert_equals 'integrated' "$(serial_mode_name)"
 }
 
 test_serial_mode_defaults_to_stdio_for_graphical_modes() {
   QEMU_DISPLAY_MODE='vnc'
   QEMU_SERIAL_MODE='auto'
+  mark_launch_globals_used
   assert_equals 'stdio' "$(serial_mode_name)"
 }
 
@@ -181,6 +209,7 @@ test_append_serial_args_rejects_unknown_mode() {
 
   QEMU_DISPLAY_MODE='spice'
   QEMU_SERIAL_MODE='bogus'
+  mark_launch_globals_used
 
   if output="$(append_serial_args 2>&1)"; then
     fail 'expected append_serial_args to fail for an unknown serial mode'
@@ -206,12 +235,13 @@ test_build_qemu_cmd_uses_vnc_and_stdio_serial() {
   QEMU_SERIAL_MODE='stdio'
   QEMU_VNC_ADDRESS='127.0.0.1:4'
   QEMU_VIDEO_DEVICE='virtio-vga'
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
-  : >"${ISO_INST}"
-  : >"${EFI_FIRM}"
+  mark_launch_globals_used
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
+  : > "${ISO_INST}"
+  : > "${EFI_FIRM}"
 
   build_qemu_cmd
 
@@ -240,12 +270,13 @@ test_build_qemu_cmd_uses_spice_qxl_and_tcp_serial() {
   QEMU_SPICE_OPTIONS='port=5930,addr=0.0.0.0,disable-ticketing=on'
   QEMU_SERIAL_TCP='0.0.0.0:4555,server=on,wait=off,telnet=on'
   QEMU_VIDEO_DEVICE='auto'
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
-  : >"${ISO_INST}"
-  : >"${EFI_FIRM}"
+  mark_launch_globals_used
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
+  : > "${ISO_INST}"
+  : > "${EFI_FIRM}"
 
   build_qemu_cmd
 
@@ -271,12 +302,13 @@ test_build_qemu_cmd_uses_host_disks_and_virtio_net() {
   QEMU_DISPLAY_MODE='nographic'
   QEMU_SERIAL_MODE='auto'
   QEMU_VIDEO_DEVICE='std'
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
-  : >"${ISO_INST}"
-  : >"${EFI_FIRM}"
+  mark_launch_globals_used
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
+  : > "${ISO_INST}"
+  : > "${EFI_FIRM}"
 
   build_qemu_cmd
 
@@ -308,6 +340,7 @@ test_validate_passthrough_devices_rejects_vfio_noiommu_group() {
   SYSFS_ROOT="${temp_dir}/sys"
   VFIO_DEV_ROOT="${temp_dir}/dev/vfio"
   PCI_NETWK='02:00.0'
+  mark_launch_globals_used
   setup_vfio_noiommu_device "${temp_dir}" "${PCI_NETWK}" '2'
 
   if output="$(validate_passthrough_devices 2>&1)"; then
@@ -339,12 +372,13 @@ test_main_dry_run_prints_command() {
   QEMU_VIDEO_DEVICE='std'
   QEMU_VIDEO_DEVICE_HELP_OUTPUT='name "std"'
   PCI_NETWK=''
-  : >"${ISO_INST}"
-  : >"${EFI_FIRM}"
-  : >"${BPOOL_DISK0}"
-  : >"${BPOOL_DISK1}"
-  : >"${RPOOL_DISK0}"
-  : >"${RPOOL_DISK1}"
+  mark_launch_globals_used
+  : > "${ISO_INST}"
+  : > "${EFI_FIRM}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
 
   output="$(main 2>&1)"
 

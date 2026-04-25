@@ -10,7 +10,7 @@ import os
 import platform
 import socket
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib import error, request
 
@@ -107,7 +107,7 @@ def resolve_basic_auth(username: str | None, password: str | None) -> str:
     resolved_password = password or os.getenv("NTFY_PASSWORD", "")
     if not resolved_user:
         return ""
-    return base64.b64encode(f"{resolved_user}:{resolved_password}".encode("utf-8")).decode("ascii")
+    return base64.b64encode(f"{resolved_user}:{resolved_password}".encode()).decode("ascii")
 
 
 def severity_for_state(state: str, explicit: str | None) -> int:
@@ -137,7 +137,7 @@ def render_syslog_body(
     message: str,
 ) -> str:
     pri = facility * 8 + severity
-    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    timestamp = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     sanitized_message = " ".join(message.splitlines()).replace('"', "'")
     return (
         f"<{pri}>1 {timestamp} {host} {app_name} {os.getpid()} - - "
@@ -265,7 +265,11 @@ def main() -> int:
     if args.output == "body":
         print(payload["body"])
     else:
-        print(json.dumps({"ok": True, "result": result, "topic": payload["topic"]}, indent=2, sort_keys=True))
+        print(
+            json.dumps(
+                {"ok": True, "result": result, "topic": payload["topic"]}, indent=2, sort_keys=True
+            )
+        )
     return 0
 
 

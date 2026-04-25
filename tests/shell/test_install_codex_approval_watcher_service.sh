@@ -18,15 +18,15 @@ assert_contains() {
 
 output="$(
   SERVICE_NAME=test-codex-approval-watcher \
-  LIBEXEC_DIR=/tmp/libexec-test \
-  INITD_DIR=/tmp/initd-test \
-  CONFD_DIR=/tmp/confd-test \
-  LOG_DIR=/tmp/log-test \
-  INSTALL_REPO_ROOT=/srv/codex/repo \
-  INSTALL_ENV_FILE=/srv/codex/ntfy.env \
-  INSTALL_LOG_FILE=/srv/codex/codex-tui.log \
-  INSTALL_STATE_FILE=/srv/codex/approval-state.json \
-  bash "${INSTALLER}" --dry-run --no-enable --no-start
+    LIBEXEC_DIR=/tmp/libexec-test \
+    INITD_DIR=/tmp/initd-test \
+    CONFD_DIR=/tmp/confd-test \
+    LOG_DIR=/tmp/log-test \
+    INSTALL_REPO_ROOT=/srv/codex/repo \
+    INSTALL_ENV_FILE=/srv/codex/ntfy.env \
+    INSTALL_LOG_FILE=/srv/codex/codex-tui.log \
+    INSTALL_STATE_FILE=/srv/codex/approval-state.json \
+    bash "${INSTALLER}" --dry-run --no-enable --no-start
 )"
 
 assert_contains "${output}" "/tmp/libexec-test/test-codex-approval-watcher"
