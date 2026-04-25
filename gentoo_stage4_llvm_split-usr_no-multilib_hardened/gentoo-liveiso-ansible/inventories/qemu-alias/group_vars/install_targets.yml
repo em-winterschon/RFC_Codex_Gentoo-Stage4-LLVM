@@ -71,7 +71,8 @@ install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 c
 # Installed services and finalization
 install_openssh: true
 install_networkmanager: true
-root_authorized_keys: []
+root_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@livecd
 finalize_unmount_target: false
 finalize_reboot_host: false
 
