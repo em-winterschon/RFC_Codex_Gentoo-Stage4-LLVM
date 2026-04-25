@@ -64,6 +64,62 @@
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
 
+- name: Ensure target /etc exists for ZFS host identity
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc"
+    state: directory
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Copy generated hostid into the target system
+  ansible.builtin.copy:
+    src: /etc/hostid
+    dest: "{{ install_target_root }}/etc/hostid"
+    remote_src: true
+    mode: '0644'
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - storage_layout in ['single-drive', 'zfs-mirror', 'zfs-boot-root-mirror', 'zraid1', 'zraid2', 'zraid3', 'draid', 'raid-1', 'raid-10']
+
+- name: Ensure target dracut config directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/dracut.conf.d"
+    state: directory
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Force dracut to carry /etc/hostid into the initramfs
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/dracut.conf.d/90-zfs-hostid.conf"
+    content: |
+      install_items+=" /etc/hostid "
+    mode: '0644'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Resolve target ZFS hostid for dracut-compatible kernel command line
+  ansible.builtin.shell: |
+    set -euo pipefail
+    od -An -tx4 "{{ install_target_root }}/etc/hostid" | tr -d ' \n'
+  args:
+    executable: /bin/bash
+  register: boot_target_hostid
+  changed_when: false
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Build effective ZFSBootMenu root command line
+  ansible.builtin.set_fact:
+    zfsbootmenu_root_commandline_effective: >-
+      {{
+        (
+          zfsbootmenu_root_commandline
+          ~ ' spl_hostid='
+          ~ (boot_target_hostid.stdout | trim)
+        )
+        | regex_replace('\\s+', ' ')
+        | trim
+      }}
+  when: boot_strategy == 'zfsbootmenu'
+
 - name: Persist root pool in target zpool.cache
   ansible.builtin.command: >-
     zpool set cachefile={{ install_target_root }}/etc/zfs/zpool.cache {{ zpool_name }}
@@ -126,7 +182,12 @@
 
 - name: Set inherited ZFSBootMenu kernel command line on the root dataset tree
   ansible.builtin.command: >-
-    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline | quote }} {{ zpool_name }}/ROOT
+    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective | quote }} {{ zpool_name }}/ROOT
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Set ZFSBootMenu kernel command line on the selected root dataset
+  ansible.builtin.command: >-
+    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective | quote }} {{ zpool_name }}/ROOT/gentoo
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Ensure the ZFSBootMenu EFI directory exists
