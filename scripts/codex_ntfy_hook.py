@@ -17,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO_ROOT))
 
 import ntfy_notify  # noqa: E402
+import codex_ntfy_reply_queue as reply_queue  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -151,6 +152,25 @@ def poll_replies(since_ts: int, wait_timeout: int) -> Iterator[str]:
         time.sleep(0.5)
 
 
+def poll_queue_reply(request_id: str, *, expected_kind: str, wait_timeout: int) -> dict | None:
+    if not reply_queue.queue_available():
+        return None
+    end_time = time.time() + wait_timeout
+    while time.time() < end_time:
+        payload = reply_queue.consume_reply(
+            request_id,
+            expected_kind=expected_kind,
+        )
+        if payload:
+            return payload
+        time.sleep(0.5)
+    return None
+
+
+def reply_queue_enabled() -> bool:
+    return reply_queue.queue_available()
+
+
 def permission_command(payload: dict) -> str:
     tool_input = payload.get("tool_input") or {}
     if isinstance(tool_input, dict):
@@ -190,9 +210,47 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
     )
     if dry_run or not ntfy_reply_topic():
         return 0
+    if reply_queue_enabled():
+        queued_reply = poll_queue_reply(
+            request_id,
+            expected_kind="permission_reply",
+            wait_timeout=min(wait_secs(), 5),
+        )
+        if queued_reply:
+            if queued_reply.get("decision") == "allow":
+                print(
+                    json.dumps(
+                        {
+                            "hookSpecificOutput": {
+                                "hookEventName": "PermissionRequest",
+                                "decision": {"behavior": "allow"},
+                            }
+                        }
+                    )
+                )
+                return 0
+            if queued_reply.get("decision") == "deny":
+                print(
+                    json.dumps(
+                        {
+                            "hookSpecificOutput": {
+                                "hookEventName": "PermissionRequest",
+                                "decision": {"behavior": "deny", "message": "Denied via ntfy reply"},
+                            }
+                        }
+                    )
+                )
+                return 0
     for reply in poll_replies(started, wait_secs()):
-        normalized = reply.strip().lower()
-        if normalized == f"allow {request_id}":
+        normalized = reply_queue.normalize_reply_message(
+            reply,
+            message_id=reply_queue.synthetic_message_id(),
+            timestamp=int(time.time()),
+            topic=ntfy_reply_topic(),
+        )
+        if not normalized:
+            continue
+        if normalized.get("kind") == "permission_reply" and normalized.get("request_id") == request_id and normalized.get("decision") == "allow":
             print(
                 json.dumps(
                     {
@@ -204,7 +262,7 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
                 )
             )
             return 0
-        if normalized == f"deny {request_id}":
+        if normalized.get("kind") == "permission_reply" and normalized.get("request_id") == request_id and normalized.get("decision") == "deny":
             print(
                 json.dumps(
                     {
@@ -249,13 +307,30 @@ def handle_stop(payload: dict, *, dry_run: bool) -> int:
     )
     if dry_run or not ntfy_reply_topic():
         return 0
+    if reply_queue_enabled():
+        queued_reply = poll_queue_reply(
+            request_id,
+            expected_kind="question_reply",
+            wait_timeout=min(wait_secs(), 5),
+        )
+        if queued_reply and queued_reply.get("answer"):
+            print(json.dumps({"decision": "block", "reason": queued_reply["answer"]}))
+            return 0
     for reply in poll_replies(started, wait_secs()):
-        prefix = f"{request_id}:"
-        if reply.startswith(prefix):
-            answer = reply[len(prefix) :].strip()
-            if answer:
-                print(json.dumps({"decision": "block", "reason": answer}))
-                return 0
+        normalized = reply_queue.normalize_reply_message(
+            reply,
+            message_id=reply_queue.synthetic_message_id(),
+            timestamp=int(time.time()),
+            topic=ntfy_reply_topic(),
+        )
+        if (
+            normalized
+            and normalized.get("kind") == "question_reply"
+            and normalized.get("request_id") == request_id
+            and normalized.get("answer")
+        ):
+            print(json.dumps({"decision": "block", "reason": normalized["answer"]}))
+            return 0
     return 0
 
 

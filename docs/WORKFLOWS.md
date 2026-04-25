@@ -38,6 +38,8 @@ the calling automation layer.
 
 - [codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
   persistent ntfy approval-watcher installation and validation on a Gentoo/OpenRC host
+- [codex-ntfy-reply-listener-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-ntfy-reply-listener-service.json)
+  persistent ntfy reply-listener installation and validation with local pending/processed reply queue storage
 - [stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
   Stage4 VM build, launch, Ansible install, and target-disk boot validation flow
 - [stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)

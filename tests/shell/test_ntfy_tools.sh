@@ -14,6 +14,8 @@ CODEX_APPROVAL_WATCHER_WITH_ENV="${REPO_ROOT}/scripts/codex_approval_watcher_wit
 NTFY_PUBSUB_TUI="${REPO_ROOT}/scripts/ntfy_pubsub_tui.py"
 SLACK_WEBHOOK="${REPO_ROOT}/scripts/slack_webhook.py"
 GITHUB_NOTIFY="${REPO_ROOT}/.github/scripts/ntfy_repo_event.py"
+CODEX_REPLY_LISTENER="${REPO_ROOT}/scripts/codex_ntfy_reply_listener.py"
+CODEX_REPLY_LISTENER_WITH_ENV="${REPO_ROOT}/scripts/codex_ntfy_reply_listener_with_env.sh"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -37,6 +39,8 @@ test_python_sources_compile() {
     "${NTFY_NOTIFY}" \
     "${CODEX_NOTIFY_EVENT}" \
     "${CODEX_NTFY_HOOK}" \
+    "${REPO_ROOT}/scripts/codex_ntfy_reply_queue.py" \
+    "${CODEX_REPLY_LISTENER}" \
     "${CODEX_APPROVAL_WATCHER}" \
     "${NTFY_PUBSUB_TUI}" \
     "${SLACK_WEBHOOK}" \
@@ -46,7 +50,7 @@ test_python_sources_compile() {
 }
 
 test_shell_wrappers_parse() {
-  bash -n "${CODEX_NOTIFY}" "${CODEX_NOTIFY_WITH_ENV}" "${CODEX_HOOK_WITH_ENV}" "${CODEX_APPROVAL_WATCHER_WITH_ENV}"
+  bash -n "${CODEX_NOTIFY}" "${CODEX_NOTIFY_WITH_ENV}" "${CODEX_HOOK_WITH_ENV}" "${CODEX_APPROVAL_WATCHER_WITH_ENV}" "${CODEX_REPLY_LISTENER_WITH_ENV}"
 }
 
 test_ntfy_notify_dry_run_renders_payload() {
@@ -177,6 +181,26 @@ EOF
   rm -rf "${temp_dir}"
 }
 
+test_codex_reply_listener_wrapper_sources_env_file() {
+  local temp_dir env_file output
+  temp_dir="$(mktemp -d)"
+  env_file="${temp_dir}/ntfy.env"
+  cat > "${env_file}" << 'EOF'
+export CODEX_NTFY_REPLY_TOPIC='codex-replies-wrapper'
+export CODEX_NTFY_REPLY_QUEUE_DIR='/tmp/codex-replies-wrapper'
+EOF
+
+  output="$(
+    CODEX_NTFY_ENV_FILE="${env_file}" \
+      CODEX_NTFY_REPLY_LISTENER_TEST_MESSAGES='allow req-1' \
+      bash "${CODEX_REPLY_LISTENER_WITH_ENV}" --dry-run --once --from-start
+  )"
+
+  assert_contains "${output}" '"decision": "allow"'
+  assert_contains "${output}" '"kind": "permission_reply"'
+  rm -rf "${temp_dir}"
+}
+
 test_codex_ntfy_hook_permission_dry_run_and_reply() {
   local payload dry_output reply_output
   payload='{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
@@ -200,6 +224,50 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
 
   assert_contains "${reply_output}" '"decision"'
   assert_contains "${reply_output}" '"allow"'
+}
+
+test_codex_reply_listener_persists_normalized_queue_entries() {
+  local temp_dir state_file pending_file content
+  temp_dir="$(mktemp -d)"
+  state_file="${temp_dir}/listener-state.json"
+
+  CODEX_NTFY_REPLY_TOPIC=codex-replies \
+    CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
+    CODEX_NTFY_REPLY_LISTENER_TEST_MESSAGES=$'allow req-1\nreq-2: continue with stage3' \
+    python3 "${CODEX_REPLY_LISTENER}" --once --from-start --state-file "${state_file}"
+
+  pending_file="$(find "${temp_dir}/queue/pending" -type f -name '*.json' | sort | head -n 1)"
+  [[ -n "${pending_file}" ]] || fail "expected pending reply queue files"
+  content="$(find "${temp_dir}/queue/pending" -type f -name '*.json' -print0 | xargs -0 cat)"
+  assert_contains "${content}" '"request_id": "req-1"'
+  assert_contains "${content}" '"request_id": "req-2"'
+  assert_contains "${content}" '"kind": "question_reply"'
+  rm -rf "${temp_dir}"
+}
+
+test_codex_ntfy_hook_consumes_reply_queue_entries() {
+  local temp_dir state_file output
+  temp_dir="$(mktemp -d)"
+  state_file="${temp_dir}/listener-state.json"
+
+  CODEX_NTFY_REPLY_TOPIC=codex-replies \
+    CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
+    CODEX_NTFY_REPLY_LISTENER_TEST_MESSAGES='allow 12345678' \
+    python3 "${CODEX_REPLY_LISTENER}" --once --from-start --state-file "${state_file}"
+
+  output="$(
+    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
+      CODEX_NTFY_REPLY_TOPIC=codex-replies \
+      CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
+      CODEX_NTFY_TEST_REQUEST_ID='12345678' \
+      python3 "${CODEX_NTFY_HOOK}" <<< '{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
+  )"
+
+  assert_contains "${output}" '"decision"'
+  assert_contains "${output}" '"allow"'
+  [[ -d "${temp_dir}/queue/processed" ]] || fail "expected processed queue directory"
+  find "${temp_dir}/queue/processed" -type f -name '*.json' | grep -q . || fail "expected processed reply file"
+  rm -rf "${temp_dir}"
 }
 
 test_approval_watcher_exec_request_dry_run() {
@@ -293,7 +361,10 @@ test_github_event_formatter_renders_pull_request_message
 test_codex_notify_event_renders_turn_complete_payload
 test_codex_notify_wrapper_sources_env_file
 test_codex_hook_wrapper_sources_env_file
+test_codex_reply_listener_wrapper_sources_env_file
 test_codex_ntfy_hook_permission_dry_run_and_reply
+test_codex_reply_listener_persists_normalized_queue_entries
+test_codex_ntfy_hook_consumes_reply_queue_entries
 test_approval_watcher_exec_request_dry_run
 test_approval_watcher_patch_request_dry_run
 test_ntfy_pubsub_tui_prints_config
