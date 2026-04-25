@@ -7,12 +7,21 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
 
 - [docs/WORKFLOWS.md](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/WORKFLOWS.md)
   human-readable index for the machine-readable workflow manifests
+- [docs/wiki](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/wiki)
+  versioned source for the GitHub wiki; publish separately after PR approval
 - [docs/workflows/codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
   persistent ntfy approval-watcher install and validation flow
 - [docs/workflows/stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
   Stage4 VM build, install, and target-disk boot validation flow
 - [docs/workflows/stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)
   staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
+
+Wiki publication policy:
+
+- edit wiki pages under `docs/wiki/`
+- treat the GitHub wiki as a deployment target, not the source of truth
+- use `bash scripts/publish-wiki.sh` to refresh the local wiki checkout
+- use `bash scripts/publish-wiki.sh --push` only after the relevant PR is approved
 
 ## Notifications
 
