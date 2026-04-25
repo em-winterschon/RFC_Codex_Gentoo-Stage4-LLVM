@@ -1,6 +1,6 @@
 ---
 # Safety rails
-storage_confirm_destroy: false
+storage_confirm_destroy: true
 storage_allow_mdadm_under_zfs: false
 
 # LiveISO and target root
@@ -27,9 +27,18 @@ install_root_password_hash: ""
 #   zraid2
 #   zraid3
 #   draid
-storage_layout: single-drive
+storage_layout: zfs-boot-root-mirror
 storage_devices:
-  - /dev/disk/by-id/replace-me
+  - /dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305
+  - /dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382932
+  - /dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A5659
+  - /dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A58E2
+zfs_boot_pool_devices:
+  - /dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382305
+  - /dev/disk/by-id/ata-SATADOM-SL_3IE3_V2_BCA11708020382932
+zfs_root_pool_devices:
+  - /dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A5659
+  - /dev/disk/by-id/ata-HBS3A1919A7E6B1_A03A58E2
 esp_size_mib: 1024
 swap_size_gib: 16
 zpool_name: rpool

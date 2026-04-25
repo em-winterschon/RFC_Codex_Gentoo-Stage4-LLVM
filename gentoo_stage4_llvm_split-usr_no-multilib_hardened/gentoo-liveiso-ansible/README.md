@@ -88,7 +88,7 @@ GPU-specific Portage settings are intentionally separate via `gpu_stack`.
 ```bash
 ./scripts/bootstrap-liveiso.sh
 vim inventories/examples/group_vars/install_targets.yml
-ansible-playbook playbooks/install.yml -l liveiso-local --connection=local
+ansible-playbook playbooks/install.yml -l target_system_local --connection=local
 ```
 
 ### Remote execution against a booted LiveISO
@@ -97,7 +97,7 @@ ansible-playbook playbooks/install.yml -l liveiso-local --connection=local
 ./scripts/bootstrap-liveiso.sh
 vim inventories/examples/hosts.yml
 vim inventories/examples/group_vars/install_targets.yml
-ansible-playbook playbooks/install.yml -l remote-liveiso
+ansible-playbook playbooks/install.yml -l target_system_remote
 ```
 
 ### Install sequences
@@ -149,7 +149,7 @@ selected_roles:
 Example direct role override:
 
 ```bash
-ansible-playbook playbooks/install.yml -l remote-liveiso -e '{"selected_roles":["boot","network"]}'
+ansible-playbook playbooks/install.yml -l target_system_remote -e '{"selected_roles":["boot","network"]}'
 ```
 
 ### Sequence wrapper and control-flow pipeline
@@ -159,17 +159,17 @@ Use the wrapper script to run a sequence with a tail-able JSONL control-flow str
 ```bash
 bash scripts/run-install-sequence.sh \
   --inventory inventories/examples/hosts.yml \
-  --limit remote-liveiso \
+  --limit target_system_remote \
   --sequence full-default \
   --checkpoint \
-  --control-flow-path /tmp/ansible-control-flow/remote-liveiso.install.jsonl
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.install.jsonl
 ```
 
 Watch the run remotely in a second terminal or over SSH:
 
 ```bash
 python3 scripts/watch-control-flow.py \
-  --path /tmp/ansible-control-flow/remote-liveiso.install.jsonl \
+  --path /tmp/ansible-control-flow/target-system-remote.install.jsonl \
   --follow
 ```
 
@@ -178,24 +178,24 @@ Recommended first-pass staged execution for a destination test host:
 ```bash
 bash scripts/run-install-sequence.sh \
   --inventory inventories/examples/hosts.yml \
-  --limit remote-liveiso \
+  --limit target_system_remote \
   --sequence storage-foundation \
   --checkpoint \
-  --control-flow-path /tmp/ansible-control-flow/remote-liveiso.storage.jsonl
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.storage.jsonl
 
 bash scripts/run-install-sequence.sh \
   --inventory inventories/examples/hosts.yml \
-  --limit remote-liveiso \
+  --limit target_system_remote \
   --sequence chroot-bootstrap \
   --checkpoint \
-  --control-flow-path /tmp/ansible-control-flow/remote-liveiso.bootstrap.jsonl
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.bootstrap.jsonl
 
 bash scripts/run-install-sequence.sh \
   --inventory inventories/examples/hosts.yml \
-  --limit remote-liveiso \
+  --limit target_system_remote \
   --sequence target-integration \
   --checkpoint \
-  --control-flow-path /tmp/ansible-control-flow/remote-liveiso.integration.jsonl
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.integration.jsonl
 ```
 
 Optional focused repair pass:
@@ -203,10 +203,10 @@ Optional focused repair pass:
 ```bash
 bash scripts/run-install-sequence.sh \
   --inventory inventories/examples/hosts.yml \
-  --limit remote-liveiso \
+  --limit target_system_remote \
   --sequence repair-boot \
   --checkpoint \
-  --control-flow-path /tmp/ansible-control-flow/remote-liveiso.repair-boot.jsonl
+  --control-flow-path /tmp/ansible-control-flow/target-system-remote.repair-boot.jsonl
 ```
 
 The control-flow stream is produced by:
@@ -357,7 +357,7 @@ meant as a concrete validation target for the managed-service facility.
 Example invocation:
 
 ```bash
-ansible-playbook playbooks/install.yml -l remote-liveiso -e @service-definitions/stage4-heartbeat.yml
+ansible-playbook playbooks/install.yml -l target_system_remote -e @service-definitions/stage4-heartbeat.yml
 ```
 
 Optional tuning keys:
