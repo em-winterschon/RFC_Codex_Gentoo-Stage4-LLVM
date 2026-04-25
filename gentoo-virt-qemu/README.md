@@ -8,6 +8,7 @@ Preferred workflow:
 - attach the four host disks intended for the eventual `bpool` and `rpool`
 - boot only from the explicit QCOW boot disk by default, with PXE and fallback device boot disabled
 - keep both network SSH access and serial-console access available
+- support safe host-local VM networking before moving to bridge-backed external connectivity
 
 Why this path is now preferred:
 - the official Gentoo `cloud-init` QCOW images are `systemd` based, which does not match this infrastructure
@@ -120,6 +121,7 @@ Important launcher defaults:
 - `QEMU_DISPLAY_MODE=none`
 - `QEMU_SERIAL_MODE=file`
 - `QEMU_SERIAL_FILE=/opt/gentoo-virt-qemu/stage3/state/gentoo-stage4-testvm.serial.log`
+- `QEMU_NETWORK_MODE=user`
 - `QEMU_NETDEV_BACKEND=user,hostfwd=tcp:127.0.0.1:2222-:22`
 - `WAIT_FOR_SSH=1`
 - `SSH_READY_PROBE=banner`
@@ -132,6 +134,50 @@ Preferred launch sequence:
    `bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh`
 3. Connect with SSH after the banner check passes:
    `ssh -o StrictHostKeyChecking=no -p 2222 root@127.0.0.1`
+
+Network modes:
+- `QEMU_NETWORK_MODE=user`
+  current default; QEMU slirp user-mode networking with localhost SSH forwarding
+- `QEMU_NETWORK_MODE=alias`
+  safe host-local test mode; adds `QEMU_NET_ALIAS_CIDR` to `QEMU_NET_ALIAS_DEV` and uses
+  slirp DHCP on `QEMU_NET_ALIAS_SUBNET`, starting guest allocation at `QEMU_NET_ALIAS_GUEST_IPV4`
+- `QEMU_NETWORK_MODE=tap`
+  creates and brings up `QEMU_TAP_IFNAME`, optionally assigning `QEMU_TAP_HOST_CIDR`
+- `QEMU_NETWORK_MODE=bridge`
+  same tap setup as `tap`, then enslaves the tap interface into `QEMU_BRIDGE_IFNAME`
+
+Alias-mode defaults:
+- `QEMU_NET_ALIAS_DEV=lo`
+- `QEMU_NET_ALIAS_CIDR=10.9.8.108/24`
+- `QEMU_NET_ALIAS_SUBNET=10.9.8.0/24`
+- `QEMU_NET_ALIAS_GUEST_IPV4=10.9.8.7`
+
+Alias-mode test example:
+```bash
+QEMU_NETWORK_MODE=alias \
+QEMU_SERIAL_MODE=file \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+
+ssh -o StrictHostKeyChecking=no -p 2222 root@10.9.8.108
+```
+
+Tap-mode example:
+```bash
+QEMU_NETWORK_MODE=tap \
+QEMU_TAP_IFNAME=tap-stage4 \
+QEMU_TAP_HOST_CIDR=10.9.8.108/24 \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Bridge-mode example:
+```bash
+QEMU_NETWORK_MODE=bridge \
+QEMU_TAP_IFNAME=tap-stage4 \
+QEMU_BRIDGE_IFNAME=br0 \
+WAIT_FOR_SSH=0 \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
 
 Boot-source modes:
 - `QEMU_BOOT_SOURCE=qcow`

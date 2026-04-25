@@ -32,11 +32,20 @@ QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-none}"
 QEMU_SERIAL_MODE="${QEMU_SERIAL_MODE:-file}"
 QEMU_SERIAL_FILE="${QEMU_SERIAL_FILE:-${STAGE3_IMAGE_DIR}/state/${INSTANCE_NAME}.serial.log}"
 QEMU_SERIAL_TCP="${QEMU_SERIAL_TCP:-127.0.0.1:4555,server=on,wait=off,telnet=on}"
+QEMU_NETWORK_MODE="${QEMU_NETWORK_MODE:-user}"
 QEMU_NETDEV_ID="${QEMU_NETDEV_ID:-net0}"
 QEMU_NETDEV_BACKEND="${QEMU_NETDEV_BACKEND:-user,hostfwd=tcp:127.0.0.1:2222-:22}"
 QEMU_NETDEV_MODEL="${QEMU_NETDEV_MODEL:-virtio-net-pci}"
+QEMU_NET_ALIAS_DEV="${QEMU_NET_ALIAS_DEV:-lo}"
+QEMU_NET_ALIAS_CIDR="${QEMU_NET_ALIAS_CIDR:-10.9.8.108/24}"
+QEMU_NET_ALIAS_SUBNET="${QEMU_NET_ALIAS_SUBNET:-10.9.8.0/24}"
+QEMU_NET_ALIAS_GUEST_IPV4="${QEMU_NET_ALIAS_GUEST_IPV4:-10.9.8.7}"
+QEMU_TAP_IFNAME="${QEMU_TAP_IFNAME:-tap-stage4}"
+QEMU_BRIDGE_IFNAME="${QEMU_BRIDGE_IFNAME:-}"
+QEMU_TAP_HOST_CIDR="${QEMU_TAP_HOST_CIDR:-}"
 QEMU_NETDEV_HELP_OUTPUT="${QEMU_NETDEV_HELP_OUTPUT-}"
 QEMU_DISPLAY_HELP_OUTPUT="${QEMU_DISPLAY_HELP_OUTPUT-}"
+IP_BIN="${IP_BIN:-/usr/sbin/ip}"
 HOST_DISK_CACHE="${HOST_DISK_CACHE:-none}"
 HOST_DISK_AIO="${HOST_DISK_AIO:-native}"
 WAIT_FOR_SSH="${WAIT_FOR_SSH:-1}"
@@ -51,6 +60,8 @@ LAUNCHER_LOG_FILE="${LAUNCHER_LOG_FILE-}"
 LAUNCHER_LOG_TIMESTAMP="${LAUNCHER_LOG_TIMESTAMP-}"
 LAUNCHER_LOG_INITIALIZED=0
 ALLOCATED_SERIAL_PTY=''
+RESOLVED_QEMU_NETDEV_BACKEND=''
+RESOLVED_SSH_READY_HOST=''
 QEMU_CMD=()
 
 log() {
@@ -79,8 +90,85 @@ serial_mode_name() {
   printf '%s' "${QEMU_SERIAL_MODE}"
 }
 
+network_mode_name() {
+  printf '%s' "${QEMU_NETWORK_MODE}"
+}
+
 boot_source_name() {
   printf '%s' "${QEMU_BOOT_SOURCE}"
+}
+
+alias_host_ipv4() {
+  printf '%s' "${QEMU_NET_ALIAS_CIDR%%/*}"
+}
+
+ensure_alias_address() {
+  local existing_addrs
+
+  if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
+    return 0
+  fi
+
+  existing_addrs="$("${IP_BIN}" -o -4 addr show dev "${QEMU_NET_ALIAS_DEV}" 2> /dev/null || true)"
+  if [[ "${existing_addrs}" == *"${QEMU_NET_ALIAS_CIDR}"* ]]; then
+    return 0
+  fi
+
+  "${IP_BIN}" address add "${QEMU_NET_ALIAS_CIDR}" dev "${QEMU_NET_ALIAS_DEV}"
+}
+
+ensure_tap_interface() {
+  if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
+    return 0
+  fi
+
+  if ! "${IP_BIN}" link show dev "${QEMU_TAP_IFNAME}" > /dev/null 2>&1; then
+    "${IP_BIN}" tuntap add dev "${QEMU_TAP_IFNAME}" mode tap
+  fi
+
+  "${IP_BIN}" link set "${QEMU_TAP_IFNAME}" up
+
+  if [[ -n "${QEMU_TAP_HOST_CIDR}" ]]; then
+    if ! "${IP_BIN}" -o -4 addr show dev "${QEMU_TAP_IFNAME}" | grep -Fq "${QEMU_TAP_HOST_CIDR}"; then
+      "${IP_BIN}" address add "${QEMU_TAP_HOST_CIDR}" dev "${QEMU_TAP_IFNAME}"
+    fi
+  fi
+}
+
+ensure_bridge_membership() {
+  if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
+    return 0
+  fi
+
+  [[ -n "${QEMU_BRIDGE_IFNAME}" ]] || fail 'QEMU_BRIDGE_IFNAME is required for QEMU_NETWORK_MODE=bridge'
+  "${IP_BIN}" link show dev "${QEMU_BRIDGE_IFNAME}" > /dev/null 2>&1 || fail "Bridge interface is missing: ${QEMU_BRIDGE_IFNAME}"
+  "${IP_BIN}" link set "${QEMU_TAP_IFNAME}" master "${QEMU_BRIDGE_IFNAME}"
+}
+
+resolve_network_backend() {
+  RESOLVED_SSH_READY_HOST="${SSH_READY_HOST}"
+  case "$(network_mode_name)" in
+  user)
+    RESOLVED_QEMU_NETDEV_BACKEND="${QEMU_NETDEV_BACKEND}"
+    ;;
+  alias)
+    ensure_alias_address
+    RESOLVED_SSH_READY_HOST="$(alias_host_ipv4)"
+    RESOLVED_QEMU_NETDEV_BACKEND="user,net=${QEMU_NET_ALIAS_SUBNET},host=${RESOLVED_SSH_READY_HOST},dhcpstart=${QEMU_NET_ALIAS_GUEST_IPV4},hostfwd=tcp:${RESOLVED_SSH_READY_HOST}:${SSH_READY_PORT}-:22"
+    ;;
+  tap)
+    ensure_tap_interface
+    RESOLVED_QEMU_NETDEV_BACKEND="tap,ifname=${QEMU_TAP_IFNAME},script=no,downscript=no"
+    ;;
+  bridge)
+    ensure_tap_interface
+    ensure_bridge_membership
+    RESOLVED_QEMU_NETDEV_BACKEND="tap,ifname=${QEMU_TAP_IFNAME},script=no,downscript=no"
+    ;;
+  *)
+    fail "Unsupported QEMU_NETWORK_MODE: $(network_mode_name) (supported: user, alias, tap, bridge)"
+    ;;
+  esac
 }
 
 launcher_log_timestamp() {
@@ -162,7 +250,13 @@ validate_efi_firmware() {
 validate_net_backend() {
   local backend help_output
 
+  resolve_network_backend
   backend="$(network_backend_name)"
+  if [[ "${backend}" == 'alias' ]]; then
+    backend='user'
+  elif [[ "${backend}" == 'bridge' ]]; then
+    backend='tap'
+  fi
   [[ -n "${backend}" ]] || fail 'QEMU_NETDEV_BACKEND is empty'
 
   help_output="${QEMU_NETDEV_HELP_OUTPUT}"
@@ -276,6 +370,7 @@ prepare_ovmf_vars_file() {
 }
 
 build_qemu_cmd() {
+  resolve_network_backend
   prepare_ovmf_vars_file
   QEMU_CMD=(
     "${QEMU_BIN}"
@@ -307,7 +402,7 @@ build_qemu_cmd() {
   append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
 
   QEMU_CMD+=(
-    -netdev "${QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
+    -netdev "${RESOLVED_QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
     -device "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
   )
 
@@ -419,13 +514,15 @@ main() {
   validate_display_backend
   validate_serial_mode
   log "Boot source: $(boot_source_name)"
+  log "Network mode: $(network_mode_name)"
   if [[ "$(boot_source_name)" == 'qcow' ]]; then
     log "QCOW image: ${QCOW_IMAGE}"
   else
     log "Target-disk boot: prioritizing ${BPOOL_DISK0} via UEFI removable path"
   fi
-  log "SSH target after boot: ssh -p ${SSH_READY_PORT} root@${SSH_READY_HOST}"
+  log "SSH target after boot: ssh -p ${SSH_READY_PORT} root@${RESOLVED_SSH_READY_HOST}"
   run_qemu_cmd
+  SSH_READY_HOST="${RESOLVED_SSH_READY_HOST}"
   wait_for_ssh_ready
   log '[COMPLETE]'
 }
