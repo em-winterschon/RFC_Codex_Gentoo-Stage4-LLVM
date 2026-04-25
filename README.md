@@ -55,6 +55,8 @@ Codex integration files:
   subscribes to the reply topic and persists normalized replies into a local pending/processed queue
 - `scripts/codex_ntfy_reply_listener_with_env.sh`
   sources the ntfy export file before launching the reply listener
+- `config/codex-ntfy-policy.json`
+  default reply-handling policy that marks each normalized reply kind as `state-driven` or `advisory`
 - `.codex/hooks.json`
   repo-local example hook wiring for `PermissionRequest` and `Stop`
 
@@ -75,8 +77,22 @@ Preferred reply-processing path:
 
 - run the persistent reply listener service
 - let it normalize ntfy reply messages into a local queue under `CODEX_NTFY_REPLY_QUEUE_DIR`
+- control whether each reply kind is `state-driven` or `advisory` through `CODEX_NTFY_POLICY_FILE`
 - let `scripts/codex_ntfy_hook.py` consume matching replies from that queue first
 - fall back to direct ntfy polling only when the queue path is absent or empty
+
+Reply policy defaults:
+
+- `permission_reply`: `state-driven`
+- `question_reply`: `state-driven`
+- `status_request`: `advisory`
+- `unrecognized_reply`: `advisory`
+
+Recommended policy handling:
+
+- keep `permission_reply` and `question_reply` as `state-driven` only if you trust the reply channel
+- keep `status_request` and unrecognized content as `advisory`
+- override with `CODEX_NTFY_POLICY_FILE=/path/to/ntfy-policy.json` if the host should use a site-local policy instead of the repo default
 
 Archive-derived local operator tools now included:
 

@@ -153,6 +153,25 @@ def consume_reply(
     root: Path | None = None,
 ) -> dict[str, Any] | None:
     ensure_queue_dirs(root)
+    found = find_reply(request_id, expected_kind=expected_kind, root=root)
+    if found:
+        path, payload = found
+        mark_processed(path, root=root)
+        return payload
+    return None
+
+
+def synthetic_message_id() -> str:
+    return uuid.uuid4().hex[:12]
+
+
+def find_reply(
+    request_id: str,
+    *,
+    expected_kind: str,
+    root: Path | None = None,
+) -> tuple[Path, dict[str, Any]] | None:
+    ensure_queue_dirs(root)
     for path in iter_pending_replies(root):
         payload = load_reply(path)
         if not payload:
@@ -161,11 +180,12 @@ def consume_reply(
             continue
         if payload.get("request_id") != request_id:
             continue
-        destination = processed_dir(root) / path.name
-        path.replace(destination)
-        return payload
+        return path, payload
     return None
 
 
-def synthetic_message_id() -> str:
-    return uuid.uuid4().hex[:12]
+def mark_processed(path: Path, *, root: Path | None = None) -> Path:
+    ensure_queue_dirs(root)
+    destination = processed_dir(root) / path.name
+    path.replace(destination)
+    return destination

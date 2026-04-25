@@ -39,6 +39,7 @@ test_python_sources_compile() {
     "${NTFY_NOTIFY}" \
     "${CODEX_NOTIFY_EVENT}" \
     "${CODEX_NTFY_HOOK}" \
+    "${REPO_ROOT}/scripts/codex_ntfy_policy.py" \
     "${REPO_ROOT}/scripts/codex_ntfy_reply_queue.py" \
     "${CODEX_REPLY_LISTENER}" \
     "${CODEX_APPROVAL_WATCHER}" \
@@ -245,6 +246,36 @@ test_codex_reply_listener_persists_normalized_queue_entries() {
   rm -rf "${temp_dir}"
 }
 
+test_codex_ntfy_policy_file_overrides_mode() {
+  local temp_dir policy_file output
+  temp_dir="$(mktemp -d)"
+  policy_file="${temp_dir}/policy.json"
+  cat > "${policy_file}" << 'EOF'
+{
+  "replyKinds": {
+    "permission_reply": {
+      "mode": "advisory"
+    }
+  }
+}
+EOF
+
+  output="$(
+    CODEX_NTFY_POLICY_FILE="${policy_file}" \
+      python3 - <<'PY'
+import sys
+sys.path.insert(0, "/root/RFC_Codex_Gentoo-Stage4-LLVM/scripts")
+import codex_ntfy_policy as p
+print(p.mode_for_kind("permission_reply"))
+print(p.mode_for_kind("question_reply"))
+PY
+  )"
+
+  assert_contains "${output}" 'advisory'
+  assert_contains "${output}" 'state-driven'
+  rm -rf "${temp_dir}"
+}
+
 test_codex_reply_listener_parses_syslog_wrapped_reply_messages() {
   local temp_dir state_file content
   temp_dir="$(mktemp -d)"
@@ -283,6 +314,39 @@ test_codex_ntfy_hook_consumes_reply_queue_entries() {
   assert_contains "${output}" '"allow"'
   [[ -d "${temp_dir}/queue/processed" ]] || fail "expected processed queue directory"
   find "${temp_dir}/queue/processed" -type f -name '*.json' | grep -q . || fail "expected processed reply file"
+  rm -rf "${temp_dir}"
+}
+
+test_codex_ntfy_hook_respects_advisory_policy_for_queue_entries() {
+  local temp_dir state_file policy_file output
+  temp_dir="$(mktemp -d)"
+  state_file="${temp_dir}/listener-state.json"
+  policy_file="${temp_dir}/policy.json"
+  cat > "${policy_file}" << 'EOF'
+{
+  "replyKinds": {
+    "permission_reply": {
+      "mode": "advisory"
+    }
+  }
+}
+EOF
+
+  CODEX_NTFY_REPLY_TOPIC=codex-replies \
+    CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
+    CODEX_NTFY_REPLY_LISTENER_TEST_MESSAGES='allow 87654321' \
+    python3 "${CODEX_REPLY_LISTENER}" --once --from-start --state-file "${state_file}"
+
+  output="$(
+    CODEX_NTFY_REPLY_TOPIC=codex-replies \
+      CODEX_NTFY_POLICY_FILE="${policy_file}" \
+      CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
+      CODEX_NTFY_TEST_REQUEST_ID='87654321' \
+      python3 "${CODEX_NTFY_HOOK}" <<< '{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
+  )"
+
+  [[ -z "${output}" ]] || fail "expected no hook decision output for advisory policy, got '${output}'"
+  find "${temp_dir}/queue/processed" -type f -name '*.json' | grep -q . || fail "expected advisory reply to be moved to processed"
   rm -rf "${temp_dir}"
 }
 
@@ -380,8 +444,10 @@ test_codex_hook_wrapper_sources_env_file
 test_codex_reply_listener_wrapper_sources_env_file
 test_codex_ntfy_hook_permission_dry_run_and_reply
 test_codex_reply_listener_persists_normalized_queue_entries
+test_codex_ntfy_policy_file_overrides_mode
 test_codex_reply_listener_parses_syslog_wrapped_reply_messages
 test_codex_ntfy_hook_consumes_reply_queue_entries
+test_codex_ntfy_hook_respects_advisory_policy_for_queue_entries
 test_approval_watcher_exec_request_dry_run
 test_approval_watcher_patch_request_dry_run
 test_ntfy_pubsub_tui_prints_config
