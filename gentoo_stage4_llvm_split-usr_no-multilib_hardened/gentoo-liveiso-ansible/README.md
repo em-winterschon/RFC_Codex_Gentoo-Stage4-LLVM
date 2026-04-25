@@ -100,6 +100,19 @@ vim inventories/examples/group_vars/install_targets.yml
 ansible-playbook playbooks/install.yml -l target_system_remote
 ```
 
+### QEMU alias-mode execution against the installer VM
+
+Use the dedicated alias-mode inventory when the installer VM is launched with
+`QEMU_NETWORK_MODE=alias`. In that mode, the guest uses `10.9.8.7/24`
+internally, but Ansible must connect to the host-side alias and forwarded SSH
+port.
+
+```bash
+./scripts/bootstrap-liveiso.sh
+vim inventories/qemu-alias/group_vars/install_targets.yml
+ansible-playbook -i inventories/qemu-alias/hosts.yml playbooks/install.yml -l target_system_remote
+```
+
 ### Install sequences
 
 The installer now supports staged `install_sequence` execution. The default sequence is:
@@ -158,7 +171,7 @@ Use the wrapper script to run a sequence with a tail-able JSONL control-flow str
 
 ```bash
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
+  --inventory inventories/qemu-alias/hosts.yml \
   --limit target_system_remote \
   --sequence full-default \
   --checkpoint \
@@ -177,21 +190,21 @@ Recommended first-pass staged execution for a destination test host:
 
 ```bash
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
+  --inventory inventories/qemu-alias/hosts.yml \
   --limit target_system_remote \
   --sequence storage-foundation \
   --checkpoint \
   --control-flow-path /tmp/ansible-control-flow/target-system-remote.storage.jsonl
 
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
+  --inventory inventories/qemu-alias/hosts.yml \
   --limit target_system_remote \
   --sequence chroot-bootstrap \
   --checkpoint \
   --control-flow-path /tmp/ansible-control-flow/target-system-remote.bootstrap.jsonl
 
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
+  --inventory inventories/qemu-alias/hosts.yml \
   --limit target_system_remote \
   --sequence target-integration \
   --checkpoint \
@@ -202,7 +215,7 @@ Optional focused repair pass:
 
 ```bash
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
+  --inventory inventories/qemu-alias/hosts.yml \
   --limit target_system_remote \
   --sequence repair-boot \
   --checkpoint \

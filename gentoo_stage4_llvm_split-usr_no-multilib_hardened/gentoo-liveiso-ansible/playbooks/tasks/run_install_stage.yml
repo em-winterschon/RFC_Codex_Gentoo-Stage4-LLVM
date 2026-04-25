@@ -20,7 +20,7 @@
           install_stage_roles: "{{ install_stage.roles }}"
         per_host: false
 
-    - name: Include role {{ install_stage_role }} for stage {{ install_stage.id }}
+    - name: Include roles {{ install_stage.roles | join(', ') }} for stage {{ install_stage.id }}
       ansible.builtin.include_role:
         name: "{{ install_stage_role }}"
       loop: "{{ install_stage.roles }}"
