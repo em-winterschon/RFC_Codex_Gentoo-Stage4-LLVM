@@ -4,7 +4,7 @@
 
 - Change title: Path B iPXE lab on isolated `10.9.8.0/24` using a RouterOS CHR VM
 - Change type: Standard change candidate after first successful validation
-- Current state: Planned, not yet executed
+- Current state: Implemented and validated in isolated lab form
 - Related PRs:
   - `#17` Path B iPXE netboot workflow
   - `#16` default LLVM/Clang Portage profile and linting
@@ -105,7 +105,37 @@ Before implementation:
 4. A RouterOS CHR image is available locally.
 5. Operator understands the rollback steps below.
 
-## 6. Implementation Plan
+## 6. Current Validated Lab State
+
+The following are now validated in the isolated `10.9.8.0/24` lab:
+
+- RouterOS CHR provides DHCP and iPXE handoff
+- Path B assets publish over HTTP from the Gentoo host
+- a UEFI client VM completes:
+  - DHCP
+  - iPXE bootstrap
+  - kernel/initramfs fetch
+  - `rootfs.img` fetch
+  - dracut `switch_root`
+  - OpenRC `default` runlevel
+- the Path B provisioner is reachable by SSH at `root@10.9.8.98`
+- final provisioner network state converges to:
+  - one IPv4 address
+  - one default route
+  - no surviving DHCP client process
+
+Key implementation findings now encoded in the repo:
+
+- Path B SquashFS artifacts must be built with `mksquashfs -noappend`
+- mountpoint directories such as `/dev`, `/proc`, `/sys`, `/run`, `/tmp`, and
+  `/boot/efi` must be preserved in the live rootfs while excluding only their
+  contents
+- serial access after `switch_root` requires an active `ttyS0` getty and
+  `securetty` entry
+- initramfs network reuse requires a userspace handoff cleanup step to prune
+  duplicate addresses and routes
+
+## 7. Implementation Plan
 
 ### Stage 1: Confirm repo and publish Path B assets
 
@@ -183,6 +213,7 @@ Success criteria for this stage:
 - stage3 bootstrap completes without package or dracut failure
 - installer and rescue artifacts both exist under `/opt/gentoo-netboot/path-b`
 - artifact tree is ready for HTTP publication
+- artifact build produces a clean, non-recursively-appended `rootfs.img`
 
 ### Stage 4: Create the RouterOS CHR VM
 
@@ -292,8 +323,7 @@ Purpose:
 
 Planned boot profile:
 
-- UEFI client first
-- then BIOS client if needed
+- UEFI client only
 
 Command pattern:
 
@@ -315,6 +345,9 @@ Success criteria for this stage:
 - client reaches iPXE
 - iPXE fetches Path B assets over HTTP/HTTPS
 - provisioning kernel/initramfs begin boot
+- provisioning image reaches `switch_root`
+- provisioning image reaches OpenRC `default`
+- provisioning image exposes SSH on the lab address
 
 ### Stage 7: Validate provisioning-to-installer handoff
 
@@ -339,7 +372,7 @@ bash scripts/run-install-sequence.sh \
   --control-flow-path /tmp/ansible-control-flow/path-b-client.storage.jsonl
 ```
 
-## 7. Validation Plan
+## 8. Validation Plan
 
 ### Technical validation
 
@@ -350,7 +383,10 @@ bash scripts/run-install-sequence.sh \
 5. Client VM receives DHCP and reaches iPXE.
 6. iPXE fetches `bootstrap.ipxe` and the selected role script.
 7. Provisioning kernel/initramfs boot begins.
-8. Installer control-flow logging works once the provisioning environment is up.
+8. Provisioning reaches `switch_root`.
+9. Provisioning reaches OpenRC `default`.
+10. SSH is reachable on the provisioner.
+11. Installer control-flow logging works once the provisioning environment is up.
 
 ### Documentary validation
 
@@ -361,7 +397,7 @@ The following must remain updated:
 - `docs/wiki/Configurations-and-Examples.md`
 - `docs/wiki/Repository-Layout.md`
 
-## 8. Backout / Rollback Plan
+## 9. Backout / Rollback Plan
 
 If the lab setup causes instability or does not validate:
 
@@ -380,7 +416,7 @@ ip link del br-pathb type bridge || true
 ip addr del 10.9.8.108/24 dev lo || true
 ```
 
-## 9. Success Criteria
+## 10. Success Criteria
 
 The change is considered successful when:
 
@@ -388,9 +424,11 @@ The change is considered successful when:
 - RouterOS CHR VM is operational on the isolated subnet
 - at least one test client boots into iPXE and fetches Path B assets
 - provisioning reaches the Gentoo installer handoff point
+- provisioner SSH is reachable and stable
+- provisioner network state converges to one IPv4 address and one default route
 - Path A remains unaffected and available
 
-## 10. Next Automation Targets
+## 11. Next Automation Targets
 
 After the first successful manual lab bring-up:
 
@@ -398,4 +436,5 @@ After the first successful manual lab bring-up:
 2. add repo-managed host bridge/tap bring-up helpers
 3. add DHCP/iPXE helper automation for the isolated subnet
 4. add a machine-readable client boot validation manifest
-5. promote the change into a repeatable standard-change workflow
+5. remove temporary debug init/local hooks once normal boot is considered fully stable
+6. promote the change into a repeatable standard-change workflow

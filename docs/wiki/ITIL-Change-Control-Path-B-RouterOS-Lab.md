@@ -26,6 +26,17 @@ Scope:
 5. configure DHCP/iPXE handoff on the isolated segment
 6. boot one client VM into the Gentoo provisioning flow
 
+Current status:
+
+- RouterOS CHR lab is operational on `10.9.8.0/24`
+- Path B assets publish over HTTP
+- a UEFI client VM now reaches:
+  - iPXE
+  - dracut `switch_root`
+  - OpenRC `default`
+  - SSH on `10.9.8.98`
+- the provisioner now converges to a single IPv4 address and default route
+
 ## Command Sequence Reference
 
 ### 1. Build Path B provisioning artifacts
@@ -105,6 +116,8 @@ bash scripts/run-install-sequence.sh \
 - client reaches iPXE
 - iPXE fetches Path B assets
 - provisioning environment reaches installer handoff
+- provisioning environment reaches OpenRC `default`
+- SSH is reachable on the provisioner
 - Path A remains unaffected
 
 ## Rollback
