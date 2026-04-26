@@ -119,6 +119,38 @@ Published artifacts:
 - `/var/lib/netboot/path-b/hosts/*.ipxe`
 - `/var/lib/netboot/path-b/manifests/path-b-netboot.json`
 
+Path B target metadata should be carried by the `install_targets` inventory
+hosts that will be provisioned:
+
+```yaml
+target_system_remote:
+  ansible_host: 10.9.8.7
+  ansible_user: root
+  ansible_python_interpreter: /usr/bin/python3
+  netboot_enabled: true
+  netboot_interface_name: eth0
+  netboot_mac_address: "52:54:00:12:34:56"
+  netboot_type: dhcp
+  netboot_dhcp_client_options:
+    - "class-id=PXEClient:Arch:00000:UNDI:002001"
+  netboot_os_type: linux
+  netboot_os_name: gentoo
+  netboot_os_version: stage4-current
+  netboot_machine_type: qemu
+  netboot_platform: uefi
+  netboot_arch: amd64
+  netboot_role: installer
+```
+
+Relevant enums:
+
+- `netboot_type`: `static`, `dhcp`, `bootp`
+- `netboot_os_type`: `linux`, `bsd`, `router-os`, `solaris`, `other`
+- `netboot_os_name`: `gentoo`, `centos`, `rocky`, `debian`, `devuan`, `solaris`, `tribblix`, `dietpi`, `fedora`, `freebsd`, `netbsd`, `other`
+- `netboot_machine_type`: `metal`, `qemu`, `xen`, `embedded`
+- `netboot_platform`: `bios`, `uefi`, `other`
+- `netboot_arch`: `amd64`, `arm64`, `ppc64le`, `other`
+
 ## 5. Tap Mode
 
 Use when the VM should get a dedicated tap interface without full bridge automation.

@@ -142,6 +142,46 @@ This renders:
 - `hosts/*.ipxe`
 - `manifests/path-b-netboot.json`
 
+Path B host metadata should be defined on the `install_targets` inventory
+entries themselves so the same host records drive Ansible control, iPXE
+dispatch, and published manifest data:
+
+```yaml
+target_system_remote:
+  ansible_host: 10.9.8.7
+  ansible_user: root
+  ansible_python_interpreter: /usr/bin/python3
+  netboot_enabled: true
+  netboot_interface_name: eth0
+  netboot_mac_address: "52:54:00:12:34:56"
+  netboot_type: dhcp
+  netboot_dhcp_client_options:
+    - "class-id=PXEClient:Arch:00000:UNDI:002001"
+  netboot_os_type: linux
+  netboot_os_name: gentoo
+  netboot_os_version: stage4-current
+  netboot_machine_type: qemu
+  netboot_platform: uefi
+  netboot_arch: amd64
+  netboot_role: installer
+```
+
+Relevant enums:
+
+- `netboot_type`: `static`, `dhcp`, `bootp`
+- `netboot_os_type`: `linux`, `bsd`, `router-os`, `solaris`, `other`
+- `netboot_os_name`: `gentoo`, `centos`, `rocky`, `debian`, `devuan`, `solaris`, `tribblix`, `dietpi`, `fedora`, `freebsd`, `netbsd`, `other`
+- `netboot_machine_type`: `metal`, `qemu`, `xen`, `embedded`
+- `netboot_platform`: `bios`, `uefi`, `other`
+- `netboot_arch`: `amd64`, `arm64`, `ppc64le`, `other`
+
+Optional fields:
+
+- `netboot_host_alias`
+- `netboot_script_name`
+- `netboot_static_address`
+- `netboot_gateway`
+
 The rendered role scripts now boot the published SquashFS environment through
 dracut live-boot arguments such as:
 

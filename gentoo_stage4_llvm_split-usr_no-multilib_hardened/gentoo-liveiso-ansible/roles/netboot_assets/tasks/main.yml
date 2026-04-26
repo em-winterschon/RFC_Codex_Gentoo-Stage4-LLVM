@@ -6,14 +6,70 @@
     fail_msg: >-
       netboot_default_role={{ netboot_default_role }} is not defined in netboot_roles.
 
+- name: Initialize resolved Path B host map
+  ansible.builtin.set_fact:
+    netboot_resolved_host_map: []
+
+- name: Assert inventory-backed Path B host metadata is valid
+  ansible.builtin.assert:
+    that:
+      - hostvars[netboot_inventory_host].netboot_interface_name is defined
+      - hostvars[netboot_inventory_host].netboot_mac_address is defined
+      - (hostvars[netboot_inventory_host].netboot_type | lower) in netboot_boot_type_enum
+      - (hostvars[netboot_inventory_host].netboot_os_type | lower) in netboot_os_type_enum
+      - (hostvars[netboot_inventory_host].netboot_os_name | lower) in netboot_os_name_enum
+      - hostvars[netboot_inventory_host].netboot_os_version is defined
+      - (hostvars[netboot_inventory_host].netboot_machine_type | lower) in netboot_machine_type_enum
+      - ((hostvars[netboot_inventory_host].netboot_platform | default('uefi')) | lower) in netboot_platform_enum
+      - ((hostvars[netboot_inventory_host].netboot_arch | default('amd64')) | lower) in netboot_arch_enum
+    fail_msg: >-
+      install_targets host {{ netboot_inventory_host }} is marked netboot_enabled=true but
+      is missing required Path B metadata or has an invalid enum value.
+  loop: "{{ groups['install_targets'] | default([]) }}"
+  loop_control:
+    loop_var: netboot_inventory_host
+  when: hostvars[netboot_inventory_host].netboot_enabled | default(false) | bool
+
+- name: Build resolved Path B host map from install_targets inventory
+  ansible.builtin.set_fact:
+    netboot_resolved_host_map: "{{ netboot_resolved_host_map + [resolved_netboot_host] }}"
+  vars:
+    resolved_netboot_host_name: "{{ hostvars[netboot_inventory_host].netboot_host_alias | default(netboot_inventory_host | replace('_', '-')) }}"
+    resolved_netboot_host:
+      inventory_name: "{{ netboot_inventory_host }}"
+      name: "{{ resolved_netboot_host_name }}"
+      match_mac: "{{ hostvars[netboot_inventory_host].netboot_mac_address | lower }}"
+      role: "{{ hostvars[netboot_inventory_host].netboot_role | default(netboot_default_role) }}"
+      script_name: "{{ hostvars[netboot_inventory_host].netboot_script_name | default(resolved_netboot_host_name ~ '.ipxe') }}"
+      interface_name: "{{ hostvars[netboot_inventory_host].netboot_interface_name }}"
+      boot_type: "{{ hostvars[netboot_inventory_host].netboot_type | lower }}"
+      dhcp_client_options: "{{ hostvars[netboot_inventory_host].netboot_dhcp_client_options | default([]) }}"
+      os_type: "{{ hostvars[netboot_inventory_host].netboot_os_type | lower }}"
+      os_name: "{{ hostvars[netboot_inventory_host].netboot_os_name | lower }}"
+      os_version: "{{ hostvars[netboot_inventory_host].netboot_os_version }}"
+      machine_type: "{{ hostvars[netboot_inventory_host].netboot_machine_type | lower }}"
+      platform: "{{ (hostvars[netboot_inventory_host].netboot_platform | default('uefi')) | lower }}"
+      arch: "{{ (hostvars[netboot_inventory_host].netboot_arch | default('amd64')) | lower }}"
+      static_address: "{{ hostvars[netboot_inventory_host].netboot_static_address | default('') }}"
+      gateway: "{{ hostvars[netboot_inventory_host].netboot_gateway | default('') }}"
+  loop: "{{ groups['install_targets'] | default([]) }}"
+  loop_control:
+    loop_var: netboot_inventory_host
+  when: hostvars[netboot_inventory_host].netboot_enabled | default(false) | bool
+
+- name: Append extra Path B host map entries
+  ansible.builtin.set_fact:
+    netboot_resolved_host_map: "{{ netboot_resolved_host_map + netboot_host_map_extra }}"
+  when: netboot_host_map_extra | length > 0
+
 - name: Assert all mapped Path B host roles exist
   ansible.builtin.assert:
     that:
       - netboot_host_entry.role in netboot_roles
     fail_msg: >-
-      netboot_host_map entry {{ netboot_host_entry.name }} references unknown role
+      netboot_resolved_host_map entry {{ netboot_host_entry.name }} references unknown role
       {{ netboot_host_entry.role }}.
-  loop: "{{ netboot_host_map }}"
+  loop: "{{ netboot_resolved_host_map }}"
   loop_control:
     loop_var: netboot_host_entry
 
@@ -56,7 +112,7 @@
     src: host.ipxe.j2
     dest: "{{ netboot_publish_root }}/hosts/{{ netboot_host.script_name }}"
     mode: '0644'
-  loop: "{{ netboot_host_map }}"
+  loop: "{{ netboot_resolved_host_map }}"
   loop_control:
     loop_var: netboot_host
 

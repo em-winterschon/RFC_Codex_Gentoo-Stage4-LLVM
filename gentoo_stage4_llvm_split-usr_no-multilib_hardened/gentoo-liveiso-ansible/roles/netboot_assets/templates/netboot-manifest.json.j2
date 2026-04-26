@@ -27,12 +27,24 @@
 {% endfor %}
   ],
   "hosts": [
-{% for netboot_host in netboot_host_map %}
+{% for netboot_host in netboot_resolved_host_map %}
     {
+      "inventoryName": "{{ netboot_host.inventory_name | default(netboot_host.name) }}",
       "name": "{{ netboot_host.name }}",
       "matchMac": "{{ netboot_host.match_mac }}",
       "role": "{{ netboot_host.role }}",
-      "scriptName": "{{ netboot_host.script_name }}"
+      "scriptName": "{{ netboot_host.script_name }}",
+      "interfaceName": "{{ netboot_host.interface_name | default('') }}",
+      "bootType": "{{ netboot_host.boot_type | default('') }}",
+      "dhcpClientOptions": {{ netboot_host.dhcp_client_options | default([]) | to_json }},
+      "osType": "{{ netboot_host.os_type | default('') }}",
+      "osName": "{{ netboot_host.os_name | default('') }}",
+      "osVersion": "{{ netboot_host.os_version | default('') }}",
+      "machineType": "{{ netboot_host.machine_type | default('') }}",
+      "platform": "{{ netboot_host.platform | default('') }}",
+      "arch": "{{ netboot_host.arch | default('') }}",
+      "staticAddress": "{{ netboot_host.static_address | default('') }}",
+      "gateway": "{{ netboot_host.gateway | default('') }}"
     }{% if not loop.last %},{% endif %}
 {% endfor %}
   ]

@@ -19,15 +19,19 @@ assert_file_contains() {
 test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/playbooks/netboot-path-b.yml" "hosts: netboot_publishers"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/defaults/main.yml" "netboot_publish_root:"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/defaults/main.yml" "netboot_boot_type_enum:"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/defaults/main.yml" "root=live:"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/tasks/main.yml" "Build resolved Path B host map from install_targets inventory"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/tasks/main.yml" "Render Path B bootstrap iPXE script"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/tasks/main.yml" "Render Path B MAC dispatch iPXE script"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/templates/bootstrap.ipxe.j2" "chain \${base-url}/hosts/by-mac.ipxe"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/templates/hosts-by-mac.ipxe.j2" "iseq \${net0/mac}"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/templates/menu.ipxe.j2" "RFC Codex Gentoo Stage4 LLVM - Path B iPXE"
   assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/templates/role.ipxe.j2" "kernel {{ netboot_role.value.kernel_url }}"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/netboot_assets/templates/netboot-manifest.json.j2" "\"bootType\":"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "Built Path B netboot artifacts"
-  assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/group_vars/netboot_publishers.yml" "netboot_publish_root:"
+  assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/group_vars/netboot_publishers.yml" "netboot_host_map_extra:"
+  assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" "netboot_machine_type: qemu"
   assert_file_contains "${REPO_ROOT}/docs/workflows/stage4-netboot-path-b.json" "\"name\": \"stage4-netboot-path-b\""
 }
 
