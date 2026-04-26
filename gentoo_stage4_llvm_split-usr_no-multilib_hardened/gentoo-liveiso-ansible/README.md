@@ -506,13 +506,22 @@ If you want to carry house policy as data instead of editing the roles, set
 
 - `repository_enable`
 - `make_conf_append`
+- `env_files`
+- `package_env_files`
 - `package_use_files`
+- `package_accept_keywords_files`
 - `package_mask_files`
 - `package_mask_symlinks`
+- `kernel_config_fragment_files`
 
-The included preset:
+An optional `metadata` mapping may also be present. The installer ignores that
+block, but it is useful for keeping package lists, GCC fallback policy, and
+validated exact-version pin sets next to the active Portage profile data.
+
+The included presets:
 
 - `profile-definitions/hardened-llvm-stage4.yml`
+- `profile-definitions/llvm-clang-hardened-portage.yml`
 
 adds the Hardened LLVM/OpenRC stage4 policy from the separate setup draft:
 
@@ -521,11 +530,22 @@ adds the Hardened LLVM/OpenRC stage4 policy from the separate setup draft:
 - installs extra `package.use` fragments for LLVM and elogind replacements
 - installs `package.mask` fragments including the `without-systemd` mask link
 
+The LLVM/Clang Portage baseline preset:
+
+- keeps the default compiler, linker, and binutils-facing variables on LLVM
+- appends hardening and ThinLTO settings to the generated `make.conf`
+- writes `/etc/portage/env/gcc-compat.conf`
+- constrains GCC fallback to explicit `package.env` atoms such as `sys-devel/gcc`
+  and `sys-libs/glibc`
+- documents validated exact-version pin sets in:
+  `profile-definitions/llvm-clang-hardened-portage.metadata.yml`
+
 Example:
 
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 ```
 - per-interface network policy beyond enabling NetworkManager
 

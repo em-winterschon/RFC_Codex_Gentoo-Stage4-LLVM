@@ -11,6 +11,18 @@
     state: directory
     mode: '0755'
 
+- name: Ensure env directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/env"
+    state: directory
+    mode: '0755'
+
+- name: Ensure package.env directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.env"
+    state: directory
+    mode: '0755'
+
 - name: Ensure package.accept_keywords directory exists
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/package.accept_keywords"
@@ -37,6 +49,24 @@
     content: |
       net-wireless/wpa_supplicant dbus
   when: install_networkmanager | bool
+
+- name: Write env fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/env/{{ portage_env_file.key }}"
+    mode: '0644'
+    content: "{{ portage_env_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_env_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_env_file
+
+- name: Write package.env fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.env/{{ portage_package_env_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_env_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_env_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_env_file
 
 - name: Write extra package.use fragments from selected profile definitions
   ansible.builtin.copy:

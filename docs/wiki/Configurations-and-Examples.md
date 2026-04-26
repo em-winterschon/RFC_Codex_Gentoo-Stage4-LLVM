@@ -160,7 +160,15 @@ Additional YAML profile definitions can be layered via:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 ```
+
+The LLVM/Clang Portage baseline profile adds:
+
+- hardening and ThinLTO append blocks for generated `make.conf`
+- explicit `/etc/portage/env` and `package.env` GCC fallback control
+- repo-local metadata for validated exact-version pin sets in:
+  `profile-definitions/llvm-clang-hardened-portage.metadata.yml`
 
 ## 8. Service Definition Configuration
 

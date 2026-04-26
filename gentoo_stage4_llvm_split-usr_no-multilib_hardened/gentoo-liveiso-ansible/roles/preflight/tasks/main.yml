@@ -58,6 +58,8 @@
     selected_gpu_profile: "{{ gpu_profiles[gpu_stack] }}"
     resolved_portage_enable_repositories: "{{ portage_enable_repositories | default(['guru']) }}"
     resolved_portage_make_conf_append: "{{ portage_make_conf_append | default('') }}"
+    resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
+    resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
     resolved_portage_package_use_files: "{{ portage_package_use_files | default({}) }}"
     resolved_portage_package_accept_keywords_files: "{{ portage_package_accept_keywords_files | default({}) }}"
     resolved_portage_package_mask_files: "{{ portage_package_mask_files | default({}) }}"

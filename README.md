@@ -7,6 +7,10 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
 
 - [docs/WORKFLOWS.md](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/WORKFLOWS.md)
   human-readable index for the machine-readable workflow manifests
+- [gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.yml](/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.yml)
+  repo-managed LLVM/Clang-first Portage baseline with explicit GCC fallback via `package.env`
+- [gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.metadata.yml](/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.metadata.yml)
+  machine-readable package-list and exact-version pin metadata for the baseline profile
 - [docs/wiki](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/wiki)
   versioned source for the GitHub wiki; publish separately after PR approval
 - [docs/workflows/codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)

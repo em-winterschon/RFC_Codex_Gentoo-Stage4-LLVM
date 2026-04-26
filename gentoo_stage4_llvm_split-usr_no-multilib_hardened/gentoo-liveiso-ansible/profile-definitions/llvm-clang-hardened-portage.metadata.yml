@@ -1,0 +1,44 @@
+---
+portage_profile_metadata:
+  profile_id: llvm-clang-hardened-portage
+  source_profile_definition: llvm-clang-hardened-portage.yml
+  description: >-
+    Machine-readable package policy metadata for the LLVM/Clang-hardened
+    Portage baseline. This file documents fallback packages and validated exact
+    atom pins without forcing them globally.
+  package_lists:
+    clang_first_toolchain:
+      description: Prefer LLVM/Clang and LLD for the default system toolchain.
+      packages:
+        - atom: llvm-core/clang-toolchain-symlinks
+          policy: required
+        - atom: llvm-core/lld-toolchain-symlinks
+          policy: required
+        - atom: llvm-core/clang-linker-config
+          policy: required
+        - atom: llvm-runtimes/clang-runtime
+          policy: required
+    gcc_fallback_only:
+      description: Keep GCC use constrained to explicit compatibility cases.
+      packages:
+        - atom: sys-devel/gcc
+          env_file: gcc-compat.conf
+          rationale: Maintain a self-hosting fallback compiler toolchain.
+        - atom: sys-libs/glibc
+          env_file: gcc-compat.conf
+          rationale: Preserve compatibility for libc builds that remain GCC-oriented.
+  version_pin_sets:
+    validated_alias_mode_2026_04_25:
+      description: >-
+        Validated qemu-alias ZFS boot path using source-built gentoo-kernel and
+        Gentoo-native OpenZFS packages.
+      atoms:
+        kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.18.18
+        zfs_package_atom: =sys-fs/zfs-2.3.6
+        zfs_kmod_package_atom: =sys-fs/zfs-kmod-2.3.6
+      package_accept_keywords_files: {}
+      kernel_config_fragment_files:
+        90-zfs-ftrace.config: |
+          # Avoid the direct-call dynamic ftrace path that warned during OpenZFS module load.
+          # CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS is not set
+          # CONFIG_DYNAMIC_FTRACE_WITH_ARGS is not set

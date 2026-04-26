@@ -1,0 +1,72 @@
+---
+gentoo_profile_definition:
+  metadata:
+    profile_id: llvm-clang-hardened-portage
+    description: >-
+      Baseline Portage policy for LLVM/Clang-first Gentoo systems with
+      hardening enabled and GCC constrained to explicit per-package fallback
+      paths.
+    package_lists:
+      clang_first_toolchain:
+        - llvm-core/clang-toolchain-symlinks
+        - llvm-core/lld-toolchain-symlinks
+        - llvm-core/clang-linker-config
+        - llvm-runtimes/clang-runtime
+      gcc_fallback_packages:
+        - sys-devel/gcc
+        - sys-libs/glibc
+    version_pin_metadata_file: >-
+      profile-definitions/llvm-clang-hardened-portage.metadata.yml
+  repository_enable:
+    - guru
+  make_conf_append: |
+    COMMON_FLAGS="${COMMON_FLAGS} -fstack-protector-strong -fstack-clash-protection -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+    CFLAGS="${COMMON_FLAGS} -flto=thin"
+    CXXFLAGS="${COMMON_FLAGS} -flto=thin"
+    FCFLAGS="${COMMON_FLAGS}"
+    FFLAGS="${COMMON_FLAGS}"
+    LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld"
+    RUSTFLAGS="${RUSTFLAGS} -Clink-arg=-fuse-ld=lld"
+    FEATURES="${FEATURES} compressdebug config-protect-if-modified fail-clean parallel-install splitdebug"
+    USE="${USE} llvm-libunwind pie sanitize"
+    LD="ld.lld"
+    STRIP="llvm-strip"
+    OBJCOPY="llvm-objcopy"
+    OBJDUMP="llvm-objdump"
+    READELF="llvm-readelf"
+    QA_STRICT_EXECSTACK="set"
+    QA_STRICT_TEXTRELS="set"
+    QA_STRICT_FLAGS_IGNORED="set"
+  env_files:
+    gcc-compat.conf: |
+      CC="gcc"
+      CXX="g++"
+      CPP="cpp"
+      AR="gcc-ar"
+      NM="gcc-nm"
+      RANLIB="gcc-ranlib"
+      LDFLAGS="${LDFLAGS/-fuse-ld=lld/}"
+  package_env_files:
+    00-gcc-fallback: |
+      sys-devel/gcc gcc-compat.conf
+      sys-libs/glibc gcc-compat.conf
+  package_use_files:
+    00-llvm-clang-hardened-portage: |
+      llvm-core/clang-toolchain-symlinks native-symlinks -gcc-symlinks
+      llvm-core/lld-toolchain-symlinks native-symlinks
+      llvm-core/clang-linker-config default-lld
+      llvm-runtimes/clang-runtime compiler-rt default-compiler-rt default-lld libunwind sanitize
+      sys-devel/gcc pgo pie
+      sys-libs/glibc -clang
+      sys-libs/libunwind static-libs
+      www-client/firefox clang lto pgo
+      mail-client/thunderbird clang lto
+      dev-lang/spidermonkey clang lto
+  package_mask_files:
+    10-gcc-fallback-only: |
+      # Add package atoms here only after LLVM/Clang was attempted and failed.
+      # Prefer package.env-based GCC fallback over globally changing CC/CXX.
+  package_accept_keywords_files:
+    10-llvm-clang-hardened-portage: |
+      # Add exact-version ~arch atoms here only after validation against the
+      # metadata pin set documented in llvm-clang-hardened-portage.metadata.yml.

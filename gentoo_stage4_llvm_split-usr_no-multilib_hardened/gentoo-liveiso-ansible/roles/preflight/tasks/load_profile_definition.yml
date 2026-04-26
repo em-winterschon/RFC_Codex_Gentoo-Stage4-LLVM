@@ -31,6 +31,22 @@
         | reject('equalto', '')
         | join('\n\n')
       }}
+    resolved_portage_env_files: >-
+      {{
+        resolved_portage_env_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.env_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_env_files: >-
+      {{
+        resolved_portage_package_env_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_env_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_use_files: >-
       {{
         resolved_portage_package_use_files
