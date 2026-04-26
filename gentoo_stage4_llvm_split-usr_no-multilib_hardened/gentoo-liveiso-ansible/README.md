@@ -129,6 +129,7 @@ Relevant inventory keys:
 - `portage_package_use_files`
 - `portage_package_accept_keywords_files`
 - `kernel_config_fragment_files`
+- the default `llvm-clang-hardened-portage.yml` profile definition
 
 ### Install sequences
 
@@ -539,6 +540,10 @@ The LLVM/Clang Portage baseline preset:
   and `sys-libs/glibc`
 - documents validated exact-version pin sets in:
   `profile-definitions/llvm-clang-hardened-portage.metadata.yml`
+
+This LLVM/Clang Portage baseline is now enabled by default in the shipped
+example, qemu-alias, and vm-stage4 inventories. Override `profile_definition_files`
+explicitly only if you want to replace that default policy.
 
 Example:
 

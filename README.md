@@ -126,13 +126,15 @@ Local validation:
 - `python -m pip install -r requirements-dev.txt`
 - `pre-commit install`
 - `pre-commit run --all-files`
+- `python3 scripts/lint_portage_profiles.py`
+- `ANSIBLE_LINT_NODEPS=1 ansible-lint gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/install.yml`
 - `bash tests/shell/run-tests.sh`
 - `bash tests/shell/test_workflow_manifests.sh`
 
 PR and release validation:
 - `.github/workflows/validate.yml` runs the repo validation suite on pull requests and pushes to `main`
 - `.github/workflows/notify.yml` sends repository event notifications to ntfy when configured
-- the shell validation sequence currently covers shell syntax checks for committed `.sh` files, generator/output parity for the Ansible Python environment helper, and unit tests for `gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
+- the shell validation sequence covers shell syntax checks, Portage profile linting, offline `ansible-lint`, generator/output parity for the Ansible Python environment helper, and the repo shell unit tests
 - Python linting and formatting are enforced through `ruff` and `black`
 
 ## Stage4 control flow

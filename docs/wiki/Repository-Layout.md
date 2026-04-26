@@ -67,7 +67,9 @@ gentoo-liveiso-ansible
 │   ├── install.yml
 │   └── tasks/run_install_stage.yml
 ├── profile-definitions/
-│   └── hardened-llvm-stage4.yml
+│   ├── hardened-llvm-stage4.yml
+│   ├── llvm-clang-hardened-portage.metadata.yml
+│   └── llvm-clang-hardened-portage.yml
 ├── roles/
 │   ├── preflight/
 │   ├── liveiso_prepare/

@@ -69,7 +69,8 @@ profile_parents:
 # enable/sync operations plus extra make.conf, env, package.env, package.use,
 # package.accept_keywords, and package.mask fragments without editing the roles
 # themselves.
-profile_definition_files: []
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 # Example:
 # profile_definition_files:
 #   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"

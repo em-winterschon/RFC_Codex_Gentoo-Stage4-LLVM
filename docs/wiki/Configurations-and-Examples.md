@@ -170,6 +170,9 @@ The LLVM/Clang Portage baseline profile adds:
 - repo-local metadata for validated exact-version pin sets in:
   `profile-definitions/llvm-clang-hardened-portage.metadata.yml`
 
+This profile is enabled by default in the shipped example, qemu-alias, and
+vm-stage4 inventories.
+
 ## 8. Service Definition Configuration
 
 Managed OpenRC services can be defined as data:

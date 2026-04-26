@@ -1,5 +1,5 @@
 ---
-- name: Checkpoint start | {{ resolved_install_sequence_name }} | {{ install_stage.id }}
+- name: Checkpoint start for install stage {{ install_stage.id }}
   ansible.builtin.debug:
     msg:
       checkpoint: start
@@ -9,7 +9,7 @@
       roles: "{{ install_stage.roles }}"
   when: install_debug_checkpoints | bool
 
-- name: Stage {{ install_stage.id }} | {{ install_stage.summary | default('') }}
+- name: Run install stage {{ install_stage.id }}
   block:
     - name: Set active control-flow stage | {{ install_stage.id }}
       ansible.builtin.set_stats:
@@ -20,7 +20,7 @@
           install_stage_roles: "{{ install_stage.roles }}"
         per_host: false
 
-    - name: Include roles {{ install_stage.roles | join(', ') }} for stage {{ install_stage.id }}
+    - name: Include roles for install stage {{ install_stage.id }}
       ansible.builtin.include_role:
         name: "{{ install_stage_role }}"
       loop: "{{ install_stage.roles }}"
@@ -28,7 +28,7 @@
         loop_var: install_stage_role
         label: "{{ resolved_install_sequence_name }} :: {{ install_stage.id }} :: {{ install_stage_role }}"
   rescue:
-    - name: Checkpoint failure | {{ resolved_install_sequence_name }} | {{ install_stage.id }}
+    - name: Checkpoint failure for install stage {{ install_stage.id }}
       ansible.builtin.debug:
         msg:
           checkpoint: failure
@@ -44,7 +44,7 @@
           Install sequence {{ resolved_install_sequence_name }} failed in stage
           {{ install_stage.id }} ({{ install_stage.summary | default('no summary') }}).
   always:
-    - name: Checkpoint end | {{ resolved_install_sequence_name }} | {{ install_stage.id }}
+    - name: Checkpoint end for install stage {{ install_stage.id }}
       ansible.builtin.debug:
         msg:
           checkpoint: end

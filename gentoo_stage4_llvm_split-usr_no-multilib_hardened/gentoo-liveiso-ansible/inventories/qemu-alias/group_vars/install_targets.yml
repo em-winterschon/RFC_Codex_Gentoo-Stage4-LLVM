@@ -47,7 +47,8 @@ profile_name: install-target
 profile_parents:
   - gentoo:default/linux/amd64/23.0/llvm
   - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
-profile_definition_files: []
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 
 # Toolchain and tuning
 portage_cpu_profile: amd_ryzen_z1_extreme
