@@ -51,7 +51,6 @@ PATHB_SERIAL_BAUD="${PATHB_SERIAL_BAUD:-115200}"
 PATHB_ROOT_PASSWORD_HASH="${PATHB_ROOT_PASSWORD_HASH:-}"
 MKSQUASHFS_BIN="${MKSQUASHFS_BIN:-/usr/bin/mksquashfs}"
 PATHB_SQUASHFS_COMPRESSOR="${PATHB_SQUASHFS_COMPRESSOR:-zstd}"
-PATHB_DEBUG_LOCAL_START="${PATHB_DEBUG_LOCAL_START:-0}"
 
 ensure_pathb_dirs() {
   mkdir -p \
@@ -199,27 +198,6 @@ fi
 pkill dhcpcd >/dev/null 2>&1 || true
 LOCALNET
 chmod 0755 /etc/local.d/pathb-network-handoff.start
-fi
-
-if [[ "${PATHB_DEBUG_LOCAL_START}" == '1' ]]; then
-cat > /etc/local.d/pathb-debug.start <<'LOCALDEBUG'
-#!/usr/bin/env bash
-set +e
-exec >/dev/ttyS0 2>&1
-echo
-echo "[path-b-debug] local.d reached"
-date
-hostname
-ip -brief addr || true
-rc-status default || true
-ss -ltnp || true
-rc-service sshd status || true
-rc-service sshd start || true
-rc-service dhcpcd status || true
-ss -ltnp || true
-echo "[path-b-debug] local.d complete"
-LOCALDEBUG
-chmod 0755 /etc/local.d/pathb-debug.start
 fi
 
 if [[ "${PATHB_REUSE_INITRAMFS_NETWORK}" != '1' ]]; then
