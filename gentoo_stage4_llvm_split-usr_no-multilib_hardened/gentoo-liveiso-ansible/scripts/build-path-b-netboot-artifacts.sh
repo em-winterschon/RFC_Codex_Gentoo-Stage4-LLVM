@@ -29,8 +29,11 @@ PATHB_BUILD_DIR="${PATHB_BUILD_DIR:-${PATHB_ROOT}/build/${PATHB_INSTANCE_NAME}}"
 PATHB_ARTIFACT_ROOT="${PATHB_ARTIFACT_ROOT:-${PATHB_ROOT}/artifacts}"
 PATHB_INSTALLER_ARTIFACT_DIR="${PATHB_INSTALLER_ARTIFACT_DIR:-${PATHB_ARTIFACT_ROOT}/gentoo-installer}"
 PATHB_RESCUE_ARTIFACT_DIR="${PATHB_RESCUE_ARTIFACT_DIR:-${PATHB_ARTIFACT_ROOT}/gentoo-rescue}"
-TARGET_ROOT_MNT="${TARGET_ROOT_MNT:-${PATHB_BUILD_DIR}/rootfs}"
-WORK_BOOTSTRAP_SCRIPT="${WORK_BOOTSTRAP_SCRIPT:-${PATHB_BUILD_DIR}/bootstrap-path-b.sh}"
+PATHB_TARGET_ROOT_MNT="${PATHB_TARGET_ROOT_MNT:-${PATHB_BUILD_DIR}/rootfs}"
+PATHB_WORK_BOOTSTRAP_SCRIPT="${PATHB_WORK_BOOTSTRAP_SCRIPT:-${PATHB_BUILD_DIR}/bootstrap-path-b.sh}"
+TARGET_ROOT_MNT="${PATHB_TARGET_ROOT_MNT}"
+WORK_BOOTSTRAP_SCRIPT="${PATHB_WORK_BOOTSTRAP_SCRIPT}"
+PORTAGE_SYNC_COMMAND="${PATHB_PORTAGE_SYNC_COMMAND:-emerge --sync}"
 PATHB_KERNEL_PACKAGE="${PATHB_KERNEL_PACKAGE:-sys-kernel/gentoo-kernel}"
 PATHB_NETWORK_PACKAGE="${PATHB_NETWORK_PACKAGE:-net-misc/dhcpcd}"
 PATHB_SSH_PACKAGE="${PATHB_SSH_PACKAGE:-net-misc/openssh}"
@@ -77,7 +80,9 @@ mkdir -p \
   /etc/default \
   /etc/portage/package.use \
   /etc/portage/package.mask \
-  /etc/dracut.conf.d
+  /etc/dracut.conf.d \
+  /etc/portage/repos.conf \
+  /var/db/repos/gentoo
 
 if [[ -f /etc/resolv.conf ]]; then
   chmod 0644 /etc/resolv.conf || true
@@ -96,6 +101,18 @@ MAKECONF
 cat > /etc/portage/package.use/path-b-dracut <<'PKGUSE'
 sys-kernel/installkernel dracut -systemd
 PKGUSE
+
+cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
+[DEFAULT]
+main-repo = gentoo
+
+[gentoo]
+location = /var/db/repos/gentoo
+sync-type = rsync
+sync-uri = rsync://rsync.gentoo.org/gentoo-portage
+auto-sync = yes
+webrsync-gpg = yes
+REPOSCONF
 
 ${stage3_profile_fragment}
 
@@ -162,7 +179,20 @@ install_pathb_bootstrap_script() {
 }
 
 run_pathb_bootstrap() {
-  run_cmd "${MOUNT_BIN}" --bind /dev "${TARGET_ROOT_MNT}/dev"
+  mkdir -p "${TARGET_ROOT_MNT}/dev" "${TARGET_ROOT_MNT}/dev/pts" "${TARGET_ROOT_MNT}/dev/shm"
+  run_cmd "${MOUNT_BIN}" -t devtmpfs devtmpfs "${TARGET_ROOT_MNT}/dev"
+  run_cmd "${MOUNT_BIN}" -t devpts devpts "${TARGET_ROOT_MNT}/dev/pts"
+  run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs "${TARGET_ROOT_MNT}/dev/shm"
+  rm -f "${TARGET_ROOT_MNT}/dev/null" "${TARGET_ROOT_MNT}/dev/zero" "${TARGET_ROOT_MNT}/dev/random" "${TARGET_ROOT_MNT}/dev/urandom" "${TARGET_ROOT_MNT}/dev/tty"
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/null" c 1 3
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/zero" c 1 5
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/random" c 1 8
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/urandom" c 1 9
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/tty" c 5 0
+  ln -sfn /proc/self/fd "${TARGET_ROOT_MNT}/dev/fd"
+  ln -sfn fd/0 "${TARGET_ROOT_MNT}/dev/stdin"
+  ln -sfn fd/1 "${TARGET_ROOT_MNT}/dev/stdout"
+  ln -sfn fd/2 "${TARGET_ROOT_MNT}/dev/stderr"
   run_cmd "${MOUNT_BIN}" --bind /proc "${TARGET_ROOT_MNT}/proc"
   run_cmd "${MOUNT_BIN}" --bind /sys "${TARGET_ROOT_MNT}/sys"
   run_cmd "${CHROOT_BIN}" "${TARGET_ROOT_MNT}" /bin/bash /root/bootstrap-path-b.sh
