@@ -113,6 +113,23 @@ vim inventories/qemu-alias/group_vars/install_targets.yml
 ansible-playbook -i inventories/qemu-alias/hosts.yml playbooks/install.yml -l target_system_remote
 ```
 
+The qemu-alias validation inventory is also the current test bed for ZFS/kernel
+compatibility debugging. It now demonstrates:
+
+- source-built `sys-kernel/gentoo-kernel` rather than `gentoo-kernel-bin`
+- package atom overrides for exact kernel and ZFS versions
+- `package.accept_keywords` fragments for newer `~amd64` OpenZFS builds
+- `/etc/kernel/config.d/*.config` snippets for targeted kernel config changes
+
+Relevant inventory keys:
+
+- `kernel_package_atom_override`
+- `zfs_package_atom`
+- `zfs_kmod_package_atom`
+- `portage_package_use_files`
+- `portage_package_accept_keywords_files`
+- `kernel_config_fragment_files`
+
 ### Install sequences
 
 The installer now supports staged `install_sequence` execution. The default sequence is:
@@ -300,6 +317,42 @@ The action plugin can be used inside playbooks for explicit controller-side mess
     attrs:
       tags: [hammer_and_wrench]
 ```
+
+### Package pins and kernel config fragments
+
+The installer supports package pinning and distribution-kernel config snippets
+without requiring a full custom savedconfig kernel.
+
+Package atom overrides:
+
+```yaml
+kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.1.163
+zfs_package_atom: =sys-fs/zfs-2.4.1
+zfs_kmod_package_atom: =sys-fs/zfs-kmod-2.4.1
+```
+
+Package accept-keywords fragments:
+
+```yaml
+portage_package_accept_keywords_files:
+  zfs-testing: |
+    =sys-fs/zfs-2.4.1 ~amd64
+    =sys-fs/zfs-kmod-2.4.1 ~amd64
+```
+
+Kernel config fragments merged by `sys-kernel/gentoo-kernel`:
+
+```yaml
+kernel_config_fragment_files:
+  90-zfs-ftrace.config: |
+    # CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS is not set
+    # CONFIG_DYNAMIC_FTRACE_WITH_ARGS is not set
+```
+
+These snippets are written to:
+
+- `/etc/portage/package.accept_keywords/*`
+- `/etc/kernel/config.d/*.config`
 
 ### Translated modular roles
 

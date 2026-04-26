@@ -141,6 +141,15 @@ portage_makeopts_jobs: "{{ ansible_processor_vcpus | default(8) }}"
 portage_emerge_jobs: 4
 portage_load_average: 0
 portage_gpg_key_refresh: false
+# Optional package accept_keywords fragments written under /etc/portage/package.accept_keywords
+portage_package_accept_keywords_files: {}
+# Optional kernel package atom override when kernel_strategy is too coarse
+# kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.1.163
+# Optional ZFS package atom overrides
+# zfs_package_atom: =sys-fs/zfs-2.4.1
+# zfs_kmod_package_atom: =sys-fs/zfs-kmod-2.4.1
+# Optional dist-kernel config snippets written under /etc/kernel/config.d
+kernel_config_fragment_files: {}
 
 # Optional role override. Leave undefined to run the default role sequence.
 # Preferred staged execution path:

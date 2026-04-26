@@ -1,12 +1,35 @@
 ---
 - name: Resolve kernel package atom
   ansible.builtin.set_fact:
-    selected_kernel_package: "{{ kernel_package_map[kernel_strategy] }}"
+    selected_kernel_package: >-
+      {{
+        (
+          kernel_package_atom_override
+          if (kernel_package_atom_override | default('') | length > 0)
+          else kernel_package_map[kernel_strategy]
+        )
+      }}
+
+- name: Ensure kernel config fragment directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/kernel/config.d"
+    state: directory
+    mode: '0755'
+  when: (resolved_kernel_config_fragment_files | default({})) | length > 0
+
+- name: Install kernel config fragments
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/kernel/config.d/{{ kernel_config_fragment_file.key }}"
+    mode: '0644'
+    content: "{{ kernel_config_fragment_file.value | trim }}\n"
+  loop: "{{ (resolved_kernel_config_fragment_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: kernel_config_fragment_file
 
 - name: Install core packages in target
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('emerge --verbose --oneshot app-admin/sudo app-admin/sysklogd app-portage/gentoolkit sys-apps/pciutils sys-boot/efibootmgr sys-fs/dosfstools sys-fs/zfs sys-fs/zfs-kmod sys-kernel/dracut sys-kernel/installkernel ' + selected_kernel_package + ' ' + (install_networkmanager | ternary('net-misc/networkmanager ', '')) + (install_openssh | ternary('net-misc/openssh ', '')) + (selected_gpu_profile.packages | join(' '))) | trim | quote }}
+    {{ ('emerge --verbose --oneshot app-admin/sudo app-admin/sysklogd app-portage/gentoolkit sys-apps/pciutils sys-boot/efibootmgr sys-fs/dosfstools ' + zfs_package_atom + ' ' + zfs_kmod_package_atom + ' sys-kernel/dracut sys-kernel/installkernel ' + selected_kernel_package + ' ' + (install_networkmanager | ternary('net-misc/networkmanager ', '')) + (install_openssh | ternary('net-misc/openssh ', '')) + (selected_gpu_profile.packages | join(' '))) | trim | quote }}
 
 - name: Refresh environment cache in target
   ansible.builtin.command: >-

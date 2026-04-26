@@ -4,32 +4,29 @@ This page tracks concrete next work, not vague aspirations.
 
 ## Immediate TODO
 
-### 1. Finish current alias-mode validation run
+### 1. Commit and push the current PR #15 branch state
 
-Current state:
-
-- `storage-foundation` passed
-- `chroot-bootstrap` passed
-- `target-integration` was running at the last observed state
+Validated work completed locally now exceeds the original PR #15 summary.
 
 Next actions:
 
-- confirm `target-integration` completion
-- validate installed target state inside the installer VM
-- boot with `QEMU_BOOT_SOURCE=target-disks`
-- verify SSH, `zpool status`, `/boot`, `/`, and boot reliability
+- commit the current `codex/fix-zfs-hostid-and-zbm-kcl` branch state
+- push the updated branch head
+- refresh the PR description so it matches the actual validated scope
 
-### 2. Inspect the ZFS-related kernel warning path
+### 2. Decide whether PR #15 remains single-scope or gets split
 
-Observed issue:
+Current branch includes:
 
-- installer QCOW boot showed `ftrace_verify_code` / `ftrace_bug` warnings during ZFS module load
+- hostid and ZFSBootMenu commandline handling
+- validated `gentoo-kernel` + `zfs-kmod` mitigation path
+- qemu-alias inventory updates
+- regression coverage for installer override paths and the `sole=tty0` typo
 
 Next actions:
 
-- reproduce on the installed target boot path
-- determine whether the warning is tied to the kernel package, module signing state, or QEMU environment
-- document whether it is ignorable taint/noise or a real stability risk
+- decide whether to merge as one coherent ZFS-boot stabilization PR
+- or split the newer kernel/ZFS mitigation work into a follow-up PR
 
 ### 3. Validate bridge/tap networking after alias mode
 
@@ -131,9 +128,10 @@ Next actions:
 - target-disk boot path with ZFSBootMenu
 - staged Ansible install sequences with checkpoints
 - JSONL control-flow callback and watcher
-- alias-mode QEMU networking path
+- alias-mode QEMU networking path as the validated standard workflow for the current LiveISO host
 - ntfy integration across Ansible, GitHub, and Codex tooling
 - persistent Codex approval watcher OpenRC service
+- validated `gentoo-kernel` + Gentoo-native ZFS mitigation path that removes the prior `ftrace` warning reproduction on target-disk boot
 
 ## Rule for New TODO Items
 

@@ -39,6 +39,14 @@
             recursive=True
           )
       }}
+    resolved_portage_package_accept_keywords_files: >-
+      {{
+        resolved_portage_package_accept_keywords_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_accept_keywords_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_mask_files: >-
       {{
         resolved_portage_package_mask_files
@@ -51,4 +59,12 @@
       {{
         resolved_portage_package_mask_symlinks
         + (loaded_profile_definition_file.gentoo_profile_definition.package_mask_symlinks | default([]))
+      }}
+    resolved_kernel_config_fragment_files: >-
+      {{
+        resolved_kernel_config_fragment_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.kernel_config_fragment_files | default({}),
+            recursive=True
+          )
       }}

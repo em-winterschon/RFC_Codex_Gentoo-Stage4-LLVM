@@ -80,6 +80,18 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 4. Execute staged Ansible sequences against the installer VM.
 5. Boot directly from target disks and verify `bpool`/`rpool`, SSH, and boot flow.
 
+## Current Recommended Validation Path
+
+For the current LiveISO host, the validated standard workflow is:
+
+- QEMU alias-mode networking
+- staged Ansible install execution
+- target-disk reboot validation
+- Gentoo-native `sys-fs/zfs` + `sys-fs/zfs-kmod`
+- `gentoo-kernel` with the validated ZFS/ftrace mitigation fragment
+
+Tap/bridge remains a later enhancement, not the required default path.
+
 ## Reference Documents
 
 - repo overview: `README.md`

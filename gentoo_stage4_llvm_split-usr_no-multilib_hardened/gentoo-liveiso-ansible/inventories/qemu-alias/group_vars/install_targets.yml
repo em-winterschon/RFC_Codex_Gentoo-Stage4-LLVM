@@ -54,11 +54,14 @@ portage_cpu_profile: amd_ryzen_z1_extreme
 gpu_stack: amdgpu
 
 # Package strategy
-kernel_strategy: gentoo-kernel-bin
+kernel_strategy: gentoo-kernel
 kernel_package_map:
   gentoo-kernel-bin: sys-kernel/gentoo-kernel-bin
   gentoo-kernel: sys-kernel/gentoo-kernel
   gentoo-sources: sys-kernel/gentoo-sources
+kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.18.18
+zfs_package_atom: =sys-fs/zfs-2.3.6
+zfs_kmod_package_atom: =sys-fs/zfs-kmod-2.3.6
 
 # Boot loader values: zfsbootmenu or efistub
 boot_strategy: zfsbootmenu
@@ -88,6 +91,7 @@ portage_global_use:
   - bindist
   - bzip2
   - cli
+  - dist-kernel
   - ipv6
   - lld
   - zstd
@@ -96,3 +100,14 @@ portage_makeopts_jobs: "{{ ansible_processor_vcpus | default(8) }}"
 portage_emerge_jobs: 4
 portage_load_average: 0
 portage_gpg_key_refresh: false
+portage_package_use_files:
+  gentoo-kernel: |
+    =sys-kernel/gentoo-kernel-6.18.18 hardened
+  zfs: |
+    =sys-fs/zfs-2.3.6 dist-kernel
+portage_package_accept_keywords_files: {}
+kernel_config_fragment_files:
+  90-zfs-ftrace.config: |
+    # Avoid the direct-call dynamic ftrace path that is warning during OpenZFS module load.
+    # CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS is not set
+    # CONFIG_DYNAMIC_FTRACE_WITH_ARGS is not set

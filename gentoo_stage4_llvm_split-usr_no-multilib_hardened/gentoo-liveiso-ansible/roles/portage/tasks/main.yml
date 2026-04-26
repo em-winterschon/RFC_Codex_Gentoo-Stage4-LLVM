@@ -11,6 +11,12 @@
     state: directory
     mode: '0755'
 
+- name: Ensure package.accept_keywords directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.accept_keywords"
+    state: directory
+    mode: '0755'
+
 - name: Ensure package.mask directory exists
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/package.mask"
@@ -40,6 +46,15 @@
   loop: "{{ (resolved_portage_package_use_files | default({})) | dict2items }}"
   loop_control:
     loop_var: portage_package_use_file
+
+- name: Write package.accept_keywords fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.accept_keywords/{{ portage_package_accept_keywords_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_accept_keywords_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_accept_keywords_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_accept_keywords_file
 
 - name: Write extra package.mask fragments from selected profile definitions
   ansible.builtin.copy:

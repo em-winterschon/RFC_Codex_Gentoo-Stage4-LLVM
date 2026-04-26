@@ -59,8 +59,10 @@
     resolved_portage_enable_repositories: "{{ portage_enable_repositories | default(['guru']) }}"
     resolved_portage_make_conf_append: "{{ portage_make_conf_append | default('') }}"
     resolved_portage_package_use_files: "{{ portage_package_use_files | default({}) }}"
+    resolved_portage_package_accept_keywords_files: "{{ portage_package_accept_keywords_files | default({}) }}"
     resolved_portage_package_mask_files: "{{ portage_package_mask_files | default({}) }}"
     resolved_portage_package_mask_symlinks: "{{ portage_package_mask_symlinks | default([]) }}"
+    resolved_kernel_config_fragment_files: "{{ kernel_config_fragment_files | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml
