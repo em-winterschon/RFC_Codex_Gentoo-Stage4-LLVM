@@ -173,10 +173,10 @@ Expected artifact paths:
 
 - `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/vmlinuz`
 - `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/initramfs.img`
-- `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/rootfs.squashfs`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/rootfs.img`
 - `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/vmlinuz`
 - `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/initramfs.img`
-- `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/rootfs.squashfs`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/rootfs.img`
 
 Success criteria for this stage:
 

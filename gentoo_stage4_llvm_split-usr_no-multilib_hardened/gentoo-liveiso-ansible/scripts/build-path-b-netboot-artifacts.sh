@@ -36,6 +36,8 @@ WORK_BOOTSTRAP_SCRIPT="${PATHB_WORK_BOOTSTRAP_SCRIPT}"
 PORTAGE_SYNC_COMMAND="${PATHB_PORTAGE_SYNC_COMMAND:-emerge --sync}"
 PATHB_KERNEL_PACKAGE="${PATHB_KERNEL_PACKAGE:-sys-kernel/gentoo-kernel}"
 PATHB_NETWORK_PACKAGE="${PATHB_NETWORK_PACKAGE:-net-misc/dhcpcd}"
+PATHB_DRACUT_DHCP_PACKAGE="${PATHB_DRACUT_DHCP_PACKAGE:-net-misc/dhcp}"
+PATHB_DRACUT_DM_PACKAGE="${PATHB_DRACUT_DM_PACKAGE:-sys-fs/lvm2}"
 PATHB_SSH_PACKAGE="${PATHB_SSH_PACKAGE:-net-misc/openssh}"
 PATHB_NETWORK_SERVICE="${PATHB_NETWORK_SERVICE:-dhcpcd}"
 PATHB_SSH_SERVICE="${PATHB_SSH_SERVICE:-sshd}"
@@ -47,6 +49,7 @@ PATHB_KEYMAP="${PATHB_KEYMAP:-us}"
 PATHB_SERIAL_BAUD="${PATHB_SERIAL_BAUD:-115200}"
 PATHB_ROOT_PASSWORD_HASH="${PATHB_ROOT_PASSWORD_HASH:-}"
 MKSQUASHFS_BIN="${MKSQUASHFS_BIN:-/usr/bin/mksquashfs}"
+PATHB_SQUASHFS_COMPRESSOR="${PATHB_SQUASHFS_COMPRESSOR:-zstd}"
 
 ensure_pathb_dirs() {
   mkdir -p \
@@ -153,9 +156,13 @@ done
 emerge \
   ${PATHB_KERNEL_PACKAGE} \
   ${PATHB_NETWORK_PACKAGE} \
+  ${PATHB_DRACUT_DHCP_PACKAGE} \
+  ${PATHB_DRACUT_DM_PACKAGE} \
   ${PATHB_SSH_PACKAGE} \
   dracut \
   ${PATHB_EXTRA_PACKAGES}
+
+ssh-keygen -A
 
 rc-update add ${PATHB_NETWORK_SERVICE} default
 rc-update add ${PATHB_SSH_SERVICE} default
@@ -163,13 +170,16 @@ rc-update add ${PATHB_SSH_SERVICE} default
 cat > /etc/dracut.conf.d/path-b-live.conf <<'DRACUT'
 hostonly="no"
 use_fstab="no"
-add_dracutmodules+=" dmsquash-live network "
+add_dracutmodules+=" dmsquash-live livenet network url-lib "
 filesystems+=" squashfs overlay ext4 vfat "
 compress="zstd"
 DRACUT
 
 kernel_version="\$(ls -1 /lib/modules | sort -V | tail -n1)"
-dracut --force --no-hostonly "/boot/initramfs-\${kernel_version}.img" "\${kernel_version}"
+dracut --force --no-hostonly \
+  --add "dmsquash-live livenet network url-lib" \
+  --filesystems "squashfs overlay ext4 vfat" \
+  "/boot/initramfs-\${kernel_version}.img" "\${kernel_version}"
 EOF
   chmod 0755 "${WORK_BOOTSTRAP_SCRIPT}"
 }
@@ -211,19 +221,40 @@ copy_variant_artifacts() {
   install -m 0644 "${TARGET_ROOT_MNT}/boot/vmlinuz-${kernel_version}" "${variant_dir}/vmlinuz"
   install -m 0644 "${TARGET_ROOT_MNT}/boot/initramfs-${kernel_version}.img" "${variant_dir}/initramfs.img"
   cp -f "${squashfs_source}" "${variant_dir}/rootfs.squashfs"
+  cp -f "${squashfs_source}" "${variant_dir}/rootfs.img"
+}
+
+resolve_mksquashfs_compressor() {
+  local supported
+
+  supported="$("${MKSQUASHFS_BIN}" -help 2>&1 || true)"
+  if printf '%s\n' "${supported}" | grep -Eq "\\b${PATHB_SQUASHFS_COMPRESSOR}\\b"; then
+    printf '%s\n' "${PATHB_SQUASHFS_COMPRESSOR}"
+    return
+  fi
+
+  if printf '%s\n' "${supported}" | grep -Eq "\\bgzip\\b"; then
+    log "mksquashfs compressor '${PATHB_SQUASHFS_COMPRESSOR}' is unavailable; falling back to gzip"
+    printf '%s\n' "gzip"
+    return
+  fi
+
+  printf '%s\n' "${PATHB_SQUASHFS_COMPRESSOR}"
 }
 
 create_rootfs_artifacts() {
   local kernel_version
   local squashfs_path
+  local squashfs_compressor
 
   kernel_version="$(resolve_built_kernel_version)"
   squashfs_path="${PATHB_BUILD_DIR}/rootfs.squashfs"
+  squashfs_compressor="$(resolve_mksquashfs_compressor)"
 
   run_cmd "${MKSQUASHFS_BIN}" \
     "${TARGET_ROOT_MNT}" \
     "${squashfs_path}" \
-    -comp zstd \
+    -comp "${squashfs_compressor}" \
     -wildcards \
     -e dev proc sys run tmp var/tmp boot/efi
 

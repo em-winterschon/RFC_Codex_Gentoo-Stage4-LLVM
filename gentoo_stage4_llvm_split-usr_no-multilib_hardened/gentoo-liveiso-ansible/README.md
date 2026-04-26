@@ -185,7 +185,7 @@ Optional fields:
 The rendered role scripts now boot the published SquashFS environment through
 dracut live-boot arguments such as:
 
-- `root=live:http://.../artifacts/gentoo-installer/rootfs.squashfs`
+- `root=live:http://.../artifacts/gentoo-installer/rootfs.img`
 - `rd.live.image`
 - `ip=dhcp`
 

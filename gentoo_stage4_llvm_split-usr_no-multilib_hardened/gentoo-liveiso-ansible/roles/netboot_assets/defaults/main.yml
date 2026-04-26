@@ -53,19 +53,19 @@ netboot_roles:
     description: Boot the Gentoo provisioning environment for Stage4 imaging.
     kernel_url: "{{ netboot_artifact_base_url }}/gentoo-installer/vmlinuz"
     initrd_url: "{{ netboot_artifact_base_url }}/gentoo-installer/initramfs.img"
-    rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs"
+    rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.img"
     extra_cmdline: >-
       init=/sbin/init ip=dhcp rd.neednet=1 rd.live.image
-      root=live:{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs
+      root=live:{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.img
       stage4_path=path-b stage4_role=installer
   rescue:
     description: Boot a rescue environment without invoking the imaging workflow.
     kernel_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/vmlinuz"
     initrd_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/initramfs.img"
-    rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs"
+    rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.img"
     extra_cmdline: >-
       init=/sbin/init ip=dhcp rd.neednet=1 rd.live.image
-      root=live:{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs
+      root=live:{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.img
       stage4_path=path-b stage4_role=rescue rescue_mode=1
   localdisk:
     description: Exit provisioning and boot from the local installed disk.
