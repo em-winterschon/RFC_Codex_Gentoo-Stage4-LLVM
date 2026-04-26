@@ -56,6 +56,7 @@ gentoo-liveiso-ansible
 ├── inventories/
 │   ├── examples/
 │   │   ├── group_vars/install_targets.yml
+│   │   ├── group_vars/netboot_publishers.yml
 │   │   └── hosts.yml
 │   ├── qemu-alias/
 │   │   ├── group_vars/install_targets.yml
@@ -65,6 +66,7 @@ gentoo-liveiso-ansible
 │       └── hosts.yml
 ├── playbooks/
 │   ├── install.yml
+│   ├── netboot-path-b.yml
 │   └── tasks/run_install_stage.yml
 ├── profile-definitions/
 │   └── hardened-llvm-stage4.yml
@@ -76,6 +78,7 @@ gentoo-liveiso-ansible
 │   ├── stage3/
 │   ├── profile/
 │   ├── portage/
+│   ├── netboot_assets/
 │   ├── chroot_base/
 │   ├── system_packages/
 │   ├── kernel/
@@ -105,14 +108,18 @@ gentoo-liveiso-ansible
 - `ansible.cfg`
   enables local plugin paths and callback configuration
 - `playbooks/install.yml`
-  top-level installer playbook
+  top-level Path A installer playbook
+- `playbooks/netboot-path-b.yml`
+  top-level Path B iPXE asset publication playbook
 - `playbooks/tasks/run_install_stage.yml`
   named stage block wrapper used by `install_sequence`
 
 ### Inventories
 
 - `inventories/examples/hosts.yml`
-  general examples for local and remote LiveISO targets
+  general examples for local and remote Path A LiveISO targets plus local Path B publishers
+- `inventories/examples/group_vars/netboot_publishers.yml`
+  example Path B iPXE asset publication settings
 - `inventories/qemu-alias/hosts.yml`
   installer-VM control path through alias mode and forwarded SSH
 - `inventories/qemu-alias/group_vars/install_targets.yml`
@@ -136,6 +143,8 @@ gentoo-liveiso-ansible
   local overlay profile composition
 - `portage`
   `make.conf`, package.use, and repository tuning
+- `netboot_assets`
+  render Path B iPXE bootstrap, menu, role, host, and manifest assets
 - `chroot_base`
   chroot mounts, sync, repositories, locale, timezone, hostname
 - `system_packages`

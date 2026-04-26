@@ -1,0 +1,20 @@
+#!ipxe
+dhcp
+set menu-timeout {{ netboot_menu_timeout_ms }}
+set base-url {{ netboot_public_base_url }}
+
+menu RFC Codex Gentoo Stage4 LLVM - Path B iPXE
+item --gap -- ---------------- Installer roles ----------------
+{% for netboot_role_name, netboot_role_data in netboot_roles.items() %}
+item {{ netboot_role_name }} {{ netboot_role_name }} - {{ netboot_role_data.description }}
+{% endfor %}
+choose --timeout ${menu-timeout} --default {{ netboot_default_role }} selected || goto shell
+chain ${base-url}/roles/${selected}.ipxe || goto failed
+
+:failed
+echo Failed to load ${selected} from ${base-url}
+sleep 3
+goto shell
+
+:shell
+shell

@@ -1,0 +1,38 @@
+---
+netboot_publish_root: /var/lib/netboot/path-b
+netboot_public_base_url: http://boot.example.net/path-b
+netboot_menu_timeout_ms: 5000
+netboot_default_role: installer
+netboot_default_next_server: ""
+netboot_iso_fallback_enabled: false
+netboot_enable_serial_console: true
+netboot_serial_console: console=ttyS0,115200
+netboot_local_console: console=tty0
+netboot_artifact_base_url: "{{ netboot_public_base_url }}/artifacts"
+netboot_operator_notes_url: "{{ netboot_public_base_url }}/README.txt"
+netboot_roles:
+  installer:
+    description: Boot the Gentoo provisioning environment for Stage4 imaging.
+    kernel_url: "{{ netboot_artifact_base_url }}/gentoo-installer/vmlinuz"
+    initrd_url: "{{ netboot_artifact_base_url }}/gentoo-installer/initramfs.img"
+    rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs"
+    extra_cmdline: >-
+      init=/sbin/init ip=dhcp stage4_path=path-b stage4_role=installer
+      rootfs_url={{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs
+  rescue:
+    description: Boot a rescue environment without invoking the imaging workflow.
+    kernel_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/vmlinuz"
+    initrd_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/initramfs.img"
+    rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs"
+    extra_cmdline: >-
+      init=/sbin/init ip=dhcp stage4_path=path-b stage4_role=rescue
+      rescue_mode=1 rootfs_url={{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs
+  localdisk:
+    description: Exit provisioning and boot from the local installed disk.
+    sanboot_url: local
+    extra_cmdline: ""
+netboot_host_map:
+  - name: target-system-remote
+    match_mac: "52:54:00:12:34:56"
+    role: installer
+    script_name: target-system-remote.ipxe

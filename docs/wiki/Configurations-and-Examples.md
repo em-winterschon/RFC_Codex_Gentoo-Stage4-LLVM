@@ -47,6 +47,8 @@ Then:
 - `chroot-bootstrap`
 - `target-integration`
 
+This is Path A.
+
 ## 3. QEMU Alias-Mode Installer VM
 
 Use when validating inside a VM without changing the host’s physical bridge configuration.
@@ -83,7 +85,41 @@ zfs_root_pool_devices:
   - /dev/disk/by-id/ata-QEMU_HARDDISK_rpool-1
 ```
 
-## 4. Tap Mode
+This is also Path A.
+
+## 4. Path B iPXE Publisher
+
+Use when a host or VM fleet should boot a Gentoo provisioning environment via
+DHCP/TFTP or UEFI HTTP into iPXE, then fetch boot assets over HTTP/HTTPS.
+
+Inventory pattern:
+
+```yaml
+netboot_publishers:
+  hosts:
+    netboot_control_local:
+      ansible_connection: local
+      ansible_python_interpreter: /usr/bin/python3
+```
+
+Render the asset tree:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/netboot-path-b.yml \
+  -l netboot_control_local
+```
+
+Published artifacts:
+
+- `/var/lib/netboot/path-b/bootstrap.ipxe`
+- `/var/lib/netboot/path-b/menu.ipxe`
+- `/var/lib/netboot/path-b/roles/*.ipxe`
+- `/var/lib/netboot/path-b/hosts/*.ipxe`
+- `/var/lib/netboot/path-b/manifests/path-b-netboot.json`
+
+## 5. Tap Mode
 
 Use when the VM should get a dedicated tap interface without full bridge automation.
 
@@ -97,7 +133,7 @@ WAIT_FOR_SSH=0 \
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
 
-## 5. Bridge Mode
+## 6. Bridge Mode
 
 Use when the VM must participate more directly in the external network fabric.
 
@@ -113,7 +149,7 @@ bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 
 This is the preferred long-term network model, but alias mode is the safer first validation path on a LiveISO host.
 
-## 6. Boot Source Modes
+## 7. Boot Source Modes
 
 ### Installer QCOW
 
@@ -148,7 +184,7 @@ Expected result:
 - root on `rpool/ROOT/gentoo`
 - `/boot` on `bpool/BOOT/gentoo`
 
-## 7. Profile Overlay Configuration
+## 8. Profile Overlay Configuration
 
 The default combined target uses a local overlay profile that composes:
 
@@ -162,7 +198,7 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
 ```
 
-## 8. Service Definition Configuration
+## 9. Service Definition Configuration
 
 Managed OpenRC services can be defined as data:
 
@@ -181,7 +217,7 @@ Or loaded from repo-managed definitions such as:
 
 - `service-definitions/stage4-heartbeat.yml`
 
-## 9. Notification Configuration
+## 10. Notification Configuration
 
 ### Ansible callback
 
@@ -206,7 +242,7 @@ Configure repository secrets or variables for:
 - `NTFY_TOPIC`
 - optional state-specific topic keys
 
-## 10. Sequence Examples
+## 11. Sequence Examples
 
 ### Storage only
 

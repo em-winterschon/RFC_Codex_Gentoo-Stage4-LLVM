@@ -11,10 +11,12 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
   versioned source for the GitHub wiki; publish separately after PR approval
 - [docs/workflows/codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
   persistent ntfy approval-watcher install and validation flow
+- [docs/workflows/stage4-netboot-path-b.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-netboot-path-b.json)
+  Path B iPXE asset publication and operator handoff flow
 - [docs/workflows/stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
-  Stage4 VM build, install, and target-disk boot validation flow
+  Path A LiveISO/QEMU Stage4 build, install, and target-disk boot validation flow
 - [docs/workflows/stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)
-  staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
+  Path A staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
 
 Wiki publication policy:
 

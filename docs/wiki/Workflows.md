@@ -2,11 +2,12 @@
 
 ## Operator Workflow Families
 
-This repository currently has four main workflow families:
+This repository currently has five main workflow families:
 
 - host validation and CI
-- VM build and launch
-- staged installer execution
+- Path A VM build and launch
+- Path A staged installer execution
+- Path B iPXE asset publication and fleet bootstrapping
 - notification and approval visibility
 
 ## 1. Validate the Repository
@@ -89,7 +90,36 @@ Machine-readable version:
 
 - `docs/workflows/stage4-vm-install-and-boot.json`
 
-## 6. Destination Host Staged Install Flow
+## 6. Path B iPXE Asset Publication
+
+Render the Path B asset tree:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/netboot-path-b.yml \
+  -l netboot_control_local
+```
+
+This produces:
+
+- `bootstrap.ipxe`
+- `menu.ipxe`
+- `roles/*.ipxe`
+- `hosts/*.ipxe`
+- `manifests/path-b-netboot.json`
+
+Operational intent:
+
+- use DHCP/TFTP or UEFI HTTP only to reach iPXE
+- use iPXE plus HTTP/HTTPS to fetch the provisioning kernel/initramfs/rootfs
+- keep Path A available for hosts that cannot join the iPXE network
+
+Machine-readable version:
+
+- `docs/workflows/stage4-netboot-path-b.json`
+
+## 7. Destination Host Staged Install Flow
 
 Recommended order:
 
@@ -103,7 +133,7 @@ Machine-readable version:
 
 - `docs/workflows/stage4-destination-install-sequences.json`
 
-## 7. Persistent Codex Approval Visibility
+## 8. Persistent Codex Approval Visibility
 
 Install:
 
@@ -123,7 +153,7 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 8. Release and Merge Discipline
+## 9. Release and Merge Discipline
 
 Operational rule:
 
@@ -138,7 +168,7 @@ Recommended GitHub protection:
 - require up-to-date branches before merge
 - restrict direct pushes to `main`
 
-## Expected Return Codes
+## 10. Expected Return Codes
 
 Normal success:
 
@@ -152,7 +182,7 @@ Failure conditions should be surfaced at one of these layers:
 - SSH readiness checks
 - workflow JSONL final stats
 
-## Artifacts Worth Watching
+## 11. Artifacts Worth Watching
 
 - `/tmp/ansible-control-flow/*.jsonl`
 - `/opt/gentoo-virt-qemu/stage3/state/*.serial.log`

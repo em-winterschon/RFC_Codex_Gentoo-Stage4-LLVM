@@ -83,6 +83,8 @@ GPU-specific Portage settings are intentionally separate via `gpu_stack`.
 
 ## Quick start
 
+### Path A: LiveISO execution from the target or installer VM
+
 ### Local execution from the LiveISO
 
 ```bash
@@ -112,6 +114,30 @@ port.
 vim inventories/qemu-alias/group_vars/install_targets.yml
 ansible-playbook -i inventories/qemu-alias/hosts.yml playbooks/install.yml -l target_system_remote
 ```
+
+### Path B: iPXE asset publication for fleet bootstrapping
+
+Use this path when hosts or VMs should reach a Gentoo provisioning environment
+through DHCP/TFTP or UEFI HTTP into iPXE, then fetch kernel/initramfs/rootfs
+artifacts over HTTP/HTTPS before running the same Stage4 workflow.
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/netboot-path-b.yml \
+  -l netboot_control_local
+```
+
+This renders:
+
+- `bootstrap.ipxe`
+- `menu.ipxe`
+- `roles/*.ipxe`
+- `hosts/*.ipxe`
+- `manifests/path-b-netboot.json`
+
+Path A remains the supported fallback for systems that cannot join the iPXE
+network or otherwise require a LiveISO-style entry path.
 
 ### Install sequences
 

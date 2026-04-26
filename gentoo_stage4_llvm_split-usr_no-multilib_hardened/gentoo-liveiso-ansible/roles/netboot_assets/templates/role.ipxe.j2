@@ -1,0 +1,11 @@
+#!ipxe
+dhcp
+set role {{ netboot_role.key }}
+set base-url {{ netboot_public_base_url }}
+{% if netboot_role.key == 'localdisk' %}
+sanboot --no-describe --drive 0x80
+{% else %}
+kernel {{ netboot_role.value.kernel_url }} {{ netboot_local_console }}{% if netboot_enable_serial_console | bool %} {{ netboot_serial_console }}{% endif %} {{ netboot_role.value.extra_cmdline }}
+initrd {{ netboot_role.value.initrd_url }}
+boot
+{% endif %}

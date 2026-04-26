@@ -1,0 +1,67 @@
+---
+- name: Assert default Path B role exists
+  ansible.builtin.assert:
+    that:
+      - netboot_default_role in netboot_roles
+    fail_msg: >-
+      netboot_default_role={{ netboot_default_role }} is not defined in netboot_roles.
+
+- name: Assert all mapped Path B host roles exist
+  ansible.builtin.assert:
+    that:
+      - netboot_host_entry.role in netboot_roles
+    fail_msg: >-
+      netboot_host_map entry {{ netboot_host_entry.name }} references unknown role
+      {{ netboot_host_entry.role }}.
+  loop: "{{ netboot_host_map }}"
+  loop_control:
+    loop_var: netboot_host_entry
+
+- name: Ensure Path B publish directories exist
+  ansible.builtin.file:
+    path: "{{ netboot_directory_path }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ netboot_publish_root }}"
+    - "{{ netboot_publish_root }}/roles"
+    - "{{ netboot_publish_root }}/hosts"
+    - "{{ netboot_publish_root }}/manifests"
+  loop_control:
+    loop_var: netboot_directory_path
+
+- name: Render Path B bootstrap iPXE script
+  ansible.builtin.template:
+    src: bootstrap.ipxe.j2
+    dest: "{{ netboot_publish_root }}/bootstrap.ipxe"
+    mode: '0644'
+
+- name: Render Path B menu iPXE script
+  ansible.builtin.template:
+    src: menu.ipxe.j2
+    dest: "{{ netboot_publish_root }}/menu.ipxe"
+    mode: '0644'
+
+- name: Render Path B role iPXE scripts
+  ansible.builtin.template:
+    src: role.ipxe.j2
+    dest: "{{ netboot_publish_root }}/roles/{{ netboot_role.key }}.ipxe"
+    mode: '0644'
+  loop: "{{ netboot_roles | dict2items }}"
+  loop_control:
+    loop_var: netboot_role
+
+- name: Render Path B host iPXE scripts
+  ansible.builtin.template:
+    src: host.ipxe.j2
+    dest: "{{ netboot_publish_root }}/hosts/{{ netboot_host.script_name }}"
+    mode: '0644'
+  loop: "{{ netboot_host_map }}"
+  loop_control:
+    loop_var: netboot_host
+
+- name: Render Path B netboot manifest
+  ansible.builtin.template:
+    src: netboot-manifest.json.j2
+    dest: "{{ netboot_publish_root }}/manifests/path-b-netboot.json"
+    mode: '0644'

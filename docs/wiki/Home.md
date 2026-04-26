@@ -15,7 +15,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 ## Functional Areas
 
 - `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible`
-  staged Ansible installer for LiveISO-driven imaging
+  staged Ansible installer for Path A LiveISO-driven imaging plus Path B iPXE asset publishing
 - `gentoo-virt-qemu`
   host-side VM builder and launcher helpers for pre-bare-metal validation
 - `scripts`, `.github/workflows`, `openrc`
@@ -42,7 +42,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - Control-flow JSONL
   callback plugin emits machine-readable events for long-running installs
 - dual-path validation
-  build and install in a disposable QCOW first, then validate target-disk boot
+  keep Path A LiveISO-driven imaging available while adding Path B iPXE fleet booting
 
 ## Wiki Contents
 
@@ -75,10 +75,15 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 ## Current Validation Model
 
 1. Run shell and manifest tests locally and in CI.
-2. Build a Stage3 QCOW from an LLVM/OpenRC Gentoo stage3.
-3. Launch the installer VM with attached target disks.
-4. Execute staged Ansible sequences against the installer VM.
-5. Boot directly from target disks and verify `bpool`/`rpool`, SSH, and boot flow.
+2. Follow Path A for LiveISO/QEMU validation:
+   - build a Stage3 QCOW from an LLVM/OpenRC Gentoo stage3
+   - launch the installer VM with attached target disks
+   - execute staged Ansible sequences against the installer VM
+   - boot directly from target disks and verify `bpool`/`rpool`, SSH, and boot flow
+3. Follow Path B for fleet netboot preparation:
+   - render iPXE bootstrap, menu, role, host, and manifest assets
+   - publish them through DHCP/TFTP plus iPXE HTTP or UEFI HTTP + iPXE
+   - boot into the Gentoo provisioning environment and then invoke the same installer workflow
 
 ## Reference Documents
 
