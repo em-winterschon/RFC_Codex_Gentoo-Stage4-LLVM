@@ -40,6 +40,7 @@ PATHB_DRACUT_DHCP_PACKAGE="${PATHB_DRACUT_DHCP_PACKAGE:-net-misc/dhcp}"
 PATHB_DRACUT_DM_PACKAGE="${PATHB_DRACUT_DM_PACKAGE:-sys-fs/lvm2}"
 PATHB_SSH_PACKAGE="${PATHB_SSH_PACKAGE:-net-misc/openssh}"
 PATHB_NETWORK_SERVICE="${PATHB_NETWORK_SERVICE:-dhcpcd}"
+PATHB_REUSE_INITRAMFS_NETWORK="${PATHB_REUSE_INITRAMFS_NETWORK:-1}"
 PATHB_SSH_SERVICE="${PATHB_SSH_SERVICE:-sshd}"
 PATHB_EXTRA_PACKAGES="${PATHB_EXTRA_PACKAGES:-app-admin/sudo dev-lang/python sys-apps/iproute2 sys-fs/zfs sys-fs/zfs-kmod sys-fs/dosfstools sys-block/parted sys-apps/pciutils sys-apps/usbutils sys-apps/kmod}"
 PATHB_HOSTNAME="${PATHB_HOSTNAME:-gentoo-pathb}"
@@ -50,6 +51,7 @@ PATHB_SERIAL_BAUD="${PATHB_SERIAL_BAUD:-115200}"
 PATHB_ROOT_PASSWORD_HASH="${PATHB_ROOT_PASSWORD_HASH:-}"
 MKSQUASHFS_BIN="${MKSQUASHFS_BIN:-/usr/bin/mksquashfs}"
 PATHB_SQUASHFS_COMPRESSOR="${PATHB_SQUASHFS_COMPRESSOR:-zstd}"
+PATHB_DEBUG_LOCAL_START="${PATHB_DEBUG_LOCAL_START:-0}"
 
 ensure_pathb_dirs() {
   mkdir -p \
@@ -85,6 +87,7 @@ mkdir -p \
   /etc/portage/package.mask \
   /etc/dracut.conf.d \
   /etc/portage/repos.conf \
+  /etc/local.d \
   /var/db/repos/gentoo
 
 if [[ -f /etc/resolv.conf ]]; then
@@ -134,7 +137,12 @@ cat > /etc/hosts <<'HOSTS'
 127.0.1.1 ${PATHB_HOSTNAME}
 HOSTS
 
-grep -q 'ttyS0' /etc/inittab || printf 's0:12345:respawn:/sbin/agetty ${PATHB_SERIAL_BAUD} ttyS0 vt100\n' >> /etc/inittab
+if ! awk '/^[[:space:]]*[^#].*ttyS0/ {found=1} END { exit(found ? 0 : 1) }' /etc/inittab; then
+  printf 's0:12345:respawn:/sbin/agetty -L ${PATHB_SERIAL_BAUD} ttyS0 vt100\n' >> /etc/inittab
+fi
+
+touch /etc/securetty
+grep -Eq '^[[:space:]]*ttyS0([[:space:]]+.*)?$' /etc/securetty || printf 'ttyS0\n' >> /etc/securetty
 
 printf '%s\n' '${ssh_key}' > /root/.ssh/authorized_keys
 chmod 700 /root/.ssh
@@ -164,7 +172,59 @@ emerge \
 
 ssh-keygen -A
 
-rc-update add ${PATHB_NETWORK_SERVICE} default
+if [[ "${PATHB_REUSE_INITRAMFS_NETWORK}" == '1' ]]; then
+cat > /etc/local.d/pathb-network-handoff.start <<'LOCALNET'
+#!/usr/bin/env bash
+set +e
+
+boot_iface="$(ip route show default 2>/dev/null | awk 'NR==1 { print $5 }')"
+
+if [[ -n "${boot_iface}" ]]; then
+  mapfile -t boot_ipv4_addrs < <(ip -o -4 addr show dev "${boot_iface}" scope global 2>/dev/null | awk '{ print $4 }')
+
+  if (( ${#boot_ipv4_addrs[@]} > 1 )); then
+    for stale_addr in "${boot_ipv4_addrs[@]:1}"; do
+      ip addr del "${stale_addr}" dev "${boot_iface}" >/dev/null 2>&1 || true
+    done
+  fi
+
+  mapfile -t boot_default_routes < <(ip route show default dev "${boot_iface}" 2>/dev/null)
+  if (( ${#boot_default_routes[@]} > 1 )); then
+    for stale_route in "${boot_default_routes[@]:1}"; do
+      ip route del ${stale_route} >/dev/null 2>&1 || true
+    done
+  fi
+fi
+
+pkill dhcpcd >/dev/null 2>&1 || true
+LOCALNET
+chmod 0755 /etc/local.d/pathb-network-handoff.start
+fi
+
+if [[ "${PATHB_DEBUG_LOCAL_START}" == '1' ]]; then
+cat > /etc/local.d/pathb-debug.start <<'LOCALDEBUG'
+#!/usr/bin/env bash
+set +e
+exec >/dev/ttyS0 2>&1
+echo
+echo "[path-b-debug] local.d reached"
+date
+hostname
+ip -brief addr || true
+rc-status default || true
+ss -ltnp || true
+rc-service sshd status || true
+rc-service sshd start || true
+rc-service dhcpcd status || true
+ss -ltnp || true
+echo "[path-b-debug] local.d complete"
+LOCALDEBUG
+chmod 0755 /etc/local.d/pathb-debug.start
+fi
+
+if [[ "${PATHB_REUSE_INITRAMFS_NETWORK}" != '1' ]]; then
+  rc-update add ${PATHB_NETWORK_SERVICE} default
+fi
 rc-update add ${PATHB_SSH_SERVICE} default
 
 cat > /etc/dracut.conf.d/path-b-live.conf <<'DRACUT'
@@ -254,9 +314,10 @@ create_rootfs_artifacts() {
   run_cmd "${MKSQUASHFS_BIN}" \
     "${TARGET_ROOT_MNT}" \
     "${squashfs_path}" \
+    -noappend \
     -comp "${squashfs_compressor}" \
     -wildcards \
-    -e dev proc sys run tmp var/tmp boot/efi
+    -e dev/\* proc/\* sys/\* run/\* tmp/\* var/tmp/\* boot/efi/\*
 
   copy_variant_artifacts "${PATHB_INSTALLER_ARTIFACT_DIR}" "${kernel_version}" "${squashfs_path}"
   copy_variant_artifacts "${PATHB_RESCUE_ARTIFACT_DIR}" "${kernel_version}" "${squashfs_path}"
