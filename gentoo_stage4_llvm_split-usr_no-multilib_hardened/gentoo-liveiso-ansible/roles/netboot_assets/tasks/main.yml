@@ -60,6 +60,12 @@
   loop_control:
     loop_var: netboot_host
 
+- name: Render Path B MAC dispatch iPXE script
+  ansible.builtin.template:
+    src: hosts-by-mac.ipxe.j2
+    dest: "{{ netboot_publish_root }}/hosts/by-mac.ipxe"
+    mode: '0644'
+
 - name: Render Path B netboot manifest
   ansible.builtin.template:
     src: netboot-manifest.json.j2

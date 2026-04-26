@@ -17,16 +17,18 @@ netboot_roles:
     initrd_url: "{{ netboot_artifact_base_url }}/gentoo-installer/initramfs.img"
     rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs"
     extra_cmdline: >-
-      init=/sbin/init ip=dhcp stage4_path=path-b stage4_role=installer
-      rootfs_url={{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs
+      init=/sbin/init ip=dhcp rd.neednet=1 rd.live.image
+      root=live:{{ netboot_artifact_base_url }}/gentoo-installer/rootfs.squashfs
+      stage4_path=path-b stage4_role=installer
   rescue:
     description: Boot a rescue environment without invoking the imaging workflow.
     kernel_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/vmlinuz"
     initrd_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/initramfs.img"
     rootfs_url: "{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs"
     extra_cmdline: >-
-      init=/sbin/init ip=dhcp stage4_path=path-b stage4_role=rescue
-      rescue_mode=1 rootfs_url={{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs
+      init=/sbin/init ip=dhcp rd.neednet=1 rd.live.image
+      root=live:{{ netboot_artifact_base_url }}/gentoo-rescue/rootfs.squashfs
+      stage4_path=path-b stage4_role=rescue rescue_mode=1
   localdisk:
     description: Exit provisioning and boot from the local installed disk.
     sanboot_url: local

@@ -121,6 +121,12 @@ Use this path when hosts or VMs should reach a Gentoo provisioning environment
 through DHCP/TFTP or UEFI HTTP into iPXE, then fetch kernel/initramfs/rootfs
 artifacts over HTTP/HTTPS before running the same Stage4 workflow.
 
+Build the provisioning artifacts first:
+
+```bash
+bash scripts/build-path-b-netboot-artifacts.sh
+```
+
 ```bash
 ansible-playbook \
   -i inventories/examples/hosts.yml \
@@ -135,6 +141,13 @@ This renders:
 - `roles/*.ipxe`
 - `hosts/*.ipxe`
 - `manifests/path-b-netboot.json`
+
+The rendered role scripts now boot the published SquashFS environment through
+dracut live-boot arguments such as:
+
+- `root=live:http://.../artifacts/gentoo-installer/rootfs.squashfs`
+- `rd.live.image`
+- `ip=dhcp`
 
 Path A remains the supported fallback for systems that cannot join the iPXE
 network or otherwise require a LiveISO-style entry path.

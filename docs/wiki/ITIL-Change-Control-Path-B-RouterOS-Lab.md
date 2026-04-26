@@ -14,15 +14,23 @@ Purpose:
 
 Scope:
 
-1. publish Path B iPXE assets
-2. bring up isolated host-side lab networking
-3. create a RouterOS CHR VM in QEMU
-4. configure DHCP/iPXE handoff on the isolated segment
-5. boot one client VM into the Gentoo provisioning flow
+1. build Path B provisioning artifacts
+2. publish Path B iPXE assets
+3. bring up isolated host-side lab networking
+4. create a RouterOS CHR VM in QEMU
+5. configure DHCP/iPXE handoff on the isolated segment
+6. boot one client VM into the Gentoo provisioning flow
 
 ## Command Sequence Reference
 
-### 1. Publish Path B assets
+### 1. Build Path B provisioning artifacts
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+bash scripts/build-path-b-netboot-artifacts.sh
+```
+
+### 2. Publish Path B assets
 
 ```bash
 cd /root/RFC_Codex_Gentoo-Stage4-LLVM
@@ -32,7 +40,7 @@ cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_h
 ansible-playbook -i inventories/examples/hosts.yml playbooks/netboot-path-b.yml -l netboot_control_local
 ```
 
-### 2. Prepare isolated lab network
+### 3. Prepare isolated lab network
 
 ```bash
 ip addr add 10.9.8.108/24 dev lo
@@ -41,7 +49,7 @@ ip addr add 10.9.8.108/24 dev br-pathb
 ip link set br-pathb up
 ```
 
-### 3. Launch RouterOS CHR VM
+### 4. Launch RouterOS CHR VM
 
 ```bash
 qemu-img create -f qcow2 /opt/routeros/routeros-lab.qcow2 2G
@@ -57,7 +65,7 @@ qemu-system-x86_64 \
   -serial mon:stdio
 ```
 
-### 4. Validate client iPXE boot
+### 5. Validate client iPXE boot
 
 ```bash
 qemu-system-x86_64 \
@@ -71,7 +79,7 @@ qemu-system-x86_64 \
   -serial mon:stdio
 ```
 
-### 5. Hand off to Stage4 installer
+### 6. Hand off to Stage4 installer
 
 ```bash
 cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
@@ -85,6 +93,7 @@ bash scripts/run-install-sequence.sh \
 
 ## Validation Gates
 
+- artifact build completes
 - asset render completes
 - host lab address is reachable
 - RouterOS CHR VM boots

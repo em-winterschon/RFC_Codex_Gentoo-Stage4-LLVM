@@ -43,6 +43,26 @@
   ],
   "stages": [
     {
+      "id": "build-provisioning-artifacts",
+      "summary": "Build the Gentoo provisioning kernel, initramfs, and SquashFS roots for the Path B installer and rescue roles.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/build-path-b-netboot-artifacts.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/vmlinuz",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/initramfs.img",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/rootfs.squashfs",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/vmlinuz",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/initramfs.img",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/rootfs.squashfs"
+      ]
+    },
+    {
       "id": "render-path-b-assets",
       "summary": "Render the iPXE bootstrap, menu, role, host, and manifest files for Path B.",
       "cwd": "${ansible_root}",

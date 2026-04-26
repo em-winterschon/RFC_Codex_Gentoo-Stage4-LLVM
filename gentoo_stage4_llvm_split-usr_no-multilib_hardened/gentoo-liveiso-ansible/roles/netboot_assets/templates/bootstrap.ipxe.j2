@@ -1,5 +1,4 @@
 #!ipxe
 dhcp
 set base-url {{ netboot_public_base_url }}
-isset ${hostname} || set hostname unknown
-chain ${base-url}/hosts/${hostname}.ipxe || chain ${base-url}/menu.ipxe
+chain ${base-url}/hosts/by-mac.ipxe || chain ${base-url}/menu.ipxe

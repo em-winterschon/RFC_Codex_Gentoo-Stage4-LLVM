@@ -155,7 +155,35 @@ Operational note:
   address and retire the loopback alias
 - final implementation should converge on one authoritative lab interface
 
-### Stage 3: Create the RouterOS CHR VM
+### Stage 3: Build Path B provisioning artifacts
+
+Purpose:
+- build the Gentoo provisioning kernel, initramfs, and SquashFS root that Path
+  B iPXE clients will boot
+
+Command sequence:
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+bash scripts/build-path-b-netboot-artifacts.sh
+```
+
+Expected artifact paths:
+
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/vmlinuz`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/initramfs.img`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/rootfs.squashfs`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/vmlinuz`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/initramfs.img`
+- `/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/rootfs.squashfs`
+
+Success criteria for this stage:
+
+- stage3 bootstrap completes without package or dracut failure
+- installer and rescue artifacts both exist under `/opt/gentoo-netboot/path-b`
+- artifact tree is ready for HTTP publication
+
+### Stage 4: Create the RouterOS CHR VM
 
 Purpose:
 - provide a controlled lab gateway/router and DHCP domain manager inside the
@@ -186,7 +214,7 @@ Implementation target:
 
 - replace the raw command with a repo-managed launcher script
 
-### Stage 4: Configure lab DHCP and iPXE handoff
+### Stage 5: Configure lab DHCP and iPXE handoff
 
 Purpose:
 - make PXE clients on `10.9.8.0/24` chain into the Path B asset tree
@@ -213,7 +241,7 @@ Planned operator steps:
 3. validate that `bootstrap.ipxe` resolves into either `hosts/*.ipxe` or
    `menu.ipxe`
 
-### Stage 5: Create a client validation VM
+### Stage 6: Create a client validation VM
 
 Purpose:
 - prove the full boot chain before any physical host is pointed at the lab
@@ -244,7 +272,7 @@ Success criteria for this stage:
 - iPXE fetches Path B assets over HTTP/HTTPS
 - provisioning kernel/initramfs begin boot
 
-### Stage 6: Validate provisioning-to-installer handoff
+### Stage 7: Validate provisioning-to-installer handoff
 
 Purpose:
 - confirm that Path B reaches the same installer execution model as Path A
@@ -271,13 +299,14 @@ bash scripts/run-install-sequence.sh \
 
 ### Technical validation
 
-1. Path B asset render succeeds.
-2. Host lab interface is reachable at `10.9.8.108`.
-3. RouterOS CHR VM boots and is reachable from the host.
-4. Client VM receives DHCP and reaches iPXE.
-5. iPXE fetches `bootstrap.ipxe` and the selected role script.
-6. Provisioning kernel/initramfs boot begins.
-7. Installer control-flow logging works once the provisioning environment is up.
+1. Path B provisioning artifact build succeeds.
+2. Path B asset render succeeds.
+3. Host lab interface is reachable at `10.9.8.108`.
+4. RouterOS CHR VM boots and is reachable from the host.
+5. Client VM receives DHCP and reaches iPXE.
+6. iPXE fetches `bootstrap.ipxe` and the selected role script.
+7. Provisioning kernel/initramfs boot begins.
+8. Installer control-flow logging works once the provisioning environment is up.
 
 ### Documentary validation
 
