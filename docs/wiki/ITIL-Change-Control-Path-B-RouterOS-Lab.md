@@ -4,6 +4,11 @@ This page mirrors the versioned source document:
 
 - `docs/CHANGE-CONTROL-PATH-B-ROUTEROS-LAB.md`
 
+It also depends on:
+
+- `docs/workflows/stage4-routeros-pathb-deployment.json`
+- `docs/wiki/RouterOS-Path-B.md`
+
 ## Summary
 
 Purpose:

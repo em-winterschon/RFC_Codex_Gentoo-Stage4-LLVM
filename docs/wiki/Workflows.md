@@ -2,12 +2,13 @@
 
 ## Operator Workflow Families
 
-This repository currently has five main workflow families:
+This repository currently has six main workflow families:
 
 - host validation and CI
 - Path A VM build and launch
 - Path A staged installer execution
 - Path B iPXE asset publication and fleet bootstrapping
+- Path B RouterOS CHR lab configuration
 - notification and approval visibility
 
 ## 1. Validate the Repository
@@ -133,7 +134,41 @@ Machine-readable version:
 
 - `docs/workflows/stage4-destination-install-sequences.json`
 
-## 8. Persistent Codex Approval Visibility
+## 8. Path B RouterOS CHR Role
+
+Render the RouterOS Path B intent locally:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/routeros-path-b.yml \
+  -l routeros_pathb_primary
+```
+
+Optional live apply:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/routeros-path-b.yml \
+  -l routeros_pathb_primary \
+  -e routeros_pathb_apply=true
+```
+
+Important current constraints:
+
+- UEFI only
+- CHR lab architecture treated as RouterOS `x86`
+- `container` support is valid on `x86`
+- `zerotier` is not documented by MikroTik for `x86`
+- HTTP is disabled rather than redirected
+- RouterOS does not provide the full desired local UDP+TCP syslog-server role natively
+
+Machine-readable version:
+
+- `docs/workflows/stage4-routeros-pathb-deployment.json`
+
+## 9. Persistent Codex Approval Visibility
 
 Install:
 
@@ -153,7 +188,7 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 9. Release and Merge Discipline
+## 10. Release and Merge Discipline
 
 Operational rule:
 
@@ -168,7 +203,7 @@ Recommended GitHub protection:
 - require up-to-date branches before merge
 - restrict direct pushes to `main`
 
-## 10. Expected Return Codes
+## 11. Expected Return Codes
 
 Normal success:
 
@@ -182,7 +217,7 @@ Failure conditions should be surfaced at one of these layers:
 - SSH readiness checks
 - workflow JSONL final stats
 
-## 11. Artifacts Worth Watching
+## 12. Artifacts Worth Watching
 
 - `/tmp/ansible-control-flow/*.jsonl`
 - `/opt/gentoo-virt-qemu/stage3/state/*.serial.log`

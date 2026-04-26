@@ -11,6 +11,7 @@
 - Related workflow manifests:
   - `docs/workflows/stage4-netboot-path-b.json`
   - `docs/workflows/stage4-routeros-lab-bringup.json`
+  - `docs/workflows/stage4-routeros-pathb-deployment.json`
 
 ## 1. Purpose
 
@@ -240,6 +241,49 @@ Planned operator steps:
 2. validate that the client reaches `bootstrap.ipxe`
 3. validate that `bootstrap.ipxe` resolves into either `hosts/*.ipxe` or
    `menu.ipxe`
+
+### Stage 5a: Render RouterOS configuration as code
+
+Purpose:
+- ensure the RouterOS CHR configuration is repo-driven and repeatable on
+  alternate hosts or alternate isolated subnets
+
+Commands:
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-path-b.yml -l routeros_pathb_primary
+```
+
+Optional live apply:
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/routeros-path-b.yml \
+  -l routeros_pathb_primary \
+  -e routeros_pathb_apply=true
+```
+
+Expected render artifacts:
+
+- `/tmp/routeros-pathb/routeros_pathb_primary-pathb.rsc`
+- `/tmp/routeros-pathb/routeros_pathb_primary-pathb.json`
+
+Current enforced or documented policy:
+
+- UEFI only
+- CHR lab architecture `x86`
+- HTTPS on, plain HTTP off
+- SSH restricted and hardened
+- NTP client and NTP broadcast/multicast server
+- SNMP v2c and SNMPv3 read/write enabled
+- remote syslog client enabled
+- native syslog receive/server behavior deferred to a future collector/container
+- `container` support tracked as valid on `x86`
+- `zerotier` tracked as unsupported on current CHR/x86 labs
+- future HA explicitly recorded but not yet implemented
 
 ### Stage 6: Create a client validation VM
 

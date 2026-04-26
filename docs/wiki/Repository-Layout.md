@@ -57,6 +57,7 @@ gentoo-liveiso-ansible
 │   ├── examples/
 │   │   ├── group_vars/install_targets.yml
 │   │   ├── group_vars/netboot_publishers.yml
+│   │   ├── group_vars/routeros_pathb.yml
 │   │   └── hosts.yml
 │   ├── qemu-alias/
 │   │   ├── group_vars/install_targets.yml
@@ -67,6 +68,7 @@ gentoo-liveiso-ansible
 ├── playbooks/
 │   ├── install.yml
 │   ├── netboot-path-b.yml
+│   ├── routeros-path-b.yml
 │   └── tasks/run_install_stage.yml
 ├── profile-definitions/
 │   └── hardened-llvm-stage4.yml
@@ -79,6 +81,7 @@ gentoo-liveiso-ansible
 │   ├── profile/
 │   ├── portage/
 │   ├── netboot_assets/
+│   ├── routeros_pathb/
 │   ├── chroot_base/
 │   ├── system_packages/
 │   ├── kernel/
@@ -111,6 +114,8 @@ gentoo-liveiso-ansible
   top-level Path A installer playbook
 - `playbooks/netboot-path-b.yml`
   top-level Path B iPXE asset publication playbook
+- `playbooks/routeros-path-b.yml`
+  top-level RouterOS CHR role entry point for the Path B lab
 - `playbooks/tasks/run_install_stage.yml`
   named stage block wrapper used by `install_sequence`
 
@@ -120,6 +125,8 @@ gentoo-liveiso-ansible
   general examples for local and remote Path A LiveISO targets plus local Path B publishers
 - `inventories/examples/group_vars/netboot_publishers.yml`
   example Path B iPXE asset publication settings
+- `inventories/examples/group_vars/routeros_pathb.yml`
+  example RouterOS CHR variables for the isolated Path B lab
 - `inventories/qemu-alias/hosts.yml`
   installer-VM control path through alias mode and forwarded SSH
 - `inventories/qemu-alias/group_vars/install_targets.yml`
@@ -145,6 +152,8 @@ gentoo-liveiso-ansible
   `make.conf`, package.use, and repository tuning
 - `netboot_assets`
   render Path B iPXE bootstrap, menu, role, host, and manifest assets
+- `routeros_pathb`
+  render and optionally apply the RouterOS CHR lab intent for Path B
 - `chroot_base`
   chroot mounts, sync, repositories, locale, timezone, hostname
 - `system_packages`

@@ -1,0 +1,145 @@
+---
+routeros_pathb_apply: false
+routeros_pathb_render_root: /tmp/routeros-pathb
+routeros_pathb_remote_script_name: "{{ inventory_hostname }}-pathb.rsc"
+routeros_pathb_export_before_apply: true
+routeros_pathb_export_after_apply: true
+routeros_pathb_ssh_identity_file: "{{ ansible_ssh_private_key_file | default('') }}"
+routeros_pathb_ssh_strict_host_key_checking: false
+routeros_pathb_routeros_arch: x86
+routeros_pathb_routeros_release: 7-stable
+routeros_pathb_identity: "{{ inventory_hostname }}"
+routeros_pathb_lab_name: pathb-lab
+routeros_pathb_boot_mode: uefi-http-ipxe
+routeros_pathb_management_cidrs:
+  - 10.9.8.0/24
+routeros_pathb_lan_interface: ether1
+routeros_pathb_lan_cidr: 10.9.8.1/24
+routeros_pathb_lan_network_cidr: 10.9.8.0/24
+routeros_pathb_gateway: 10.9.8.1
+routeros_pathb_dns_servers:
+  - 10.9.8.108
+routeros_pathb_dns_allow_remote_requests: true
+routeros_pathb_dhcp_pool_name: pathb-pool
+routeros_pathb_dhcp_pool_ranges:
+  - 10.9.8.10-10.9.8.99
+routeros_pathb_dhcp_server_name: pathb-dhcp
+routeros_pathb_dhcp_lease_time: 1h
+routeros_pathb_boot_next_server: 10.9.8.108
+routeros_pathb_boot_file_name: http://10.9.8.108:8080/bootstrap.ipxe
+routeros_pathb_timezone: UTC
+routeros_pathb_ntp_client_enabled: true
+routeros_pathb_ntp_client_mode: unicast
+routeros_pathb_ntp_client_servers:
+  - 10.9.8.108
+routeros_pathb_ntp_server_enabled: true
+routeros_pathb_ntp_server_broadcast: true
+routeros_pathb_ntp_server_multicast: true
+routeros_pathb_ntp_server_broadcast_addresses:
+  - 10.9.8.255
+routeros_pathb_ssh_enabled: true
+routeros_pathb_ssh_port: 22
+routeros_pathb_ssh_strong_crypto: true
+routeros_pathb_ssh_password_authentication: no
+routeros_pathb_ssh_forwarding: no
+routeros_pathb_winbox_enabled: false
+routeros_pathb_winbox_port: 8291
+routeros_pathb_https_enabled: true
+routeros_pathb_https_port: 443
+routeros_pathb_http_enabled: false
+routeros_pathb_http_port: 80
+routeros_pathb_http_redirect_strategy: disable-http
+routeros_pathb_certificate_name: pathb-selfsigned
+routeros_pathb_certificate_common_name: "{{ routeros_pathb_identity }}"
+routeros_pathb_serial_console_mode: qemu-telnet
+routeros_pathb_serial_console_baud: 9600
+routeros_pathb_syslog_client_enabled: true
+routeros_pathb_syslog_remote_host: 10.9.8.108
+routeros_pathb_syslog_remote_port_udp: 514
+routeros_pathb_syslog_remote_port_tcp: 514
+routeros_pathb_syslog_client_transport: udp-syslog
+routeros_pathb_syslog_topics:
+  - info
+  - warning
+  - error
+  - critical
+routeros_pathb_syslog_server_enabled: false
+routeros_pathb_syslog_server_strategy: container-adjunct
+routeros_pathb_syslog_server_note: >-
+  Native RouterOS is managed here as a syslog client. Local syslog server
+  behavior on TCP/UDP 514 should be provided later through a containerized
+  adjunct or external collector.
+routeros_pathb_snmp_enabled: true
+routeros_pathb_snmp_contact: stage4-operator
+routeros_pathb_snmp_location: pathb-lab
+routeros_pathb_snmp_disable_public: true
+routeros_pathb_snmp_v2c_enabled: true
+routeros_pathb_snmp_v2c_community: pathb-rw
+routeros_pathb_snmp_v2c_addresses:
+  - 10.9.8.0/24
+routeros_pathb_snmp_v2c_write_access: true
+routeros_pathb_snmp_v3_enabled: true
+routeros_pathb_snmp_v3_name: pathb-v3
+routeros_pathb_snmp_v3_auth_protocol: SHA1
+routeros_pathb_snmp_v3_auth_password: CHANGE_ME_SNMPV3_AUTH
+routeros_pathb_snmp_v3_priv_protocol: AES
+routeros_pathb_snmp_v3_priv_password: CHANGE_ME_SNMPV3_PRIV
+routeros_pathb_snmp_v3_write_access: true
+routeros_pathb_required_packages:
+  - container
+  - zerotier
+routeros_pathb_package_files: []
+routeros_pathb_package_support:
+  container:
+    - arm
+    - arm64
+    - x86
+  zerotier:
+    - arm
+    - arm64
+routeros_pathb_container_enablement_note: >-
+  RouterOS container support requires physical-access style enablement before
+  remote container administration is allowed.
+routeros_pathb_zerotier_arch_note: >-
+  ZeroTier is documented by MikroTik only for ARM and ARM64 RouterOS targets,
+  not for x86 CHR/amd64 lab deployments.
+routeros_pathb_ha_mode: standalone
+routeros_pathb_ha_peer: ""
+routeros_pathb_future_ha_note: >-
+  Future target state is dual RouterOS systems in active/passive or equivalent
+  HA on the remote datacenter edge; current role is single-node focused.
+routeros_pathb_routeros_arch_enum:
+  - arm
+  - arm64
+  - x86
+routeros_pathb_os_type_enum:
+  - linux
+  - bsd
+  - router-os
+  - solaris
+  - other
+routeros_pathb_os_name_enum:
+  - gentoo
+  - centos
+  - rocky
+  - debian
+  - devuan
+  - solaris
+  - tribblix
+  - dietpi
+  - fedora
+  - freebsd
+  - netbsd
+  - other
+routeros_pathb_machine_type_enum:
+  - metal
+  - qemu
+  - xen
+  - embedded
+routeros_pathb_netboot_type_enum:
+  - static
+  - dhcp
+  - bootp
+routeros_pathb_platform_enum:
+  - uefi
+routeros_pathb_render_manifest_name: "{{ inventory_hostname }}-pathb.json"

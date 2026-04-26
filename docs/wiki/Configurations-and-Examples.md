@@ -181,7 +181,56 @@ bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 
 This is the preferred long-term network model, but alias mode is the safer first validation path on a LiveISO host.
 
-## 7. Boot Source Modes
+## 7. RouterOS Path B CHR Example
+
+Use when the isolated `10.9.8.0/24` Path B segment is backed by a RouterOS CHR
+VM.
+
+Example inventory:
+
+```yaml
+routeros_pathb:
+  hosts:
+    routeros_pathb_primary:
+      ansible_host: 10.9.8.1
+      ansible_user: admin
+```
+
+Example variables:
+
+```yaml
+routeros_pathb_routeros_arch: x86
+routeros_pathb_lan_interface: ether1
+routeros_pathb_lan_cidr: 10.9.8.1/24
+routeros_pathb_lan_network_cidr: 10.9.8.0/24
+routeros_pathb_boot_next_server: 10.9.8.108
+routeros_pathb_boot_file_name: http://10.9.8.108:8080/bootstrap.ipxe
+routeros_pathb_ntp_client_servers:
+  - 10.9.8.108
+routeros_pathb_ntp_server_broadcast_addresses:
+  - 10.9.8.255
+routeros_pathb_required_packages:
+  - container
+  - zerotier
+```
+
+Render only:
+
+```bash
+ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-path-b.yml -l routeros_pathb_primary
+```
+
+Important current constraints:
+
+- UEFI only
+- CHR uses RouterOS `x86`
+- `container` is supportable on `x86`
+- `zerotier` is not documented for `x86`, only `ARM` and `ARM64`
+- native HTTP is disabled instead of redirected
+- native RouterOS does not satisfy the full local UDP+TCP syslog-server role
+- serial console is hypervisor-backed; RouterOS x86 default serial speed is `9600`
+
+## 8. Boot Source Modes
 
 ### Installer QCOW
 
@@ -216,7 +265,7 @@ Expected result:
 - root on `rpool/ROOT/gentoo`
 - `/boot` on `bpool/BOOT/gentoo`
 
-## 8. Profile Overlay Configuration
+## 9. Profile Overlay Configuration
 
 The default combined target uses a local overlay profile that composes:
 

@@ -40,6 +40,8 @@ the calling automation layer.
   persistent ntfy approval-watcher installation and validation on a Gentoo/OpenRC host
 - [stage4-netboot-path-b.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-netboot-path-b.json)
   Path B iPXE asset publication and operator handoff flow for bare-metal and VM fleets
+- [stage4-routeros-pathb-deployment.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-routeros-pathb-deployment.json)
+  RouterOS CHR render/apply workflow for the isolated Path B lab
 - [stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
   Path A Stage4 VM build, launch, Ansible install, and target-disk boot validation flow
 - [stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)

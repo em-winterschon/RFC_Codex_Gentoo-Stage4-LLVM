@@ -1,0 +1,28 @@
+---
+routeros_pathb_apply: false
+routeros_pathb_routeros_arch: x86
+routeros_pathb_identity: pathb-routeros-primary
+routeros_pathb_lan_interface: ether1
+routeros_pathb_lan_cidr: 10.9.8.1/24
+routeros_pathb_lan_network_cidr: 10.9.8.0/24
+routeros_pathb_gateway: 10.9.8.1
+routeros_pathb_dns_servers:
+  - 10.9.8.108
+routeros_pathb_dhcp_pool_ranges:
+  - 10.9.8.10-10.9.8.99
+routeros_pathb_boot_next_server: 10.9.8.108
+routeros_pathb_boot_file_name: http://10.9.8.108:8080/bootstrap.ipxe
+routeros_pathb_timezone: UTC
+routeros_pathb_ntp_client_servers:
+  - 10.9.8.108
+routeros_pathb_ntp_server_broadcast_addresses:
+  - 10.9.8.255
+routeros_pathb_management_cidrs:
+  - 10.9.8.0/24
+routeros_pathb_syslog_remote_host: 10.9.8.108
+routeros_pathb_snmp_contact: stage4-operator
+routeros_pathb_snmp_location: pathb-lab
+routeros_pathb_required_packages:
+  - container
+  - zerotier
+routeros_pathb_ha_mode: standalone
