@@ -97,6 +97,8 @@ Validated so far:
   - `haproxy` container up on `0.0.0.0:80` and `0.0.0.0:443`
   - `curl -I http://127.0.0.1:8080/` returns `200 OK`
   - `curl -I http://127.0.0.1:80/` returns `200 OK` through haproxy
+  - `rc-service nftables restart` succeeds without clobbering the running
+    netavark-managed container rules
 
 Important fixes that made this possible:
 
@@ -110,21 +112,14 @@ Important fixes that made this possible:
 - explicit `ntfy` runtime data directory provisioning
 - explicit `nginx` cache/temp directory provisioning
 - target-side `iptables` frontend selection to `xtables-nft-multi`
+- OpenRC `nftables` service pinned to the managed static `/etc/nftables.conf`
+  instead of saving and reloading dynamic netavark state
 - app-specific capability overrides for hardened containers:
   - `nginx`: `CHOWN`, `SETGID`, `SETUID`
 
-## Remaining Known Issue
-
-- the OpenRC `nftables` service currently conflicts with netavark-managed rules
-  when it reloads `/var/lib/nftables/rules-save`
-- containers still start and serve traffic correctly, but the site firewall and
-  netavark rules need cleaner ownership boundaries before this is considered
-  production-clean
-
 ## Next Validation Goals
 
-1. resolve the `nftables` vs netavark ruleset ownership conflict cleanly
-2. validate the same container-services stack on the installed target boot, not
+1. validate the same container-services stack on the installed target boot, not
    only in the provisioner chroot
-3. build the first reusable `gentoo-stage4-llvm-clang-hardened` container image
-4. publish the validated image to `GHCR`
+2. build the first reusable `gentoo-stage4-llvm-clang-hardened` container image
+3. publish the validated image to `GHCR`

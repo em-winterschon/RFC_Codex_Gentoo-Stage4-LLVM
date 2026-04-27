@@ -65,3 +65,15 @@
     dest: "{{ install_target_root }}/etc/nftables.conf"
     mode: '0644'
   when: container_services_enabled
+
+- name: Configure nftables service to load managed static policy
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/conf.d/nftables"
+    mode: '0644'
+    content: |
+      # Managed by gentoo-liveiso-ansible
+      NFTABLES_SAVE="/etc/nftables.conf"
+      SAVE_OPTIONS="-n"
+      SAVE_ON_STOP="no"
+      PANIC_ON_STOP=""
+  when: container_services_enabled
