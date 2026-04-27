@@ -2,20 +2,29 @@
 gentoo_profile_definition:
   make_conf_append: |
     USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    20-container-services: |
+      net-proxy/haproxy -slz zlib
+      >=app-misc/mime-types-2.1.54 nginx
+      >=net-firewall/iptables-1.8.13 nftables
+      sys-apps/systemd-utils acl kmod tmpfiles udev -boot -kernel-install -sysusers -ukify
+  package_mask_files:
+    21-container-services-systemd-utils: |
+      -sys-apps/systemd-utils
   package_atoms:
     - app-containers/conmon
     - app-containers/podman
     - app-containers/crun
     - app-containers/slirp4netns
-    - net-dns/aardvark-dns
+    - app-containers/aardvark-dns
+    - app-containers/netavark
     - net-firewall/nftables
     - net-misc/bridge-utils
     - net-misc/curl
-    - net-misc/netavark
     - net-proxy/haproxy
-    - net-proxy/nginx
+    - www-servers/nginx
+    - app-misc/jq
     - sys-apps/iproute2
-    - sys-apps/jq
     - sys-fs/fuse-overlayfs
   openrc_services_enable:
     - cgroups

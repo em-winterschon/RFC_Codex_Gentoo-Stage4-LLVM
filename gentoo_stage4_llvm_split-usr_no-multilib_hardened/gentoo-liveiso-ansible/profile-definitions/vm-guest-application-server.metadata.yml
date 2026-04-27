@@ -4,7 +4,6 @@ gentoo_system_profile_metadata:
   purpose: Hardened OpenRC VM guest with serial plus SSH management, QEMU and Xen guest utilities, and optional cloud-init user seeding.
   package_pins:
     gentoo_tree_exact_atoms:
-      - =app-emulation/cloud-init-25.1
       - =app-emulation/qemu-guest-agent-9.2.0
       - =app-emulation/xe-guest-utilities-6.2.0_p1120-r1
     keyworded_atoms:
@@ -19,10 +18,9 @@ gentoo_system_profile_metadata:
     - xen_blkfront
     - xen_netfront
   cloud_init:
-    datasource: NoCloud
-    enabled_by_profile: true
-    notes: The profile writes NoCloud seed data and datasource config; operator-specific users and keys should be supplied through inventory variables.
+    datasource: delegated
+    enabled_by_profile: false
+    notes: Pair this profile with the modular cloud-init-vm overlay when seed-driven first boot configuration is desired.
   source_references:
-    - https://packages.gentoo.org/packages/app-emulation/cloud-init
     - https://packages.gentoo.org/packages/app-emulation/qemu-guest-agent
     - https://packages.gentoo.org/packages/app-emulation/xe-guest-utilities

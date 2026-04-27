@@ -6,21 +6,27 @@ gentoo_system_profile_metadata:
     intended_overlay_on:
       - llvm-clang-hardened-portage
       - vm-guest-simple-ipxe
+      - cloud-init-vm
   package_pins:
     tracked_atoms:
       - app-containers/conmon
       - app-containers/crun
       - app-containers/podman
       - app-containers/slirp4netns
-      - net-dns/aardvark-dns
+      - app-containers/aardvark-dns
+      - app-containers/netavark
       - net-firewall/nftables
-      - net-misc/netavark
       - sys-fs/fuse-overlayfs
     app_runtime_packages:
       - net-proxy/haproxy
-      - net-proxy/nginx
+      - www-servers/nginx
       - net-misc/curl
-      - sys-apps/jq
+      - app-misc/jq
+  systemd_exception_scope:
+    masked_globally: true
+    locally_unmasked_atoms:
+      - sys-apps/systemd-utils
+    notes: The Podman container-host profile permits only the minimal tmpfiles and udev-capable systemd-utils footprint required by the current container stack.
   kernel_modules:
     - br_netfilter
     - nf_tables
@@ -41,6 +47,6 @@ gentoo_system_profile_metadata:
     notes: NetBox mode expects an operator-supplied API endpoint that returns pre-normalized JSON for the local site-security role.
   source_references:
     - https://packages.gentoo.org/packages/app-containers/podman
-    - https://packages.gentoo.org/packages/net-misc/netavark
-    - https://packages.gentoo.org/packages/net-dns/aardvark-dns
+    - https://packages.gentoo.org/packages/app-containers/netavark
+    - https://packages.gentoo.org/packages/app-containers/aardvark-dns
     - https://packages.gentoo.org/packages/net-firewall/nftables

@@ -194,6 +194,23 @@ QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.j
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
 
+Path B iPXE client launch example:
+```bash
+INSTANCE_NAME=container-services \
+QEMU_VM_DIR=/opt/gentoo-netboot/path-b/vms/container-services-profile \
+QEMU_ROOTDISK=/opt/gentoo-netboot/path-b/vms/container-services-profile/container-services-root.qcow2 \
+QEMU_IPXE_EFI_DIR=/opt/gentoo-netboot/path-b/vms/container-services-profile/ipxe-efi \
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/pathb-container-services/memory-drives.json \
+QEMU_TAP_IFNAME=tap-container \
+QEMU_SERIAL_PORT=5003 \
+QEMU_RESET_EFI_VARS=1 \
+bash gentoo-virt-qemu/qemu-launch-pathb-vm.sh
+```
+
+This launcher is Path B specific and differs from the stage3 launcher in two important ways:
+- it always uses UEFI `pflash0+pflash1`, which avoids the broken `-bios + pflash1` mix
+- it always uses an explicit TAP interface on the requested bridge, which avoids QEMU bridge-helper ACL failures
+
 The manifest-driven disks are meant for:
 - Portage caches
 - build scratch space

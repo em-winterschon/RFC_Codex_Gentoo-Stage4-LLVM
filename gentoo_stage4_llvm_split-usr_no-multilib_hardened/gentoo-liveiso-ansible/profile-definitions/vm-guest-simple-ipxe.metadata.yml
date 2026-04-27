@@ -4,7 +4,6 @@ gentoo_system_profile_metadata:
   purpose: Minimal Gentoo VM guest profile for validating the iPXE Path B provisioning workflow.
   package_pins:
     gentoo_tree_exact_atoms:
-      - =app-emulation/cloud-init-25.1
       - =app-emulation/qemu-guest-agent-9.2.0
     support_packages:
       - sys-apps/ethtool
@@ -13,9 +12,8 @@ gentoo_system_profile_metadata:
     - virtio_net
     - virtio_pci
   cloud_init:
-    datasource: NoCloud
-    enabled_by_profile: true
-    notes: Intended for throwaway validation VMs rather than long-lived application instances.
+    datasource: delegated
+    enabled_by_profile: false
+    notes: Pair this profile with the modular cloud-init-vm overlay when seed-driven first boot configuration is desired.
   source_references:
-    - https://packages.gentoo.org/packages/app-emulation/cloud-init
     - https://packages.gentoo.org/packages/app-emulation/qemu-guest-agent

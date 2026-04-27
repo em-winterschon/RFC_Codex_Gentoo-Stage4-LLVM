@@ -1,0 +1,14 @@
+---
+gentoo_system_profile_metadata:
+  id: cloud-init-baremetal
+  purpose: Modular cloud-init overlay for bare-metal Gentoo profiles using NoCloud seed data.
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/cloud-init-25.1
+  cloud_init:
+    datasource_list:
+      - NoCloud
+    enabled_by_profile: true
+    notes: Intended for bare-metal hosts that still want cloud-init style seeding without inheriting VM-specific guest-agent choices.
+  source_references:
+    - https://packages.gentoo.org/packages/app-emulation/cloud-init

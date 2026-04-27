@@ -1,0 +1,12 @@
+---
+gentoo_profile_definition:
+  package_atoms:
+    - =app-emulation/cloud-init-25.1
+  cloud_init:
+    enabled: true
+    disable_root: false
+    ssh_pwauth: false
+    datasource_list:
+      - NoCloud
+      - ConfigDrive
+    seedfrom: file:///var/lib/cloud/seed/nocloud-net/

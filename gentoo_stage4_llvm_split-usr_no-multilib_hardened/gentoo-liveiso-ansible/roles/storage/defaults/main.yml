@@ -1,4 +1,7 @@
 ---
+zpool_name: rpool
+zpool_compatibility: 'off'
+zpool_altroot: "{{ install_target_root }}"
 zfs_pool_properties:
   ashift: '12'
   autotrim: 'on'

@@ -86,6 +86,34 @@
   loop_control:
     loop_var: netboot_directory_path
 
+- name: Create short Path B artifact aliases
+  ansible.builtin.file:
+    src: "{{ netboot_alias.src }}"
+    dest: "{{ netboot_alias.dest }}"
+    state: link
+    force: true
+  loop:
+    - src: "{{ netboot_publish_root }}/artifacts/gentoo-installer"
+      dest: "{{ netboot_publish_root }}/{{ netboot_installer_short_path }}"
+    - src: "{{ netboot_publish_root }}/artifacts/gentoo-rescue"
+      dest: "{{ netboot_publish_root }}/{{ netboot_rescue_short_path }}"
+  loop_control:
+    loop_var: netboot_alias
+
+- name: Create short Path B initramfs aliases
+  ansible.builtin.file:
+    src: "{{ netboot_initramfs_alias.src }}"
+    dest: "{{ netboot_initramfs_alias.dest }}"
+    state: link
+    force: true
+  loop:
+    - src: "{{ netboot_publish_root }}/artifacts/gentoo-installer/initramfs.img"
+      dest: "{{ netboot_publish_root }}/{{ netboot_installer_short_path }}/{{ netboot_initramfs_short_name }}"
+    - src: "{{ netboot_publish_root }}/artifacts/gentoo-rescue/initramfs.img"
+      dest: "{{ netboot_publish_root }}/{{ netboot_rescue_short_path }}/{{ netboot_initramfs_short_name }}"
+  loop_control:
+    loop_var: netboot_initramfs_alias
+
 - name: Render Path B bootstrap iPXE script
   ansible.builtin.template:
     src: bootstrap.ipxe.j2

@@ -35,6 +35,19 @@
     state: directory
     mode: '0755'
 
+- name: Ensure common Portage and compiler cache directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ portage_runtime_dir.path }}"
+    state: directory
+    mode: "{{ portage_runtime_dir.mode }}"
+  loop:
+    - { path: /var/tmp/portage-tmpfs, mode: '1777' }
+    - { path: /var/tmp/portage-tmpfs/ccache-tmp, mode: '1777' }
+    - { path: /var/log/portage, mode: '0755' }
+    - { path: /var/cache/ccache, mode: '0755' }
+  loop_control:
+    loop_var: portage_runtime_dir
+
 - name: Force installkernel to keep kernels on ZFS /boot instead of ESP
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/etc/portage/package.use/installkernel"
@@ -100,6 +113,7 @@
     src: "{{ portage_package_mask_link.src }}"
     dest: "{{ install_target_root }}/etc/portage/package.mask/{{ portage_package_mask_link.name }}"
     state: link
+    force: true
   loop: "{{ resolved_portage_package_mask_symlinks | default([]) }}"
   loop_control:
     loop_var: portage_package_mask_link

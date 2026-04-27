@@ -13,6 +13,8 @@ assert_file_contains() {
 }
 
 for profile in \
+  cloud-init-baremetal.yml \
+  cloud-init-vm.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
   vm-container-services.yml \
@@ -24,6 +26,8 @@ do
 done
 
 for metadata in \
+  cloud-init-baremetal.metadata.yml \
+  cloud-init-vm.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
   vm-container-services.metadata.yml \
   vm-guest-application-server.metadata.yml \

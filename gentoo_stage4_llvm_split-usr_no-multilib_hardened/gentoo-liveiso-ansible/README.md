@@ -317,6 +317,7 @@ Use the simple guest profile as the base, then layer the container-services over
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
 ```
@@ -332,6 +333,7 @@ The profile adds:
 - profile-driven container service segments
 - app-profile roles for `ntfy`, `nginx`, and `haproxy`
 - optional IPAM ingestion from a flat JSON file or a pre-normalized NetBox API endpoint
+- a narrow `sys-apps/systemd-utils` exception scoped only to the Podman/netavark container stack while keeping the repo-wide `without-systemd` posture elsewhere
 
 Example direct role override:
 
@@ -659,9 +661,11 @@ profile_definition_files:
 ## Gentoo system profiles
 
 The repo now carries a reusable LLVM/Clang Portage baseline plus three stackable
-system-profile overlays:
+system-profile overlays plus modular cloud-init overlays:
 
 - `profile-definitions/llvm-clang-hardened-portage.yml`
+- `profile-definitions/cloud-init-baremetal.yml`
+- `profile-definitions/cloud-init-vm.yml`
 - `profile-definitions/hypervisor-xen-qemu-libvirt-host.yml`
 - `profile-definitions/vm-guest-application-server.yml`
 - `profile-definitions/vm-guest-simple-ipxe.yml`
@@ -674,6 +678,7 @@ host-type overlay second.
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
   - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
 ```
 
@@ -697,6 +702,7 @@ Portage:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
 ```
 
@@ -705,14 +711,15 @@ This profile targets hardened OpenRC guests with:
 - serial console plus SSH-only operational model
 - `qemu-guest-agent`
 - `xe-guest-utilities`
-- `cloud-init`
 - `bonding`, `virtio_*`, and `xen_*front` kernel module load hints
+- cloud-init behavior supplied by the separate `cloud-init-vm` overlay
 
 ### VM guest simple iPXE profile
 
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
 ```
 
@@ -721,10 +728,13 @@ testing.
 
 ### Per-host accounts and cloud-init
 
-Profiles define the behavior, but actual users and host-specific cloud-init values
-should come from inventory:
+Use the modular cloud-init overlays to enable package and datasource defaults, then
+keep host-specific instance IDs, hostnames, and users in inventory:
 
 ```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+
 profile_local_user_accounts:
   - name: deploy
     groups:
@@ -733,11 +743,8 @@ profile_local_user_accounts:
     ssh_authorized_keys: []
 
 profile_cloud_init:
-  enabled: true
   instance_id: vm-guest-appserver
   local_hostname: appserver
-  disable_root: false
-  ssh_pwauth: false
 ```
 
 Example host records are included under:

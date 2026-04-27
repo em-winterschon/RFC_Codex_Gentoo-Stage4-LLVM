@@ -242,6 +242,7 @@ Example host-vars overlay:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
 
@@ -285,6 +286,7 @@ This produces:
 - `nftables` policy in `/etc/nftables.conf`
 - site-security and IPAM snapshots under `/etc/container-services`
 - OpenRC-managed Podman service wrappers under `/usr/local/libexec/container-services`
+- a narrow `sys-apps/systemd-utils` exception scoped only to the Podman/netavark container stack while preserving the repo-wide `without-systemd` stance elsewhere
 
 Optional guest-side tmpfs mounts for the same profile:
 
@@ -381,6 +383,8 @@ Portage baseline can be reused across multiple host classes.
 Common base:
 
 - `profile-definitions/llvm-clang-hardened-portage.yml`
+- `profile-definitions/cloud-init-baremetal.yml`
+- `profile-definitions/cloud-init-vm.yml`
 
 Host-specific overlays:
 
@@ -393,6 +397,7 @@ Host-specific overlays:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
   - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
 ```
 
@@ -411,6 +416,7 @@ Highlights:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
 ```
 
@@ -418,7 +424,7 @@ Highlights:
 
 - `qemu-guest-agent`
 - `xe-guest-utilities`
-- `cloud-init`
+- cloud-init behavior supplied by the separate `cloud-init-vm` overlay
 - serial + SSH operational model
 - `bonding`, `virtio_*`, and `xen_*front` module hints
 
@@ -427,22 +433,26 @@ Highlights:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
 ```
 
 Highlights:
 
 - lean Path B validation guest
-- `cloud-init`
+- cloud-init behavior supplied by the separate `cloud-init-vm` overlay
 - `qemu-guest-agent`
 - `virtio_*` module hints only
 
 ### Per-host Users and Cloud-init
 
-The profiles define package and kernel/service policy. Host-specific accounts and
-NoCloud seed values should come from inventory:
+Use the modular cloud-init overlays to enable package and datasource defaults, then
+keep host-specific accounts and NoCloud seed values in inventory:
 
 ```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+
 profile_local_user_accounts:
   - name: deploy
     groups:
@@ -451,7 +461,6 @@ profile_local_user_accounts:
     ssh_authorized_keys: []
 
 profile_cloud_init:
-  enabled: true
   instance_id: vm-guest-appserver
   local_hostname: appserver
 ```

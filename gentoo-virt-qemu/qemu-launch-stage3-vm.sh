@@ -79,6 +79,40 @@ print_cmd() {
   printf '\n'
 }
 
+resolve_nonempty_file() {
+  local candidate
+
+  for candidate in "$@"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && -f "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+    if [[ -f "${candidate}" && -s "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+resolve_ovmf_paths() {
+  EFI_FIRM="$(
+    resolve_nonempty_file \
+      "${EFI_FIRM}" \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.fd \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.secboot.fd
+  )" || fail "No usable OVMF code image found; checked ${EFI_FIRM} and standard edk2 paths"
+
+  EFI_VARS_TEMPLATE="$(
+    resolve_nonempty_file \
+      "${EFI_VARS_TEMPLATE}" \
+      /usr/share/edk2/OvmfX64/OVMF_VARS.fd \
+      /usr/share/edk2/OvmfX64/OVMF_VARS.secboot.fd
+  )" || fail "No usable OVMF vars template found; checked ${EFI_VARS_TEMPLATE} and standard edk2 paths"
+}
+
 network_backend_name() {
   printf '%s' "${QEMU_NETDEV_BACKEND%%,*}"
 }
@@ -249,6 +283,7 @@ validate_qcow_image() {
 }
 
 validate_efi_firmware() {
+  resolve_ovmf_paths
   [[ -f "${EFI_FIRM}" ]] || fail "EFI_FIRM is missing: ${EFI_FIRM}"
   [[ -f "${EFI_VARS_TEMPLATE}" ]] || fail "EFI_VARS_TEMPLATE is missing: ${EFI_VARS_TEMPLATE}"
 }

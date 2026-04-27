@@ -25,14 +25,18 @@
   ansible.builtin.stat:
     path: /sys/firmware/efi/efivars
   register: efi_vars
-  when: install_boot_mode == 'uefi'
+  when:
+    - install_boot_mode == 'uefi'
+    - preflight_require_runtime_uefi | bool
 
 - name: Fail if UEFI was requested but firmware is not in UEFI mode
   ansible.builtin.assert:
     that:
       - efi_vars.stat.exists
     fail_msg: "UEFI mode requested, but /sys/firmware/efi/efivars is missing."
-  when: install_boot_mode == 'uefi'
+  when:
+    - install_boot_mode == 'uefi'
+    - preflight_require_runtime_uefi | bool
 
 - name: Create work directory
   ansible.builtin.file:

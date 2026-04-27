@@ -3,7 +3,6 @@ gentoo_profile_definition:
   make_conf_append: |
     USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
   package_atoms:
-    - =app-emulation/cloud-init-25.1
     - =app-emulation/qemu-guest-agent-9.2.0
     - sys-apps/ethtool
   modules_load_files:
@@ -11,8 +10,3 @@ gentoo_profile_definition:
       virtio_blk
       virtio_net
       virtio_pci
-  cloud_init:
-    enabled: true
-    disable_root: false
-    ssh_pwauth: false
-    seedfrom: file:///var/lib/cloud/seed/nocloud-net/

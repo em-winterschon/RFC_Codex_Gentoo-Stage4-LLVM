@@ -1,12 +1,18 @@
 ---
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
   - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
 
 kernel_strategy: gentoo-kernel
 gpu_stack: amdgpu
 install_networkmanager: true
 install_openssh: true
+install_hostname: hypervisor-host
+
+profile_cloud_init:
+  instance_id: hypervisor-host
+  local_hostname: hypervisor-host
 
 profile_local_user_accounts:
   - name: ops

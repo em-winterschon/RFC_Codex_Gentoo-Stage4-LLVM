@@ -51,6 +51,7 @@ PATHB_SERIAL_BAUD="${PATHB_SERIAL_BAUD:-115200}"
 PATHB_ROOT_PASSWORD_HASH="${PATHB_ROOT_PASSWORD_HASH:-}"
 MKSQUASHFS_BIN="${MKSQUASHFS_BIN:-/usr/bin/mksquashfs}"
 PATHB_SQUASHFS_COMPRESSOR="${PATHB_SQUASHFS_COMPRESSOR:-zstd}"
+PATHB_INITRAMFS_COMPRESSOR="${PATHB_INITRAMFS_COMPRESSOR:-gzip}"
 
 ensure_pathb_dirs() {
   mkdir -p \
@@ -210,7 +211,7 @@ hostonly="no"
 use_fstab="no"
 add_dracutmodules+=" dmsquash-live livenet network url-lib "
 filesystems+=" squashfs overlay ext4 vfat "
-compress="zstd"
+compress="${PATHB_INITRAMFS_COMPRESSOR}"
 DRACUT
 
 kernel_version="\$(ls -1 /lib/modules | sort -V | tail -n1)"
