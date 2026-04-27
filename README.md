@@ -135,6 +135,30 @@ PR and release validation:
 - the shell validation sequence currently covers shell syntax checks for committed `.sh` files, generator/output parity for the Ansible Python environment helper, and unit tests for `gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
 - Python linting and formatting are enforced through `ruff` and `black`
 
+## Container Publishing
+
+The first supported image publication target is `GHCR`.
+
+Use:
+
+```bash
+bash scripts/publish-container-ghcr.sh \
+  --local-image localhost/gentoo-stage4-base:latest \
+  --image-name gentoo-stage4-base \
+  --tag git-$(git rev-parse --short HEAD) \
+  --namespace em-winterschon \
+  --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
+  --description "Gentoo Stage4 LLVM/Clang hardened base container"
+```
+
+Authentication:
+
+- `GHCR_TOKEN` in the environment, or
+- `--token-file /path/to/token`
+
+Use immutable tags such as `git-<sha>` for validated builds and reserve `latest`
+for explicitly promoted images only.
+
 ## Stage4 control flow
 
 The Ansible Stage4 subtree now supports staged installer execution plus a structured JSONL

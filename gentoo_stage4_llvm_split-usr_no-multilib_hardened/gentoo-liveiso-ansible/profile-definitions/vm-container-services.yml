@@ -11,6 +11,9 @@ gentoo_profile_definition:
   package_mask_files:
     21-container-services-systemd-utils: |
       -sys-apps/systemd-utils
+  package_env_files:
+    20-container-services-gcc-compat: |
+      net-proxy/haproxy gcc-compat.conf
   package_atoms:
     - app-containers/conmon
     - app-containers/podman
