@@ -36,6 +36,24 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
 }
 
+sanitize_emerge_features() {
+  local raw sanitized
+  raw="${FEATURES:-}"
+  if [[ -z "${raw}" ]]; then
+    printf '%s' ""
+    return 0
+  fi
+
+  sanitized="$(
+    printf '%s\n' "${raw}" \
+      | tr ' ' '\n' \
+      | grep -Ev '^(distcc|ccache)$' \
+      | awk 'NF' \
+      | paste -sd' ' -
+  )"
+  printf '%s' "${sanitized}"
+}
+
 ROOT_DIR=
 PACKAGE_LIST=
 CONFIG_ROOT=/
@@ -46,6 +64,7 @@ SOURCE_URL=
 DESCRIPTION=
 DEFAULT_CMD=/bin/bash
 DRY_RUN=false
+SANITIZED_FEATURES=
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -109,6 +128,7 @@ fi
 
 mapfile -t PACKAGE_ATOMS < <(grep -Ev '^[[:space:]]*($|#)' "${PACKAGE_LIST}")
 [[ ${#PACKAGE_ATOMS[@]} -gt 0 ]] || die "package list is empty: ${PACKAGE_LIST}"
+SANITIZED_FEATURES="$(sanitize_emerge_features)"
 
 RESOLVED_ENGINE=${ENGINE}
 if [[ "${RESOLVED_ENGINE}" == "auto" ]]; then
@@ -129,6 +149,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'engine=%s\n' "${RESOLVED_ENGINE}"
   printf 'image-ref=%s\n' "${IMAGE_REF}"
   printf 'tarball=%s\n' "${TARBALL}"
+  printf 'sanitized-features=%s\n' "${SANITIZED_FEATURES}"
   exit 0
 fi
 
@@ -147,13 +168,22 @@ install -d -m 0755 \
 chmod 1777 "${ROOT_DIR}/tmp" "${ROOT_DIR}/var/tmp"
 
 log "building rootfs in ${ROOT_DIR}"
-emerge \
-  --verbose \
-  --oneshot \
-  --emptytree \
-  --root="${ROOT_DIR}" \
-  --config-root="${CONFIG_ROOT}" \
-  "${PACKAGE_ATOMS[@]}"
+emerge_env=(
+  "CCACHE_DISABLE=1"
+  "DISTCC_DISABLE=1"
+)
+if [[ -n "${SANITIZED_FEATURES}" ]]; then
+  emerge_env+=("FEATURES=${SANITIZED_FEATURES}")
+fi
+
+env "${emerge_env[@]}" \
+  emerge \
+    --verbose \
+    --oneshot \
+    --emptytree \
+    --root="${ROOT_DIR}" \
+    --config-root="${CONFIG_ROOT}" \
+    "${PACKAGE_ATOMS[@]}"
 
 if [[ -n "${TARBALL}" ]]; then
   require_cmd tar

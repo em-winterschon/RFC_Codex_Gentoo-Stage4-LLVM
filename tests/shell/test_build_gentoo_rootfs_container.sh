@@ -74,7 +74,30 @@ EOF
   assert_contains "${output}" 'image-ref=localhost/test:latest'
 }
 
+test_dry_run_sanitizes_features() {
+  local temp_dir package_list output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  output="$(
+    FEATURES='network-sandbox distcc ccache userpriv' \
+      bash "${BUILD_SCRIPT}" \
+        --root "${temp_dir}/rootfs" \
+        --package-list "${package_list}" \
+        --engine none \
+        --dry-run
+  )"
+
+  assert_contains "${output}" 'sanitized-features=network-sandbox userpriv'
+}
+
 test_dry_run
 test_auto_engine_prefers_buildah
+test_dry_run_sanitizes_features
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"
