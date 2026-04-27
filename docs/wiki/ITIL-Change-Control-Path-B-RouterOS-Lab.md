@@ -132,5 +132,18 @@ ip addr del 10.9.8.108/24 dev lo || true
 
 ## Status
 
-This document is planning and execution guidance only. The lab build itself has
-not yet been executed under this change record.
+This document is planning and execution guidance for the Path B RouterOS lab.
+The following execution state is now validated:
+
+- RouterOS CHR provides DHCP and iPXE handoff on `10.9.8.0/24`
+- UEFI clients require an EFI iPXE binary first; the working lab method is an
+  embedded `ipxe.efi` that chains to
+  `http://10.9.8.108:8080/bootstrap.ipxe`
+- the Path B provisioner can reach OpenRC `default` and SSH
+- the first simple-guest validation reached:
+  - destructive storage layout on the target disk
+  - stage3 tarball download during `chroot-bootstrap`
+- temporary upstream access for the provisioner currently uses:
+  - host-side NAT on the Gentoo control host
+  - guest-side default route override to `10.9.8.108`
+  - explicit `/etc/resolv.conf`

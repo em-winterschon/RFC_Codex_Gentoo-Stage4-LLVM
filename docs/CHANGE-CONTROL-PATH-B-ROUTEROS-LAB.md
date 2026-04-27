@@ -124,6 +124,22 @@ The following are now validated in the isolated `10.9.8.0/24` lab:
   - one default route
   - no surviving DHCP client process
 
+Additional validated findings:
+
+- UEFI guests must not be pointed directly at `bootstrap.ipxe`
+- UEFI Path B clients require an EFI iPXE binary first; the reliable lab method
+  is an embedded `ipxe.efi` that chains to
+  `http://10.9.8.108:8080/bootstrap.ipxe`
+- the first Path B simple-guest validation reached:
+  - UEFI boot through embedded `ipxe.efi`
+  - live provisioner SSH
+  - destructive storage layout on the target disk
+  - stage3 tarball download during `chroot-bootstrap`
+- the current temporary upstream workaround for the provisioner is:
+  - host-side IPv4 forwarding and NAT on the Gentoo control host
+  - guest-side default route override to `10.9.8.108`
+  - explicit `/etc/resolv.conf` population in the provisioner
+
 Key implementation findings now encoded in the repo:
 
 - Path B SquashFS artifacts must be built with `mksquashfs -noappend`
@@ -134,6 +150,8 @@ Key implementation findings now encoded in the repo:
   `securetty` entry
 - initramfs network reuse requires a userspace handoff cleanup step to prune
   duplicate addresses and routes
+- UEFI-only Path B requires an explicit iPXE EFI handoff stage rather than
+  assuming firmware can interpret `.ipxe` scripts directly
 
 ## 7. Implementation Plan
 
