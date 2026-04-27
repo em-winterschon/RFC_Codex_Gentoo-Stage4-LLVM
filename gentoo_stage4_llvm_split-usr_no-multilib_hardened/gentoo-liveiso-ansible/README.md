@@ -257,6 +257,59 @@ The container roles are dormant unless a profile defines
 service-segment network helpers, site-security `nftables` policy, and app-profile
 artifacts for `ntfy`, `nginx`, and `haproxy`.
 
+### Ephemeral memory-backed storage
+
+Two separate knobs now exist for faster iterative VM development:
+
+- hypervisor-side tmpfs-backed QEMU disks via `playbooks/qemu-memory-drives.yml`
+- guest-side tmpfs mounts via the `memory_storage` role in `target-integration`
+
+Hypervisor-side example:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/qemu-memory-drives.yml \
+  -l qemu_control_local \
+  -e qemu_memory_drives_enabled=true \
+  -e qemu_memory_drives_instance_name=stage4-devvm
+```
+
+That renders a manifest such as:
+
+```text
+/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json
+```
+
+and the stage3 launcher can attach it with:
+
+```bash
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json \
+bash ../../gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Guest-side example for a container host:
+
+```yaml
+profile_container_services:
+  runtime_root: /var/lib/container-services-ephemeral
+
+profile_memory_storage:
+  enabled: true
+  mounts:
+    - path: /var/lib/container-services-ephemeral
+      size: 32G
+      mode: "0755"
+      options:
+        - noatime
+```
+
+This is intended for:
+
+- Portage tmpdirs and caches
+- Podman image/runtime scratch space
+- disposable application data for short-lived development containers
+
 ### Container-Services VM profile
 
 Use the simple guest profile as the base, then layer the container-services overlay:

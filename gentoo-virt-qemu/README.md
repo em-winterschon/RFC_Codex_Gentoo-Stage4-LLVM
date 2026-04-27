@@ -109,6 +109,7 @@ The builder writes an OpenRC-oriented bootstrap plan that:
 What it does:
 - boots the explicit QCOW boot disk as `virtio-blk-pci`
 - attaches the four target disks for `bpool` and `rpool`
+- can attach additional tmpfs-backed ephemeral development disks from a JSON manifest
 - can boot directly from the target `bpool`/`rpool` disks after the installer has populated the ESP and ZFS datasets
 - runs QEMU with `-boot strict=on` by default so OVMF does not wander into SATADOM, PXE, or HTTP boot
 - forwards guest SSH to `127.0.0.1:2222` by default
@@ -126,6 +127,7 @@ Important launcher defaults:
 - `WAIT_FOR_SSH=1`
 - `SSH_READY_PROBE=banner`
 - `LAUNCHER_LOG_ENABLE=1`
+- `QEMU_MEMORY_DRIVES_FILE=''`
 
 Preferred launch sequence:
 1. Build the QCOW image:
@@ -178,6 +180,25 @@ QEMU_BRIDGE_IFNAME=br0 \
 WAIT_FOR_SSH=0 \
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
+
+Tmpfs-backed ephemeral memory-drive example:
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/qemu-memory-drives.yml \
+  -l qemu_control_local \
+  -e qemu_memory_drives_enabled=true \
+  -e qemu_memory_drives_instance_name=stage4-devvm
+
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+The manifest-driven disks are meant for:
+- Portage caches
+- build scratch space
+- ephemeral container/image storage
+- other development-time data that should not be written to the persistent validation disks
 
 Boot-source modes:
 - `QEMU_BOOT_SOURCE=qcow`

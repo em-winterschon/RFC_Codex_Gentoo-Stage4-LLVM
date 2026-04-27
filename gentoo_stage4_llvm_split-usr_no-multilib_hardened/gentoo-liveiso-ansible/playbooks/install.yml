@@ -21,6 +21,7 @@
       - network
       - platform_profile
       - identity
+      - memory_storage
       - container_host
       - container_app_ntfy
       - container_app_nginx

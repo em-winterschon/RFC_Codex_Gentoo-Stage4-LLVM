@@ -286,7 +286,66 @@ This produces:
 - site-security and IPAM snapshots under `/etc/container-services`
 - OpenRC-managed Podman service wrappers under `/usr/local/libexec/container-services`
 
-## 9. Boot Source Modes
+Optional guest-side tmpfs mounts for the same profile:
+
+```yaml
+profile_container_services:
+  runtime_root: /var/lib/container-services-ephemeral
+
+profile_memory_storage:
+  enabled: true
+  mounts:
+    - path: /var/lib/container-services-ephemeral
+      size: 32G
+      mode: "0755"
+      options:
+        - noatime
+```
+
+## 9. Hypervisor-side tmpfs-backed VM disks
+
+Use when the QEMU host should provide extra ephemeral disks out of RAM-backed
+tmpfs instead of persistent SSD/NVMe storage.
+
+Inventory group:
+
+```yaml
+qemu_hypervisors:
+  hosts:
+    qemu_control_local:
+      ansible_connection: local
+      ansible_python_interpreter: /usr/bin/python3
+```
+
+Example group vars:
+
+```yaml
+qemu_memory_drives_enabled: true
+qemu_memory_drives_mount_root: /dev/shm/qemu-memory-drives
+qemu_memory_drives_tmpfs_size: 256G
+qemu_memory_drives_instance_name: stage4-devvm
+qemu_memory_drives:
+  - name: portage-cache
+    size_gib: 64
+    format: qcow2
+    serial: mem-portage-cache
+    device_model: virtio-blk-pci
+```
+
+Prepare the drives:
+
+```bash
+ansible-playbook -i inventories/examples/hosts.yml playbooks/qemu-memory-drives.yml -l qemu_control_local
+```
+
+Then launch with:
+
+```bash
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+## 10. Boot Source Modes
 
 ### Installer QCOW
 

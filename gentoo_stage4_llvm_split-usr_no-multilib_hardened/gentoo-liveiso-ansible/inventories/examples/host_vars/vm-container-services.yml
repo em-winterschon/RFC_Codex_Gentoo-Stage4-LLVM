@@ -31,6 +31,23 @@ profile_container_app_profiles:
   haproxy:
     enabled: true
 
+profile_container_services:
+  runtime_root: /var/lib/container-services-ephemeral
+
+profile_memory_storage:
+  enabled: true
+  mounts:
+    - path: /var/lib/container-services-ephemeral
+      size: 32G
+      mode: "0755"
+      options:
+        - noatime
+    - path: /var/tmp/portage-tmpfs
+      size: 48G
+      mode: "1777"
+      options:
+        - noatime
+
 profile_site_security_profile:
   compliance_mode: strict
   firewall:

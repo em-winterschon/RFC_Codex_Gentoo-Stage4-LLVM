@@ -140,3 +140,11 @@
             recursive=True
           )
       }}
+    resolved_profile_memory_storage: >-
+      {{
+        resolved_profile_memory_storage
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.memory_storage | default({}),
+            recursive=True
+          )
+      }}

@@ -73,6 +73,7 @@
     resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
     resolved_profile_site_security_profile: "{{ profile_site_security_profile | default({}) }}"
+    resolved_profile_memory_storage: "{{ profile_memory_storage | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml
