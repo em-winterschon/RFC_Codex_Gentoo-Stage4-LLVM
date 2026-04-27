@@ -47,8 +47,67 @@
             recursive=True
           )
       }}
+    resolved_portage_package_accept_keywords_files: >-
+      {{
+        resolved_portage_package_accept_keywords_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_accept_keywords_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_env_files: >-
+      {{
+        resolved_portage_env_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.env_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_env_files: >-
+      {{
+        resolved_portage_package_env_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_env_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_mask_symlinks: >-
       {{
         resolved_portage_package_mask_symlinks
         + (loaded_profile_definition_file.gentoo_profile_definition.package_mask_symlinks | default([]))
+      }}
+    resolved_profile_package_atoms: >-
+      {{
+        (
+          resolved_profile_package_atoms
+          + (loaded_profile_definition_file.gentoo_profile_definition.package_atoms | default([]))
+        ) | unique
+      }}
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable
+          + (loaded_profile_definition_file.gentoo_profile_definition.openrc_services_enable | default([]))
+        ) | unique
+      }}
+    resolved_profile_modules_load_files: >-
+      {{
+        resolved_profile_modules_load_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.modules_load_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_local_user_accounts: >-
+      {{
+        resolved_profile_local_user_accounts
+        + (loaded_profile_definition_file.gentoo_profile_definition.local_user_accounts | default([]))
+      }}
+    resolved_profile_cloud_init: >-
+      {{
+        resolved_profile_cloud_init
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.cloud_init | default({}),
+            recursive=True
+          )
       }}

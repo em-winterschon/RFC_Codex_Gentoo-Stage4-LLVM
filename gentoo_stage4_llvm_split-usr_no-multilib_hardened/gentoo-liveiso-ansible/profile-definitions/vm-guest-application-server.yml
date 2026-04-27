@@ -1,0 +1,28 @@
+---
+gentoo_profile_definition:
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    20-vm-guest-appserver: |
+      app-emulation/xe-guest-utilities xenstore
+  package_accept_keywords_files:
+    20-vm-guest-appserver: |
+      =app-emulation/xe-guest-utilities-6.2.0_p1120-r1 ~amd64
+  package_atoms:
+    - =app-emulation/cloud-init-25.1
+    - =app-emulation/qemu-guest-agent-9.2.0
+    - =app-emulation/xe-guest-utilities-6.2.0_p1120-r1
+    - sys-apps/ethtool
+  modules_load_files:
+    vm-guest-appserver.conf: |
+      bonding
+      virtio_blk
+      virtio_net
+      virtio_pci
+      xen_blkfront
+      xen_netfront
+  cloud_init:
+    enabled: true
+    disable_root: false
+    ssh_pwauth: false
+    seedfrom: file:///var/lib/cloud/seed/nocloud-net/

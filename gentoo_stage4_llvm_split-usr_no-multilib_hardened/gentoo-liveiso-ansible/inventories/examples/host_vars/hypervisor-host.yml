@@ -1,0 +1,19 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
+
+kernel_strategy: gentoo-kernel
+gpu_stack: amdgpu
+install_networkmanager: true
+install_openssh: true
+
+profile_local_user_accounts:
+  - name: ops
+    comment: Operations administrator
+    groups:
+      - wheel
+      - libvirt
+      - kvm
+    sudo_nopasswd: true
+    ssh_authorized_keys: []

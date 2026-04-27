@@ -258,6 +258,95 @@ WAIT_FOR_SSH=0 \
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
 
+## 9. Gentoo System Profiles
+
+The installer now supports stackable profile-definition files so the LLVM/Clang
+Portage baseline can be reused across multiple host classes.
+
+Common base:
+
+- `profile-definitions/llvm-clang-hardened-portage.yml`
+
+Host-specific overlays:
+
+- `profile-definitions/hypervisor-xen-qemu-libvirt-host.yml`
+- `profile-definitions/vm-guest-application-server.yml`
+- `profile-definitions/vm-guest-simple-ipxe.yml`
+
+### Hypervisor Host
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
+```
+
+Highlights:
+
+- Xen + Xen tools
+- QEMU + Libvirt
+- Open vSwitch
+- NVMe-oF / RDMA support packages
+- PMem / NVDIMM tooling
+- ZFS 2.4.x testing-track atoms
+- kernel-module load hints for `mlx5_*`, `qede`, `nvme-rdma`, `openvswitch`, and `zfs`
+
+### VM Guest Application Server
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+```
+
+Highlights:
+
+- `qemu-guest-agent`
+- `xe-guest-utilities`
+- `cloud-init`
+- serial + SSH operational model
+- `bonding`, `virtio_*`, and `xen_*front` module hints
+
+### VM Guest Simple iPXE
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+```
+
+Highlights:
+
+- lean Path B validation guest
+- `cloud-init`
+- `qemu-guest-agent`
+- `virtio_*` module hints only
+
+### Per-host Users and Cloud-init
+
+The profiles define package and kernel/service policy. Host-specific accounts and
+NoCloud seed values should come from inventory:
+
+```yaml
+profile_local_user_accounts:
+  - name: deploy
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-guest-appserver
+  local_hostname: appserver
+```
+
+Example host variable files:
+
+- `inventories/examples/host_vars/hypervisor-host.yml`
+- `inventories/examples/host_vars/vm-guest-appserver.yml`
+- `inventories/examples/host_vars/vm-guest-simple.yml`
+
 Expected result:
 
 - UEFI boots from `bpool`

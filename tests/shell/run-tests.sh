@@ -19,6 +19,7 @@ done
 bash "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
 bash "${SCRIPT_DIR}/test_ntfy_tools.sh"
 bash "${SCRIPT_DIR}/test_control_flow_tools.sh"
+bash "${SCRIPT_DIR}/test_system_profiles.sh"
 bash "${SCRIPT_DIR}/test_netboot_assets.sh"
 bash "${SCRIPT_DIR}/test_routeros_pathb_role.sh"
 bash "${SCRIPT_DIR}/test_install_codex_approval_watcher_service.sh"

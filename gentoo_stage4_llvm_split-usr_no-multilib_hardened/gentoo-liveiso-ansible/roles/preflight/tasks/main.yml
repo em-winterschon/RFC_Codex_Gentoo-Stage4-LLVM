@@ -61,6 +61,14 @@
     resolved_portage_package_use_files: "{{ portage_package_use_files | default({}) }}"
     resolved_portage_package_mask_files: "{{ portage_package_mask_files | default({}) }}"
     resolved_portage_package_mask_symlinks: "{{ portage_package_mask_symlinks | default([]) }}"
+    resolved_portage_package_accept_keywords_files: "{{ portage_package_accept_keywords_files | default({}) }}"
+    resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
+    resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
+    resolved_profile_package_atoms: "{{ profile_package_atoms | default([]) }}"
+    resolved_profile_openrc_services_enable: "{{ profile_openrc_services_enable | default([]) }}"
+    resolved_profile_modules_load_files: "{{ profile_modules_load_files | default({}) }}"
+    resolved_profile_local_user_accounts: "{{ profile_local_user_accounts | default([]) }}"
+    resolved_profile_cloud_init: "{{ profile_cloud_init | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml

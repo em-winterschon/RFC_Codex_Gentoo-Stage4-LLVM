@@ -2,11 +2,33 @@
 - name: Resolve kernel package atom
   ansible.builtin.set_fact:
     selected_kernel_package: "{{ kernel_package_map[kernel_strategy] }}"
+    resolved_system_package_atoms: >-
+      {{
+        (
+          [
+            'app-admin/sudo',
+            'app-admin/sysklogd',
+            'app-portage/gentoolkit',
+            'sys-apps/pciutils',
+            'sys-boot/efibootmgr',
+            'sys-fs/dosfstools',
+            'sys-fs/zfs',
+            'sys-fs/zfs-kmod',
+            'sys-kernel/dracut',
+            'sys-kernel/installkernel',
+            selected_kernel_package
+          ]
+          + (install_networkmanager | ternary(['net-misc/networkmanager'], []))
+          + (install_openssh | ternary(['net-misc/openssh'], []))
+          + selected_gpu_profile.packages
+          + (resolved_profile_package_atoms | default([]))
+        ) | unique
+      }}
 
 - name: Install core packages in target
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('emerge --verbose --oneshot app-admin/sudo app-admin/sysklogd app-portage/gentoolkit sys-apps/pciutils sys-boot/efibootmgr sys-fs/dosfstools sys-fs/zfs sys-fs/zfs-kmod sys-kernel/dracut sys-kernel/installkernel ' + selected_kernel_package + ' ' + (install_networkmanager | ternary('net-misc/networkmanager ', '')) + (install_openssh | ternary('net-misc/openssh ', '')) + (selected_gpu_profile.packages | join(' '))) | trim | quote }}
+    {{ ('emerge --verbose --oneshot ' + (resolved_system_package_atoms | join(' '))) | trim | quote }}
 
 - name: Refresh environment cache in target
   ansible.builtin.command: >-

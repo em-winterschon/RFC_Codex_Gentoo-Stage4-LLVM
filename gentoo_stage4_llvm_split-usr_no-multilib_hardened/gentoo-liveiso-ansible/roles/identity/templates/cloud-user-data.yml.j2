@@ -1,0 +1,39 @@
+#cloud-config
+preserve_hostname: true
+disable_root: {{ resolved_profile_cloud_init.disable_root | default(false) | bool | lower }}
+ssh_pwauth: {{ resolved_profile_cloud_init.ssh_pwauth | default(false) | bool | lower }}
+users:
+  - default
+{% for identity_user in resolved_profile_local_user_accounts | default([]) %}
+  - name: {{ identity_user.name }}
+{% if identity_user.comment is defined %}
+    gecos: {{ identity_user.comment | to_json }}
+{% endif %}
+{% if identity_user.primary_group is defined %}
+    primary_group: {{ identity_user.primary_group }}
+{% endif %}
+{% if identity_user.groups is defined and identity_user.groups | length > 0 %}
+    groups: {{ identity_user.groups | join(',') }}
+{% endif %}
+{% if identity_user.shell is defined %}
+    shell: {{ identity_user.shell }}
+{% endif %}
+{% if identity_user.home is defined %}
+    homedir: {{ identity_user.home }}
+{% endif %}
+{% if identity_user.password_hash is defined and identity_user.password_hash | length > 0 %}
+    passwd: {{ identity_user.password_hash | to_json }}
+    lock_passwd: false
+{% else %}
+    lock_passwd: true
+{% endif %}
+{% if identity_user.sudo_nopasswd | default(false) | bool %}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+{% endif %}
+{% if identity_user.ssh_authorized_keys is defined and identity_user.ssh_authorized_keys | length > 0 %}
+    ssh_authorized_keys:
+{% for ssh_key in identity_user.ssh_authorized_keys %}
+      - {{ ssh_key | to_json }}
+{% endfor %}
+{% endif %}
+{% endfor %}

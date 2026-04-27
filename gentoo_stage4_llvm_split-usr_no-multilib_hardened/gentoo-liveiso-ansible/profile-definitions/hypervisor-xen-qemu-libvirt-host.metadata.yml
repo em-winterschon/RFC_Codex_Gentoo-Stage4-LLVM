@@ -1,0 +1,58 @@
+---
+gentoo_system_profile_metadata:
+  id: hypervisor-xen-qemu-libvirt-host
+  purpose: Bare-metal Gentoo hypervisor with Xen, QEMU, Libvirt, Open vSwitch, ZFSBootMenu, NVMe-oF, RoCE-v2, PMem, and selected vendor GPU/NIC support.
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/qemu-10.2.0-r1
+      - =app-emulation/libvirt-12.0.0
+      - =app-emulation/xen-4.19.3
+      - =app-emulation/xen-tools-4.19.3
+      - =app-emulation/guestfs-tools-1.52.3-r1
+      - =media-libs/amdgpu-pro-vulkan-25.10.2203192
+      - =net-misc/openvswitch-3.3.8
+      - =sys-apps/nvme-cli-2.16
+      - =sys-block/ndctl-77-r2
+    testing_atoms:
+      - =net-misc/openvswitch-3.3.8
+      - =sys-fs/zfs-2.4.1
+      - =sys-fs/zfs-kmod-2.4.0_rc2-r1
+    unpinned_support_packages:
+      - sys-cluster/rdma-core
+      - sys-kernel/linux-firmware
+  kernel_modules:
+    - amdgpu
+    - ib_uverbs
+    - libnvdimm
+    - mlx5_core
+    - mlx5_ib
+    - nd_pmem
+    - nvme
+    - nvme-fabrics
+    - nvme-rdma
+    - openvswitch
+    - qede
+    - zfs
+  vendor_managed_components:
+    - name: nvidia-doca-ofed-bluefield2
+      management_model: vendor
+      notes: BlueField-2 DOCA/MLNX_OFED host support is vendor-managed, outside the Gentoo tree, and should be validated against the target kernel before deployment.
+    - name: amdgpu-pro-w7700-userspace
+      management_model: mixed
+      notes: Gentoo provides amdgpu-pro-vulkan and amdgpu-pro-opencl style userspace pieces, but the kernel driver remains the upstream amdgpu stack.
+    - name: qlogic-fastlinq-41000
+      management_model: kernel-inbox
+      notes: Linux inbox qede driver is expected for 41000/45000 adapters.
+  source_references:
+    - https://packages.gentoo.org/packages/app-emulation/libvirt
+    - https://packages.gentoo.org/packages/app-emulation/qemu
+    - https://packages.gentoo.org/packages/app-emulation/xen
+    - https://packages.gentoo.org/packages/app-emulation/xen-tools
+    - https://packages.gentoo.org/packages/net-misc/openvswitch
+    - https://packages.gentoo.org/packages/sys-fs/zfs
+    - https://packages.gentoo.org/packages/sys-fs/zfs-kmod
+    - https://packages.gentoo.org/packages/sys-apps/nvme-cli
+    - https://packages.gentoo.org/packages/sys-block/ndctl
+    - https://docs.nvidia.com/doca/sdk/General-Support/index.html
+    - https://support.hpe.com/hpesc/public/docDisplay?docId=a00071081en_us&docLocale=en_US&page=GUID-F966A03E-9F4B-45A3-95B7-FE5A1D86E43C.html
+    - https://www.intel.com/content/www/us/en/support/articles/000055272/memory-and-storage/intel-optane-persistent-memory.html

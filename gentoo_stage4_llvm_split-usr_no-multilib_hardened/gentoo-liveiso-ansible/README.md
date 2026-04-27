@@ -238,6 +238,15 @@ selected_roles:
   - boot
 ```
 
+The default `target-integration` stage now includes two additional roles:
+
+- `platform_profile`
+- `identity`
+
+`platform_profile` writes profile-driven `modules-load.d` fragments and enables native
+OpenRC services. `identity` creates local users and, when requested, writes NoCloud
+compatible `cloud-init` seed data under `/var/lib/cloud/seed/nocloud-net/`.
+
 Example direct role override:
 
 ```bash
@@ -535,6 +544,13 @@ If you want to carry house policy as data instead of editing the roles, set
 - `package_use_files`
 - `package_mask_files`
 - `package_mask_symlinks`
+- `package_accept_keywords_files`
+- `env_files`
+- `package_env_files`
+- `package_atoms`
+- `modules_load_files`
+- `openrc_services_enable`
+- `cloud_init`
 
 The included preset:
 
@@ -553,6 +569,100 @@ Example:
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
 ```
+
+## Gentoo system profiles
+
+The repo now carries a reusable LLVM/Clang Portage baseline plus three stackable
+system-profile overlays:
+
+- `profile-definitions/llvm-clang-hardened-portage.yml`
+- `profile-definitions/hypervisor-xen-qemu-libvirt-host.yml`
+- `profile-definitions/vm-guest-application-server.yml`
+- `profile-definitions/vm-guest-simple-ipxe.yml`
+
+Use them as stacked data, with the common LLVM/Clang baseline first and the
+host-type overlay second.
+
+### Hypervisor host profile
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
+```
+
+This profile targets bare-metal Xen/QEMU/Libvirt hosts and adds:
+
+- Xen, Xen tools, QEMU, Libvirt, guestfs tools
+- Open vSwitch
+- NVMe-oF and RDMA userland support
+- NVDIMM / PMem tooling via `ndctl`
+- ZFS 2.4.x testing-track pins
+- kernel modules for `nvme-rdma`, `mlx5_*`, `qede`, `libnvdimm`, `nd_pmem`, and `zfs`
+
+Vendor-managed pieces are explicitly tracked in metadata rather than forced into
+Portage:
+
+- BlueField2 DOCA / MLNX_OFED host drivers
+- AMDGPU Pro userspace nuances beyond Gentoo-provided `amdgpu-pro-vulkan`
+
+### VM guest application-server profile
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+```
+
+This profile targets hardened OpenRC guests with:
+
+- serial console plus SSH-only operational model
+- `qemu-guest-agent`
+- `xe-guest-utilities`
+- `cloud-init`
+- `bonding`, `virtio_*`, and `xen_*front` kernel module load hints
+
+### VM guest simple iPXE profile
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+```
+
+This profile keeps the package set small for Path B bring-up and repeatable iPXE
+testing.
+
+### Per-host accounts and cloud-init
+
+Profiles define the behavior, but actual users and host-specific cloud-init values
+should come from inventory:
+
+```yaml
+profile_local_user_accounts:
+  - name: deploy
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-guest-appserver
+  local_hostname: appserver
+  disable_root: false
+  ssh_pwauth: false
+```
+
+Example host records are included under:
+
+- `inventories/examples/host_vars/hypervisor-host.yml`
+- `inventories/examples/host_vars/vm-guest-appserver.yml`
+- `inventories/examples/host_vars/vm-guest-simple.yml`
+
+Each profile also has a matching `*.metadata.yml` file that records package pinning,
+kernel-module expectations, and any vendor-managed components that are outside the
+Gentoo tree.
 - per-interface network policy beyond enabling NetworkManager
 
 ## Suggested next steps

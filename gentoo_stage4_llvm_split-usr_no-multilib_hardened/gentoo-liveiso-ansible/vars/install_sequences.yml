@@ -32,6 +32,8 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - platform_profile
+          - identity
           - services
 
   full-modular-zfs:
@@ -62,6 +64,8 @@ install_role_sequences:
         roles:
           - kernel
           - bootloader
+          - platform_profile
+          - identity
           - finalize
 
   storage-foundation:
@@ -109,6 +113,8 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - platform_profile
+          - identity
           - services
 
   repair-boot:
@@ -123,6 +129,8 @@ install_role_sequences:
         roles:
           - boot
           - network
+          - platform_profile
+          - identity
 
   repair-services:
     description: Targeted rerun for network and managed OpenRC service state.
@@ -135,4 +143,6 @@ install_role_sequences:
         summary: Reapply network and managed OpenRC services.
         roles:
           - network
+          - platform_profile
+          - identity
           - services

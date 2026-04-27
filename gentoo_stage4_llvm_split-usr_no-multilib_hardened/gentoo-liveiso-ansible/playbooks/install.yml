@@ -19,6 +19,8 @@
       - system_packages
       - boot
       - network
+      - platform_profile
+      - identity
       - services
 
   tasks:

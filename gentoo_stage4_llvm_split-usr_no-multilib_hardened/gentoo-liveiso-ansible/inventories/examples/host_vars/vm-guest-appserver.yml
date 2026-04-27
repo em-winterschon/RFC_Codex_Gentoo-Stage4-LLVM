@@ -1,0 +1,22 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: appserver
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-guest-appserver
+  local_hostname: appserver
+  disable_root: false
+  ssh_pwauth: false
+
+profile_local_user_accounts:
+  - name: deploy
+    comment: Application deployment account
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
