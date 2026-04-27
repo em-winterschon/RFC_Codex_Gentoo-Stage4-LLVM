@@ -91,6 +91,12 @@ Validated so far:
   - `app-containers/buildah`
   - `app-containers/skopeo`
 - package transaction advanced into later system and container-host packages
+- Podman runtime validation inside the target chroot:
+  - `nginx` container up on `0.0.0.0:8080`
+  - `ntfy` container up on the internal `apps` segment
+  - `haproxy` container up on `0.0.0.0:80` and `0.0.0.0:443`
+  - `curl -I http://127.0.0.1:8080/` returns `200 OK`
+  - `curl -I http://127.0.0.1:80/` returns `200 OK` through haproxy
 
 Important fixes that made this possible:
 
@@ -100,12 +106,25 @@ Important fixes that made this possible:
 - scoped GCC compatibility env so fallback packages do not inherit LLVM-only
   `-flto=thin`
 - temporary upstream and DNS fix for the Path B lab
+- netavark-safe network bootstrap helper without forced `interface_name`
+- explicit `ntfy` runtime data directory provisioning
+- explicit `nginx` cache/temp directory provisioning
+- target-side `iptables` frontend selection to `xtables-nft-multi`
+- app-specific capability overrides for hardened containers:
+  - `nginx`: `CHOWN`, `SETGID`, `SETUID`
+
+## Remaining Known Issue
+
+- the OpenRC `nftables` service currently conflicts with netavark-managed rules
+  when it reloads `/var/lib/nftables/rules-save`
+- containers still start and serve traffic correctly, but the site firewall and
+  netavark rules need cleaner ownership boundaries before this is considered
+  production-clean
 
 ## Next Validation Goals
 
-1. finish `target-integration`
-2. verify Podman runtime and supporting container roles on the installed VM
-3. verify `container_app_ntfy`, `container_app_nginx`, `container_app_haproxy`,
-   `container_net_policy`, and `container_service_segments`
-4. build the first reusable `gentoo-stage4-llvm-clang-hardened` container image
-5. publish the validated image to `GHCR`
+1. resolve the `nftables` vs netavark ruleset ownership conflict cleanly
+2. validate the same container-services stack on the installed target boot, not
+   only in the provisioner chroot
+3. build the first reusable `gentoo-stage4-llvm-clang-hardened` container image
+4. publish the validated image to `GHCR`

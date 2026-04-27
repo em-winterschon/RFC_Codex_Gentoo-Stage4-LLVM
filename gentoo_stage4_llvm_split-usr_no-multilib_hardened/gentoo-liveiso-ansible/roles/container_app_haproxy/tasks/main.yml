@@ -35,6 +35,7 @@
               'network': container_haproxy_profile.network | default('apps'),
               'ip_address': container_haproxy_profile.ip_address | default(''),
               'published_ports': container_haproxy_profile.published_ports | default(['80:80/tcp', '443:443/tcp']),
+              'cap_add': container_haproxy_profile.cap_add | default([]),
               'environment': container_haproxy_profile.env | default({}),
               'volumes': [
                 container_haproxy_config_dir + '/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'

@@ -65,3 +65,19 @@
     dest: "{{ install_target_root }}/etc/sysctl.d/90-container-services.conf"
     mode: '0644'
   when: container_services_enabled
+
+- name: Query iptables frontend selected in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ "sh -c 'basename \"$(readlink -f /usr/sbin/iptables)\"'" | quote }}
+  register: container_host_iptables_frontend
+  changed_when: false
+  when: container_services_enabled
+
+- name: Select nft-backed iptables frontend for Podman networking
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ "eselect iptables set xtables-nft-multi" | quote }}
+  when:
+    - container_services_enabled
+    - container_host_iptables_frontend.stdout | trim != 'xtables-nft-multi'

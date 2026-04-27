@@ -13,6 +13,53 @@
     - container_services_enabled
     - container_nginx_profile.enabled | default(false) | bool
 
+- name: Ensure nginx runtime cache directory exists
+  ansible.builtin.file:
+    path: >-
+      {{
+        install_target_root
+        + (
+            resolved_profile_container_services.runtime_root
+            | default('/var/lib/container-services')
+          )
+        + '/data/nginx-cache'
+      }}
+    state: directory
+    mode: '0755'
+    owner: '101'
+    group: '101'
+  when:
+    - container_services_enabled
+    - container_nginx_profile.enabled | default(false) | bool
+
+- name: Ensure nginx runtime temp directories exist
+  ansible.builtin.file:
+    path: >-
+      {{
+        install_target_root
+        + (
+            resolved_profile_container_services.runtime_root
+            | default('/var/lib/container-services')
+          )
+        + '/data/nginx-cache/'
+        + nginx_runtime_temp_dir
+      }}
+    state: directory
+    mode: '0700'
+    owner: '101'
+    group: '101'
+  loop:
+    - client_temp
+    - proxy_temp
+    - fastcgi_temp
+    - uwsgi_temp
+    - scgi_temp
+  loop_control:
+    loop_var: nginx_runtime_temp_dir
+  when:
+    - container_services_enabled
+    - container_nginx_profile.enabled | default(false) | bool
+
 - name: Render nginx main configuration
   ansible.builtin.template:
     src: nginx.conf.j2
@@ -44,10 +91,12 @@
               'network': container_nginx_profile.network | default('apps'),
               'ip_address': container_nginx_profile.ip_address | default(''),
               'published_ports': container_nginx_profile.published_ports | default(['8080:80/tcp']),
+              'cap_add': container_nginx_profile.cap_add | default([]),
               'environment': container_nginx_profile.env | default({}),
               'volumes': [
                 container_nginx_config_dir + '/nginx.conf:/etc/nginx/nginx.conf:ro',
-                container_nginx_config_dir + '/default.conf:/etc/nginx/conf.d/default.conf:ro'
+                container_nginx_config_dir + '/default.conf:/etc/nginx/conf.d/default.conf:ro',
+                (resolved_profile_container_services.runtime_root | default('/var/lib/container-services')) + '/data/nginx-cache:/var/cache/nginx'
               ],
               'enabled': true
             }

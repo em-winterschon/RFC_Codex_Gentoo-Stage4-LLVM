@@ -53,8 +53,7 @@ gentoo_profile_definition:
       image: docker.io/binwiederhier/ntfy:v2.14.0
       network: apps
       ip_address: 10.77.1.20
-      published_ports:
-        - 80:80/tcp
+      published_ports: []
       env:
         NTFY_BASE_URL: http://127.0.0.1
     nginx:
@@ -62,6 +61,10 @@ gentoo_profile_definition:
       image: docker.io/library/nginx:1.29-alpine
       network: apps
       ip_address: 10.77.1.30
+      cap_add:
+        - CHOWN
+        - SETGID
+        - SETUID
       published_ports:
         - 8080:80/tcp
     haproxy:

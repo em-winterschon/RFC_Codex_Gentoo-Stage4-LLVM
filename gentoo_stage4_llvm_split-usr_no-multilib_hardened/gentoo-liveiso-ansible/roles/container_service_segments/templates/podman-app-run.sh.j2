@@ -19,6 +19,9 @@ exec podman run \
 {% if resolved_profile_site_security_profile.isolation.drop_capabilities | default(true) | bool %}
   --cap-drop all \
 {% endif %}
+{% for added_capability in container_runtime_app.cap_add | default([]) %}
+  --cap-add {{ added_capability | quote }} \
+{% endfor %}
 {% if resolved_profile_site_security_profile.isolation.userns | default('host') | length > 0 %}
   --userns {{ resolved_profile_site_security_profile.isolation.userns | quote }} \
 {% endif %}
