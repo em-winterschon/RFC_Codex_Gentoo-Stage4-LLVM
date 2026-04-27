@@ -1,0 +1,11 @@
+=app-emulation/qemu-10.2.0-r1
+=app-emulation/libvirt-12.0.0
+=app-emulation/xen-4.19.3
+=app-emulation/xen-tools-4.19.3
+=app-emulation/guestfs-tools-1.52.3-r1
+=media-libs/amdgpu-pro-vulkan-25.10.2203192
+=net-misc/openvswitch-3.3.8
+=sys-apps/nvme-cli-2.16
+=sys-block/ndctl-77-r2
+sys-cluster/rdma-core
+sys-kernel/linux-firmware

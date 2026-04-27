@@ -1,5 +1,7 @@
 ---
 gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-container-services.packages
   make_conf_append: |
     USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
   package_use_files:
@@ -14,23 +16,6 @@ gentoo_profile_definition:
   package_env_files:
     20-container-services-gcc-compat: |
       net-proxy/haproxy gcc-compat.conf
-  package_atoms:
-    - app-containers/buildah
-    - app-containers/conmon
-    - app-containers/podman
-    - app-containers/crun
-    - app-containers/skopeo
-    - app-containers/slirp4netns
-    - app-containers/aardvark-dns
-    - app-containers/netavark
-    - net-firewall/nftables
-    - net-misc/bridge-utils
-    - net-misc/curl
-    - net-proxy/haproxy
-    - www-servers/nginx
-    - app-misc/jq
-    - sys-apps/iproute2
-    - sys-fs/fuse-overlayfs
   openrc_services_enable:
     - cgroups
     - nftables

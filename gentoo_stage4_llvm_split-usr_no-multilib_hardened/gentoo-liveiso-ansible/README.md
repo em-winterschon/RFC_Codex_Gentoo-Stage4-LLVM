@@ -637,9 +637,34 @@ If you want to carry house policy as data instead of editing the roles, set
 - `env_files`
 - `package_env_files`
 - `package_atoms`
+- `package_list_files`
 - `modules_load_files`
 - `openrc_services_enable`
 - `cloud_init`
+
+## Stage language
+
+The repo uses a layered profile language:
+
+- `Stage 4`
+  - shared OS baseline policy
+  - compiler, linker, hardening, OpenRC, and Portage behavior
+  - example: `llvm-clang-hardened-portage.yml`
+- `Stage 5`
+  - role overlay
+  - host or service intent carried on top of the Stage 4 baseline
+  - package layers, module hints, service defaults, and role-specific policy
+
+Current Stage 5 role classes:
+
+- `metal-host`
+- `virtual-host`
+- `service-container`
+- `cloud-init-overlay`
+
+For scalability, Stage 5 package sets should live in external flat files under
+`profile-package-lists/` and be referenced through `package_list_files` instead
+of embedding long `package_atoms` lists inline.
 
 The included preset:
 
@@ -671,8 +696,8 @@ system-profile overlays plus modular cloud-init overlays:
 - `profile-definitions/vm-guest-application-server.yml`
 - `profile-definitions/vm-guest-simple-ipxe.yml`
 
-Use them as stacked data, with the common LLVM/Clang baseline first and the
-host-type overlay second.
+Use them as stacked data, with the Stage 4 baseline first and the Stage 5 role
+overlay(s) after it.
 
 ### Hypervisor host profile
 

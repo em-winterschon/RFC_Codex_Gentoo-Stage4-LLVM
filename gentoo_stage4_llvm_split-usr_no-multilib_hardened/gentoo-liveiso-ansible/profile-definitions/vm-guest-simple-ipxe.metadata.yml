@@ -2,6 +2,12 @@
 gentoo_system_profile_metadata:
   id: vm-guest-simple-ipxe
   purpose: Minimal Gentoo VM guest profile for validating the iPXE Path B provisioning workflow.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: simple-ipxe
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
   package_pins:
     gentoo_tree_exact_atoms:
       - =app-emulation/qemu-guest-agent-9.2.0

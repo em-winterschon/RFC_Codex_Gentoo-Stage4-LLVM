@@ -91,6 +91,13 @@
           + (loaded_profile_definition_file.gentoo_profile_definition.package_atoms | default([]))
         ) | unique
       }}
+    resolved_profile_package_list_files: >-
+      {{
+        (
+          resolved_profile_package_list_files
+          + (loaded_profile_definition_file.gentoo_profile_definition.package_list_files | default([]))
+        ) | unique
+      }}
     resolved_profile_openrc_services_enable: >-
       {{
         (

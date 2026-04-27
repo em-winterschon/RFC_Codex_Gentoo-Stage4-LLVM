@@ -1,7 +1,7 @@
 ---
 gentoo_profile_definition:
-  package_atoms:
-    - =app-emulation/cloud-init-25.1
+  package_list_files:
+    - profile-package-lists/cloud-init-base.packages
   cloud_init:
     enabled: true
     disable_root: false

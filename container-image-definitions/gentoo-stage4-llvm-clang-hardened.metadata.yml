@@ -1,6 +1,10 @@
 ---
 container_image_definition:
   name: gentoo-stage4-llvm-clang-hardened
+  profile_taxonomy:
+    stage: stage5
+    role_class: service-container
+    role_name: gentoo-stage4-llvm-clang-hardened
   source_profile: llvm-clang-hardened-portage
   package_list: container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages
   labels:

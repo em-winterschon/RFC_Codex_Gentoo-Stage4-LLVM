@@ -70,6 +70,7 @@
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
     resolved_profile_package_atoms: "{{ profile_package_atoms | default([]) }}"
+    resolved_profile_package_list_files: "{{ profile_package_list_files | default([]) }}"
     resolved_profile_openrc_services_enable: "{{ profile_openrc_services_enable | default([]) }}"
     resolved_profile_modules_load_files: "{{ profile_modules_load_files | default({}) }}"
     resolved_profile_local_user_accounts: "{{ profile_local_user_accounts | default([]) }}"
@@ -85,6 +86,26 @@
   loop: "{{ profile_definition_files | default([]) }}"
   loop_control:
     loop_var: profile_definition_file
+
+- name: Resolve package atoms from selected profile package list files
+  ansible.builtin.set_fact:
+    resolved_profile_package_atoms: >-
+      {{
+        (
+          resolved_profile_package_atoms
+          + (
+            lookup('ansible.builtin.file', playbook_dir ~ '/../' ~ resolved_profile_package_list_file)
+            .splitlines()
+            | map('trim')
+            | reject('equalto', '')
+            | reject('match', '^#')
+            | list
+          )
+        ) | unique
+      }}
+  loop: "{{ resolved_profile_package_list_files | default([]) }}"
+  loop_control:
+    loop_var: resolved_profile_package_list_file
 
 - name: Ensure storage device list is present
   ansible.builtin.assert:

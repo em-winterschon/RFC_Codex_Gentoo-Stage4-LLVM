@@ -1,5 +1,26 @@
 # Configurations and Examples
 
+## Stage Language
+
+Use this vocabulary consistently:
+
+- `Stage 4`
+  - shared OS baseline
+  - LLVM/Clang, hardening, Portage, OpenRC, and common policy
+- `Stage 5`
+  - role overlay
+  - host or service intent layered on top of Stage 4
+
+Current Stage 5 role classes:
+
+- `metal-host`
+- `virtual-host`
+- `service-container`
+- `cloud-init-overlay`
+
+For scalability, Stage 5 package sets should be stored in
+`profile-package-lists/*.packages` and referenced by `package_list_files`.
+
 ## 1. Local LiveISO Target
 
 Use when Ansible runs directly on the booted target host.

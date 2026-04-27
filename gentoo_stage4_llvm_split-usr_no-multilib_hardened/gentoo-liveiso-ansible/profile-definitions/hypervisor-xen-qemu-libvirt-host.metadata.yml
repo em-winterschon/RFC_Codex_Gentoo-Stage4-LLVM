@@ -2,6 +2,12 @@
 gentoo_system_profile_metadata:
   id: hypervisor-xen-qemu-libvirt-host
   purpose: Bare-metal Gentoo hypervisor with Xen, QEMU, Libvirt, Open vSwitch, ZFSBootMenu, NVMe-oF, RoCE-v2, PMem, and selected vendor GPU/NIC support.
+  profile_taxonomy:
+    stage: stage5
+    role_class: metal-host
+    role_name: hypervisor-xen-qemu-libvirt-host
+    package_layers:
+      - profile-package-lists/stage5-metal-host-hypervisor.packages
   package_pins:
     gentoo_tree_exact_atoms:
       - =app-emulation/qemu-10.2.0-r1

@@ -2,6 +2,14 @@
 gentoo_system_profile_metadata:
   id: vm-container-services
   purpose: Hardened Gentoo VM profile for hosting Podman-based application services with netavark plus nftables policy control.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: container-services
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-container-services.packages
   base_profile:
     intended_overlay_on:
       - llvm-clang-hardened-portage
