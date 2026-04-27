@@ -111,3 +111,32 @@
             recursive=True
           )
       }}
+    resolved_profile_container_services: >-
+      {{
+        resolved_profile_container_services
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.container_services | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_app_profiles: >-
+      {{
+        resolved_profile_container_app_profiles
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.container_app_profiles | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_service_segments: >-
+      {{
+        resolved_profile_container_service_segments
+        + (loaded_profile_definition_file.gentoo_profile_definition.container_service_segments | default([]))
+      }}
+    resolved_profile_site_security_profile: >-
+      {{
+        resolved_profile_site_security_profile
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.site_security_profile | default({}),
+            recursive=True
+          )
+      }}

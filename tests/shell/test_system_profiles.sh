@@ -15,6 +15,7 @@ assert_file_contains() {
 for profile in \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  vm-container-services.yml \
   vm-guest-application-server.yml \
   vm-guest-simple-ipxe.yml
 do
@@ -24,6 +25,7 @@ done
 
 for metadata in \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
+  vm-container-services.metadata.yml \
   vm-guest-application-server.metadata.yml \
   vm-guest-simple-ipxe.metadata.yml
 do
@@ -33,6 +35,7 @@ done
 
 for host_var in \
   hypervisor-host.yml \
+  vm-container-services.yml \
   vm-guest-appserver.yml \
   vm-guest-simple.yml
 do

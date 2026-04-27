@@ -1,0 +1,50 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: container-services
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-container-services
+  local_hostname: container-services
+  disable_root: false
+  ssh_pwauth: false
+
+profile_local_user_accounts:
+  - name: deploy
+    comment: Container deployment operator
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
+
+profile_container_app_profiles:
+  ntfy:
+    enabled: true
+  nginx:
+    enabled: true
+  haproxy:
+    enabled: true
+
+profile_site_security_profile:
+  compliance_mode: strict
+  firewall:
+    allowed_management_cidrs:
+      - 10.9.8.0/24
+      - 172.16.99.0/24
+  ipam:
+    source: flat-file-json
+    flat_file_json:
+      site: example-lab
+      networks:
+        apps:
+          gateway: 10.77.1.1
+          subnet: 10.77.1.0/24
+        mgmt:
+          gateway: 10.77.0.1
+          subnet: 10.77.0.0/24

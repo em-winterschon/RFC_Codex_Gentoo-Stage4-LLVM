@@ -1,0 +1,46 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-container-services
+  purpose: Hardened Gentoo VM profile for hosting Podman-based application services with netavark plus nftables policy control.
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - vm-guest-simple-ipxe
+  package_pins:
+    tracked_atoms:
+      - app-containers/conmon
+      - app-containers/crun
+      - app-containers/podman
+      - app-containers/slirp4netns
+      - net-dns/aardvark-dns
+      - net-firewall/nftables
+      - net-misc/netavark
+      - sys-fs/fuse-overlayfs
+    app_runtime_packages:
+      - net-proxy/haproxy
+      - net-proxy/nginx
+      - net-misc/curl
+      - sys-apps/jq
+  kernel_modules:
+    - br_netfilter
+    - nf_tables
+    - overlay
+    - tun
+    - veth
+  service_segments:
+    - mgmt
+    - apps
+  app_profiles:
+    - ntfy
+    - nginx
+    - haproxy
+  ipam:
+    supported_sources:
+      - flat-file-json
+      - netbox-api
+    notes: NetBox mode expects an operator-supplied API endpoint that returns pre-normalized JSON for the local site-security role.
+  source_references:
+    - https://packages.gentoo.org/packages/app-containers/podman
+    - https://packages.gentoo.org/packages/net-misc/netavark
+    - https://packages.gentoo.org/packages/net-dns/aardvark-dns
+    - https://packages.gentoo.org/packages/net-firewall/nftables

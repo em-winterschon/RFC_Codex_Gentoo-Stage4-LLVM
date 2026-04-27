@@ -1,0 +1,21 @@
+# Managed by gentoo-liveiso-ansible
+[engine]
+cgroup_manager = "cgroupfs"
+events_logger = "file"
+network_backend = "{{ resolved_profile_container_services.network_backend | default('netavark') }}"
+runtime = "{{ resolved_profile_container_services.oci_runtime | default('crun') }}"
+service_timeout = 0
+
+[containers]
+default_sysctls = [
+  "net.ipv4.ip_unprivileged_port_start=0"
+]
+env = [
+  "PODMAN_SYSTEMD_UNIT=0"
+]
+log_driver = "k8s-file"
+netns = "private"
+pids_limit = 4096
+read_only = {{ resolved_profile_site_security_profile.isolation.read_only_rootfs | default(true) | bool | lower }}
+tz = "local"
+userns = "{{ resolved_profile_site_security_profile.isolation.userns | default('host') }}"

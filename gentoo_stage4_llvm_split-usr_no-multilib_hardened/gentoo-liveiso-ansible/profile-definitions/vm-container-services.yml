@@ -1,0 +1,105 @@
+---
+gentoo_profile_definition:
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_atoms:
+    - app-containers/conmon
+    - app-containers/podman
+    - app-containers/crun
+    - app-containers/slirp4netns
+    - net-dns/aardvark-dns
+    - net-firewall/nftables
+    - net-misc/bridge-utils
+    - net-misc/curl
+    - net-misc/netavark
+    - net-proxy/haproxy
+    - net-proxy/nginx
+    - sys-apps/iproute2
+    - sys-apps/jq
+    - sys-fs/fuse-overlayfs
+  openrc_services_enable:
+    - cgroups
+    - nftables
+  modules_load_files:
+    vm-container-services.conf: |
+      br_netfilter
+      nf_tables
+      overlay
+      tun
+      veth
+  container_services:
+    enabled: true
+    runtime: podman
+    service_user: root
+    service_group: root
+    runtime_root: /var/lib/container-services
+    network_backend: netavark
+    firewall_backend: nftables
+    ssh_console_only: true
+    serial_console_only: true
+  container_service_segments:
+    - name: mgmt
+      driver: bridge
+      subnet: 10.77.0.0/24
+      gateway: 10.77.0.1
+      interface_name: podman-mgmt0
+    - name: apps
+      driver: bridge
+      subnet: 10.77.1.0/24
+      gateway: 10.77.1.1
+      interface_name: podman-apps0
+  container_app_profiles:
+    ntfy:
+      enabled: false
+      image: docker.io/binwiederhier/ntfy:v2.14.0
+      network: apps
+      ip_address: 10.77.1.20
+      published_ports:
+        - 80:80/tcp
+      env:
+        NTFY_BASE_URL: http://127.0.0.1
+    nginx:
+      enabled: false
+      image: docker.io/library/nginx:1.29-alpine
+      network: apps
+      ip_address: 10.77.1.30
+      published_ports:
+        - 8080:80/tcp
+    haproxy:
+      enabled: false
+      image: docker.io/library/haproxy:3.2-alpine
+      network: apps
+      ip_address: 10.77.1.10
+      published_ports:
+        - 80:80/tcp
+        - 443:443/tcp
+  site_security_profile:
+    compliance_mode: standard
+    rbac:
+      admin_users:
+        - root
+      deploy_groups:
+        - wheel
+    aaa_policy:
+      ssh_authorized_keys_only: true
+      sudo_nopasswd_groups:
+        - wheel
+    firewall:
+      default_policy_input: drop
+      default_policy_forward: drop
+      default_policy_output: accept
+      allowed_management_cidrs:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+      enable_container_nat: true
+    qos:
+      enabled: false
+      default_egress_mbit: 0
+    isolation:
+      userns: host
+      read_only_rootfs: true
+      drop_capabilities: true
+    ipam:
+      source: flat-file-json
+      flat_file_path: /etc/container-services/ipam/site-ipam.json

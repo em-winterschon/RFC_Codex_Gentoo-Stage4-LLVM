@@ -1,0 +1,67 @@
+---
+- name: Resolve container site security policy
+  ansible.builtin.set_fact:
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+    resolved_site_security_profile_local: >-
+      {{
+        container_site_security_profile_default
+        | combine(resolved_profile_site_security_profile | default({}), recursive=True)
+      }}
+
+- name: Ensure container policy directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_policy_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/container-services
+    - /etc/container-services/ipam
+  loop_control:
+    loop_var: container_policy_dir
+  when: container_services_enabled
+
+- name: Install flat-file IPAM definition when provided inline
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}{{ resolved_site_security_profile_local.ipam.flat_file_path }}"
+    mode: '0644'
+    content: "{{ resolved_site_security_profile_local.ipam.flat_file_json | to_nice_json }}\n"
+  when:
+    - container_services_enabled
+    - resolved_site_security_profile_local.ipam.source | default('flat-file-json') == 'flat-file-json'
+    - resolved_site_security_profile_local.ipam.flat_file_json is defined
+
+- name: Fetch NetBox-backed IPAM definition when configured
+  ansible.builtin.uri:
+    url: "{{ resolved_site_security_profile_local.ipam.netbox_api_url }}"
+    headers: "{{ resolved_site_security_profile_local.ipam.netbox_headers | default({}) }}"
+    method: GET
+    return_content: true
+  register: container_netbox_ipam
+  when:
+    - container_services_enabled
+    - resolved_site_security_profile_local.ipam.source | default('flat-file-json') == 'netbox-api'
+    - resolved_site_security_profile_local.ipam.netbox_api_url is defined
+
+- name: Install NetBox-backed IPAM snapshot
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}{{ resolved_site_security_profile_local.ipam.flat_file_path | default('/etc/container-services/ipam/site-ipam.json') }}"
+    mode: '0644'
+    content: "{{ container_netbox_ipam.content }}\n"
+  when:
+    - container_services_enabled
+    - container_netbox_ipam is defined
+    - container_netbox_ipam.content is defined
+
+- name: Render site security profile snapshot
+  ansible.builtin.template:
+    src: site-security-profile.json.j2
+    dest: "{{ install_target_root }}/etc/container-services/site-security-profile.json"
+    mode: '0644'
+  when: container_services_enabled
+
+- name: Render nftables policy for container services
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: "{{ install_target_root }}/etc/nftables.conf"
+    mode: '0644'
+  when: container_services_enabled

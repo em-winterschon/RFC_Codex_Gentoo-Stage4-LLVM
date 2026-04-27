@@ -232,6 +232,62 @@ Important current constraints:
 
 ## 8. Boot Source Modes
 
+## 8. Container-Services VM Profile
+
+Use when the simple guest base should become a Podman container host with OpenRC,
+serial and SSH console only, `netavark`, and `nftables` site-security policy.
+
+Example host-vars overlay:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
+
+profile_container_app_profiles:
+  ntfy:
+    enabled: true
+  nginx:
+    enabled: true
+  haproxy:
+    enabled: true
+
+profile_site_security_profile:
+  compliance_mode: strict
+  firewall:
+    allowed_management_cidrs:
+      - 10.9.8.0/24
+      - 172.16.99.0/24
+  ipam:
+    source: flat-file-json
+    flat_file_json:
+      site: example-lab
+      networks:
+        apps:
+          subnet: 10.77.1.0/24
+          gateway: 10.77.1.1
+```
+
+Role flow in `target-integration`:
+
+- `container_host`
+- `container_app_ntfy`
+- `container_app_nginx`
+- `container_app_haproxy`
+- `container_net_policy`
+- `container_service_segments`
+- `services`
+
+This produces:
+
+- Podman host config under `/etc/containers`
+- `nftables` policy in `/etc/nftables.conf`
+- site-security and IPAM snapshots under `/etc/container-services`
+- OpenRC-managed Podman service wrappers under `/usr/local/libexec/container-services`
+
+## 9. Boot Source Modes
+
 ### Installer QCOW
 
 Used for building and imaging:

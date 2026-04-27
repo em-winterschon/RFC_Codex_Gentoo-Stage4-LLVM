@@ -1,0 +1,55 @@
+#!/usr/sbin/nft -f
+# Managed by gentoo-liveiso-ansible
+
+flush ruleset
+
+table inet filter {
+  set mgmt_cidrs {
+    type ipv4_addr
+    flags interval
+    elements = {
+{% for cidr in resolved_site_security_profile_local.firewall.allowed_management_cidrs | default([]) %}
+      {{ cidr }}{% if not loop.last %},{% endif %}
+{% endfor %}
+    }
+  }
+
+  chain input {
+    type filter hook input priority 0;
+    policy {{ resolved_site_security_profile_local.firewall.default_policy_input | default('drop') }};
+    iif "lo" accept
+    ct state established,related accept
+    ip saddr @mgmt_cidrs tcp dport { 22 } accept
+{% for app in container_runtime_applications | default([]) %}
+{% for published_port in app.published_ports | default([]) %}
+{% set published_fields = published_port.split('/') %}
+{% set proto = published_fields[1] if published_fields|length > 1 else 'tcp' %}
+{% set port_map = published_fields[0].split(':') %}
+{% set host_port = port_map[0] %}
+    {{ proto }} dport {{ host_port }} accept
+{% endfor %}
+{% endfor %}
+  }
+
+  chain forward {
+    type filter hook forward priority 0;
+    policy {{ resolved_site_security_profile_local.firewall.default_policy_forward | default('drop') }};
+    ct state established,related accept
+    iifname "podman+" accept
+    oifname "podman+" accept
+  }
+
+  chain output {
+    type filter hook output priority 0;
+    policy {{ resolved_site_security_profile_local.firewall.default_policy_output | default('accept') }};
+  }
+}
+
+{% if resolved_site_security_profile_local.firewall.enable_container_nat | default(true) | bool %}
+table ip nat {
+  chain postrouting {
+    type nat hook postrouting priority 100;
+    oifname != "lo" ip saddr 10.77.0.0/16 masquerade
+  }
+}
+{% endif %}

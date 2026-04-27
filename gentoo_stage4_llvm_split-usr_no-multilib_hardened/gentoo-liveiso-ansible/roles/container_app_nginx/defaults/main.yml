@@ -1,0 +1,2 @@
+---
+container_nginx_config_dir: /etc/container-services/apps/nginx

@@ -242,10 +242,43 @@ The default `target-integration` stage now includes two additional roles:
 
 - `platform_profile`
 - `identity`
+- `container_host`
+- `container_app_ntfy`
+- `container_app_nginx`
+- `container_app_haproxy`
+- `container_net_policy`
+- `container_service_segments`
 
 `platform_profile` writes profile-driven `modules-load.d` fragments and enables native
 OpenRC services. `identity` creates local users and, when requested, writes NoCloud
 compatible `cloud-init` seed data under `/var/lib/cloud/seed/nocloud-net/`.
+The container roles are dormant unless a profile defines
+`container_services.enabled: true`; when enabled, they render Podman host config,
+service-segment network helpers, site-security `nftables` policy, and app-profile
+artifacts for `ntfy`, `nginx`, and `haproxy`.
+
+### Container-Services VM profile
+
+Use the simple guest profile as the base, then layer the container-services overlay:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
+```
+
+Example host-vars file:
+
+- `inventories/examples/host_vars/vm-container-services.yml`
+
+The profile adds:
+
+- Podman plus `conmon`, `crun`, `netavark`, `aardvark-dns`, `fuse-overlayfs`
+- `nftables`-driven site-security policy
+- profile-driven container service segments
+- app-profile roles for `ntfy`, `nginx`, and `haproxy`
+- optional IPAM ingestion from a flat JSON file or a pre-normalized NetBox API endpoint
 
 Example direct role override:
 

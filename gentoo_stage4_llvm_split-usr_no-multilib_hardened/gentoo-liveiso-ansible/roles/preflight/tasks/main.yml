@@ -69,6 +69,10 @@
     resolved_profile_modules_load_files: "{{ profile_modules_load_files | default({}) }}"
     resolved_profile_local_user_accounts: "{{ profile_local_user_accounts | default([]) }}"
     resolved_profile_cloud_init: "{{ profile_cloud_init | default({}) }}"
+    resolved_profile_container_services: "{{ profile_container_services | default({}) }}"
+    resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
+    resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
+    resolved_profile_site_security_profile: "{{ profile_site_security_profile | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{% for segment in resolved_container_service_segments_local %}
+if ! podman network exists {{ segment.name | quote }}; then
+  podman network create \
+    --driver {{ segment.driver | default('bridge') | quote }} \
+    --subnet {{ segment.subnet | quote }} \
+    --gateway {{ segment.gateway | quote }} \
+    -o interface_name={{ segment.interface_name | default('podman-' + segment.name) | quote }} \
+    {{ segment.name | quote }}
+fi
+{% endfor %}

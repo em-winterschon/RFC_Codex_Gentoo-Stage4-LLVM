@@ -1,0 +1,38 @@
+global
+  log stdout format raw local0
+  daemon
+  maxconn 2048
+
+defaults
+  mode http
+  log global
+  option httplog
+  option dontlognull
+  timeout connect 5s
+  timeout client 30s
+  timeout server 30s
+
+frontend fe_http
+  bind *:80
+{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list | length) > 0 %}
+  acl host_ntfy hdr(host) -i ntfy.local
+  use_backend be_ntfy if host_ntfy
+{% endif %}
+{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list | length) > 0 %}
+  default_backend be_nginx
+{% else %}
+  default_backend be_fallback
+{% endif %}
+
+{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list | length) > 0 %}
+backend be_nginx
+  server nginx {{ (container_runtime_applications | selectattr('name', 'equalto', 'nginx') | first).ip_address | default('10.77.1.30') }}:80 check
+{% endif %}
+
+{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list | length) > 0 %}
+backend be_ntfy
+  server ntfy {{ (container_runtime_applications | selectattr('name', 'equalto', 'ntfy') | first).ip_address | default('10.77.1.20') }}:80 check
+{% endif %}
+
+backend be_fallback
+  http-request return status 503 content-type text/plain string "no backend configured\n"

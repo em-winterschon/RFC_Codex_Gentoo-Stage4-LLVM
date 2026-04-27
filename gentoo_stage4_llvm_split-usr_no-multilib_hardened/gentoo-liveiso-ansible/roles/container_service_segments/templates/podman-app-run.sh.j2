@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+/usr/local/libexec/container-services/ensure-networks.sh
+podman rm -f {{ container_runtime_app.name | quote }} >/dev/null 2>&1 || true
+
+exec podman run \
+  --name {{ container_runtime_app.name | quote }} \
+  --replace \
+  --rm \
+  --detach=false \
+  --network {{ container_runtime_app.network | quote }} \
+{% if container_runtime_app.ip_address | default('') | length > 0 %}
+  --ip {{ container_runtime_app.ip_address | quote }} \
+{% endif %}
+{% if resolved_profile_site_security_profile.isolation.read_only_rootfs | default(true) | bool %}
+  --read-only \
+{% endif %}
+{% if resolved_profile_site_security_profile.isolation.drop_capabilities | default(true) | bool %}
+  --cap-drop all \
+{% endif %}
+{% if resolved_profile_site_security_profile.isolation.userns | default('host') | length > 0 %}
+  --userns {{ resolved_profile_site_security_profile.isolation.userns | quote }} \
+{% endif %}
+{% for published_port in container_runtime_app.published_ports | default([]) %}
+  -p {{ published_port | quote }} \
+{% endfor %}
+{% for volume_mount in container_runtime_app.volumes | default([]) %}
+  -v {{ volume_mount | quote }} \
+{% endfor %}
+{% for env_name, env_value in (container_runtime_app.environment | default({})).items() %}
+  -e {{ (env_name + '=' + env_value) | quote }} \
+{% endfor %}
+{% for extra_arg in container_runtime_app.extra_args | default([]) %}
+  {{ extra_arg }} \
+{% endfor %}
+  {{ container_runtime_app.image | quote }}{% for command_arg in container_runtime_app.command | default([]) %} {{ command_arg | quote }}{% endfor %}

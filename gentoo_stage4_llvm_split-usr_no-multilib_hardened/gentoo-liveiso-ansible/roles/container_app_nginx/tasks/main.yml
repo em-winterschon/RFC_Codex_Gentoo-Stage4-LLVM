@@ -1,0 +1,58 @@
+---
+- name: Resolve nginx container application profile
+  ansible.builtin.set_fact:
+    container_nginx_profile: "{{ resolved_profile_container_app_profiles.nginx | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure nginx configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_nginx_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_nginx_profile.enabled | default(false) | bool
+
+- name: Render nginx main configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ install_target_root }}{{ container_nginx_config_dir }}/nginx.conf"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_nginx_profile.enabled | default(false) | bool
+
+- name: Render nginx site configuration
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: "{{ install_target_root }}{{ container_nginx_config_dir }}/default.conf"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_nginx_profile.enabled | default(false) | bool
+
+- name: Register nginx runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'nginx',
+              'description': 'nginx web service',
+              'image': container_nginx_profile.image,
+              'network': container_nginx_profile.network | default('apps'),
+              'ip_address': container_nginx_profile.ip_address | default(''),
+              'published_ports': container_nginx_profile.published_ports | default(['8080:80/tcp']),
+              'environment': container_nginx_profile.env | default({}),
+              'volumes': [
+                container_nginx_config_dir + '/nginx.conf:/etc/nginx/nginx.conf:ro',
+                container_nginx_config_dir + '/default.conf:/etc/nginx/conf.d/default.conf:ro'
+              ],
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_nginx_profile.enabled | default(false) | bool

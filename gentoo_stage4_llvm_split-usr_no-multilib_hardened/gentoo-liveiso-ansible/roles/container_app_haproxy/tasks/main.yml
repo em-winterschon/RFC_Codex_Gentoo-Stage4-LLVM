@@ -1,0 +1,48 @@
+---
+- name: Resolve haproxy container application profile
+  ansible.builtin.set_fact:
+    container_haproxy_profile: "{{ resolved_profile_container_app_profiles.haproxy | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure haproxy configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_haproxy_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool
+
+- name: Render haproxy configuration
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: "{{ install_target_root }}{{ container_haproxy_config_dir }}/haproxy.cfg"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool
+
+- name: Register haproxy runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'haproxy',
+              'description': 'haproxy load balancer and reverse proxy',
+              'image': container_haproxy_profile.image,
+              'network': container_haproxy_profile.network | default('apps'),
+              'ip_address': container_haproxy_profile.ip_address | default(''),
+              'published_ports': container_haproxy_profile.published_ports | default(['80:80/tcp', '443:443/tcp']),
+              'environment': container_haproxy_profile.env | default({}),
+              'volumes': [
+                container_haproxy_config_dir + '/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'
+              ],
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool

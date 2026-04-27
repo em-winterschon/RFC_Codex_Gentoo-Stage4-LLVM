@@ -1,0 +1,5 @@
+---
+container_services_default_enabled: false
+container_services_default_runtime_root: /var/lib/container-services
+container_services_default_registries:
+  - docker.io

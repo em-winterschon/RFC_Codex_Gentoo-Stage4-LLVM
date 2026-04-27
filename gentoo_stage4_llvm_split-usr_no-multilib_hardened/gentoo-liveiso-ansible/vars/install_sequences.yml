@@ -34,6 +34,12 @@ install_role_sequences:
           - network
           - platform_profile
           - identity
+          - container_host
+          - container_app_ntfy
+          - container_app_nginx
+          - container_app_haproxy
+          - container_net_policy
+          - container_service_segments
           - services
 
   full-modular-zfs:
@@ -115,6 +121,12 @@ install_role_sequences:
           - network
           - platform_profile
           - identity
+          - container_host
+          - container_app_ntfy
+          - container_app_nginx
+          - container_app_haproxy
+          - container_net_policy
+          - container_service_segments
           - services
 
   repair-boot:
@@ -145,4 +157,10 @@ install_role_sequences:
           - network
           - platform_profile
           - identity
+          - container_host
+          - container_app_ntfy
+          - container_app_nginx
+          - container_app_haproxy
+          - container_net_policy
+          - container_service_segments
           - services
