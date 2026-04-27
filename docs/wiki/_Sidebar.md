@@ -6,6 +6,7 @@
 - [ITIL Change Control: Path B RouterOS Lab](ITIL-Change-Control-Path-B-RouterOS-Lab)
 - [RouterOS Path B](RouterOS-Path-B)
 - [Configurations and Examples](Configurations-and-Examples)
+- [Container-Services Validation](Container-Services-Validation)
 - [Container Building](Container-Building)
 - [Container Publishing](Container-Publishing)
 - [Repository Layout](Repository-Layout)

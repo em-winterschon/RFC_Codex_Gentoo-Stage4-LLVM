@@ -66,3 +66,9 @@ Always record:
 Once the container-services VM is validated end-to-end, the next build path should
 create a Gentoo container rootfs from the Stage4 profile and feed it into
 `buildah`/`podman`, then publish the validated result through the same GHCR helper.
+
+Current validation note:
+
+- the live `vm-container-services` Path B run has already advanced past the
+  earlier `buildah` and `skopeo` package blockers
+- complete the VM validation before promoting any image to `latest`

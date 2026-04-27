@@ -153,6 +153,23 @@ Key implementation findings now encoded in the repo:
 - UEFI-only Path B requires an explicit iPXE EFI handoff stage rather than
   assuming firmware can interpret `.ipxe` scripts directly
 
+Current container-services validation status on top of this lab:
+
+- the `vm-container-services` Stage 5 overlay is now validated through:
+  - provisioner SSH
+  - `storage-foundation`
+  - `chroot-bootstrap`
+- `target-integration` has progressed beyond the earlier package blockers:
+  - `dev-python/rpds-py`
+  - `dev-python/cryptography`
+  - `app-containers/buildah`
+  - `app-containers/skopeo`
+- generic guest CPU tuning is now required for this lab path:
+  - `x86_64_v2_generic` preferred
+  - `x86_64_v3_generic` optional for newer guest fleets
+- the container-services validation still relies on the temporary upstream
+  workaround documented below until RouterOS has a proper upstream path
+
 ## 7. Implementation Plan
 
 ### Stage 1: Confirm repo and publish Path B assets

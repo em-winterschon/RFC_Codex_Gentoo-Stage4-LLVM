@@ -11,6 +11,13 @@ The first reusable base image path for this repo is:
 
 This is intended to run first on the validated `vm-container-services` host profile.
 
+CPU tuning note:
+
+- for generic VM and container-builder targets, prefer `x86_64_v2_generic`
+- use `x86_64_v3_generic` only when the guest fleet contract supports it
+- avoid host-specific microarchitecture profiles for portable guest/container
+  images because Rust/Python build helpers can fault later with `invalid opcode`
+
 ## Default image definition
 
 - metadata:

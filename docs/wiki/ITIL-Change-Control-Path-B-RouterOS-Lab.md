@@ -36,6 +36,10 @@ Current status:
   - OpenRC `default`
   - SSH on `10.9.8.98`
 - the provisioner now converges to a single IPv4 address and default route
+- the container-services validation overlay is now past the earlier
+  `rpds-py`, `cryptography`, `buildah`, and `skopeo` blockers
+- generic guest CPU tuning for this lab should use `x86_64_v2_generic`
+  unless a stricter guest CPU contract is known
 
 ## Command Sequence Reference
 
@@ -147,3 +151,5 @@ The following execution state is now validated:
   - host-side NAT on the Gentoo control host
   - guest-side default route override to `10.9.8.108`
   - explicit `/etc/resolv.conf`
+- the container-services validation currently depends on that same temporary
+  upstream workaround until RouterOS has a proper upstream path

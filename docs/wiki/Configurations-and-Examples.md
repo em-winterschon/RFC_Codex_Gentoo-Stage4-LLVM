@@ -325,6 +325,20 @@ profile_memory_storage:
         - noatime
 ```
 
+Operational notes:
+
+- for generic VM and container-host validation, prefer `portage_cpu_profile:
+  x86_64_v2_generic`
+- reserve host-specific microarchitecture profiles for guest fleets that are
+  guaranteed to match that CPU contract
+- the current Path B lab uses a temporary upstream workaround:
+  - guest default route override to `10.9.8.108`
+  - explicit `resolv.conf` population
+  - host-side IPv4 forwarding and NAT
+- that workaround is acceptable for isolated validation but should be replaced
+  by a proper RouterOS upstream path before promoting the lab into a standard
+  external-host service environment
+
 ## 9. Hypervisor-side tmpfs-backed VM disks
 
 Use when the QEMU host should provide extra ephemeral disks out of RAM-backed
