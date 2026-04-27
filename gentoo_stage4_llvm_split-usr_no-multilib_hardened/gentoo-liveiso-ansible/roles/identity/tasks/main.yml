@@ -35,15 +35,17 @@
 - name: Ensure local user primary groups exist
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('bash -lc ' + identity_primary_group_command) | quote }}
+    {{ identity_primary_group_command | quote }}
   vars:
+    identity_user_primary_group: "{{ identity_user.primary_group | default(identity_user.name) }}"
+    identity_user_primary_group_gid: "{{ identity_user.primary_group_gid | default('') }}"
     identity_primary_group_command: >-
       {{
         "if ! getent group "
-        + ((identity_user.primary_group | default(identity_user.name)) | quote)
+        + (identity_user_primary_group | quote)
         + " >/dev/null; then groupadd "
-        + ((identity_user.primary_group_gid is defined) | ternary('-g ' + (identity_user.primary_group_gid | string) + ' ', ''))
-        + ((identity_user.primary_group | default(identity_user.name)) | quote)
+        + ((identity_user_primary_group_gid | length > 0) | ternary('-g ' + identity_user_primary_group_gid + ' ', ''))
+        + (identity_user_primary_group | quote)
         + "; fi"
       }}
   loop: "{{ resolved_profile_local_user_accounts | default([]) }}"
@@ -53,19 +55,20 @@
 - name: Ensure local user accounts exist with requested properties
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('bash -lc ' + identity_user_command) | quote }}
+    {{ identity_user_command | quote }}
   vars:
     identity_user_home: "{{ identity_user.home | default('/home/' + identity_user.name) }}"
     identity_user_shell: "{{ identity_user.shell | default('/bin/bash') }}"
     identity_user_comment: "{{ identity_user.comment | default('') }}"
     identity_user_primary_group: "{{ identity_user.primary_group | default(identity_user.name) }}"
+    identity_user_uid: "{{ identity_user.uid | default('') }}"
     identity_user_group_list: "{{ identity_user.groups | default([]) | join(',') }}"
     identity_user_password_hash: "{{ identity_user.password_hash | default('') }}"
     identity_user_command: >-
       {{
         "if id -u " + (identity_user.name | quote) + " >/dev/null 2>&1; then "
         + "usermod "
-        + ((identity_user.uid is defined) | ternary('-u ' + (identity_user.uid | string) + ' ', ''))
+        + ((identity_user_uid | length > 0) | ternary('-u ' + identity_user_uid + ' ', ''))
         + "-d " + (identity_user_home | quote) + " "
         + "-s " + (identity_user_shell | quote) + " "
         + "-g " + (identity_user_primary_group | quote) + " "
@@ -73,7 +76,7 @@
         + ((identity_user_password_hash | length > 0) | ternary('-p ' + (identity_user_password_hash | quote) + ' ', ''))
         + (identity_user.name | quote)
         + "; else useradd "
-        + ((identity_user.uid is defined) | ternary('-u ' + (identity_user.uid | string) + ' ', ''))
+        + ((identity_user_uid | length > 0) | ternary('-u ' + identity_user_uid + ' ', ''))
         + "-m -d " + (identity_user_home | quote) + " "
         + "-s " + (identity_user_shell | quote) + " "
         + "-g " + (identity_user_primary_group | quote) + " "
@@ -90,7 +93,7 @@
 - name: Install local user authorized_keys
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('bash -lc ' + identity_authorized_keys_command) | quote }}
+    {{ identity_authorized_keys_command | quote }}
   vars:
     identity_user_home: "{{ identity_user.home | default('/home/' + identity_user.name) }}"
     identity_authorized_keys_path: "{{ identity_user_home }}/.ssh/authorized_keys"

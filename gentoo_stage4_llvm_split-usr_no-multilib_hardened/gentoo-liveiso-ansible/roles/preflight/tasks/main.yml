@@ -87,6 +87,40 @@
   loop_control:
     loop_var: profile_definition_file
 
+- name: Reapply explicit inventory-level profile overrides after definition layering
+  ansible.builtin.set_fact:
+    resolved_profile_cloud_init: >-
+      {{
+        resolved_profile_cloud_init
+        | combine(profile_cloud_init | default({}), recursive=True)
+      }}
+    resolved_profile_container_services: >-
+      {{
+        resolved_profile_container_services
+        | combine(profile_container_services | default({}), recursive=True)
+      }}
+    resolved_profile_container_app_profiles: >-
+      {{
+        resolved_profile_container_app_profiles
+        | combine(profile_container_app_profiles | default({}), recursive=True)
+      }}
+    resolved_profile_container_service_segments: >-
+      {{
+        profile_container_service_segments
+        if profile_container_service_segments is defined
+        else resolved_profile_container_service_segments
+      }}
+    resolved_profile_site_security_profile: >-
+      {{
+        resolved_profile_site_security_profile
+        | combine(profile_site_security_profile | default({}), recursive=True)
+      }}
+    resolved_profile_memory_storage: >-
+      {{
+        resolved_profile_memory_storage
+        | combine(profile_memory_storage | default({}), recursive=True)
+      }}
+
 - name: Resolve package atoms from selected profile package list files
   ansible.builtin.set_fact:
     resolved_profile_package_atoms: >-
