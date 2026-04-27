@@ -64,6 +64,8 @@ That can still be useful in some environments, but it is not the default recomme
 
 Available `portage_cpu_profile` values:
 
+- `x86_64_v2_generic`
+- `x86_64_v3_generic`
 - `amd_ryzen_z1_extreme`
 - `amd_epyc_zen4`
 - `amd_epyc_zen5`

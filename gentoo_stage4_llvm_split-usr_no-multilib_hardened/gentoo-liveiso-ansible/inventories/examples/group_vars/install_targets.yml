@@ -88,7 +88,7 @@ profile_definition_files: []
 #   local_hostname: ipxe-test
 
 # Toolchain and tuning
-portage_cpu_profile: amd_ryzen_z1_extreme
+portage_cpu_profile: x86_64_v2_generic
 # GPU stack values:
 #   amdgpu
 #   nvidia
