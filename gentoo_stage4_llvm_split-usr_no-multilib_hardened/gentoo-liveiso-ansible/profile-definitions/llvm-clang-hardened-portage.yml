@@ -59,7 +59,12 @@ gentoo_profile_definition:
       AR=gcc-ar
       NM=gcc-nm
       RANLIB=gcc-ranlib
-      LDFLAGS="${LDFLAGS} -fuse-ld=bfd"
+      COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+      FCFLAGS="${COMMON_FLAGS}"
+      FFLAGS="${COMMON_FLAGS}"
+      LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
   package_env_files:
     00-gcc-compat: |
       sys-devel/gcc gcc-compat.conf

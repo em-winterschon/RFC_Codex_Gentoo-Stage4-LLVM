@@ -23,6 +23,12 @@
     state: directory
     mode: '0755'
 
+- name: Ensure package.unmask directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.unmask"
+    state: directory
+    mode: '0755'
+
 - name: Ensure env directory exists
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/env"
@@ -80,6 +86,15 @@
   loop: "{{ (resolved_portage_package_mask_files | default({})) | dict2items }}"
   loop_control:
     loop_var: portage_package_mask_file
+
+- name: Write extra package.unmask fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.unmask/{{ portage_package_unmask_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_unmask_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_unmask_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_unmask_file
 
 - name: Write extra package.accept_keywords fragments from selected profile definitions
   ansible.builtin.copy:

@@ -137,6 +137,10 @@ PR and release validation:
 
 ## Container Publishing
 
+Container rootfs and image build workflow:
+
+- `docs/CONTAINER-BUILDING.md`
+
 The first supported image publication target is `GHCR`.
 
 Use:

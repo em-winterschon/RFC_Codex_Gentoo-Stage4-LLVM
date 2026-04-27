@@ -631,6 +631,7 @@ If you want to carry house policy as data instead of editing the roles, set
 - `make_conf_append`
 - `package_use_files`
 - `package_mask_files`
+- `package_unmask_files`
 - `package_mask_symlinks`
 - `package_accept_keywords_files`
 - `env_files`

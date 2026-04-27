@@ -47,6 +47,14 @@
             recursive=True
           )
       }}
+    resolved_portage_package_unmask_files: >-
+      {{
+        resolved_portage_package_unmask_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_unmask_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_accept_keywords_files: >-
       {{
         resolved_portage_package_accept_keywords_files

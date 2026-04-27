@@ -8,16 +8,18 @@ gentoo_profile_definition:
       >=app-misc/mime-types-2.1.54 nginx
       >=net-firewall/iptables-1.8.13 nftables
       sys-apps/systemd-utils acl kmod tmpfiles udev -boot -kernel-install -sysusers -ukify
-  package_mask_files:
+  package_unmask_files:
     21-container-services-systemd-utils: |
-      -sys-apps/systemd-utils
+      sys-apps/systemd-utils
   package_env_files:
     20-container-services-gcc-compat: |
       net-proxy/haproxy gcc-compat.conf
   package_atoms:
+    - app-containers/buildah
     - app-containers/conmon
     - app-containers/podman
     - app-containers/crun
+    - app-containers/skopeo
     - app-containers/slirp4netns
     - app-containers/aardvark-dns
     - app-containers/netavark

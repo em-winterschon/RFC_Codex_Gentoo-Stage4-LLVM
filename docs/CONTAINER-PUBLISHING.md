@@ -15,6 +15,9 @@ The first supported registry target is `GHCR`:
 3. Authenticate with a GitHub token that has `write:packages`.
 4. Push the image and record the digest.
 
+If you need to create the local image first, use the rootfs/image builder in
+`docs/CONTAINER-BUILDING.md`.
+
 ## Helper script
 
 Use:

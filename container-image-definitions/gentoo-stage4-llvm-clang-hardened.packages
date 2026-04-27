@@ -1,0 +1,12 @@
+app-shells/bash
+dev-lang/python
+net-misc/ca-certificates
+net-misc/curl
+sys-apps/coreutils
+sys-apps/iproute2
+sys-apps/openrc
+sys-process/procps
+sys-process/psmisc
+sys-libs/ncurses
+sys-libs/zlib
+sys-devel/clang
