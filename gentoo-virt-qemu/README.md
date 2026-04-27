@@ -233,6 +233,18 @@ Serial transport options:
 - `QEMU_SERIAL_MODE=stdio`
   keeps the guest serial console on the invoking terminal and requires `QEMU_DAEMONIZE=0`
 
+Operator helper for TCP serial consoles:
+```bash
+bash scripts/watch-vm-serial.sh --vm container-services
+```
+
+Other examples:
+```bash
+bash scripts/watch-vm-serial.sh --vm routeros
+bash scripts/watch-vm-serial.sh --vm simple-guest
+bash scripts/watch-vm-serial.sh --host 127.0.0.1 --port 5003 --mode socat
+```
+
 Minicom-style local serial example:
 ```bash
 QEMU_SERIAL_MODE=pty \
