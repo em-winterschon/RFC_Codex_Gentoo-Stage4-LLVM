@@ -96,8 +96,38 @@ EOF
   assert_contains "${output}" 'sanitized-features=network-sandbox userpriv'
 }
 
+test_dry_run_use_file() {
+  local temp_dir package_list use_file output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  use_file="${temp_dir}/use.txt"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  cat >"${use_file}" <<'EOF'
+# merged-usr container rootfs override
+-split-usr
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --use-file "${use_file}" \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "use-file=${use_file}"
+  assert_contains "${output}" 'use-overrides=-split-usr'
+}
+
 test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
+test_dry_run_use_file
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

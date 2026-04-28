@@ -11,6 +11,7 @@ import or commit it into a local container image.
 Options:
   --root DIR               Target rootfs directory to populate.
   --package-list FILE      Flat package list file (one atom per line).
+  --use-file FILE          Flat USE override file (one flag token per line).
   --config-root DIR        Portage config root (default: /).
   --image-ref REF          Local image reference to create.
   --engine MODE            auto, buildah, podman-import, none (default: auto).
@@ -56,6 +57,7 @@ sanitize_emerge_features() {
 
 ROOT_DIR=
 PACKAGE_LIST=
+USE_FILE=
 CONFIG_ROOT=/
 IMAGE_REF=
 ENGINE=auto
@@ -65,6 +67,7 @@ DESCRIPTION=
 DEFAULT_CMD=/bin/bash
 DRY_RUN=false
 SANITIZED_FEATURES=
+USE_OVERRIDE_FLAGS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -74,6 +77,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --package-list)
       PACKAGE_LIST=${2-}
+      shift 2
+      ;;
+    --use-file)
+      USE_FILE=${2-}
       shift 2
       ;;
     --config-root)
@@ -121,6 +128,9 @@ done
 [[ -n "${ROOT_DIR}" ]] || die "--root is required"
 [[ -n "${PACKAGE_LIST}" ]] || die "--package-list is required"
 [[ -f "${PACKAGE_LIST}" ]] || die "package list not found: ${PACKAGE_LIST}"
+if [[ -n "${USE_FILE}" ]]; then
+  [[ -f "${USE_FILE}" ]] || die "use override file not found: ${USE_FILE}"
+fi
 [[ "${ENGINE}" =~ ^(auto|buildah|podman-import|none)$ ]] || die "unsupported engine: ${ENGINE}"
 if [[ "${ENGINE}" != "none" ]]; then
   [[ -n "${IMAGE_REF}" ]] || die "--image-ref is required unless --engine none is used"
@@ -128,6 +138,9 @@ fi
 
 mapfile -t PACKAGE_ATOMS < <(grep -Ev '^[[:space:]]*($|#)' "${PACKAGE_LIST}")
 [[ ${#PACKAGE_ATOMS[@]} -gt 0 ]] || die "package list is empty: ${PACKAGE_LIST}"
+if [[ -n "${USE_FILE}" ]]; then
+  mapfile -t USE_OVERRIDE_FLAGS < <(grep -Ev '^[[:space:]]*($|#)' "${USE_FILE}")
+fi
 SANITIZED_FEATURES="$(sanitize_emerge_features)"
 
 RESOLVED_ENGINE=${ENGINE}
@@ -145,7 +158,9 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'root=%s\n' "${ROOT_DIR}"
   printf 'config-root=%s\n' "${CONFIG_ROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
+  printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-count=%s\n' "${#PACKAGE_ATOMS[@]}"
+  printf 'use-overrides=%s\n' "${USE_OVERRIDE_FLAGS[*]:-}"
   printf 'engine=%s\n' "${RESOLVED_ENGINE}"
   printf 'image-ref=%s\n' "${IMAGE_REF}"
   printf 'tarball=%s\n' "${TARBALL}"
@@ -174,6 +189,11 @@ emerge_env=(
 )
 if [[ -n "${SANITIZED_FEATURES}" ]]; then
   emerge_env+=("FEATURES=${SANITIZED_FEATURES}")
+fi
+if [[ ${#USE_OVERRIDE_FLAGS[@]} -gt 0 ]]; then
+  current_use="${USE:-}"
+  current_use="${current_use:+${current_use} }${USE_OVERRIDE_FLAGS[*]}"
+  emerge_env+=("USE=${current_use}")
 fi
 
 env "${emerge_env[@]}" \

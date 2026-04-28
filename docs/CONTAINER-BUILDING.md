@@ -17,6 +17,8 @@ CPU tuning note:
 - use `x86_64_v3_generic` only when the guest fleet contract supports it
 - avoid host-specific microarchitecture profiles for portable guest/container
   images because Rust/Python build helpers can fault later with `invalid opcode`
+- container rootfs builds in this workflow are merged-usr, so the image-level
+  USE override file disables `split-usr`
 
 ## Default image definition
 
@@ -24,6 +26,8 @@ CPU tuning note:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.metadata.yml`
 - package list:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages`
+- USE overrides:
+  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.use`
 
 ## Rootfs build helper
 
@@ -33,6 +37,7 @@ Use:
 bash scripts/build-gentoo-rootfs-container.sh \
   --root /var/lib/container-services/images/gentoo-stage4-rootfs \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
+  --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
   --image-ref localhost/gentoo-stage4-llvm-clang-hardened:latest \
   --tarball /var/lib/container-services/images/gentoo-stage4-llvm-clang-hardened.tar.zst \
   --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
