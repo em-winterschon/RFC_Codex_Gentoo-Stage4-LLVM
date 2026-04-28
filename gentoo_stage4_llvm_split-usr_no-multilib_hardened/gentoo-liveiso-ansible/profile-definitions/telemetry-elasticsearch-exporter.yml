@@ -1,0 +1,8 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-metrics-elasticsearch-exporter.packages
+  telemetry:
+    elasticsearch_exporter:
+      enabled: true
+      es_uri: http://127.0.0.1:9200

@@ -1,0 +1,7 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-observability-grafana.packages
+  telemetry:
+    grafana:
+      enabled: true

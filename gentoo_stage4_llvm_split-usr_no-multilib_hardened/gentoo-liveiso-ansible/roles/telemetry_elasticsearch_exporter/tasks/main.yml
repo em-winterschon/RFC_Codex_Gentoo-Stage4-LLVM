@@ -1,0 +1,33 @@
+---
+- name: Resolve Elasticsearch exporter telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_elasticsearch_exporter_enabled: >-
+      {{
+        resolved_profile_telemetry.elasticsearch_exporter.enabled
+        | default(telemetry_elasticsearch_exporter_default_enabled)
+        | bool
+      }}
+    resolved_elasticsearch_exporter_telemetry: >-
+      {{
+        {
+          'listen_address': resolved_profile_telemetry.elasticsearch_exporter.listen_address | default(telemetry_elasticsearch_exporter_default_listen_address),
+          'listen_port': resolved_profile_telemetry.elasticsearch_exporter.listen_port | default(telemetry_elasticsearch_exporter_default_listen_port),
+          'es_uri': resolved_profile_telemetry.elasticsearch_exporter.es_uri | default(telemetry_elasticsearch_exporter_default_es_uri),
+          'extra_args': resolved_profile_telemetry.elasticsearch_exporter.extra_args | default(telemetry_elasticsearch_exporter_default_extra_args)
+        }
+      }}
+
+- name: Render Elasticsearch exporter OpenRC configuration
+  ansible.builtin.template:
+    src: elasticsearch_exporter.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/elasticsearch_exporter"
+    mode: '0644'
+  when: telemetry_elasticsearch_exporter_enabled
+
+- name: Enable Elasticsearch exporter service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['elasticsearch_exporter']) | unique
+      }}
+  when: telemetry_elasticsearch_exporter_enabled

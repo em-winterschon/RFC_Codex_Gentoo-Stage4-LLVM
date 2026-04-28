@@ -1,0 +1,15 @@
+---
+gentoo_profile_definition:
+  container_app_profiles:
+    redfish_exporter:
+      enabled: false
+      image: docker.io/sapcc/redfish-exporter:latest
+      network: mgmt
+      ip_address: 10.77.0.51
+      published_ports:
+        - 9220:9220/tcp
+      listen_port: 9220
+      username: monitor
+      password: change-me
+      timeout: 40
+      job: redfish-stage5

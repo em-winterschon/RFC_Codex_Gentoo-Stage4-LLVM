@@ -18,7 +18,9 @@ for profile in \
   cloud-init-baremetal.yml \
   cloud-init-vm.yml \
   container-elastic-apm.yml \
+  container-ipmi-exporter.yml \
   container-rsyslog-collector.yml \
+  container-redfish-exporter.yml \
   hardened-llvm-stage4-merged-usr.yml \
   hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
@@ -27,12 +29,17 @@ for profile in \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
   netbox-managed-inventory.yml \
+  telemetry-elasticsearch-exporter.yml \
+  telemetry-node-exporter-client.yml \
+  telemetry-podman-exporter.yml \
   vm-container-services.yml \
   vm-elasticsearch-node.yml \
   vm-identity-controller.yml \
   vm-jenkins-controller.yml \
   vm-guest-application-server.yml \
   vm-guest-simple-ipxe.yml \
+  vm-observability-grafana.yml \
+  vm-observability-prometheus.yml \
   vm-kibana-interface.yml \
   zerotier-managed-access.yml
 do
@@ -55,6 +62,8 @@ for metadata in \
   vm-jenkins-controller.metadata.yml \
   vm-guest-application-server.metadata.yml \
   vm-guest-simple-ipxe.metadata.yml \
+  vm-observability-grafana.metadata.yml \
+  vm-observability-prometheus.metadata.yml \
   vm-kibana-interface.metadata.yml
 do
   test -f "${PROFILE_DIR}/${metadata}"
@@ -77,6 +86,8 @@ for host_var in \
   vm-container-services.yml \
   vm-guest-appserver.yml \
   vm-guest-simple.yml \
+  vm-observability-grafana.yml \
+  vm-observability-prometheus.yml \
   vm-kibana-interface.yml
 do
   test -f "${HOST_VARS_DIR}/${host_var}"
@@ -91,12 +102,17 @@ for package_list in \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \
   stage5-observability-client.packages \
+  stage5-observability-metrics-client.packages \
+  stage5-observability-metrics-elasticsearch-exporter.packages \
+  stage5-observability-metrics-podman-exporter.packages \
   stage5-virtual-host-base.packages \
   stage5-virtual-host-appserver.packages \
   stage5-virtual-host-elasticsearch-node.packages \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-kibana-interface.packages \
+  stage5-virtual-host-observability-grafana.packages \
+  stage5-virtual-host-observability-prometheus.packages \
   stage5-virtual-host-container-services.packages
 do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"

@@ -1,0 +1,13 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-observability-prometheus.packages
+  telemetry:
+    prometheus:
+      enabled: true
+    alertmanager:
+      enabled: true
+    blackbox_exporter:
+      enabled: true
+    snmp_exporter:
+      enabled: true

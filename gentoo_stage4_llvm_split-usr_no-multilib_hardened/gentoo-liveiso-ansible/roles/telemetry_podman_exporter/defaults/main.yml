@@ -1,0 +1,5 @@
+---
+telemetry_podman_exporter_default_enabled: false
+telemetry_podman_exporter_default_listen_address: "0.0.0.0"
+telemetry_podman_exporter_default_listen_port: 9882
+telemetry_podman_exporter_default_extra_args: []

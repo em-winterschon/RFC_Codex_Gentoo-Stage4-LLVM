@@ -1,0 +1,7 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-metrics-client.packages
+  telemetry:
+    node_exporter:
+      enabled: true

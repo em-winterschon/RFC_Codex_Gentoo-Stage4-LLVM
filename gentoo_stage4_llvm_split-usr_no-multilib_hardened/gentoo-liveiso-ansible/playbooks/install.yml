@@ -20,6 +20,14 @@
       - boot
       - network
       - rsyslog_base
+      - telemetry_node_exporter
+      - telemetry_podman_exporter
+      - telemetry_blackbox_exporter
+      - telemetry_snmp_exporter
+      - telemetry_elasticsearch_exporter
+      - telemetry_prometheus
+      - telemetry_alertmanager
+      - telemetry_grafana
       - freeipa_controller
       - ipa_client
       - freeradius_bridge
@@ -35,6 +43,8 @@
       - container_host
       - container_app_rsyslog_collector
       - container_app_elastic_apm
+      - container_app_ipmi_exporter
+      - container_app_redfish_exporter
       - container_app_ntfy
       - container_app_nginx
       - container_app_haproxy

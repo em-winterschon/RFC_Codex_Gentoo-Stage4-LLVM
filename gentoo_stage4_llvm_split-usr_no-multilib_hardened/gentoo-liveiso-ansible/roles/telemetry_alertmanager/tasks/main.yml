@@ -1,0 +1,65 @@
+---
+- name: Resolve Alertmanager telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_alertmanager_enabled: >-
+      {{
+        resolved_profile_telemetry.alertmanager.enabled
+        | default(telemetry_alertmanager_default_enabled)
+        | bool
+      }}
+    resolved_alertmanager_telemetry: >-
+      {{
+        {
+          'listen_address': resolved_profile_telemetry.alertmanager.listen_address | default(telemetry_alertmanager_default_listen_address),
+          'listen_port': resolved_profile_telemetry.alertmanager.listen_port | default(telemetry_alertmanager_default_listen_port),
+          'external_url': resolved_profile_telemetry.alertmanager.external_url | default(telemetry_alertmanager_default_external_url),
+          'resolve_timeout': resolved_profile_telemetry.alertmanager.resolve_timeout | default(telemetry_alertmanager_default_resolve_timeout),
+          'route': resolved_profile_telemetry.alertmanager.route | default(telemetry_alertmanager_default_route),
+          'receivers': resolved_profile_telemetry.alertmanager.receivers | default(telemetry_alertmanager_default_receivers),
+          'inhibit_rules': resolved_profile_telemetry.alertmanager.inhibit_rules | default(telemetry_alertmanager_default_inhibit_rules),
+          'extra_args': resolved_profile_telemetry.alertmanager.extra_args | default(telemetry_alertmanager_default_extra_args)
+        }
+      }}
+
+- name: Ensure Alertmanager directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ alertmanager_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/alertmanager
+    - /var/lib/alertmanager
+    - /etc/conf.d
+  loop_control:
+    loop_var: alertmanager_dir
+  when: telemetry_alertmanager_enabled
+
+- name: Render Alertmanager configuration
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/alertmanager/config.yml"
+    mode: '0644'
+    content: >-
+      {{
+        {
+          'global': {'resolve_timeout': resolved_alertmanager_telemetry.resolve_timeout},
+          'route': resolved_alertmanager_telemetry.route,
+          'receivers': resolved_alertmanager_telemetry.receivers,
+          'inhibit_rules': resolved_alertmanager_telemetry.inhibit_rules
+        } | to_nice_yaml(indent=2, sort_keys=False)
+      }}
+  when: telemetry_alertmanager_enabled
+
+- name: Render Alertmanager OpenRC configuration
+  ansible.builtin.template:
+    src: alertmanager.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/alertmanager"
+    mode: '0644'
+  when: telemetry_alertmanager_enabled
+
+- name: Enable Alertmanager service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['alertmanager']) | unique
+      }}
+  when: telemetry_alertmanager_enabled

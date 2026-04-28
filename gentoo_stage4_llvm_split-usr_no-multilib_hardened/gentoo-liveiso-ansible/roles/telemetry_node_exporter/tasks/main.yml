@@ -1,0 +1,45 @@
+---
+- name: Resolve node_exporter telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_node_exporter_enabled: >-
+      {{
+        resolved_profile_telemetry.node_exporter.enabled
+        | default(telemetry_node_exporter_default_enabled)
+        | bool
+      }}
+    resolved_node_exporter_telemetry: >-
+      {{
+        {
+          'listen_address': resolved_profile_telemetry.node_exporter.listen_address | default(telemetry_node_exporter_default_listen_address),
+          'listen_port': resolved_profile_telemetry.node_exporter.listen_port | default(telemetry_node_exporter_default_listen_port),
+          'textfile_directory': resolved_profile_telemetry.node_exporter.textfile_directory | default(telemetry_node_exporter_default_textfile_directory),
+          'extra_args': resolved_profile_telemetry.node_exporter.extra_args | default(telemetry_node_exporter_default_extra_args)
+        }
+      }}
+
+- name: Ensure node_exporter directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ node_exporter_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /var/lib/node_exporter
+    - /etc/conf.d
+  loop_control:
+    loop_var: node_exporter_dir
+  when: telemetry_node_exporter_enabled
+
+- name: Render node_exporter OpenRC configuration
+  ansible.builtin.template:
+    src: node_exporter.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/node_exporter"
+    mode: '0644'
+  when: telemetry_node_exporter_enabled
+
+- name: Enable node_exporter service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['node_exporter']) | unique
+      }}
+  when: telemetry_node_exporter_enabled

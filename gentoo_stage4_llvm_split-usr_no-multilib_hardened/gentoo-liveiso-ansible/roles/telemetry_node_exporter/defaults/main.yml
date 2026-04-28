@@ -1,0 +1,6 @@
+---
+telemetry_node_exporter_default_enabled: false
+telemetry_node_exporter_default_listen_address: "0.0.0.0"
+telemetry_node_exporter_default_listen_port: 9100
+telemetry_node_exporter_default_textfile_directory: /var/lib/node_exporter
+telemetry_node_exporter_default_extra_args: []

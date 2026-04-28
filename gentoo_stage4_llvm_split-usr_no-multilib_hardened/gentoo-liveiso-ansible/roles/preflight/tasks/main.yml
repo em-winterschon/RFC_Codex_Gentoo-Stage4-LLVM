@@ -86,6 +86,7 @@
     resolved_profile_kibana: "{{ profile_kibana | default({}) }}"
     resolved_profile_netbox_connector: "{{ profile_netbox_connector | default({}) }}"
     resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
+    resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
     resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
     resolved_profile_container_services: "{{ profile_container_services | default({}) }}"
     resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
@@ -168,6 +169,11 @@
       {{
         resolved_profile_zerotier
         | combine(profile_zerotier | default({}), recursive=True)
+      }}
+    resolved_profile_telemetry: >-
+      {{
+        resolved_profile_telemetry
+        | combine(profile_telemetry | default({}), recursive=True)
       }}
     resolved_profile_haproxy_service_types: >-
       {{

@@ -211,6 +211,14 @@
             recursive=True
           )
       }}
+    resolved_profile_telemetry: >-
+      {{
+        resolved_profile_telemetry
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.telemetry | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_haproxy_service_types: >-
       {{
         resolved_profile_haproxy_service_types
