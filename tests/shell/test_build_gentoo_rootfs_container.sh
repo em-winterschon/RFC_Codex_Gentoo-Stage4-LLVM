@@ -125,9 +125,34 @@ EOF
   assert_contains "${output}" 'use-overrides=-split-usr'
 }
 
+test_dry_run_sysroot() {
+  local temp_dir package_list output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --config-root "${temp_dir}/rootfs" \
+      --sysroot "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "config-root=${temp_dir}/rootfs"
+  assert_contains "${output}" "sysroot=${temp_dir}/rootfs"
+}
+
 test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
 test_dry_run_use_file
+test_dry_run_sysroot
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

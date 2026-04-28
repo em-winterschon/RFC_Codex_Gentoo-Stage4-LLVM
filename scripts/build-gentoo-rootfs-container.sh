@@ -13,6 +13,7 @@ Options:
   --package-list FILE      Flat package list file (one atom per line).
   --use-file FILE          Flat USE override file (one flag token per line).
   --config-root DIR        Portage config root (default: /).
+  --sysroot DIR            Portage sysroot for DEPEND handling (default: /).
   --image-ref REF          Local image reference to create.
   --engine MODE            auto, buildah, podman-import, none (default: auto).
   --tarball PATH           Create a rootfs tarball at PATH.
@@ -59,6 +60,7 @@ ROOT_DIR=
 PACKAGE_LIST=
 USE_FILE=
 CONFIG_ROOT=/
+SYSROOT=/
 IMAGE_REF=
 ENGINE=auto
 TARBALL=
@@ -85,6 +87,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config-root)
       CONFIG_ROOT=${2-}
+      shift 2
+      ;;
+    --sysroot)
+      SYSROOT=${2-}
       shift 2
       ;;
     --image-ref)
@@ -157,6 +163,7 @@ fi
 if [[ "${DRY_RUN}" == true ]]; then
   printf 'root=%s\n' "${ROOT_DIR}"
   printf 'config-root=%s\n' "${CONFIG_ROOT}"
+  printf 'sysroot=%s\n' "${SYSROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-count=%s\n' "${#PACKAGE_ATOMS[@]}"
@@ -203,6 +210,7 @@ env "${emerge_env[@]}" \
     --emptytree \
     --root="${ROOT_DIR}" \
     --config-root="${CONFIG_ROOT}" \
+    --sysroot="${SYSROOT}" \
     "${PACKAGE_ATOMS[@]}"
 
 if [[ -n "${TARBALL}" ]]; then
