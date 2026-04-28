@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+JENKINS_HOME={{ resolved_jenkins_controller.home | quote }}
+JENKINS_WEBROOT={{ resolved_jenkins_controller.webroot | quote }}
+JENKINS_URL={{ resolved_jenkins_controller.url | quote }}
+JAVA_BIN={{ resolved_jenkins_controller.java_bin | quote }}
+JENKINS_WAR=""
+
+for candidate in \
+  /usr/share/jenkins/jenkins.war \
+  /usr/share/java/jenkins.war \
+  /usr/share/webapps/jenkins/jenkins.war \
+  /usr/lib/jenkins/jenkins.war
+do
+  if [[ -f "${candidate}" ]]; then
+    JENKINS_WAR="${candidate}"
+    break
+  fi
+done
+
+if [[ -z "${JENKINS_WAR}" ]]; then
+  echo "jenkins.war not found in the expected Gentoo paths" >&2
+  exit 1
+fi
+
+install -d -m 0755 "${JENKINS_HOME}" "${JENKINS_WEBROOT}"
+export JENKINS_HOME
+export JENKINS_URL
+{% for env_name, env_value in resolved_jenkins_controller.environment.items() %}
+export {{ env_name }}={{ env_value | quote }}
+{% endfor %}
+
+exec "${JAVA_BIN}" \
+{% for opt in resolved_jenkins_controller.java_opts %}
+  {{ opt | quote }} \
+{% endfor %}
+  -jar "${JENKINS_WAR}" \
+  --httpPort={{ resolved_jenkins_controller.http_port }} \
+  --httpListenAddress={{ resolved_jenkins_controller.http_listen_address | quote }} \
+  --prefix={{ resolved_jenkins_controller.prefix | quote }} \
+  --webroot="${JENKINS_WEBROOT}"

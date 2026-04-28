@@ -1,0 +1,24 @@
+---
+profile_distcc_farm:
+  makeopts_jobs: 48
+  builder_fabric_name: bluefield-builder-fabric
+  builder_fabric_cidr: 10.66.40.0/24
+  hosts:
+    - name: builder-farm-node01
+      address: 10.66.40.11
+      slots: 8
+    - name: builder-farm-node02
+      address: 10.66.40.12
+      slots: 8
+    - name: builder-farm-node03
+      address: 10.66.40.13
+      slots: 8
+    - name: builder-farm-node04
+      address: 10.66.40.14
+      slots: 8
+    - name: builder-farm-node05
+      address: 10.66.40.15
+      slots: 8
+    - name: builder-farm-node06
+      address: 10.66.40.16
+      slots: 8

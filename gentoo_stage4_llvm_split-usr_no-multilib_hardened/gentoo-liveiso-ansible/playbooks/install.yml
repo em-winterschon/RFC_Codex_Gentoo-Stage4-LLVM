@@ -22,6 +22,8 @@
       - platform_profile
       - identity
       - memory_storage
+      - jenkins_controller
+      - distcc_farm
       - container_host
       - container_app_ntfy
       - container_app_nginx

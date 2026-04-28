@@ -22,6 +22,7 @@ Current mirrored pages:
 - `Architecture-and-Design.md`
 - `Workflows.md`
 - `Configurations-and-Examples.md`
+- `CI-Builder-Farm.md`
 - `Repository-Layout.md`
 - `Roadmap-and-TODO.md`
 - `_Sidebar.md`

@@ -95,6 +95,26 @@ bash scripts/publish-container-ghcr.sh \
   --description "Gentoo Stage4 LLVM/Clang hardened base container"
 ```
 
+## Build telemetry
+
+Export package burn-down and builder workload data from the live logs with:
+
+```bash
+python3 scripts/export_build_metrics.py \
+  --emerge-log /mnt/gentoo/mnt/gentoo/var/log/emerge.log \
+  --builder-log /mnt/gentoo/mnt/gentoo/root/container-base-rerun.log \
+  --output-dir /tmp/build-metrics
+```
+
+Artifacts produced:
+
+- `summary.json`
+- `emerge-events.csv`
+- `builder-samples.csv`
+- `burndown.svg`
+- `builder-load.svg`
+- `report.html`
+
 ## Notes
 
 - Keep `without-systemd` as the default repo posture.

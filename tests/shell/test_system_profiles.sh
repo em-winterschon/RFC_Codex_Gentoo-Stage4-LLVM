@@ -18,7 +18,9 @@ for profile in \
   cloud-init-vm.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  metal-builder-farm-node.yml \
   vm-container-services.yml \
+  vm-jenkins-controller.yml \
   vm-guest-application-server.yml \
   vm-guest-simple-ipxe.yml
 do
@@ -30,7 +32,9 @@ for metadata in \
   cloud-init-baremetal.metadata.yml \
   cloud-init-vm.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
+  metal-builder-farm-node.metadata.yml \
   vm-container-services.metadata.yml \
+  vm-jenkins-controller.metadata.yml \
   vm-guest-application-server.metadata.yml \
   vm-guest-simple-ipxe.metadata.yml
 do
@@ -40,6 +44,7 @@ done
 
 for host_var in \
   hypervisor-host.yml \
+  vm-jenkins-controller.yml \
   vm-container-services.yml \
   vm-guest-appserver.yml \
   vm-guest-simple.yml
@@ -50,9 +55,11 @@ done
 
 for package_list in \
   cloud-init-base.packages \
+  stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-virtual-host-base.packages \
   stage5-virtual-host-appserver.packages \
+  stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-container-services.packages
 do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"

@@ -1,0 +1,13 @@
+---
+install_hostname: builder-farm-node01
+
+profile_cloud_init:
+  instance_id: builder-farm-node01
+  local_hostname: builder-farm-node01
+
+profile_distcc_farm:
+  worker_metadata:
+    node_name: builder-farm-node01
+    storage_devices:
+      - nvme0n1
+      - nvme1n1

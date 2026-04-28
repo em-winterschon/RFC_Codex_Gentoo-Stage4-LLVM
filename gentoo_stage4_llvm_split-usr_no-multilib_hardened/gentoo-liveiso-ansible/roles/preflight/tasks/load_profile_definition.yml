@@ -163,3 +163,19 @@
             recursive=True
           )
       }}
+    resolved_profile_jenkins_controller: >-
+      {{
+        resolved_profile_jenkins_controller
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.jenkins_controller | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_distcc_farm: >-
+      {{
+        resolved_profile_distcc_farm
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.distcc_farm | default({}),
+            recursive=True
+          )
+      }}

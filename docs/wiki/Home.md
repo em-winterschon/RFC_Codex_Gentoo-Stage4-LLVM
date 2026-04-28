@@ -49,6 +49,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Architecture and Design](Architecture-and-Design)
 - [Workflows](Workflows)
 - [Configurations and Examples](Configurations-and-Examples)
+- [CI Builder Farm](CI-Builder-Farm)
 - [Repository Layout](Repository-Layout)
 - [Roadmap and TODO](Roadmap-and-TODO)
 

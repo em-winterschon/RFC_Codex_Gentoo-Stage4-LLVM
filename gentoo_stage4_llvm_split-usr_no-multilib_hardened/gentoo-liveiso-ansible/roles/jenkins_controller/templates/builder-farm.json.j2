@@ -1,0 +1,14 @@
+{
+  "controller": {
+    "url": {{ resolved_jenkins_controller.url | to_json }},
+    "agent_port": {{ resolved_jenkins_controller.agent_port }},
+    "executors": {{ resolved_jenkins_controller.executors }},
+    "agent_labels": {{ resolved_jenkins_controller.agent_labels | to_json }}
+  },
+  "builder_fabric": {
+    "uplink_interfaces": {{ resolved_jenkins_controller.builder_farm_uplink_interfaces | to_json }},
+    "switch_name": {{ resolved_jenkins_controller.builder_farm_switch_name | to_json }},
+    "switch_port_profile": {{ resolved_jenkins_controller.builder_farm_switch_port_profile | to_json }}
+  },
+  "distcc_farm": {{ resolved_profile_distcc_farm | default({}) | to_nice_json }}
+}

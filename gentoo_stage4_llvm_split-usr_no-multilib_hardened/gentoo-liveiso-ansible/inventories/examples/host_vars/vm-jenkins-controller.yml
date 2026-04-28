@@ -1,0 +1,38 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-jenkins-controller.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: vm-jenkins-controller
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-jenkins-controller
+  local_hostname: vm-jenkins-controller
+  disable_root: false
+  ssh_pwauth: false
+
+profile_local_user_accounts:
+  - name: ops
+    comment: CI control-plane operator
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
+
+profile_jenkins_controller:
+  url: http://10.66.40.10:8080/
+  admin_email: ci-admin@example.invalid
+  builder_farm_uplink_interfaces:
+    - ens7f0np0
+    - ens7f1np0
+  builder_farm_switch_name: builder-fabric-sw01
+  builder_farm_switch_port_profile: bluefield2-ci-fabric
+  agent_labels:
+    - ci-controller
+    - stage4
+    - distcc-client

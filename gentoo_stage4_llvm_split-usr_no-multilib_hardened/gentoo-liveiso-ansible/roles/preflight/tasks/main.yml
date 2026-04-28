@@ -80,6 +80,8 @@
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
     resolved_profile_site_security_profile: "{{ profile_site_security_profile | default({}) }}"
     resolved_profile_memory_storage: "{{ profile_memory_storage | default({}) }}"
+    resolved_profile_jenkins_controller: "{{ profile_jenkins_controller | default({}) }}"
+    resolved_profile_distcc_farm: "{{ profile_distcc_farm | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml
@@ -119,6 +121,16 @@
       {{
         resolved_profile_memory_storage
         | combine(profile_memory_storage | default({}), recursive=True)
+      }}
+    resolved_profile_jenkins_controller: >-
+      {{
+        resolved_profile_jenkins_controller
+        | combine(profile_jenkins_controller | default({}), recursive=True)
+      }}
+    resolved_profile_distcc_farm: >-
+      {{
+        resolved_profile_distcc_farm
+        | combine(profile_distcc_farm | default({}), recursive=True)
       }}
 
 - name: Resolve package atoms from selected profile package list files

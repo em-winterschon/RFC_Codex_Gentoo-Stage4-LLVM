@@ -1,0 +1,30 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-builder-farm-node
+  purpose: Hardened Gentoo bare-metal profile for distcc-backed builder-farm workers that provide distributed compile capacity to Jenkins-managed Stage4 and container pipelines.
+  profile_taxonomy:
+    stage: stage5
+    role_class: builder-farm-node
+    role_name: distcc-worker
+    package_layers:
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-metal-host-builder-farm-node.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - cloud-init-baremetal
+  package_pins:
+    tracked_atoms:
+      - sys-devel/distcc
+      - dev-util/ccache
+      - sys-devel/gcc
+      - llvm-core/clang
+      - llvm-core/lld
+    app_runtime_packages:
+      - dev-build/cmake
+      - dev-build/ninja
+      - net-misc/rsync
+  source_references:
+    - https://packages.gentoo.org/packages/sys-devel/distcc
+    - https://packages.gentoo.org/packages/sys-devel/gcc
+    - https://packages.gentoo.org/packages/llvm-core/clang

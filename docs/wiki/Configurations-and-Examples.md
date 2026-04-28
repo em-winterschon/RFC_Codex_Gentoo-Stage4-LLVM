@@ -605,3 +605,54 @@ bash scripts/run-install-sequence.sh \
   --checkpoint \
   --control-flow-path /tmp/ansible-control-flow/target-system-remote.integration.jsonl
 ```
+
+## 12. Jenkins controller and builder farm
+
+Controller profile example:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-jenkins-controller.yml"
+```
+
+Builder node profile example:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
+```
+
+Example inventory data:
+
+- controller host vars:
+  - `inventories/examples/host_vars/vm-jenkins-controller.yml`
+- controller group vars:
+  - `inventories/examples/group_vars/ci_controllers.yml`
+- builder-farm group vars:
+  - `inventories/examples/group_vars/builder_farm_nodes.yml`
+
+The intended first builder fabric is:
+
+- controller:
+  - `10.66.40.10`
+- workers:
+  - `10.66.40.11` through `10.66.40.16`
+- fabric CIDR:
+  - `10.66.40.0/24`
+- suggested host uplinks for the build switch:
+  - `ens7f0np0`
+  - `ens7f1np0`
+
+The new roles manage:
+
+- Jenkins controller launch and JCasC seed material
+- distcc worker and client manifests
+- `DISTCC_HOSTS` injection into `make.conf`
+- OpenRC action services:
+  - `jenkins-controller`
+  - `distccd-farm`

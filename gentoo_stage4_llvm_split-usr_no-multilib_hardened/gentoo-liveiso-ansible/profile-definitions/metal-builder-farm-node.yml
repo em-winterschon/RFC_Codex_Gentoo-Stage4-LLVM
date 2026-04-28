@@ -1,0 +1,32 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-metal-host-builder-farm-node.packages
+  make_conf_append: |
+    PORTAGE_NICENESS="10"
+  memory_storage:
+    enabled: true
+    mounts:
+      - path: /var/tmp/portage-tmpfs
+        size: 12G
+        mode: "1777"
+        options:
+          - noatime
+  distcc_farm:
+    enabled: true
+    client_enabled: false
+    worker_enabled: true
+    port: 3632
+    jobs: 16
+    nice: 5
+    listen_address: 0.0.0.0
+    builder_fabric_name: bluefield-builder-fabric
+    builder_fabric_cidr: 10.66.40.0/24
+    allowed_client_cidrs:
+      - 10.66.40.0/24
+    worker_metadata:
+      cpu_model: Intel Atom C3758
+      logical_cores: 8
+      memory_gib: 32
+      nic_count: 6
+      nvme_count: 2

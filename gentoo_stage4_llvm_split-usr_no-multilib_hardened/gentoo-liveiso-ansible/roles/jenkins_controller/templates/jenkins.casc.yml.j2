@@ -1,0 +1,17 @@
+jenkins:
+  systemMessage: "Managed by Ansible for Stage4/Stage5 CI workloads."
+  mode: NORMAL
+  numExecutors: {{ resolved_jenkins_controller.executors }}
+  slaveAgentPort: {{ resolved_jenkins_controller.agent_port }}
+  remotingSecurity:
+    enabled: true
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+  markupFormatter:
+    plainText:
+      disableSyntaxHighlighting: false
+unclassified:
+  location:
+    adminAddress: {{ resolved_jenkins_controller.admin_email | quote }}
+    url: {{ resolved_jenkins_controller.url | quote }}

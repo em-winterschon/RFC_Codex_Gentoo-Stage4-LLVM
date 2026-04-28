@@ -1,0 +1,13 @@
+{
+  "builder_fabric": {
+    "name": {{ resolved_distcc_farm.builder_fabric_name | to_json }},
+    "cidr": {{ resolved_distcc_farm.builder_fabric_cidr | to_json }}
+  },
+  "client_enabled": {{ resolved_distcc_farm.client_enabled | bool | lower }},
+  "worker_enabled": {{ resolved_distcc_farm.worker_enabled | bool | lower }},
+  "port": {{ resolved_distcc_farm.port }},
+  "jobs": {{ resolved_distcc_farm.jobs }},
+  "allowed_client_cidrs": {{ resolved_distcc_farm.allowed_client_cidrs | to_json }},
+  "worker_metadata": {{ resolved_distcc_farm.worker_metadata | to_nice_json }},
+  "hosts": {{ resolved_distcc_farm.hosts | to_nice_json }}
+}

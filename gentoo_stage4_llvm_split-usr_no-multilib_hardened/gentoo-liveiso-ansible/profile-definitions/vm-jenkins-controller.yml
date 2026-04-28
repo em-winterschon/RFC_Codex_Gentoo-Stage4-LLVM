@@ -1,0 +1,40 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-jenkins-controller.packages
+  jenkins_controller:
+    enabled: true
+    home: /var/lib/jenkins
+    webroot: /var/cache/jenkins/war
+    http_port: 8080
+    http_listen_address: 0.0.0.0
+    prefix: /
+    agent_port: 50000
+    service_user: jenkins
+    service_group: jenkins
+    url: http://jenkins.example.invalid:8080/
+    admin_email: ci-admin@example.invalid
+    executors: 0
+    plugin_catalog:
+      - configuration-as-code
+      - git
+      - github
+      - credentials
+      - ssh-slaves
+      - workflow-aggregator
+      - job-dsl
+      - matrix-auth
+      - ws-cleanup
+      - antisamy-markup-formatter
+    folders:
+      - name: stage4
+        description: Stage4 and Stage5 build pipelines.
+      - name: containers
+        description: Container image and GHCR publication pipelines.
+      - name: binpkgs
+        description: Binpkg rebuild and package-host publication pipelines.
+  distcc_farm:
+    enabled: true
+    client_enabled: true
+    worker_enabled: false
+    builder_fabric_name: bluefield-builder-fabric

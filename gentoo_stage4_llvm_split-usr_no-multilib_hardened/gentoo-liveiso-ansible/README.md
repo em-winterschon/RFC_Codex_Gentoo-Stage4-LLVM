@@ -337,6 +337,52 @@ The profile adds:
 - optional IPAM ingestion from a flat JSON file or a pre-normalized NetBox API endpoint
 - a narrow `sys-apps/systemd-utils` exception scoped only to the Podman/netavark container stack while keeping the repo-wide `without-systemd` posture elsewhere
 
+### Jenkins controller and distcc builder farm
+
+The repo now carries a Stage 5 controller profile plus a Stage 5 builder-farm
+worker profile:
+
+- `profile-definitions/vm-jenkins-controller.yml`
+- `profile-definitions/metal-builder-farm-node.yml`
+
+Example controller stack:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-jenkins-controller.yml"
+```
+
+Example builder node stack:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
+```
+
+Supporting examples:
+
+- `inventories/examples/host_vars/vm-jenkins-controller.yml`
+- `inventories/examples/group_vars/ci_controllers.yml`
+- `inventories/examples/group_vars/builder_farm_nodes.yml`
+
+These roles render:
+
+- a Jenkins controller launcher plus JCasC manifest
+- distcc client and worker manifests
+- managed `DISTCC_HOSTS` policy in `make.conf`
+- OpenRC-managed `jenkins-controller` and `distccd-farm` services
+
+The intended first fabric is a dedicated builder LAN carried to a switch and
+uplinked from one of the BlueField2 interfaces:
+
+- `ens7f0np0`
+- `ens7f1np0`
+
 Example direct role override:
 
 ```bash
@@ -643,6 +689,8 @@ If you want to carry house policy as data instead of editing the roles, set
 - `modules_load_files`
 - `openrc_services_enable`
 - `cloud_init`
+- `jenkins_controller`
+- `distcc_farm`
 
 ## Stage language
 
@@ -663,6 +711,8 @@ Current Stage 5 role classes:
 - `virtual-host`
 - `service-container`
 - `cloud-init-overlay`
+- `ci-controller`
+- `builder-farm-node`
 
 For scalability, Stage 5 package sets should live in external flat files under
 `profile-package-lists/` and be referenced through `package_list_files` instead
