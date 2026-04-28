@@ -32,6 +32,9 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
           - platform_profile
           - identity
           - memory_storage
@@ -73,6 +76,9 @@ install_role_sequences:
         roles:
           - kernel
           - bootloader
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
           - platform_profile
           - identity
           - finalize
@@ -122,6 +128,9 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
           - platform_profile
           - identity
           - memory_storage
@@ -161,6 +170,9 @@ install_role_sequences:
         summary: Reapply network and managed OpenRC services.
         roles:
           - network
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
           - platform_profile
           - identity
           - memory_storage

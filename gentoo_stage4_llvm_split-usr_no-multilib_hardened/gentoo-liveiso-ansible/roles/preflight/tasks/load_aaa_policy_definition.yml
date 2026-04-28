@@ -1,0 +1,25 @@
+---
+- name: Load AAA policy definition data
+  ansible.builtin.include_vars:
+    file: "{{ aaa_policy_definition_file }}"
+    name: loaded_aaa_policy_definition_file
+
+- name: Assert AAA policy definition schema
+  ansible.builtin.assert:
+    that:
+      - loaded_aaa_policy_definition_file.aaa_policy_definition is defined
+      - loaded_aaa_policy_definition_file.aaa_policy_definition is mapping
+    fail_msg: >-
+      AAA policy definition {{ aaa_policy_definition_file }} must define a top-level
+      aaa_policy_definition mapping.
+
+- name: Merge loaded AAA policy definition into resolved installer settings
+  ansible.builtin.set_fact:
+    resolved_profile_aaa_policy: >-
+      {{
+        resolved_profile_aaa_policy
+        | combine(
+            loaded_aaa_policy_definition_file.aaa_policy_definition,
+            recursive=True
+          )
+      }}

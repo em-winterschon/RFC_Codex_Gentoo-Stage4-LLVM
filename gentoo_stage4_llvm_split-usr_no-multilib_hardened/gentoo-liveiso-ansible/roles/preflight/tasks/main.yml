@@ -76,6 +76,11 @@
     resolved_profile_modules_load_files: "{{ profile_modules_load_files | default({}) }}"
     resolved_profile_local_user_accounts: "{{ profile_local_user_accounts | default([]) }}"
     resolved_profile_cloud_init: "{{ profile_cloud_init | default({}) }}"
+    resolved_profile_aaa_policy_files: "{{ profile_aaa_policy_files | default([]) }}"
+    resolved_profile_aaa_policy: "{{ profile_aaa_policy | default({}) }}"
+    resolved_profile_freeipa_controller: "{{ profile_freeipa_controller | default({}) }}"
+    resolved_profile_ipa_client: "{{ profile_ipa_client | default({}) }}"
+    resolved_profile_freeradius_bridge: "{{ profile_freeradius_bridge | default({}) }}"
     resolved_profile_container_services: "{{ profile_container_services | default({}) }}"
     resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
@@ -90,12 +95,48 @@
   loop_control:
     loop_var: profile_definition_file
 
+- name: Reapply explicit inventory-level AAA policy file overrides after definition layering
+  ansible.builtin.set_fact:
+    resolved_profile_aaa_policy_files: >-
+      {{
+        (
+          resolved_profile_aaa_policy_files
+          + (profile_aaa_policy_files | default([]))
+        ) | unique
+      }}
+
+- name: Load selected AAA policy definition files
+  ansible.builtin.include_tasks: load_aaa_policy_definition.yml
+  loop: "{{ resolved_profile_aaa_policy_files | default([]) }}"
+  loop_control:
+    loop_var: aaa_policy_definition_file
+
 - name: Reapply explicit inventory-level profile overrides after definition layering
   ansible.builtin.set_fact:
     resolved_profile_cloud_init: >-
       {{
         resolved_profile_cloud_init
         | combine(profile_cloud_init | default({}), recursive=True)
+      }}
+    resolved_profile_aaa_policy: >-
+      {{
+        resolved_profile_aaa_policy
+        | combine(profile_aaa_policy | default({}), recursive=True)
+      }}
+    resolved_profile_freeipa_controller: >-
+      {{
+        resolved_profile_freeipa_controller
+        | combine(profile_freeipa_controller | default({}), recursive=True)
+      }}
+    resolved_profile_ipa_client: >-
+      {{
+        resolved_profile_ipa_client
+        | combine(profile_ipa_client | default({}), recursive=True)
+      }}
+    resolved_profile_freeradius_bridge: >-
+      {{
+        resolved_profile_freeradius_bridge
+        | combine(profile_freeradius_bridge | default({}), recursive=True)
       }}
     resolved_profile_container_services: >-
       {{

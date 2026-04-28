@@ -1,0 +1,72 @@
+---
+aaa_policy_definition:
+  site_name: example-lab
+  realm: EXAMPLE.INTERNAL
+  domain: example.internal
+  auth_methods:
+    system:
+      - kerberos
+      - ssh-publickey
+      - smartcard
+    network:
+      - radius
+  linux_roles:
+    - name: linux-admin
+      freeipa_group: linux-admin
+      hostgroups:
+        - linux-servers
+        - container-hosts
+        - ci-builders
+      sudo_rule: ALL
+    - name: ci-builder
+      freeipa_group: ci-builder
+      hostgroups:
+        - ci-builders
+      sudo_rule: /usr/bin/emerge, /usr/bin/podman, /usr/bin/buildah, /usr/bin/skopeo
+  network_roles:
+    - name: network-admin
+      freeipa_group: network-admin
+      device_groups:
+        - switches
+        - routers
+        - firewalls
+        - waps
+      radius_reply_items:
+        Service-Type: Administrative-User
+        Mikrotik-Group: full
+        Juniper-Local-User-Name: super-user
+        Arista-User-Role: network-admin
+    - name: network-readonly
+      freeipa_group: network-readonly
+      device_groups:
+        - switches
+        - routers
+        - firewalls
+        - waps
+      radius_reply_items:
+        Service-Type: NAS-Prompt-User
+        Mikrotik-Group: read
+        Juniper-Local-User-Name: operator
+        Arista-User-Role: network-operator
+  device_groups:
+    - name: switches
+      supported_platforms:
+        - arista
+        - juniper
+        - swos
+        - sonic
+        - onie
+    - name: routers
+      supported_platforms:
+        - vyos
+        - routeros
+        - lede
+    - name: firewalls
+      supported_platforms:
+        - vyos
+        - lede
+    - name: waps
+      supported_platforms:
+        - routeros
+        - lede
+        - cisco

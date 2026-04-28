@@ -1,0 +1,11 @@
+---
+profile_aaa_policy_files:
+  - "{{ playbook_dir }}/../aaa-policy-definitions/site-baseline.yml"
+
+profile_ipa_client:
+  realm: EXAMPLE.INTERNAL
+  domain: example.internal
+  servers:
+    - ipa01.example.internal
+  mkhomedir: true
+  ssh_trust_ipa_keys: true

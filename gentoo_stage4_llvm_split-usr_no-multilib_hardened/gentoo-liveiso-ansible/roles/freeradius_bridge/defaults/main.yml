@@ -1,0 +1,15 @@
+---
+freeradius_bridge_default_enabled: false
+freeradius_bridge_default_backend: freeipa-ldap
+freeradius_bridge_default_ldap_uri: ldaps://ipa01.example.internal
+freeradius_bridge_default_base_dn: dc=example,dc=internal
+freeradius_bridge_default_bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=example,dc=internal
+freeradius_bridge_default_bind_password_file: /etc/raddb/radiusd-ldap.secret
+freeradius_bridge_default_auth_port: 1812
+freeradius_bridge_default_acct_port: 1813
+freeradius_bridge_default_listen_addresses:
+  - 0.0.0.0
+freeradius_bridge_default_tls_require_cert: demand
+freeradius_bridge_default_clients: []
+freeradius_bridge_default_group_mappings: []
+freeradius_bridge_default_default_reply_items: {}

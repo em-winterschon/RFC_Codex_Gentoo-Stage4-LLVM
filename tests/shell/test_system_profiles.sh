@@ -14,6 +14,7 @@ assert_file_contains() {
 }
 
 for profile in \
+  aaa-domain-client.yml \
   cloud-init-baremetal.yml \
   cloud-init-vm.yml \
   hardened-llvm-stage4-merged-usr.yml \
@@ -21,7 +22,9 @@ for profile in \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
   metal-builder-farm-node.yml \
+  metal-identity-controller.yml \
   vm-container-services.yml \
+  vm-identity-controller.yml \
   vm-jenkins-controller.yml \
   vm-guest-application-server.yml \
   vm-guest-simple-ipxe.yml
@@ -31,13 +34,16 @@ do
 done
 
 for metadata in \
+  aaa-domain-client.metadata.yml \
   cloud-init-baremetal.metadata.yml \
   cloud-init-vm.metadata.yml \
   hardened-llvm-stage4-merged-usr.metadata.yml \
   hardened-llvm-stage4-split-usr.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
   metal-builder-farm-node.metadata.yml \
+  metal-identity-controller.metadata.yml \
   vm-container-services.metadata.yml \
+  vm-identity-controller.metadata.yml \
   vm-jenkins-controller.metadata.yml \
   vm-guest-application-server.metadata.yml \
   vm-guest-simple-ipxe.metadata.yml
@@ -54,6 +60,7 @@ for host_var in \
   builder-farm-node05.yml \
   builder-farm-node06.yml \
   hypervisor-host.yml \
+  vm-identity-controller.yml \
   vm-jenkins-controller.yml \
   vm-container-services.yml \
   vm-guest-appserver.yml \
@@ -65,14 +72,19 @@ done
 
 for package_list in \
   cloud-init-base.packages \
+  stage5-domain-client.packages \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
+  stage5-metal-host-identity-controller.packages \
   stage5-virtual-host-base.packages \
   stage5-virtual-host-appserver.packages \
+  stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-container-services.packages
 do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"
 done
+
+test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 
 printf 'PASS: %s\n' "$(basename "$0")"

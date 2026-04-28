@@ -19,6 +19,9 @@
       - system_packages
       - boot
       - network
+      - freeipa_controller
+      - ipa_client
+      - freeradius_bridge
       - platform_profile
       - identity
       - memory_storage

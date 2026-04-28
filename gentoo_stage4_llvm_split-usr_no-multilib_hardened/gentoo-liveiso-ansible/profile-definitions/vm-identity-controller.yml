@@ -1,0 +1,32 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-identity-controller.packages
+  aaa_policy_files:
+    - aaa-policy-definitions/site-baseline.yml
+  openrc_services_enable:
+    - 389-ds
+    - radiusd
+    - sssd
+  freeipa_controller:
+    enabled: true
+    vendor_package_strategy: overlay-managed
+    realm: EXAMPLE.INTERNAL
+    domain: example.internal
+    server_hostname: ipa01.example.internal
+    ds_instance_name: example-internal
+    enable_dns: false
+    enable_ca: true
+    enable_pkinit: true
+    smartcard_enabled: true
+  ipa_client:
+    enabled: true
+    domain_join_mode: manual
+    mkhomedir: true
+  freeradius_bridge:
+    enabled: true
+    backend: freeipa-ldap
+    ldap_uri: ldaps://127.0.0.1
+    base_dn: dc=example,dc=internal
+    bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=example,dc=internal
+    clients: []

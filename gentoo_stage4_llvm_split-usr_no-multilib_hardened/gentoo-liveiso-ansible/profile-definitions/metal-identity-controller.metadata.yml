@@ -1,0 +1,30 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-identity-controller
+  purpose: Hardened Gentoo metal-host profile for a primary FreeIPA plus FreeRADIUS controller on dedicated hardware.
+  profile_taxonomy:
+    stage: stage5
+    role_class: metal-host
+    role_name: identity-controller
+    package_layers:
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-metal-host-identity-controller.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - cloud-init-baremetal
+      - aaa-domain-client
+  package_pins:
+    tracked_atoms:
+      - net-nds/389-ds-base
+      - net-dialup/freeradius
+      - sys-auth/sssd
+      - app-crypt/mit-krb5
+  vendor_package_gap:
+    missing_in_current_tree:
+      - freeipa server package
+    workaround: Use an overlay-managed or externalized FreeIPA server package source while keeping the domain policy and bridge configuration in repo-native Ansible data.
+  source_references:
+    - https://packages.gentoo.org/packages/net-nds/389-ds-base
+    - https://packages.gentoo.org/packages/net-dialup/freeradius
+    - https://packages.gentoo.org/packages/sys-auth/sssd

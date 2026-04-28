@@ -2,6 +2,7 @@
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
   - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
 
 install_hostname: builder-farm-node02

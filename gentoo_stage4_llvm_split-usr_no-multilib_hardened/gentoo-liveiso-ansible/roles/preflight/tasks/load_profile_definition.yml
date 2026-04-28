@@ -132,6 +132,45 @@
             recursive=True
           )
       }}
+    resolved_profile_aaa_policy_files: >-
+      {{
+        (
+          resolved_profile_aaa_policy_files
+          + (loaded_profile_definition_file.gentoo_profile_definition.aaa_policy_files | default([]))
+        ) | unique
+      }}
+    resolved_profile_aaa_policy: >-
+      {{
+        resolved_profile_aaa_policy
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.aaa_policy | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_freeipa_controller: >-
+      {{
+        resolved_profile_freeipa_controller
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.freeipa_controller | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_ipa_client: >-
+      {{
+        resolved_profile_ipa_client
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.ipa_client | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_freeradius_bridge: >-
+      {{
+        resolved_profile_freeradius_bridge
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.freeradius_bridge | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_container_services: >-
       {{
         resolved_profile_container_services
