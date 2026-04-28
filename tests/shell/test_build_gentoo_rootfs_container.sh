@@ -97,11 +97,12 @@ EOF
 }
 
 test_dry_run_use_file() {
-  local temp_dir package_list use_file output
+  local temp_dir package_list use_file package_use_file output
   temp_dir="$(mktemp -d)"
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
   use_file="${temp_dir}/use.txt"
+  package_use_file="${temp_dir}/package.use"
 
   cat >"${package_list}" <<'EOF'
 app-shells/bash
@@ -112,17 +113,53 @@ EOF
 -split-usr
 EOF
 
+  cat >"${package_use_file}" <<'EOF'
+app-alternatives/awk -split-usr
+EOF
+
   output="$(
     bash "${BUILD_SCRIPT}" \
       --root "${temp_dir}/rootfs" \
       --package-list "${package_list}" \
       --use-file "${use_file}" \
+      --package-use-file "${package_use_file}" \
+      --config-root "${temp_dir}/rootfs" \
       --engine none \
       --dry-run
   )"
 
   assert_contains "${output}" "use-file=${use_file}"
+  assert_contains "${output}" "package-use-file=${package_use_file}"
   assert_contains "${output}" 'use-overrides=-split-usr'
+}
+
+test_package_use_file_requires_explicit_config_root() {
+  local temp_dir package_list package_use_file output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  package_use_file="${temp_dir}/package.use"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  cat >"${package_use_file}" <<'EOF'
+app-alternatives/awk -split-usr
+EOF
+
+  if output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --package-use-file "${package_use_file}" \
+      --engine none \
+      --dry-run 2>&1
+  )"; then
+    fail "expected package-use-file without config-root to fail"
+  fi
+
+  assert_contains "${output}" '--package-use-file requires an explicit non-/ --config-root'
 }
 
 test_dry_run_sysroot() {
@@ -153,6 +190,7 @@ test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
 test_dry_run_use_file
+test_package_use_file_requires_explicit_config_root
 test_dry_run_sysroot
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

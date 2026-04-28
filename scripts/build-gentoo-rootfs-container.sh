@@ -12,6 +12,7 @@ Options:
   --root DIR               Target rootfs directory to populate.
   --package-list FILE      Flat package list file (one atom per line).
   --use-file FILE          Flat USE override file (one flag token per line).
+  --package-use-file FILE  package.use style overrides to install into config-root.
   --config-root DIR        Portage config root (default: /).
   --sysroot DIR            Portage sysroot for DEPEND handling (default: /).
   --image-ref REF          Local image reference to create.
@@ -59,6 +60,7 @@ sanitize_emerge_features() {
 ROOT_DIR=
 PACKAGE_LIST=
 USE_FILE=
+PACKAGE_USE_FILE=
 CONFIG_ROOT=/
 SYSROOT=/
 IMAGE_REF=
@@ -83,6 +85,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --use-file)
       USE_FILE=${2-}
+      shift 2
+      ;;
+    --package-use-file)
+      PACKAGE_USE_FILE=${2-}
       shift 2
       ;;
     --config-root)
@@ -137,6 +143,10 @@ done
 if [[ -n "${USE_FILE}" ]]; then
   [[ -f "${USE_FILE}" ]] || die "use override file not found: ${USE_FILE}"
 fi
+if [[ -n "${PACKAGE_USE_FILE}" ]]; then
+  [[ -f "${PACKAGE_USE_FILE}" ]] || die "package.use override file not found: ${PACKAGE_USE_FILE}"
+  [[ "${CONFIG_ROOT}" != "/" ]] || die "--package-use-file requires an explicit non-/ --config-root"
+fi
 [[ "${ENGINE}" =~ ^(auto|buildah|podman-import|none)$ ]] || die "unsupported engine: ${ENGINE}"
 if [[ "${ENGINE}" != "none" ]]; then
   [[ -n "${IMAGE_REF}" ]] || die "--image-ref is required unless --engine none is used"
@@ -166,6 +176,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'sysroot=%s\n' "${SYSROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'use-file=%s\n' "${USE_FILE}"
+  printf 'package-use-file=%s\n' "${PACKAGE_USE_FILE}"
   printf 'package-count=%s\n' "${#PACKAGE_ATOMS[@]}"
   printf 'use-overrides=%s\n' "${USE_OVERRIDE_FLAGS[*]:-}"
   printf 'engine=%s\n' "${RESOLVED_ENGINE}"
@@ -188,6 +199,12 @@ install -d -m 0755 \
   "${ROOT_DIR}/tmp" \
   "${ROOT_DIR}/var/tmp"
 chmod 1777 "${ROOT_DIR}/tmp" "${ROOT_DIR}/var/tmp"
+
+if [[ -n "${PACKAGE_USE_FILE}" ]]; then
+  install -d -m 0755 "${CONFIG_ROOT}/etc/portage/package.use"
+  install -m 0644 "${PACKAGE_USE_FILE}" \
+    "${CONFIG_ROOT}/etc/portage/package.use/99-build-gentoo-rootfs-container"
+fi
 
 log "building rootfs in ${ROOT_DIR}"
 emerge_env=(

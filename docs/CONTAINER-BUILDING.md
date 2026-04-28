@@ -28,6 +28,8 @@ CPU tuning note:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages`
 - USE overrides:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.use`
+- package.use overrides:
+  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use`
 
 ## Rootfs build helper
 
@@ -38,11 +40,18 @@ bash scripts/build-gentoo-rootfs-container.sh \
   --root /var/lib/container-services/images/gentoo-stage4-rootfs \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
+  --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
+  --config-root /var/lib/container-services/images/gentoo-stage4-rootfs \
+  --sysroot /var/lib/container-services/images/gentoo-stage4-rootfs \
   --image-ref localhost/gentoo-stage4-llvm-clang-hardened:latest \
   --tarball /var/lib/container-services/images/gentoo-stage4-llvm-clang-hardened.tar.zst \
   --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
   --description "Gentoo Stage4 LLVM/Clang hardened base container"
 ```
+
+Use `--package-use-file` for scoped image quirks such as `app-alternatives/awk`
+under merged-usr. Keep those exceptions image-local rather than weakening the
+host or Stage 4 profile globally.
 
 Engine behavior:
 
