@@ -169,6 +169,20 @@ Current container-services validation status on top of this lab:
   - `x86_64_v3_generic` optional for newer guest fleets
 - the container-services validation still relies on the temporary upstream
   workaround documented below until RouterOS has a proper upstream path
+- the first reusable Gentoo base-container image build is now wired to run from
+  the installed container-services target using:
+  - image-local package list
+  - image-local USE overrides
+  - image-local `package.use` overrides
+  - merged-usr image root with explicit `--config-root` and `--sysroot`
+- the latest accelerated base-image run used:
+  - guest size: `32` vCPU, `32 GiB` RAM
+  - Portage parallelism: `MAKEOPTS="-j64"`, `EMERGE_DEFAULT_OPTS="--jobs=16"`
+  - package graph: `482`
+  - stop point: `app-alternatives/awk-4` at package `116`
+  - completed count before failure: `115`
+- the next rerun should use the now-committed image-local rule:
+  - `app-alternatives/awk -split-usr`
 
 ## 7. Implementation Plan
 

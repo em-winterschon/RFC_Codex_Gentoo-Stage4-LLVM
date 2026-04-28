@@ -40,6 +40,17 @@ Current status:
   `rpds-py`, `cryptography`, `buildah`, and `skopeo` blockers
 - generic guest CPU tuning for this lab should use `x86_64_v2_generic`
   unless a stricter guest CPU contract is known
+- the first reusable Gentoo base-container image build is now wired to run from
+  the installed container-services target using image-local package, USE, and
+  `package.use` inputs
+- the latest accelerated base-image run used:
+  - guest size: `32` vCPU, `32 GiB` RAM
+  - Portage parallelism: `MAKEOPTS="-j64"`, `EMERGE_DEFAULT_OPTS="--jobs=16"`
+  - package graph: `482`
+  - stop point: `app-alternatives/awk-4` at package `116`
+  - completed count before failure: `115`
+- the next rerun should use the now-committed image-local rule:
+  - `app-alternatives/awk -split-usr`
 
 ## Command Sequence Reference
 
@@ -153,3 +164,5 @@ The following execution state is now validated:
   - explicit `/etc/resolv.conf`
 - the container-services validation currently depends on that same temporary
   upstream workaround until RouterOS has a proper upstream path
+- the current base-image rerun blocker is the merged-usr `awk` collision above,
+  not transport, RouterOS, or Path B provisioning

@@ -85,3 +85,20 @@ bash scripts/publish-container-ghcr.sh \
 - Use narrow package-local compatibility exceptions only when required.
 - Build on the validated container-services VM so Portage policy, LLVM defaults,
   and package exceptions match the intended runtime host.
+
+## Current Validation State
+
+- container-services runtime validation is complete on the Path B lab VM
+- the first source-first base-image build currently uses:
+  - guest size: `32` vCPU, `32 GiB` RAM
+  - Portage parallelism: `MAKEOPTS="-j64"`, `EMERGE_DEFAULT_OPTS="--jobs=16"`
+  - package graph: `482`
+- latest stop point:
+  - completed package markers: `115`
+  - failing package marker: `116`
+  - failing atom: `app-alternatives/awk-4`
+- next rerun should use the image-local package.use rule:
+  - `app-alternatives/awk -split-usr`
+- current timing forecast for the next rerun:
+  - `p90`: `4` to `5` hours
+  - `p95`: `5` to `7` hours
