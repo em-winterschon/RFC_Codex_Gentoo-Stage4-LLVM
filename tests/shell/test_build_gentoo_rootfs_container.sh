@@ -97,12 +97,14 @@ EOF
 }
 
 test_dry_run_use_file() {
-  local temp_dir package_list use_file package_use_file output
+  local temp_dir package_list use_file package_use_file host_package_use_file rootfs_links_file output
   temp_dir="$(mktemp -d)"
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
   use_file="${temp_dir}/use.txt"
   package_use_file="${temp_dir}/package.use"
+  host_package_use_file="${temp_dir}/host.package.use"
+  rootfs_links_file="${temp_dir}/rootfs.links"
 
   cat >"${package_list}" <<'EOF'
 app-shells/bash
@@ -117,12 +119,23 @@ EOF
 app-alternatives/awk -split-usr
 EOF
 
+  cat >"${host_package_use_file}" <<'EOF'
+sys-apps/coreutils -split-usr
+EOF
+
+  cat >"${rootfs_links_file}" <<'EOF'
+/bin usr/bin
+/sbin usr/sbin
+EOF
+
   output="$(
     bash "${BUILD_SCRIPT}" \
       --root "${temp_dir}/rootfs" \
       --package-list "${package_list}" \
       --use-file "${use_file}" \
       --package-use-file "${package_use_file}" \
+      --host-package-use-file "${host_package_use_file}" \
+      --rootfs-links-file "${rootfs_links_file}" \
       --config-root "${temp_dir}/rootfs" \
       --engine none \
       --dry-run
@@ -130,6 +143,8 @@ EOF
 
   assert_contains "${output}" "use-file=${use_file}"
   assert_contains "${output}" "package-use-file=${package_use_file}"
+  assert_contains "${output}" "host-package-use-file=${host_package_use_file}"
+  assert_contains "${output}" "rootfs-links-file=${rootfs_links_file}"
   assert_contains "${output}" 'use-overrides=-split-usr'
 }
 

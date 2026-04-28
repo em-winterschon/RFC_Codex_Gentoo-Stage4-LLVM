@@ -16,6 +16,8 @@ assert_file_contains() {
 for profile in \
   cloud-init-baremetal.yml \
   cloud-init-vm.yml \
+  hardened-llvm-stage4-merged-usr.yml \
+  hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
   metal-builder-farm-node.yml \
@@ -31,6 +33,8 @@ done
 for metadata in \
   cloud-init-baremetal.metadata.yml \
   cloud-init-vm.metadata.yml \
+  hardened-llvm-stage4-merged-usr.metadata.yml \
+  hardened-llvm-stage4-split-usr.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   vm-container-services.metadata.yml \

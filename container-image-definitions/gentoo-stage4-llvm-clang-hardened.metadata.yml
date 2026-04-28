@@ -5,11 +5,13 @@ container_image_definition:
     stage: stage5
     role_class: service-container
     role_name: gentoo-stage4-llvm-clang-hardened
-  source_profile: llvm-clang-hardened-portage
+  source_profile: hardened-llvm-stage4-merged-usr
   package_list: container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages
   use_override_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.use
   package_use_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use
+  host_package_use_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.use
   host_package_mask_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask
+  rootfs_links_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links
   overlay_dir: container-image-definitions/overlays/gentoo-stage4-image-fixes
   labels:
     org.opencontainers.image.title: Gentoo Stage4 LLVM/Clang Hardened Base

@@ -524,7 +524,14 @@ Additional YAML profile definitions can be layered via:
 
 ```yaml
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-split-usr.yml"
+```
+
+For merged-usr VM and container consumers, prefer:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
 ```
 
 ## 9. Service Definition Configuration

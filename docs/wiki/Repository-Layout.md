@@ -71,7 +71,9 @@ gentoo-liveiso-ansible
 │   ├── routeros-path-b.yml
 │   └── tasks/run_install_stage.yml
 ├── profile-definitions/
-│   └── hardened-llvm-stage4.yml
+│   ├── hardened-llvm-stage4.yml
+│   ├── hardened-llvm-stage4-split-usr.yml
+│   └── hardened-llvm-stage4-merged-usr.yml
 ├── roles/
 │   ├── preflight/
 │   ├── liveiso_prepare/

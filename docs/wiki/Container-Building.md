@@ -30,8 +30,12 @@ CPU tuning note:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.use`
 - package.use overrides:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use`
+- host package.use overrides:
+  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.use`
 - host package.mask overrides:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask`
+- rootfs compatibility links:
+  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links`
 - local overlay fixes:
   - `container-image-definitions/overlays/gentoo-stage4-image-fixes`
 
@@ -45,7 +49,9 @@ bash scripts/build-gentoo-rootfs-container.sh \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
   --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
+  --host-package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.use \
   --host-package-mask-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask \
+  --rootfs-links-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links \
   --overlay-dir container-image-definitions/overlays/gentoo-stage4-image-fixes \
   --config-root /var/lib/container-services/images/gentoo-stage4-rootfs \
   --sysroot /var/lib/container-services/images/gentoo-stage4-rootfs \
@@ -59,6 +65,11 @@ Use `--package-use-file` for scoped image quirks such as `app-alternatives/awk`
 under merged-usr. Keep those exceptions image-local rather than weakening the
 host or Stage 4 profile globally.
 
+Use `--host-package-use-file` when host-side build dependencies still default to
+split-usr behavior even though the container root is merged-usr. The current
+definition uses this to force merged-usr-safe host dependency behavior for
+`sys-apps/coreutils`.
+
 Use `--overlay-dir` when the image build needs a narrow ebuild fix in the build
 host dependency path. The current image overlay only patches
 `app-alternatives/awk` so merged-usr build hosts do not trip over the
@@ -68,6 +79,10 @@ Use `--host-package-mask-file` when the build host must be forced away from a
 broken generic atom selection. The current image definition masks
 `=app-alternatives/awk-4::gentoo` on the host so the patched overlay package
 wins for the source-first image build.
+
+Use `--rootfs-links-file` when the target container root should materialize
+merged-usr compatibility links such as `/bin -> usr/bin` and `/sbin -> usr/sbin`
+before `emerge --root` begins.
 
 Engine behavior:
 

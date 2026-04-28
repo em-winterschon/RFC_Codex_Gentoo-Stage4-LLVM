@@ -13,8 +13,12 @@ Options:
   --package-list FILE      Flat package list file (one atom per line).
   --use-file FILE          Flat USE override file (one flag token per line).
   --package-use-file FILE  package.use style overrides to install into config-root.
+  --host-package-use-file FILE
+                           package.use style overrides to install into the build host.
   --host-package-mask-file FILE
                            package.mask style overrides to install into the build host.
+  --rootfs-links-file FILE
+                           Symlink manifest to materialize inside the rootfs before emerge.
   --overlay-dir DIR        Optional Portage overlay repo root to expose in config-root.
   --config-root DIR        Portage config root (default: /).
   --sysroot DIR            Portage sysroot for DEPEND handling (default: /).
@@ -64,7 +68,9 @@ ROOT_DIR=
 PACKAGE_LIST=
 USE_FILE=
 PACKAGE_USE_FILE=
+HOST_PACKAGE_USE_FILE=
 HOST_PACKAGE_MASK_FILE=
+ROOTFS_LINKS_FILE=
 OVERLAY_DIR=
 OVERLAY_REPO_NAME=
 STAGED_OVERLAY_DIR=
@@ -79,6 +85,8 @@ DEFAULT_CMD=/bin/bash
 DRY_RUN=false
 SANITIZED_FEATURES=
 USE_OVERRIDE_FLAGS=()
+HOST_PACKAGE_USE_DEST=/etc/portage/package.use/99-build-gentoo-rootfs-container-host
+HOST_PACKAGE_MASK_DEST=/etc/portage/package.mask/99-build-gentoo-rootfs-container
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -98,8 +106,16 @@ while [[ $# -gt 0 ]]; do
       PACKAGE_USE_FILE=${2-}
       shift 2
       ;;
+    --host-package-use-file)
+      HOST_PACKAGE_USE_FILE=${2-}
+      shift 2
+      ;;
     --host-package-mask-file)
       HOST_PACKAGE_MASK_FILE=${2-}
+      shift 2
+      ;;
+    --rootfs-links-file)
+      ROOTFS_LINKS_FILE=${2-}
       shift 2
       ;;
     --overlay-dir)
@@ -162,8 +178,14 @@ if [[ -n "${PACKAGE_USE_FILE}" ]]; then
   [[ -f "${PACKAGE_USE_FILE}" ]] || die "package.use override file not found: ${PACKAGE_USE_FILE}"
   [[ "${CONFIG_ROOT}" != "/" ]] || die "--package-use-file requires an explicit non-/ --config-root"
 fi
+if [[ -n "${HOST_PACKAGE_USE_FILE}" ]]; then
+  [[ -f "${HOST_PACKAGE_USE_FILE}" ]] || die "host package.use file not found: ${HOST_PACKAGE_USE_FILE}"
+fi
 if [[ -n "${HOST_PACKAGE_MASK_FILE}" ]]; then
   [[ -f "${HOST_PACKAGE_MASK_FILE}" ]] || die "host package.mask file not found: ${HOST_PACKAGE_MASK_FILE}"
+fi
+if [[ -n "${ROOTFS_LINKS_FILE}" ]]; then
+  [[ -f "${ROOTFS_LINKS_FILE}" ]] || die "rootfs link manifest not found: ${ROOTFS_LINKS_FILE}"
 fi
 if [[ -n "${OVERLAY_DIR}" ]]; then
   [[ -d "${OVERLAY_DIR}" ]] || die "overlay dir not found: ${OVERLAY_DIR}"
@@ -203,7 +225,9 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-use-file=%s\n' "${PACKAGE_USE_FILE}"
+  printf 'host-package-use-file=%s\n' "${HOST_PACKAGE_USE_FILE}"
   printf 'host-package-mask-file=%s\n' "${HOST_PACKAGE_MASK_FILE}"
+  printf 'rootfs-links-file=%s\n' "${ROOTFS_LINKS_FILE}"
   printf 'overlay-dir=%s\n' "${OVERLAY_DIR}"
   printf 'overlay-repo-name=%s\n' "${OVERLAY_REPO_NAME}"
   printf 'staged-overlay-dir=%s\n' "${STAGED_OVERLAY_DIR}"
@@ -219,6 +243,21 @@ fi
 require_cmd emerge
 require_cmd install
 
+cleanup_rootfs_builder() {
+  rm -f "${HOST_PACKAGE_USE_DEST}" "${HOST_PACKAGE_MASK_DEST}"
+  if [[ -n "${OVERLAY_REPO_NAME}" ]]; then
+    rm -f \
+      "/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" \
+      "${CONFIG_ROOT}/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" \
+      "/var/db/repos/${OVERLAY_REPO_NAME}" \
+      "${CONFIG_ROOT}/var/db/repos/${OVERLAY_REPO_NAME}"
+  fi
+  if [[ -n "${STAGED_OVERLAY_DIR}" ]]; then
+    rm -rf "${STAGED_OVERLAY_DIR}"
+  fi
+}
+trap cleanup_rootfs_builder EXIT
+
 mkdir -p "${ROOT_DIR}"
 install -d -m 0755 \
   "${ROOT_DIR}/etc" \
@@ -230,15 +269,37 @@ install -d -m 0755 \
   "${ROOT_DIR}/var/tmp"
 chmod 1777 "${ROOT_DIR}/tmp" "${ROOT_DIR}/var/tmp"
 
+if [[ -n "${ROOTFS_LINKS_FILE}" ]]; then
+  while read -r link_path link_target _; do
+    [[ -n "${link_path}" ]] || continue
+    [[ "${link_path}" =~ ^# ]] && continue
+    [[ -n "${link_target}" ]] || die "rootfs link manifest line is missing a target: ${link_path}"
+    [[ "${link_path}" == /* ]] || die "rootfs link path must be absolute: ${link_path}"
+    link_target="${link_target#/}"
+    link_dest="${ROOT_DIR}${link_path}"
+    install -d -m 0755 "$(dirname "${link_dest}")"
+    install -d -m 0755 "${ROOT_DIR}/$(dirname "${link_target}")" "${ROOT_DIR}/${link_target}"
+    if [[ -e "${link_dest}" && ! -L "${link_dest}" ]]; then
+      rmdir "${link_dest}" 2>/dev/null || die "rootfs link destination exists and is not replaceable: ${link_dest}"
+    fi
+    ln -snf "${link_target}" "${link_dest}"
+  done < "${ROOTFS_LINKS_FILE}"
+fi
+
 if [[ -n "${PACKAGE_USE_FILE}" ]]; then
   install -d -m 0755 "${CONFIG_ROOT}/etc/portage/package.use"
   install -m 0644 "${PACKAGE_USE_FILE}" \
     "${CONFIG_ROOT}/etc/portage/package.use/99-build-gentoo-rootfs-container"
 fi
+if [[ -n "${HOST_PACKAGE_USE_FILE}" ]]; then
+  install -d -m 0755 /etc/portage/package.use
+  install -m 0644 "${HOST_PACKAGE_USE_FILE}" \
+    "${HOST_PACKAGE_USE_DEST}"
+fi
 if [[ -n "${HOST_PACKAGE_MASK_FILE}" ]]; then
   install -d -m 0755 /etc/portage/package.mask
   install -m 0644 "${HOST_PACKAGE_MASK_FILE}" \
-    /etc/portage/package.mask/99-build-gentoo-rootfs-container
+    "${HOST_PACKAGE_MASK_DEST}"
 fi
 if [[ -n "${OVERLAY_DIR}" ]]; then
   install -d -m 0755 \

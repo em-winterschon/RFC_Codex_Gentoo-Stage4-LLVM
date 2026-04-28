@@ -69,6 +69,7 @@
     resolved_portage_package_accept_keywords_files: "{{ portage_package_accept_keywords_files | default({}) }}"
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
+    resolved_profile_parents: "{{ profile_parents | default([]) }}"
     resolved_profile_package_atoms: "{{ profile_package_atoms | default([]) }}"
     resolved_profile_package_list_files: "{{ profile_package_list_files | default([]) }}"
     resolved_profile_openrc_services_enable: "{{ profile_openrc_services_enable | default([]) }}"

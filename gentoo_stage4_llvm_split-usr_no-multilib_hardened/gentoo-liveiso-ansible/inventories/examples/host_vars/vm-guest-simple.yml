@@ -1,6 +1,7 @@
 ---
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
   - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
 

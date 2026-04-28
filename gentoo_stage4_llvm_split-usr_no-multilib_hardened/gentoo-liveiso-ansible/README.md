@@ -15,7 +15,7 @@ of LiveISO via root SSH.
 
 ## Why a local profile overlay exists
 
-The desired target profile is effectively:
+The default target profile is effectively:
 
 - amd64
 - openrc
@@ -26,10 +26,15 @@ The desired target profile is effectively:
 
 Gentoo exposes these profile axes, but this scaffold treats the exact combination as a local
 profile overlay so that the installer can compose the desired state cleanly and predictably.
-The default overlay parents are:
+The default split-usr overlay parents are:
 
 - `gentoo:default/linux/amd64/23.0/llvm`
 - `gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened`
+
+For merged-usr consumers such as container roots and new VM profiles, use the
+parallel merged-usr overlay definition:
+
+- `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
 
 Adjust `profile_parents` if the upstream profile graph changes.
 
@@ -718,11 +723,17 @@ For scalability, Stage 5 package sets should live in external flat files under
 `profile-package-lists/` and be referenced through `package_list_files` instead
 of embedding long `package_atoms` lists inline.
 
-The included preset:
+The included Stage 4 presets:
 
 - `profile-definitions/hardened-llvm-stage4.yml`
+- `profile-definitions/hardened-llvm-stage4-split-usr.yml`
+- `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
 
-adds the Hardened LLVM/OpenRC stage4 policy from the separate setup draft:
+The compatibility alias `hardened-llvm-stage4.yml` retains the split-usr
+baseline. The explicit split-usr and merged-usr variants make usr-layout
+selection data-driven for new consumers.
+
+The Stage 4 policy adds:
 
 - enables `guru`, `xira`, and `without-systemd`
 - appends hardened LLVM-oriented `make.conf` settings
@@ -733,7 +744,7 @@ Example:
 
 ```yaml
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
 ```
 
 ## Gentoo system profiles
@@ -750,6 +761,14 @@ system-profile overlays plus modular cloud-init overlays:
 
 Use them as stacked data, with the Stage 4 baseline first and the Stage 5 role
 overlay(s) after it.
+
+For new VM profiles that should match container-root behavior, prefer:
+
+- `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
+
+For existing metal or compatibility-sensitive installs, keep:
+
+- `profile-definitions/hardened-llvm-stage4-split-usr.yml`
 
 ### Hypervisor host profile
 

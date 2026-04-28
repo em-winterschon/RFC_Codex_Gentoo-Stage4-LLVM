@@ -1,0 +1,5 @@
+# Host-side USE overrides for merged-usr container image builds.
+# These only affect build-host dependencies that Portage merges to / during
+# emerge --root workflows.
+app-alternatives/awk -split-usr
+sys-apps/coreutils -split-usr
