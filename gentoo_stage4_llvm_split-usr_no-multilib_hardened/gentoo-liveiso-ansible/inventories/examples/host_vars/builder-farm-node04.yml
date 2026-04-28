@@ -4,15 +4,15 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
   - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
 
-install_hostname: builder-farm-node01
+install_hostname: builder-farm-node04
 
 profile_cloud_init:
-  instance_id: builder-farm-node01
-  local_hostname: builder-farm-node01
+  instance_id: builder-farm-node04
+  local_hostname: builder-farm-node04
 
 profile_distcc_farm:
   worker_metadata:
-    node_name: builder-farm-node01
+    node_name: builder-farm-node04
     storage_devices:
       - nvme0n1
       - nvme1n1

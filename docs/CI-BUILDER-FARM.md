@@ -80,6 +80,15 @@ Example host group definitions:
 
 - `inventories/examples/hosts.yml`
 
+Per-node host vars:
+
+- `inventories/examples/host_vars/builder-farm-node01.yml`
+- `inventories/examples/host_vars/builder-farm-node02.yml`
+- `inventories/examples/host_vars/builder-farm-node03.yml`
+- `inventories/examples/host_vars/builder-farm-node04.yml`
+- `inventories/examples/host_vars/builder-farm-node05.yml`
+- `inventories/examples/host_vars/builder-farm-node06.yml`
+
 ## Recommended fabric model
 
 Use a dedicated build LAN for distcc traffic.
@@ -151,6 +160,19 @@ This is intended to feed Jenkins build artifacts and future trend tracking for:
 - builder load and merge pressure
 - elapsed time versus completion count
 - later p90/p95 duration modeling across profile revisions
+
+## First-node bring-up workflow
+
+Machine-readable bring-up manifest:
+
+- `docs/workflows/stage5-ci-builder-farm-bringup.json`
+
+That workflow is intended to:
+
+- review the example CIDR and SSH-key placeholders
+- validate the Jenkins controller VM
+- validate `builder_farm_node01` first
+- only then roll the same profile to `node02` through `node06`
 
 ## Outstanding actions
 

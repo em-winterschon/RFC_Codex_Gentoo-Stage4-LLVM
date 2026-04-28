@@ -43,6 +43,12 @@ do
 done
 
 for host_var in \
+  builder-farm-node01.yml \
+  builder-farm-node02.yml \
+  builder-farm-node03.yml \
+  builder-farm-node04.yml \
+  builder-farm-node05.yml \
+  builder-farm-node06.yml \
   hypervisor-host.yml \
   vm-jenkins-controller.yml \
   vm-container-services.yml \
