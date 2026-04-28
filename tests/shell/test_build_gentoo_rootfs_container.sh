@@ -165,6 +165,33 @@ EOF
   assert_contains "${output}" 'overlay-repo-name=test-overlay'
 }
 
+test_dry_run_host_package_mask_file() {
+  local temp_dir package_list mask_file output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  mask_file="${temp_dir}/package.mask"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  cat >"${mask_file}" <<'EOF'
+=app-alternatives/awk-4::gentoo
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --host-package-mask-file "${mask_file}" \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "host-package-mask-file=${mask_file}"
+}
+
 test_package_use_file_requires_explicit_config_root() {
   local temp_dir package_list package_use_file output
   temp_dir="$(mktemp -d)"
@@ -223,6 +250,7 @@ test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
 test_dry_run_use_file
 test_dry_run_overlay_dir
+test_dry_run_host_package_mask_file
 test_package_use_file_requires_explicit_config_root
 test_dry_run_sysroot
 
