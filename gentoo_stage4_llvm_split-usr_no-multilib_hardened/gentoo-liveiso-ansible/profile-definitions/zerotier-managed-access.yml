@@ -1,0 +1,10 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-managed-access-zerotier.packages
+  zerotier:
+    enabled: true
+    allow_managed: true
+    allow_global: false
+    allow_default: false
+    allow_dns: false

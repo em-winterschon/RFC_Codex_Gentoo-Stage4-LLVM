@@ -3,6 +3,7 @@
   ansible.builtin.set_fact:
     container_haproxy_profile: "{{ resolved_profile_container_app_profiles.haproxy | default({}) }}"
     container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+    resolved_haproxy_service_types_local: "{{ resolved_profile_haproxy_service_types | default([]) }}"
 
 - name: Ensure haproxy configuration directory exists
   ansible.builtin.file:

@@ -1,0 +1,21 @@
+---
+gentoo_profile_definition:
+  container_app_profiles:
+    elastic_apm:
+      enabled: true
+      image: docker.elastic.co/apm/apm-server:7.17.25
+      network: apps
+      ip_address: 10.77.1.40
+      published_ports:
+        - 8200:8200/tcp
+      elasticsearch_hosts:
+        - http://elastic-vip.example.internal:9200
+  haproxy_service_types:
+    - name: elastic-apm-http
+      bind: "*:8200"
+      mode: http
+      backend_name: be_elastic_apm
+      servers:
+        - name: elastic-apm
+          address: 10.77.1.40
+          port: 8200

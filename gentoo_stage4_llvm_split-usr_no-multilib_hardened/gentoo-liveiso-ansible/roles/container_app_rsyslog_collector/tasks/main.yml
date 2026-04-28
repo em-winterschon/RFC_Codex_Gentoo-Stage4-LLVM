@@ -1,0 +1,49 @@
+---
+- name: Resolve rsyslog collector container application profile
+  ansible.builtin.set_fact:
+    container_rsyslog_collector_profile: "{{ resolved_profile_container_app_profiles.rsyslog_collector | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure rsyslog collector configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_rsyslog_collector_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_rsyslog_collector_profile.enabled | default(false) | bool
+
+- name: Render rsyslog collector configuration
+  ansible.builtin.template:
+    src: rsyslog.conf.j2
+    dest: "{{ install_target_root }}{{ container_rsyslog_collector_config_dir }}/rsyslog.conf"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_rsyslog_collector_profile.enabled | default(false) | bool
+
+- name: Register rsyslog collector runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'rsyslog-collector',
+              'description': 'centralized rsyslog collector and elastic forwarder',
+              'image': container_rsyslog_collector_profile.image,
+              'network': container_rsyslog_collector_profile.network | default('mgmt'),
+              'ip_address': container_rsyslog_collector_profile.ip_address | default(''),
+              'published_ports': container_rsyslog_collector_profile.published_ports | default(['514:514/udp', '514:514/tcp']),
+              'cap_add': container_rsyslog_collector_profile.cap_add | default([]),
+              'environment': container_rsyslog_collector_profile.env | default({}),
+              'volumes': [
+                container_rsyslog_collector_config_dir + '/rsyslog.conf:/etc/rsyslog.conf:ro'
+              ],
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_rsyslog_collector_profile.enabled | default(false) | bool

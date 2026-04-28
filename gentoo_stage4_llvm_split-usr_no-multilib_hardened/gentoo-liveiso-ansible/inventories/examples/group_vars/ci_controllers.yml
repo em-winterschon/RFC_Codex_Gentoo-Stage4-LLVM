@@ -22,3 +22,12 @@ profile_distcc_farm:
     - name: builder-farm-node06
       address: 10.66.40.16
       slots: 8
+
+profile_netbox_connector:
+  api_url: https://netbox.example.internal
+  token: ""
+  snapshot_enabled: false
+  snapshot_endpoints:
+    - dcim/devices/
+    - virtualization/virtual-machines/
+    - ipam/prefixes/

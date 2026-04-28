@@ -1,0 +1,24 @@
+---
+gentoo_profile_definition:
+  container_app_profiles:
+    rsyslog_collector:
+      enabled: true
+      image: docker.io/rsyslog/syslog_appliance_alpine:latest
+      network: mgmt
+      ip_address: 10.77.0.40
+      published_ports:
+        - 514:514/udp
+        - 514:514/tcp
+      elasticsearch_hosts:
+        - elastic-vip.example.internal
+      elasticsearch_port: 9200
+      elasticsearch_index: stage5-syslog
+  haproxy_service_types:
+    - name: syslog-tcp
+      bind: "*:6514"
+      mode: tcp
+      backend_name: be_syslog_tcp
+      servers:
+        - name: rsyslog-collector
+          address: 10.77.0.40
+          port: 514

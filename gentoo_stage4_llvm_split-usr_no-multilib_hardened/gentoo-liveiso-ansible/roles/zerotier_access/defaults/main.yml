@@ -1,0 +1,8 @@
+---
+zerotier_default_enabled: false
+zerotier_default_network_id: ""
+zerotier_default_allow_managed: true
+zerotier_default_allow_global: false
+zerotier_default_allow_default: false
+zerotier_default_allow_dns: false
+zerotier_default_moon_nodes: []

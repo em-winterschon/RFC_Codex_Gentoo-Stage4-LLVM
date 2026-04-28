@@ -171,6 +171,51 @@
             recursive=True
           )
       }}
+    resolved_profile_rsyslog: >-
+      {{
+        resolved_profile_rsyslog
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.rsyslog | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_elasticsearch_cluster: >-
+      {{
+        resolved_profile_elasticsearch_cluster
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.elasticsearch_cluster | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_kibana: >-
+      {{
+        resolved_profile_kibana
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.kibana | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_netbox_connector: >-
+      {{
+        resolved_profile_netbox_connector
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.netbox_connector | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_zerotier: >-
+      {{
+        resolved_profile_zerotier
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.zerotier | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_haproxy_service_types: >-
+      {{
+        resolved_profile_haproxy_service_types
+        + (loaded_profile_definition_file.gentoo_profile_definition.haproxy_service_types | default([]))
+      }}
     resolved_profile_container_services: >-
       {{
         resolved_profile_container_services

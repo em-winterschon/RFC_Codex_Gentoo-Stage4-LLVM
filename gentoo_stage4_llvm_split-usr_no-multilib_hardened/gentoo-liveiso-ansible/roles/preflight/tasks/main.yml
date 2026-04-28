@@ -81,6 +81,12 @@
     resolved_profile_freeipa_controller: "{{ profile_freeipa_controller | default({}) }}"
     resolved_profile_ipa_client: "{{ profile_ipa_client | default({}) }}"
     resolved_profile_freeradius_bridge: "{{ profile_freeradius_bridge | default({}) }}"
+    resolved_profile_rsyslog: "{{ profile_rsyslog | default({}) }}"
+    resolved_profile_elasticsearch_cluster: "{{ profile_elasticsearch_cluster | default({}) }}"
+    resolved_profile_kibana: "{{ profile_kibana | default({}) }}"
+    resolved_profile_netbox_connector: "{{ profile_netbox_connector | default({}) }}"
+    resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
+    resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
     resolved_profile_container_services: "{{ profile_container_services | default({}) }}"
     resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
@@ -137,6 +143,37 @@
       {{
         resolved_profile_freeradius_bridge
         | combine(profile_freeradius_bridge | default({}), recursive=True)
+      }}
+    resolved_profile_rsyslog: >-
+      {{
+        resolved_profile_rsyslog
+        | combine(profile_rsyslog | default({}), recursive=True)
+      }}
+    resolved_profile_elasticsearch_cluster: >-
+      {{
+        resolved_profile_elasticsearch_cluster
+        | combine(profile_elasticsearch_cluster | default({}), recursive=True)
+      }}
+    resolved_profile_kibana: >-
+      {{
+        resolved_profile_kibana
+        | combine(profile_kibana | default({}), recursive=True)
+      }}
+    resolved_profile_netbox_connector: >-
+      {{
+        resolved_profile_netbox_connector
+        | combine(profile_netbox_connector | default({}), recursive=True)
+      }}
+    resolved_profile_zerotier: >-
+      {{
+        resolved_profile_zerotier
+        | combine(profile_zerotier | default({}), recursive=True)
+      }}
+    resolved_profile_haproxy_service_types: >-
+      {{
+        profile_haproxy_service_types
+        if profile_haproxy_service_types is defined
+        else resolved_profile_haproxy_service_types
       }}
     resolved_profile_container_services: >-
       {{

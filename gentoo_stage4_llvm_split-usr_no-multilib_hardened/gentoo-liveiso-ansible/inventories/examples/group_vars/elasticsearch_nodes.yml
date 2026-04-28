@@ -1,0 +1,19 @@
+---
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-vip.example.internal
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_elasticsearch_cluster:
+  cluster_name: stage5-observability
+  vip_hostname: elastic-vip.example.internal
+  seed_hosts:
+    - vm-elasticsearch-node01.example.internal
+    - vm-elasticsearch-node02.example.internal
+    - vm-elasticsearch-node03.example.internal
+  initial_master_nodes:
+    - vm-elasticsearch-node01
+    - vm-elasticsearch-node02
+    - vm-elasticsearch-node03
+  heap: 4g

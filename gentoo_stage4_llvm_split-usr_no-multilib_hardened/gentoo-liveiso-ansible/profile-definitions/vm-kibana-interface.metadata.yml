@@ -1,0 +1,25 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-kibana-interface
+  purpose: Hardened Gentoo VM profile for Kibana access into the Stage5 Elasticsearch cluster.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: kibana-interface
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-observability-client.packages
+      - profile-package-lists/stage5-virtual-host-kibana-interface.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-admin/rsyslog
+      - www-apps/kibana-bin
+  source_references:
+    - https://packages.gentoo.org/packages/app-admin/rsyslog
+    - https://packages.gentoo.org/packages/www-apps/kibana-bin

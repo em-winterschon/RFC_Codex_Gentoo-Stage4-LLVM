@@ -1,0 +1,80 @@
+---
+- name: Resolve NetBox connector settings
+  ansible.builtin.set_fact:
+    netbox_connector_enabled: >-
+      {{
+        resolved_profile_netbox_connector.enabled
+        | default(netbox_connector_default_enabled)
+        | bool
+      }}
+    resolved_netbox_connector: >-
+      {{
+        {
+          'api_url': resolved_profile_netbox_connector.api_url | default(netbox_connector_default_api_url),
+          'token': resolved_profile_netbox_connector.token | default(netbox_connector_default_token),
+          'validate_certs': resolved_profile_netbox_connector.validate_certs | default(netbox_connector_default_validate_certs),
+          'snapshot_enabled': resolved_profile_netbox_connector.snapshot_enabled | default(netbox_connector_default_snapshot_enabled),
+          'snapshot_endpoints': resolved_profile_netbox_connector.snapshot_endpoints | default(netbox_connector_default_snapshot_endpoints)
+        }
+      }}
+
+- name: Ensure NetBox connector directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ netbox_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/stage5-inventory
+    - /etc/stage5-inventory/netbox.d
+    - /var/lib/stage5-inventory/netbox
+  loop_control:
+    loop_var: netbox_dir
+  when: netbox_connector_enabled
+
+- name: Render NetBox connector manifest
+  ansible.builtin.template:
+    src: netbox-connector.yml.j2
+    dest: "{{ install_target_root }}/etc/stage5-inventory/netbox.d/connector.yml"
+    mode: '0600'
+  when: netbox_connector_enabled
+
+- name: Fetch NetBox inventory snapshots
+  ansible.builtin.uri:
+    url: "{{ resolved_netbox_connector.api_url.rstrip('/') }}/api/{{ netbox_snapshot_endpoint }}"
+    headers:
+      Authorization: "Token {{ resolved_netbox_connector.token }}"
+      Accept: application/json
+    method: GET
+    return_content: true
+    validate_certs: "{{ resolved_netbox_connector.validate_certs }}"
+  loop: "{{ resolved_netbox_connector.snapshot_endpoints }}"
+  loop_control:
+    loop_var: netbox_snapshot_endpoint
+  register: netbox_snapshot_results
+  when:
+    - netbox_connector_enabled
+    - resolved_netbox_connector.snapshot_enabled | bool
+    - resolved_netbox_connector.api_url | length > 0
+    - resolved_netbox_connector.token | length > 0
+
+- name: Install NetBox inventory snapshots
+  ansible.builtin.copy:
+    dest: >-
+      {{
+        install_target_root
+        + '/var/lib/stage5-inventory/netbox/'
+        + (
+            netbox_snapshot_result.netbox_snapshot_endpoint
+            | regex_replace('/+$', '')
+            | regex_replace('/', '_')
+          )
+        + '.json'
+      }}
+    mode: '0644'
+    content: "{{ netbox_snapshot_result.content }}\n"
+  loop: "{{ netbox_snapshot_results.results | default([]) }}"
+  loop_control:
+    loop_var: netbox_snapshot_result
+  when:
+    - netbox_connector_enabled
+    - netbox_snapshot_result.content is defined

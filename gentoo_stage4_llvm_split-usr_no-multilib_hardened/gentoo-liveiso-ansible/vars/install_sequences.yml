@@ -32,15 +32,22 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - rsyslog_base
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
           - platform_profile
           - identity
           - memory_storage
           - jenkins_controller
           - distcc_farm
           - container_host
+          - container_app_rsyslog_collector
+          - container_app_elastic_apm
           - container_app_ntfy
           - container_app_nginx
           - container_app_haproxy
@@ -76,9 +83,14 @@ install_role_sequences:
         roles:
           - kernel
           - bootloader
+          - rsyslog_base
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
           - platform_profile
           - identity
           - finalize
@@ -128,15 +140,22 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - rsyslog_base
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
           - platform_profile
           - identity
           - memory_storage
           - jenkins_controller
           - distcc_farm
           - container_host
+          - container_app_rsyslog_collector
+          - container_app_elastic_apm
           - container_app_ntfy
           - container_app_nginx
           - container_app_haproxy
@@ -170,15 +189,22 @@ install_role_sequences:
         summary: Reapply network and managed OpenRC services.
         roles:
           - network
+          - rsyslog_base
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
           - platform_profile
           - identity
           - memory_storage
           - jenkins_controller
           - distcc_farm
           - container_host
+          - container_app_rsyslog_collector
+          - container_app_elastic_apm
           - container_app_ntfy
           - container_app_nginx
           - container_app_haproxy

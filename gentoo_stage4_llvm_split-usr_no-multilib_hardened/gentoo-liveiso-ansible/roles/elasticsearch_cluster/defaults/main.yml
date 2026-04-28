@@ -1,0 +1,18 @@
+---
+elasticsearch_cluster_default_enabled: false
+elasticsearch_cluster_default_cluster_name: stage5-observability
+elasticsearch_cluster_default_node_name: ""
+elasticsearch_cluster_default_network_host: 0.0.0.0
+elasticsearch_cluster_default_http_port: 9200
+elasticsearch_cluster_default_transport_port: 9300
+elasticsearch_cluster_default_seed_hosts: []
+elasticsearch_cluster_default_initial_master_nodes: []
+elasticsearch_cluster_default_roles:
+  - master
+  - data
+  - ingest
+elasticsearch_cluster_default_heap: 4g
+elasticsearch_cluster_default_path_data: /var/lib/elasticsearch
+elasticsearch_cluster_default_path_logs: /var/log/elasticsearch
+elasticsearch_cluster_default_publish_host: ""
+elasticsearch_cluster_default_vip_hostname: ""

@@ -17,17 +17,24 @@ for profile in \
   aaa-domain-client.yml \
   cloud-init-baremetal.yml \
   cloud-init-vm.yml \
+  container-elastic-apm.yml \
+  container-rsyslog-collector.yml \
   hardened-llvm-stage4-merged-usr.yml \
   hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
+  netbox-managed-inventory.yml \
   vm-container-services.yml \
+  vm-elasticsearch-node.yml \
   vm-identity-controller.yml \
   vm-jenkins-controller.yml \
   vm-guest-application-server.yml \
-  vm-guest-simple-ipxe.yml
+  vm-guest-simple-ipxe.yml \
+  vm-kibana-interface.yml \
+  zerotier-managed-access.yml
 do
   test -f "${PROFILE_DIR}/${profile}"
   assert_file_contains "${PROFILE_DIR}/${profile}" '^gentoo_profile_definition:'
@@ -43,10 +50,12 @@ for metadata in \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
   vm-container-services.metadata.yml \
+  vm-elasticsearch-node.metadata.yml \
   vm-identity-controller.metadata.yml \
   vm-jenkins-controller.metadata.yml \
   vm-guest-application-server.metadata.yml \
-  vm-guest-simple-ipxe.metadata.yml
+  vm-guest-simple-ipxe.metadata.yml \
+  vm-kibana-interface.metadata.yml
 do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
@@ -60,11 +69,15 @@ for host_var in \
   builder-farm-node05.yml \
   builder-farm-node06.yml \
   hypervisor-host.yml \
+  vm-elasticsearch-node01.yml \
+  vm-elasticsearch-node02.yml \
+  vm-elasticsearch-node03.yml \
   vm-identity-controller.yml \
   vm-jenkins-controller.yml \
   vm-container-services.yml \
   vm-guest-appserver.yml \
-  vm-guest-simple.yml
+  vm-guest-simple.yml \
+  vm-kibana-interface.yml
 do
   test -f "${HOST_VARS_DIR}/${host_var}"
   assert_file_contains "${HOST_VARS_DIR}/${host_var}" '^profile_definition_files:'
@@ -73,13 +86,17 @@ done
 for package_list in \
   cloud-init-base.packages \
   stage5-domain-client.packages \
+  stage5-managed-access-zerotier.packages \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \
+  stage5-observability-client.packages \
   stage5-virtual-host-base.packages \
   stage5-virtual-host-appserver.packages \
+  stage5-virtual-host-elasticsearch-node.packages \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
+  stage5-virtual-host-kibana-interface.packages \
   stage5-virtual-host-container-services.packages
 do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"
