@@ -13,6 +13,7 @@ Options:
   --package-list FILE      Flat package list file (one atom per line).
   --use-file FILE          Flat USE override file (one flag token per line).
   --package-use-file FILE  package.use style overrides to install into config-root.
+  --overlay-dir DIR        Optional Portage overlay repo root to expose in config-root.
   --config-root DIR        Portage config root (default: /).
   --sysroot DIR            Portage sysroot for DEPEND handling (default: /).
   --image-ref REF          Local image reference to create.
@@ -61,6 +62,8 @@ ROOT_DIR=
 PACKAGE_LIST=
 USE_FILE=
 PACKAGE_USE_FILE=
+OVERLAY_DIR=
+OVERLAY_REPO_NAME=
 CONFIG_ROOT=/
 SYSROOT=/
 IMAGE_REF=
@@ -89,6 +92,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --package-use-file)
       PACKAGE_USE_FILE=${2-}
+      shift 2
+      ;;
+    --overlay-dir)
+      OVERLAY_DIR=${2-}
       shift 2
       ;;
     --config-root)
@@ -147,6 +154,13 @@ if [[ -n "${PACKAGE_USE_FILE}" ]]; then
   [[ -f "${PACKAGE_USE_FILE}" ]] || die "package.use override file not found: ${PACKAGE_USE_FILE}"
   [[ "${CONFIG_ROOT}" != "/" ]] || die "--package-use-file requires an explicit non-/ --config-root"
 fi
+if [[ -n "${OVERLAY_DIR}" ]]; then
+  [[ -d "${OVERLAY_DIR}" ]] || die "overlay dir not found: ${OVERLAY_DIR}"
+  [[ -f "${OVERLAY_DIR}/profiles/repo_name" ]] || die "overlay dir missing profiles/repo_name: ${OVERLAY_DIR}"
+  [[ "${CONFIG_ROOT}" != "/" ]] || die "--overlay-dir requires an explicit non-/ --config-root"
+  OVERLAY_REPO_NAME="$(<"${OVERLAY_DIR}/profiles/repo_name")"
+  [[ -n "${OVERLAY_REPO_NAME}" ]] || die "overlay repo_name is empty: ${OVERLAY_DIR}"
+fi
 [[ "${ENGINE}" =~ ^(auto|buildah|podman-import|none)$ ]] || die "unsupported engine: ${ENGINE}"
 if [[ "${ENGINE}" != "none" ]]; then
   [[ -n "${IMAGE_REF}" ]] || die "--image-ref is required unless --engine none is used"
@@ -177,6 +191,8 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-use-file=%s\n' "${PACKAGE_USE_FILE}"
+  printf 'overlay-dir=%s\n' "${OVERLAY_DIR}"
+  printf 'overlay-repo-name=%s\n' "${OVERLAY_REPO_NAME}"
   printf 'package-count=%s\n' "${#PACKAGE_ATOMS[@]}"
   printf 'use-overrides=%s\n' "${USE_OVERRIDE_FLAGS[*]:-}"
   printf 'engine=%s\n' "${RESOLVED_ENGINE}"
@@ -204,6 +220,17 @@ if [[ -n "${PACKAGE_USE_FILE}" ]]; then
   install -d -m 0755 "${CONFIG_ROOT}/etc/portage/package.use"
   install -m 0644 "${PACKAGE_USE_FILE}" \
     "${CONFIG_ROOT}/etc/portage/package.use/99-build-gentoo-rootfs-container"
+fi
+if [[ -n "${OVERLAY_DIR}" ]]; then
+  install -d -m 0755 "${CONFIG_ROOT}/etc/portage/repos.conf" "${CONFIG_ROOT}/var/db/repos"
+  ln -snf "${OVERLAY_DIR}" "${CONFIG_ROOT}/var/db/repos/${OVERLAY_REPO_NAME}"
+  cat > "${CONFIG_ROOT}/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" <<EOF
+[${OVERLAY_REPO_NAME}]
+location = ${OVERLAY_DIR}
+masters = gentoo
+auto-sync = no
+priority = 9999
+EOF
 fi
 
 log "building rootfs in ${ROOT_DIR}"

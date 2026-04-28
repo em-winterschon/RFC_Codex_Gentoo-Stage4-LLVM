@@ -133,6 +133,38 @@ EOF
   assert_contains "${output}" 'use-overrides=-split-usr'
 }
 
+test_dry_run_overlay_dir() {
+  local temp_dir package_list overlay_dir output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  overlay_dir="${temp_dir}/overlay"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  mkdir -p "${overlay_dir}/profiles" "${overlay_dir}/metadata"
+  printf 'test-overlay\n' > "${overlay_dir}/profiles/repo_name"
+  cat >"${overlay_dir}/metadata/layout.conf" <<'EOF'
+masters = gentoo
+repo-name = test-overlay
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --overlay-dir "${overlay_dir}" \
+      --config-root "${temp_dir}/rootfs" \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "overlay-dir=${overlay_dir}"
+  assert_contains "${output}" 'overlay-repo-name=test-overlay'
+}
+
 test_package_use_file_requires_explicit_config_root() {
   local temp_dir package_list package_use_file output
   temp_dir="$(mktemp -d)"
@@ -190,6 +222,7 @@ test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
 test_dry_run_use_file
+test_dry_run_overlay_dir
 test_package_use_file_requires_explicit_config_root
 test_dry_run_sysroot
 

@@ -30,6 +30,8 @@ CPU tuning note:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.use`
 - package.use overrides:
   - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use`
+- local overlay fixes:
+  - `container-image-definitions/overlays/gentoo-stage4-image-fixes`
 
 ## Rootfs build helper
 
@@ -41,6 +43,7 @@ bash scripts/build-gentoo-rootfs-container.sh \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
   --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
+  --overlay-dir container-image-definitions/overlays/gentoo-stage4-image-fixes \
   --config-root /var/lib/container-services/images/gentoo-stage4-rootfs \
   --sysroot /var/lib/container-services/images/gentoo-stage4-rootfs \
   --image-ref localhost/gentoo-stage4-llvm-clang-hardened:latest \
@@ -52,6 +55,11 @@ bash scripts/build-gentoo-rootfs-container.sh \
 Use `--package-use-file` for scoped image quirks such as `app-alternatives/awk`
 under merged-usr. Keep those exceptions image-local rather than weakening the
 host or Stage 4 profile globally.
+
+Use `--overlay-dir` when the image build needs a narrow ebuild fix in the build
+host dependency path. The current image overlay only patches
+`app-alternatives/awk` so merged-usr build hosts do not trip over the
+`/bin/awk` versus `/usr/bin/awk` internal collision.
 
 Engine behavior:
 
