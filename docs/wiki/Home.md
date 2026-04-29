@@ -18,6 +18,8 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
   staged Ansible installer for Path A LiveISO-driven imaging plus Path B iPXE asset publishing
 - `gentoo-virt-qemu`
   host-side VM builder and launcher helpers for pre-bare-metal validation
+- `container-image-definitions`
+  Stage4/Stage5 container rootfs package lists, USE policy, and overlay fixes
 - `scripts`, `.github/workflows`, `openrc`
   notification, approval-watcher, CI, and host integration tooling
 - `docs/workflows`
@@ -50,6 +52,14 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Workflows](Workflows)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
+- [Binpkg Repository](Binpkg-Repository)
+- [Container Building](Container-Building)
+- [Container Publishing](Container-Publishing)
+- [Identity AAA](Identity-AAA)
+- [Telemetry Observability](Telemetry-Observability)
+- [Observability Access](Observability-Access)
+- [Changelog](Changelog)
+- [EOD Status 2026-04-28](EOD-Status-2026-04-28)
 - [Repository Layout](Repository-Layout)
 - [Roadmap and TODO](Roadmap-and-TODO)
 

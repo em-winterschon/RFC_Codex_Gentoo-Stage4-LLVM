@@ -23,6 +23,15 @@ Current mirrored pages:
 - `Workflows.md`
 - `Configurations-and-Examples.md`
 - `CI-Builder-Farm.md`
+- `Binpkg-Repository.md`
+- `Container-Services-Validation.md`
+- `Container-Building.md`
+- `Container-Publishing.md`
+- `Identity-AAA.md`
+- `Telemetry-Observability.md`
+- `Observability-Access.md`
+- `Changelog.md`
+- `EOD-Status-2026-04-28.md`
 - `Repository-Layout.md`
 - `Roadmap-and-TODO.md`
 - `_Sidebar.md`
