@@ -3,3 +3,4 @@
 # emerge --root workflows.
 app-alternatives/awk -split-usr
 sys-apps/coreutils -split-usr
+llvm-runtimes/clang-runtime -openmp

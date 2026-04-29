@@ -18,6 +18,8 @@ Options:
   --binpkg-sync-remote HOST
                            Optional rsync/ssh destination host for binpkg sync.
   --binpkg-sync-root DIR   Remote repository root (default: /srv/stage5-binpkgs).
+  --profile-parent PARENT  Profile parent for generated config-root profile.
+                           May be repeated. Defaults to merged-usr Stage4 parents.
   --use-file FILE          Flat USE override file (one flag token per line).
   --package-use-file FILE  package.use style overrides to install into config-root.
   --host-package-use-file FILE
@@ -77,6 +79,8 @@ PKGDIR=
 BINPKG_REPO_ID=
 BINPKG_SYNC_REMOTE=
 BINPKG_SYNC_ROOT=/srv/stage5-binpkgs
+PROFILE_OVERLAY_NAME=local-container-image-profile
+PROFILE_NAME=stage4-container-image
 USE_FILE=
 PACKAGE_USE_FILE=
 HOST_PACKAGE_USE_FILE=
@@ -97,6 +101,7 @@ DRY_RUN=false
 SANITIZED_FEATURES=
 BUILDAH_CONTAINER_ID=
 USE_OVERRIDE_FLAGS=()
+PROFILE_PARENTS=()
 HOST_PACKAGE_USE_DEST=/etc/portage/package.use/99-build-gentoo-rootfs-container-host
 HOST_PACKAGE_MASK_DEST=/etc/portage/package.mask/99-build-gentoo-rootfs-container
 
@@ -124,6 +129,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --binpkg-sync-root)
       BINPKG_SYNC_ROOT=${2-}
+      shift 2
+      ;;
+    --profile-parent)
+      PROFILE_PARENTS+=("${2-}")
       shift 2
       ;;
     --use-file)
@@ -239,6 +248,12 @@ mapfile -t PACKAGE_ATOMS < <(grep -Ev '^[[:space:]]*($|#)' "${PACKAGE_LIST}")
 if [[ -n "${USE_FILE}" ]]; then
   mapfile -t USE_OVERRIDE_FLAGS < <(grep -Ev '^[[:space:]]*($|#)' "${USE_FILE}")
 fi
+if [[ ${#PROFILE_PARENTS[@]} -eq 0 ]]; then
+  PROFILE_PARENTS=(
+    gentoo:default/linux/amd64/23.0/llvm
+    gentoo:default/linux/amd64/23.0/no-multilib/hardened
+  )
+fi
 SANITIZED_FEATURES="$(sanitize_emerge_features)"
 
 RESOLVED_ENGINE=${ENGINE}
@@ -261,6 +276,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'binpkg-repo-id=%s\n' "${BINPKG_REPO_ID}"
   printf 'binpkg-sync-remote=%s\n' "${BINPKG_SYNC_REMOTE}"
   printf 'binpkg-sync-root=%s\n' "${BINPKG_SYNC_ROOT}"
+  printf 'profile-parents=%s\n' "${PROFILE_PARENTS[*]}"
   printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-use-file=%s\n' "${PACKAGE_USE_FILE}"
   printf 'host-package-use-file=%s\n' "${HOST_PACKAGE_USE_FILE}"
@@ -289,7 +305,8 @@ cleanup_rootfs_builder() {
   if [[ -n "${OVERLAY_REPO_NAME}" ]]; then
     rm -f \
       "/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" \
-      "${CONFIG_ROOT}/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" \
+      "${CONFIG_ROOT}/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf"
+    rm -rf \
       "/var/db/repos/${OVERLAY_REPO_NAME}" \
       "${CONFIG_ROOT}/var/db/repos/${OVERLAY_REPO_NAME}"
   fi
@@ -345,6 +362,42 @@ if [[ -n "${ROOTFS_LINKS_FILE}" ]]; then
     fi
     ln -snf "${link_target}" "${link_dest}"
   done < "${ROOTFS_LINKS_FILE}"
+fi
+
+if [[ "${CONFIG_ROOT}" != "/" ]]; then
+  install -d -m 0755 \
+    "${CONFIG_ROOT}/etc/portage" \
+    "${CONFIG_ROOT}/etc/portage/repos.conf" \
+    "${CONFIG_ROOT}/var/db/repos" \
+    "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/metadata" \
+    "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}"
+  ln -snf /var/db/repos/gentoo "${CONFIG_ROOT}/var/db/repos/gentoo"
+  printf '%s\n' "${PROFILE_OVERLAY_NAME}" > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/repo_name"
+  printf 'repo-name = %s\nmasters = gentoo\nthin-manifests = true\n' "${PROFILE_OVERLAY_NAME}" \
+    > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/metadata/layout.conf"
+  printf 'amd64 %s stable\n' "${PROFILE_NAME}" \
+    > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/profiles.desc"
+  printf '8\n' > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}/eapi"
+  : > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}/parent"
+  for profile_parent in "${PROFILE_PARENTS[@]}"; do
+    if [[ "${profile_parent}" == *:* ]]; then
+      profile_repo="${profile_parent%%:*}"
+      profile_path="${profile_parent#*:}"
+      printf '../../../%s/profiles/%s\n' "${profile_repo}" "${profile_path}" \
+        >> "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}/parent"
+    else
+      printf '%s\n' "${profile_parent}" \
+        >> "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}/parent"
+    fi
+  done
+  cat > "${CONFIG_ROOT}/etc/portage/repos.conf/${PROFILE_OVERLAY_NAME}.conf" <<EOF
+[${PROFILE_OVERLAY_NAME}]
+location = /var/db/repos/${PROFILE_OVERLAY_NAME}
+masters = gentoo
+auto-sync = no
+EOF
+  ln -snf "../../var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}" \
+    "${CONFIG_ROOT}/etc/portage/make.profile"
 fi
 
 if [[ -n "${PACKAGE_USE_FILE}" ]]; then
