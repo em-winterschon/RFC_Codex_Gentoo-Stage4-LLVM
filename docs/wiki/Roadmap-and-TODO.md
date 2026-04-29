@@ -6,10 +6,10 @@ This page tracks concrete next work, dependencies, and current blockers.
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `CP-001` | blocked | Fix `sys-apps/coreutils-9.10-r1` overlay patch failure | current failed build logs | `coreutils-9.5-skip-readutmp-test.patch` no longer applies in `src_prepare`. |
-| `CP-002` | pending | Validate `coreutils` in isolation | `CP-001` | Run a narrow emerge/ebuild prepare test before another full base-container rerun. |
-| `CP-003` | pending | Restart base-container build against the binpkg repo | `CP-002` | Use the repository at `10.9.8.90:8088` and keep binpkg publication enabled. |
-| `CP-004` | pending | Keep successful packages synced during the rerun | `CP-003` | Prefer `--binpkg-sync-remote`; otherwise use `watch-sync-binpkgs-to-repo.sh --watch-pid`. |
+| `CP-001` | completed | Fix `sys-apps/coreutils-9.10-r1` overlay patch failure | current failed build logs | Overlay now carries referenced patch files and skips split-usr relocation for merged-usr image roots. |
+| `CP-002` | completed | Validate `coreutils` in isolation | `CP-001` | `ebuild clean prepare` and focused `emerge --buildpkg` passed; binpkg published. |
+| `CP-003` | active | Restart base-container build against the binpkg repo | `CP-002` | Current rerun is active on `10.9.8.89` against the repository at `10.9.8.90:8088`. |
+| `CP-004` | active | Keep successful packages synced during the rerun | `CP-003` | Host watch-sync and remote restart watchdog are active at 10-minute intervals. |
 | `CP-005` | pending | Validate finished local image and tarball | `CP-003` | Target image: `localhost/gentoo-stage4-llvm-clang-hardened:latest`. |
 | `CP-006` | pending | Push validated image to GHCR | `CP-005` | Token source exists on-host at `~/.ssh/codex.d/tokens/GHCR_TOKEN`. |
 
@@ -27,9 +27,9 @@ Current repo:
   - `10.9.8.90`
 - HTTP endpoint:
   - `http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
-- last observed package index:
-  - `256` package records
-  - `258` files
+- last observed package index after coreutils sync:
+  - `257` package records
+  - `259` files
 
 Dependency:
 
@@ -44,14 +44,17 @@ Current state:
 - address:
   - `10.9.8.89`
 - last build state:
-  - failed at `248 / 471`
-  - failing atom: `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
+  - active rerun
+  - last observed progress: `97 / 471`
+  - prior failing atom resolved: `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
 - synced build artifacts:
-  - final watch-sync completed after failure
+  - focused `coreutils` binpkg sync completed
+  - periodic watch-sync active during rerun
 
 Dependency:
 
-- no new full rerun should start until `CP-001` and `CP-002` are complete.
+- allow the active rerun to continue unless it stops or hits a new package
+  blocker; the remote watchdog may relaunch up to two times.
 
 ## Short-Term Work
 

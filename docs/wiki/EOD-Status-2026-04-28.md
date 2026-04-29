@@ -15,13 +15,14 @@ Validated live:
   - `stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
 - current HTTP endpoint:
   - `http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
-- current repo index:
-  - `256` package records
-  - `258` files
-- final package sync completed at approximately `2026-04-28 21:13 PDT`
+- current repo index after focused `coreutils` sync:
+  - `257` package records
+  - `259` files
+- latest focused package sync completed at approximately `2026-04-28 22:27 PDT`
 
-The base-container build is not currently running. It reached `248 / 471`
-package steps before failing on the scoped `sys-apps/coreutils` overlay patch.
+The scoped `sys-apps/coreutils` overlay blocker was resolved and validated in
+isolation. A new base-container rerun is active on `10.9.8.89` against the
+binpkg repository, with periodic binpkg sync and an overnight restart watchdog.
 
 ## Commits Landed Today
 
@@ -39,6 +40,7 @@ package steps before failing on the scoped `sys-apps/coreutils` overlay patch.
 - `9822f75` Bootstrap image build config roots
 - `8ef57df` Add Path B binpkg repository VM workflow
 - `674ad9a` Add binpkg watch sync helper
+- `1fb68ae` Fix coreutils overlay patch staging
 
 ## Live Runtime State
 
@@ -78,7 +80,7 @@ Host:
 - local build PKGDIR:
   - `/var/lib/container-services-ephemeral/images/binpkgs`
 
-Final observed build state:
+Final observed failed build state:
 
 - graph size: `471`
 - completed package steps: `247`
@@ -87,15 +89,31 @@ Final observed build state:
   - `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
 - local build PKGDIR count:
   - `51` files
-- final binpkg repository count after sync:
+- final binpkg repository count after failed-run sync:
   - `256` package records
 
-The detached watch-sync helper ran every `300` seconds and exited after the
-build process ended. Its final sync completed successfully.
+Current rerun state:
+
+- graph size: `471`
+- last observed progress: `97 / 471`
+- active build process on `10.9.8.89`
+- focused `coreutils` binpkg is present in the repository VM
+- current binpkg repository count after focused `coreutils` sync:
+  - `257` package records
+  - `259` files
+
+Active safety loops:
+
+- local `watch-sync-binpkgs-to-repo.sh` publishes the remote builder PKGDIR
+  every `600` seconds
+- remote `watch-container-base-build.sh` syncs binpkgs and relaunches the build
+  up to two times if it stops before `completed rootfs build`
 
 Log:
 
 - `/var/log/stage5-binpkg-sync-watch-container-services.log`
+- builder watchdog log:
+  - `/root/container-base-watchdog.log`
 
 ## Major Errors And Direction Changes
 
@@ -205,7 +223,7 @@ Impact:
 - reduced one blocker class for the current base-container objective
 - can be revisited after the first functional GHCR-published image exists
 
-### 6. Current blocker: stale coreutils patch in the local overlay
+### 6. Coreutils blocker resolved and guarded
 
 Failure:
 
@@ -222,12 +240,15 @@ Interpretation:
 - this is now a scoped overlay maintenance issue, not a general infrastructure
   failure
 
-Tomorrow's first action:
+Resolution:
 
-- refresh or remove the stale `coreutils-9.5-skip-readutmp-test.patch`
-  application in the overlay
-- validate `src_prepare`
-- rerun the base-container build against the binpkg repository
+- staged the patch files referenced by the local overlay ebuild
+- changed the overlay ebuild so split-usr relocation is skipped when building
+  merged-usr image roots
+- validated `ebuild --skip-manifest clean prepare`
+- built `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes` in isolation
+- synced the resulting `coreutils-9.10-r1-1.gpkg.tar` into the binpkg repository
+- restarted the base-container build against the binhost
 
 ## Documentation And Wiki Sync
 
@@ -250,7 +271,7 @@ Wiki source mirrors updated:
 
 ## Build Timing Assessment
 
-Raw package-count completion before failure:
+Previous package-count completion before the blocker:
 
 - `247 / 471` completed
 - `248 / 471` failed
@@ -260,7 +281,7 @@ This is not equivalent to CPU-time completion because package weight is uneven.
 However, GCC and glibc completed before the current `coreutils` failure, which
 removes two expensive steps from the next binpkg-assisted rerun.
 
-Estimate after the `coreutils` overlay fix, assuming no equivalent blocker:
+Estimate for the active binpkg-assisted rerun, assuming no equivalent blocker:
 
 - `p90`: `2` to `4` hours
 - `p95`: `4` to `6` hours
@@ -272,18 +293,17 @@ Estimate if another overlay/package-policy blocker appears in the next tranche:
 
 ## Tomorrow Dependency Chain
 
-1. Fix the `coreutils` overlay patch failure.
-2. Validate `coreutils` prepare/build behavior in isolation.
-3. Restart the base-container build using the current binhost.
-4. Ensure builder invocation includes binpkg sync on exit, or run the watch-sync
-   helper with the new build PID.
-5. Carry the build to image/tarball completion.
-6. Validate the image locally with Podman.
-7. Push the validated image to GHCR.
+1. Check `/root/container-base-rerun.log` and `/root/container-base-watchdog.log`
+   on `10.9.8.89`.
+2. If the active rerun completed, validate the image and tarball locally.
+3. If the watchdog restarted the build, inspect the preserved timestamped log.
+4. If a new package blocker appears, patch narrowly and preserve binpkg
+   continuity.
+5. Push the validated image to GHCR after local Podman validation succeeds.
 
 ## Data Safety
 
-Repo-side changes are committed and pushed through `674ad9a` before this EOD
+Repo-side changes are committed and pushed through `1fb68ae` before this EOD
 documentation update. Build artifacts already produced have been synced into
 the repository VM. The remaining uncommitted files before this report were
 pre-existing unrelated workspace noise:

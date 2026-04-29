@@ -162,13 +162,15 @@ Artifacts produced:
 - the first source-first base-image build currently uses:
   - guest size: `32` vCPU, `32 GiB` RAM
   - Portage parallelism: `MAKEOPTS="-j64"`, `EMERGE_DEFAULT_OPTS="--jobs=16"`
-  - package graph: `482`
-- latest stop point:
-  - completed package markers: `115`
-  - failing package marker: `116`
-  - failing atom: `app-alternatives/awk-4`
-- next rerun should use the image-local package.use rule:
-  - `app-alternatives/awk -split-usr`
-- current timing forecast for the next rerun:
-  - `p90`: `4` to `5` hours
-  - `p95`: `5` to `7` hours
+  - package graph: `471`
+- latest resolved blocker:
+  - failing atom: `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
+  - fix: stage referenced overlay patch files and skip split-usr relocation
+    when building merged-usr image roots
+- active rerun:
+  - binhost: `10.9.8.90:8088`
+  - last observed progress: `97 / 471`
+  - periodic binpkg sync and a bounded restart watchdog are active
+- current timing forecast for the active rerun:
+  - `p90`: `2` to `4` hours
+  - `p95`: `4` to `6` hours

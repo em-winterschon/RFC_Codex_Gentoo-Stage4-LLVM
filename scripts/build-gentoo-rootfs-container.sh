@@ -66,7 +66,7 @@ sanitize_emerge_features() {
   sanitized="$(
     printf '%s\n' "${raw}" \
       | tr ' ' '\n' \
-      | grep -Ev '^(distcc|ccache)$' \
+      | grep -Ev '^-?(distcc|ccache)$' \
       | awk 'NF' \
       | paste -sd' ' -
   )"
@@ -453,10 +453,9 @@ emerge_env=(
   "PKGDIR=${PKGDIR}"
   "PORTAGE_BINPKG_FORMAT=${PORTAGE_BINPKG_FORMAT:-tar}"
 )
+sanitized_features="-distcc -ccache"
 if [[ -n "${SANITIZED_FEATURES}" ]]; then
-  sanitized_features="${SANITIZED_FEATURES}"
-else
-  sanitized_features=""
+  sanitized_features="${sanitized_features} ${SANITIZED_FEATURES}"
 fi
 if [[ " ${sanitized_features} " != *" buildpkg "* ]]; then
   sanitized_features="${sanitized_features:+${sanitized_features} }buildpkg"

@@ -16,6 +16,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added `sync-binpkgs-to-repo.sh` for explicit PKGDIR publication.
 - Added `watch-sync-binpkgs-to-repo.sh` for active or externally launched
   builders, including SSH-remote PKGDIR staging.
+- Added `watch-container-base-build.sh` so detached container-image builds can
+  sync binpkgs and relaunch a bounded number of times after failure.
 - Added Jenkins controller and `distcc` builder-farm scaffolding.
 - Added first-node builder-farm bring-up workflow.
 - Added FreeIPA, SSSD, and FreeRADIUS scaffolding for RBAC/AAA.
@@ -34,6 +36,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Updated the binpkg repository role so nginx includes `conf.d`, has its log
   directory, and serves a dataset-backed repository path.
 - Updated rsyslog templating to use valid property expansion.
+- Hardened the rootfs builder so inherited host `distcc` and `ccache`
+  `FEATURES` are explicitly disabled for isolated container-image builds.
 
 ### Fixed
 
@@ -45,17 +49,18 @@ infrastructure work. It is intentionally higher level than `git log`.
   locally before publishing.
 - Fixed `sync-binpkgs-to-repo.sh` executable mode so helper chaining works.
 - Fixed watch-mode process tracking by adding `--watch-pid`.
+- Fixed the `coreutils-9.10-r1` image overlay by staging the referenced patch
+  files and preventing the split-usr install path from re-splitting merged-usr
+  image roots.
 
-### Current Known Blocker
+### Active Build State
 
-- The base-container build reached `248 / 471` and failed at
-  `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`.
-- Failure mode:
-  - `coreutils-9.5-skip-readutmp-test.patch` no longer applies during
-    `src_prepare`
-- Next fix:
-  - refresh or remove that stale overlay patch, validate `src_prepare`, and
-    restart the build with the existing binpkg repository.
+- The `coreutils` blocker was validated in isolation and its binpkg was
+  published to the Stage4/Stage5 binpkg repository.
+- The base-container build was restarted against the binhost and had advanced
+  past early binary merges at last observation.
+- A local binpkg watch-sync loop and a remote build restart watchdog are active
+  for the overnight run.
 
 ## 2026-04-27
 

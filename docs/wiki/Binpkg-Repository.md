@@ -111,7 +111,7 @@ Set the calling environment for high parallelism:
 ```bash
 export MAKEOPTS="-j60"
 export EMERGE_DEFAULT_OPTS="--jobs=24 --load-average=60 --buildpkg=y --usepkg=y --with-bdeps=y --complete-graph=y --autounmask=y --autounmask-backtrack=y --autounmask-continue=y --autounmask-unrestricted-atoms=y --autounmask-use=y --autounmask-write=y --binpkg-respect-use=y"
-export FEATURES="buildpkg parallel-install merge-sync"
+export FEATURES="-distcc -ccache buildpkg parallel-install merge-sync"
 export PORTAGE_BINPKG_FORMAT="tar"
 export BINPKG_COMPRESS="zstd"
 export BINPKG_COMPRESS_FLAGS="-2"
@@ -120,6 +120,27 @@ export BINPKG_COMPRESS_FLAGS="-2"
 The helper syncs `PKGDIR` to the repository host on exit when
 `--binpkg-sync-remote` is set, including failed exits. That preserves useful
 packages from partial runs.
+
+For overnight or unattended reruns, pair the sync helper with the build
+watchdog. The watchdog does not diagnose new package blockers by itself; it
+preserves continuity by syncing binpkgs and relaunching a bounded number of
+times if the detached build exits before `completed rootfs build`.
+
+```bash
+setsid -f bash -c 'exec scripts/watch-container-base-build.sh \
+  --launch-script /root/run-container-base-build-coreutils-fix.sh \
+  --build-log /root/container-base-rerun.log \
+  --watch-pattern "build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage4-rootfs" \
+  --pkgdir /var/lib/container-services-ephemeral/images/binpkgs \
+  --repo-id "$1" \
+  --sync-remote root@10.9.8.90 \
+  --sync-root /srv/stage5-binpkgs \
+  --interval 600 \
+  --max-restarts 2 \
+  --watch-log /root/container-base-watchdog.log \
+  >>/root/container-base-watchdog.runner.log 2>&1' \
+  stage5-container-watch "${repo_id}"
+```
 
 For already-running or externally launched builders, use the watch-sync helper.
 It stages remote PKGDIRs locally first, then publishes them to the repository:
