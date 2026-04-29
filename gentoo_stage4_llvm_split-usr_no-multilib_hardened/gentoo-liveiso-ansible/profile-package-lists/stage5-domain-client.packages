@@ -1,4 +1,4 @@
 sys-auth/sssd
 app-crypt/mit-krb5
 net-nds/openldap
-app-crypt/ca-certificates
+app-misc/ca-certificates

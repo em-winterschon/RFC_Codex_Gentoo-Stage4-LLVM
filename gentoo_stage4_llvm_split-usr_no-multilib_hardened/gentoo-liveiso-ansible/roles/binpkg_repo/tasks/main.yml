@@ -20,7 +20,8 @@
     - "{{ resolved_binpkg_repo.repository_root }}"
     - "{{ resolved_binpkg_repo.repository_root }}/{{ resolved_binpkg_repo.repo_id }}"
     - /etc/nginx/conf.d
-    - /usr/local/sbin
+    - /var/log/nginx
+    - /usr/sbin
   loop_control:
     loop_var: binpkg_repo_dir
   when: binpkg_repo_enabled
@@ -28,7 +29,7 @@
 - name: Install binpkg index helper
   ansible.builtin.template:
     src: stage5-binpkg-index.sh.j2
-    dest: "{{ install_target_root }}/usr/local/sbin/stage5-binpkg-index"
+    dest: "{{ install_target_root }}/usr/sbin/stage5-binpkg-index"
     mode: '0755'
   when: binpkg_repo_enabled
 
@@ -37,6 +38,13 @@
     src: binpkg-repo.nginx.conf.j2
     dest: "{{ install_target_root }}/etc/nginx/conf.d/stage5-binpkg-repo.conf"
     mode: '0644'
+  when: binpkg_repo_enabled
+
+- name: Ensure nginx loads managed conf.d sites
+  ansible.builtin.lineinfile:
+    path: "{{ install_target_root }}/etc/nginx/nginx.conf"
+    insertafter: '^\s*include\s+/etc/nginx/mime\.types\.nginx;'
+    line: "\tinclude /etc/nginx/conf.d/*.conf;"
   when: binpkg_repo_enabled
 
 - name: Enable nginx for binpkg repository

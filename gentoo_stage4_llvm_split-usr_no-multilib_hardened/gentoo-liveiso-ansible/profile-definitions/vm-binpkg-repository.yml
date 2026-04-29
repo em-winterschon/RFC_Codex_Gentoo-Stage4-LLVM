@@ -2,6 +2,9 @@
 gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-virtual-host-binpkg-repository.packages
+  package_use_files:
+    30-binpkg-repository-nginx: |
+      app-misc/mime-types nginx
   binpkg_repo:
     enabled: true
     repository_root: /srv/stage5-binpkgs

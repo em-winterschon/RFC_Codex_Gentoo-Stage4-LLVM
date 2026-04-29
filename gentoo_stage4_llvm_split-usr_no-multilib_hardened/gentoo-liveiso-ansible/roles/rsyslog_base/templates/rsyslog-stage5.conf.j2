@@ -3,8 +3,6 @@ global(
   workDirectory="{{ resolved_rsyslog.queue_spool_directory }}"
 )
 
-module(load="imuxsock")
-module(load="imklog")
 {% if resolved_rsyslog.listen_udp | bool %}
 module(load="imudp")
 input(type="imudp" port="{{ resolved_rsyslog.udp_port }}")

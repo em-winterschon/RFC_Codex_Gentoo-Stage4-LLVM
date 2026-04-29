@@ -11,6 +11,6 @@ rsyslog_default_forward_hostname: ""
 rsyslog_default_queue_spool_directory: /var/spool/rsyslog
 rsyslog_default_template_name: stage5_forward
 rsyslog_default_template_string: >-
-  <%%pri%%>1 %%timegenerated:::date-rfc3339%% %%HOSTNAME%% %%app-name%% %%procid%% - - %%msg:::sp-if-no-1st-sp%%\n
+  <%pri%>1 %timegenerated:::date-rfc3339% %HOSTNAME% %app-name% %procid% - - %msg:::sp-if-no-1st-sp%\n
 rsyslog_default_tls_enabled: false
 rsyslog_default_tls_ca_file: /etc/ssl/certs/ca-certificates.crt

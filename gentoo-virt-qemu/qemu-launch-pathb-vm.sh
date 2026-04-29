@@ -286,8 +286,18 @@ build_qemu_cmd() {
       -append "${QEMU_DIRECT_APPEND}"
     )
     ;;
+  uefi-disk)
+    prepare_ovmf_vars_file
+    QEMU_CMD+=(
+      -drive "if=pflash,format=raw,readonly=on,unit=0,file=${EFI_FIRM}"
+      -drive "if=pflash,format=raw,unit=1,file=${EFI_VARS_FILE}"
+      -device 'ich9-ahci,id=ahci'
+      -drive "if=none,id=rootdisk,file=${QEMU_ROOTDISK},format=qcow2,cache=${HOST_DISK_CACHE}"
+      -device 'ide-hd,drive=rootdisk,bus=ahci.1,bootindex=1,serial=stage4-root'
+    )
+    ;;
   *)
-    fail "Unsupported QEMU_PATHB_BOOT_MODE: ${QEMU_PATHB_BOOT_MODE} (supported: ipxe, direct-kernel)"
+    fail "Unsupported QEMU_PATHB_BOOT_MODE: ${QEMU_PATHB_BOOT_MODE} (supported: ipxe, direct-kernel, uefi-disk)"
     ;;
   esac
 
@@ -326,8 +336,13 @@ validate_inputs() {
     require_file "${QEMU_DIRECT_KERNEL}" 'QEMU_DIRECT_KERNEL'
     require_file "${QEMU_DIRECT_INITRD}" 'QEMU_DIRECT_INITRD'
     ;;
+  uefi-disk)
+    resolve_ovmf_paths
+    require_file "${EFI_FIRM}" 'EFI_FIRM'
+    require_file "${EFI_VARS_TEMPLATE}" 'EFI_VARS_TEMPLATE'
+    ;;
   *)
-    fail "Unsupported QEMU_PATHB_BOOT_MODE: ${QEMU_PATHB_BOOT_MODE} (supported: ipxe, direct-kernel)"
+    fail "Unsupported QEMU_PATHB_BOOT_MODE: ${QEMU_PATHB_BOOT_MODE} (supported: ipxe, direct-kernel, uefi-disk)"
     ;;
   esac
 }

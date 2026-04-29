@@ -150,6 +150,42 @@
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
 
+- name: Write ZFSBootMenu EFI fallback command line
+  ansible.builtin.copy:
+    dest: "{{ liveiso_work_dir }}/zfsbootmenu-efi.cmdline"
+    mode: '0644'
+    content: "{{ zfsbootmenu_efi_commandline | trim }}"
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - zfsbootmenu_embed_efi_commandline | bool
+
+- name: Embed ZFSBootMenu command line into fallback EFI executable
+  ansible.builtin.shell: |
+    set -euo pipefail
+    efi="{{ install_target_root }}{{ zfsbootmenu_efi_directory }}/{{ zfsbootmenu_efi_filename }}"
+    cmdline="{{ liveiso_work_dir }}/zfsbootmenu-efi.cmdline"
+    objcopy_bin="$(command -v objcopy || true)"
+    objdump_bin="$(command -v objdump || true)"
+    if [[ -z "${objcopy_bin}" || -z "${objdump_bin}" ]]; then
+      printf 'GNU objcopy and objdump are required to grow the ZFSBootMenu .cmdline PE section\n' >&2
+      exit 1
+    fi
+    cmdline_vma="$("${objdump_bin}" -h "${efi}" | awk '$2 == ".cmdline" { print "0x" $4; exit }')"
+    if [[ -z "${cmdline_vma}" ]]; then
+      printf 'ZFSBootMenu EFI executable is missing a .cmdline section: %s\n' "${efi}" >&2
+      exit 1
+    fi
+    "${objcopy_bin}" \
+      --remove-section .cmdline \
+      --add-section .cmdline="${cmdline}" \
+      --change-section-vma .cmdline="${cmdline_vma}" \
+      "${efi}"
+  args:
+    executable: /bin/bash
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - zfsbootmenu_embed_efi_commandline | bool
+
 - name: Install EFI removable-path fallback for ZFSBootMenu
   ansible.builtin.copy:
     src: "{{ install_target_root }}{{ zfsbootmenu_efi_directory }}/{{ zfsbootmenu_efi_filename }}"
@@ -167,7 +203,10 @@
     -L {{ zfsbootmenu_boot_label }}
     -l \\EFI\\ZBM\\{{ zfsbootmenu_efi_filename }}
     -u {{ zfsbootmenu_efi_commandline | quote }}
-  when: boot_strategy == 'zfsbootmenu' and install_boot_mode == 'uefi'
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - install_boot_mode == 'uefi'
+    - boot_create_efi_nvram_entry | default(true) | bool
 
 - name: Install direct EFI stub helper
   ansible.builtin.copy:

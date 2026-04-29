@@ -26,7 +26,7 @@ Important paths:
 
 - repository root: `/srv/stage5-binpkgs`
 - default repo path: `/srv/stage5-binpkgs/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
-- HTTP endpoint: `http://10.66.40.20:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
+- HTTP endpoint: `http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
 
 Role behavior:
 
@@ -34,6 +34,22 @@ Role behavior:
 - renders an nginx static package host
 - installs `stage5-binpkg-index`
 - enables `nginx`
+
+Path B launch modes:
+
+```bash
+# Installer LiveISO mode for provisioning.
+bash gentoo-virt-qemu/qemu-launch-binpkg-repository-vm.sh
+
+# Installed-disk mode after provisioning.
+QEMU_PATHB_BOOT_MODE=uefi-disk \
+EFI_FIRM=/opt/gentoo-netboot/path-b/firmware/OVMF_CODE_4M.fd \
+EFI_VARS_TEMPLATE=/opt/gentoo-netboot/path-b/firmware/OVMF_VARS_4M.fd \
+bash gentoo-virt-qemu/qemu-launch-binpkg-repository-vm.sh
+```
+
+The binpkg repository VM uses a static NetworkManager profile for
+`10.9.8.90/24` via `10.9.8.108`.
 
 ## Builder Portage Settings
 
@@ -75,7 +91,7 @@ bash scripts/build-gentoo-rootfs-container.sh \
   --root /dev/shm/stage5-build/images/gentoo-stage4-rootfs \
   --pkgdir /dev/shm/stage5-build/images/binpkgs \
   --binpkg-repo-id stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic \
-  --binpkg-sync-remote root@10.66.40.20 \
+  --binpkg-sync-remote root@10.9.8.90 \
   --binpkg-sync-root /srv/stage5-binpkgs \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \

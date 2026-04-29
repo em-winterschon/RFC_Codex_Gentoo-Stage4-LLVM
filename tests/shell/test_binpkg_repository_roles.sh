@@ -33,6 +33,9 @@ require_file "${ANSIBLE_ROOT}/profile-definitions/vm-binpkg-repository.metadata.
 require_file "${ANSIBLE_ROOT}/profile-package-lists/stage5-virtual-host-binpkg-repository.packages"
 require_file "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-binpkg-repository.yml"
 require_file "${ANSIBLE_ROOT}/inventories/examples/group_vars/binpkg_repositories.yml"
+require_file "${ANSIBLE_ROOT}/inventories/pathb-binpkg-repository/hosts.yml"
+require_file "${ANSIBLE_ROOT}/vars/pathb_binpkg_repository_install.yml"
+require_file "${ANSIBLE_ROOT}/scripts/run-binpkg-repository-install.sh"
 
 require_grep 'binpkg_repo' "${ANSIBLE_ROOT}/vars/install_sequences.yml"
 require_grep 'binpkg_repo' "${ANSIBLE_ROOT}/playbooks/install.yml"
@@ -43,6 +46,7 @@ require_grep 'PORTAGE_BINPKG_FORMAT' "${ANSIBLE_ROOT}/roles/portage/templates/ma
 
 require_file "${REPO_ROOT}/scripts/sync-binpkgs-to-repo.sh"
 require_grep 'binpkg-sync-remote' "${REPO_ROOT}/scripts/build-gentoo-rootfs-container.sh"
+require_file "${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-binpkg-repository-vm.sh"
 require_file "${REPO_ROOT}/docs/BINPKG-REPOSITORY.md"
 require_file "${REPO_ROOT}/docs/wiki/Binpkg-Repository.md"
 

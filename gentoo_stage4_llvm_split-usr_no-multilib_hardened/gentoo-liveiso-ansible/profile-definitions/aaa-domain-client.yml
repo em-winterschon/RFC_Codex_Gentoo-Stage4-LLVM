@@ -2,6 +2,12 @@
 gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-domain-client.packages
+  package_use_files:
+    30-aaa-domain-client-sssd: |
+      dev-libs/cyrus-sasl kerberos
+      net-dns/bind gssapi
+      net-libs/ngtcp2 gnutls
+      net-nds/openldap experimental sasl
   aaa_policy_files:
     - aaa-policy-definitions/site-baseline.yml
   openrc_services_enable:

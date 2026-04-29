@@ -165,9 +165,32 @@ test_build_qemu_cmd_supports_direct_kernel_mode() {
   assert_contains "${rendered}" "root=live:http://10.9.8.108:8080/g/rootfs.img"
 }
 
+test_build_qemu_cmd_supports_uefi_disk_mode() {
+  local temp_dir rendered
+
+  temp_dir="$(mktemp -d)"
+  : > "${temp_dir}/root.qcow2"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+
+  reset_pathb_globals
+  QEMU_VM_DIR="${temp_dir}"
+  QEMU_ROOTDISK="${temp_dir}/root.qcow2"
+  QEMU_PATHB_BOOT_MODE='uefi-disk'
+  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
+  build_qemu_cmd
+  rendered="${QEMU_CMD[*]}"
+
+  assert_contains "${rendered}" 'if=pflash,format=raw,readonly=on,unit=0,file=/tmp/OVMF_CODE.fd'
+  assert_contains "${rendered}" "if=pflash,format=raw,unit=1,file=${temp_dir}/OVMF_VARS.fd"
+  assert_contains "${rendered}" "file=${temp_dir}/root.qcow2,format=qcow2,cache=writeback"
+  assert_contains "${rendered}" 'ide-hd,drive=rootdisk,bus=ahci.1,bootindex=1,serial=stage4-root'
+}
+
 test_build_qemu_cmd_uses_uefi_tap_and_telnet
 test_build_qemu_cmd_supports_memory_drives_manifest
 test_build_qemu_cmd_supports_stdio_without_daemonize
 test_build_qemu_cmd_supports_direct_kernel_mode
+test_build_qemu_cmd_supports_uefi_disk_mode
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

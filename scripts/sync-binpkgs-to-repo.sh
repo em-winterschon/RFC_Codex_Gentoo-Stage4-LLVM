@@ -12,7 +12,7 @@ Options:
   --repo-id ID          Unique repository ID under the remote root.
   --remote HOST         SSH target, such as root@10.66.40.20.
   --remote-root DIR     Remote repository root (default: /srv/stage5-binpkgs).
-  --index-command CMD   Remote index command (default: /usr/local/sbin/stage5-binpkg-index).
+  --index-command CMD   Remote index command (default: /usr/sbin/stage5-binpkg-index).
   --dry-run             Print the resolved plan and exit.
   --help                Show this message.
 EOF
@@ -27,7 +27,7 @@ PKGDIR=
 REPO_ID=
 REMOTE=
 REMOTE_ROOT=/srv/stage5-binpkgs
-INDEX_COMMAND=/usr/local/sbin/stage5-binpkg-index
+INDEX_COMMAND=/usr/sbin/stage5-binpkg-index
 DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do

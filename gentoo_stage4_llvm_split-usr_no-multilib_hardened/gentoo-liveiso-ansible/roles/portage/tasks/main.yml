@@ -48,6 +48,12 @@
     mode: '0755'
   when: (portage_binrepos | default([])) | length > 0
 
+- name: Remove inherited binary package repositories when none are configured
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/binrepos.conf"
+    state: absent
+  when: (portage_binrepos | default([])) | length == 0
+
 - name: Ensure common Portage and compiler cache directories exist
   ansible.builtin.file:
     path: "{{ install_target_root }}{{ portage_runtime_dir.path }}"
@@ -60,6 +66,13 @@
     - { path: /var/cache/ccache, mode: '0755' }
   loop_control:
     loop_var: portage_runtime_dir
+
+- name: Ensure configured Portage binary package directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ portage_pkgdir if portage_pkgdir.startswith('/') else '/' + portage_pkgdir }}"
+    state: directory
+    mode: '0755'
+  when: (portage_pkgdir | default('')) | length > 0
 
 - name: Write configured binary package repositories
   ansible.builtin.copy:

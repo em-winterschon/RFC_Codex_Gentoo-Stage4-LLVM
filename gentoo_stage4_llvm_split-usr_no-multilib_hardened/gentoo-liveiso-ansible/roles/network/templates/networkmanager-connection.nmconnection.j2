@@ -1,0 +1,20 @@
+[connection]
+id={{ item.name }}
+type={{ item.type | default('ethernet') }}
+interface-name={{ item.interface_name }}
+autoconnect={{ (item.autoconnect | default(true) | bool) | ternary('true', 'false') }}
+
+[{{ item.type | default('ethernet') }}]
+
+[ipv4]
+method={{ item.ipv4_method | default('manual') }}
+{% for address in item.addresses | default([]) %}
+address{{ loop.index }}={{ address }}{% if loop.first and item.gateway4 is defined %},{{ item.gateway4 }}{% endif %}
+{% endfor %}
+{% if item.dns4 is defined and item.dns4 | length > 0 %}
+dns={{ item.dns4 | join(';') }};
+{% endif %}
+may-fail={{ (item.ipv4_may_fail | default(false) | bool) | ternary('true', 'false') }}
+
+[ipv6]
+method={{ item.ipv6_method | default('ignore') }}
