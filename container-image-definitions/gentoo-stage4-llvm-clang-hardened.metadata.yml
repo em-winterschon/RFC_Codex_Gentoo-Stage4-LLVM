@@ -13,6 +13,10 @@ container_image_definition:
   host_package_mask_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask
   rootfs_links_file: container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links
   overlay_dir: container-image-definitions/overlays/gentoo-stage4-image-fixes
+  binpkg_repo:
+    repo_id: stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+    remote_root: /srv/stage5-binpkgs
+    pkgdir: /var/lib/container-services-ephemeral/images/binpkgs
   labels:
     org.opencontainers.image.title: Gentoo Stage4 LLVM/Clang Hardened Base
     org.opencontainers.image.description: Gentoo base container built from the LLVM/Clang hardened Stage4 workflow.

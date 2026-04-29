@@ -219,6 +219,14 @@
             recursive=True
           )
       }}
+    resolved_profile_binpkg_repo: >-
+      {{
+        resolved_profile_binpkg_repo
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.binpkg_repo | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_haproxy_service_types: >-
       {{
         resolved_profile_haproxy_service_types

@@ -16,6 +16,19 @@ install_networkmanager: true
 install_openssh: true
 install_hostname: container-services
 
+portage_buildpkg_enabled: true
+portage_usepkg_enabled: true
+portage_getbinpkg_enabled: true
+portage_pkgdir: /var/lib/container-services-ephemeral/binpkgs
+portage_makeopts_jobs: 64
+portage_emerge_jobs: 16
+portage_load_average: 60
+portage_binhost: http://10.66.40.20:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+portage_binrepos:
+  - name: stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+    priority: 10
+    sync_uri: http://10.66.40.20:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+
 profile_cloud_init:
   enabled: true
   instance_id: vm-container-services

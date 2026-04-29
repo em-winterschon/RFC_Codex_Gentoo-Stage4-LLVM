@@ -41,6 +41,7 @@ install_role_sequences:
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
+          - binpkg_repo
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
@@ -101,6 +102,7 @@ install_role_sequences:
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
+          - binpkg_repo
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
@@ -166,6 +168,7 @@ install_role_sequences:
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
+          - binpkg_repo
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
@@ -225,6 +228,7 @@ install_role_sequences:
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
+          - binpkg_repo
           - freeipa_controller
           - ipa_client
           - freeradius_bridge

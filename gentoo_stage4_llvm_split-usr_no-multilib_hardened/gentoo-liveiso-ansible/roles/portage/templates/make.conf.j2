@@ -10,9 +10,33 @@ RUSTFLAGS="-C target-cpu={{ selected_cpu_profile.rust_target_cpu }}"
 CHOST="x86_64-pc-linux-gnu"
 GRUB_PLATFORMS="efi-64"
 MAKEOPTS="-j{{ portage_makeopts_jobs }}"
-EMERGE_DEFAULT_OPTS="--jobs={{ portage_emerge_jobs }}{% if portage_load_average | int > 0 %} --load-average={{ portage_load_average }}{% endif %}"
+{% set binpkg_opts = [] %}
+{% if portage_buildpkg_enabled | default(false) | bool %}
+{% set _ = binpkg_opts.extend(['--buildpkg=y', '--with-bdeps=y', '--complete-graph=y', '--binpkg-respect-use=y']) %}
+{% endif %}
+{% if portage_getbinpkg_enabled | default(false) | bool %}
+{% set _ = binpkg_opts.append('--getbinpkg=y') %}
+{% endif %}
+{% if portage_usepkg_enabled | default(false) | bool %}
+{% set _ = binpkg_opts.append('--usepkg=y') %}
+{% endif %}
+{% set explicit_extra_opts = portage_emerge_default_opts_extra | default([]) %}
+EMERGE_DEFAULT_OPTS="--jobs={{ portage_emerge_jobs }}{% if portage_load_average | int > 0 %} --load-average={{ portage_load_average }}{% endif %}{% if binpkg_opts | length > 0 %} {{ binpkg_opts | unique | join(' ') }}{% endif %}{% if explicit_extra_opts | length > 0 %} {{ explicit_extra_opts | join(' ') }}{% endif %}"
 ACCEPT_LICENSE="{{ portage_accept_license }}"
-FEATURES="{{ portage_features | join(' ') }}"
+{% set resolved_features = portage_features | default([]) %}
+{% if portage_buildpkg_enabled | default(false) | bool %}
+{% set resolved_features = (resolved_features + ['buildpkg']) | unique %}
+{% endif %}
+FEATURES="{{ resolved_features | join(' ') }}"
+{% if portage_pkgdir | default('') | length > 0 %}
+PKGDIR="{{ portage_pkgdir }}"
+{% endif %}
+PORTAGE_BINPKG_FORMAT="{{ portage_binpkg_format | default('tar') }}"
+BINPKG_COMPRESS="{{ portage_binpkg_compress | default('zstd') }}"
+BINPKG_COMPRESS_FLAGS="{{ portage_binpkg_compress_flags | default('-2') }}"
+{% if portage_binhost | default('') | length > 0 %}
+BINHOST="{{ portage_binhost }}"
+{% endif %}
 LLVM_TARGETS="{{ selected_cpu_profile.llvm_targets }}"
 {% if selected_gpu_profile.video_cards | length > 0 -%}
 VIDEO_CARDS="{{ selected_gpu_profile.video_cards }}"

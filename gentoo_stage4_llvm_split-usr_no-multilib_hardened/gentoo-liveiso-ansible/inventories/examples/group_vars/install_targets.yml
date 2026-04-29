@@ -143,6 +143,16 @@ portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
 portage_features:
   - parallel-install
   - merge-sync
+portage_buildpkg_enabled: false
+portage_usepkg_enabled: false
+portage_getbinpkg_enabled: false
+portage_pkgdir: ""
+portage_binpkg_format: tar
+portage_binpkg_compress: zstd
+portage_binpkg_compress_flags: "-2"
+portage_binhost: ""
+portage_binrepos: []
+portage_emerge_default_opts_extra: []
 portage_global_use:
   - bindist
   - bzip2

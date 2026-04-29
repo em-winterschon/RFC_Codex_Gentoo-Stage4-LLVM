@@ -50,6 +50,9 @@ Use:
 bash scripts/build-gentoo-rootfs-container.sh \
   --root /var/lib/container-services/images/gentoo-stage4-rootfs \
   --pkgdir /var/lib/container-services/images/binpkgs \
+  --binpkg-repo-id stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic \
+  --binpkg-sync-remote root@10.66.40.20 \
+  --binpkg-sync-root /srv/stage5-binpkgs \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
   --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
@@ -77,6 +80,10 @@ definition uses this to force merged-usr-safe host dependency behavior for
 Use `--pkgdir` to pin the local binpkg cache location explicitly. If omitted,
 the helper defaults to `$(dirname ROOT)/binpkgs`, enables `buildpkg`, and
 reuses matching local binpkgs on reruns with `--usepkg=y`.
+
+Use `--binpkg-sync-remote` with `--binpkg-repo-id` to push every successfully
+built package to the Stage4/Stage5 binpkg repository host on script exit,
+including failed exits.
 
 Use `--overlay-dir` when the image build needs a narrow ebuild fix in the build
 host dependency path. The current image overlay patches:

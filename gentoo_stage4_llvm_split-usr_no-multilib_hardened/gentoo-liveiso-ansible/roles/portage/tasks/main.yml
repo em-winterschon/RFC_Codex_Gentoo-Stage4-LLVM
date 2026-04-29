@@ -41,6 +41,13 @@
     state: directory
     mode: '0755'
 
+- name: Ensure binrepos.conf directory exists when binrepos are configured
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/binrepos.conf"
+    state: directory
+    mode: '0755'
+  when: (portage_binrepos | default([])) | length > 0
+
 - name: Ensure common Portage and compiler cache directories exist
   ansible.builtin.file:
     path: "{{ install_target_root }}{{ portage_runtime_dir.path }}"
@@ -53,6 +60,18 @@
     - { path: /var/cache/ccache, mode: '0755' }
   loop_control:
     loop_var: portage_runtime_dir
+
+- name: Write configured binary package repositories
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/binrepos.conf/{{ portage_binrepo.name }}.conf"
+    mode: '0644'
+    content: |
+      [{{ portage_binrepo.name }}]
+      priority = {{ portage_binrepo.priority | default(10) }}
+      sync-uri = {{ portage_binrepo.sync_uri }}
+  loop: "{{ portage_binrepos | default([]) }}"
+  loop_control:
+    loop_var: portage_binrepo
 
 - name: Force installkernel to keep kernels on ZFS /boot instead of ESP
   ansible.builtin.copy:

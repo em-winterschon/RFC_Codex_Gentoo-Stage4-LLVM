@@ -1,0 +1,22 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/netbox-managed-inventory.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-binpkg-repository.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: vm-binpkg-repository
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-binpkg-repository
+  local_hostname: vm-binpkg-repository
+  disable_root: false
+  ssh_pwauth: false

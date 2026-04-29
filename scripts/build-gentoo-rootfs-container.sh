@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 usage() {
   cat <<'EOF'
 Usage: build-gentoo-rootfs-container.sh --root DIR --package-list FILE [options]
@@ -12,6 +14,10 @@ Options:
   --root DIR               Target rootfs directory to populate.
   --package-list FILE      Flat package list file (one atom per line).
   --pkgdir DIR             Local binpkg cache directory (default: sibling binpkgs/).
+  --binpkg-repo-id ID      Unique Stage4/Stage5 binpkg repository ID.
+  --binpkg-sync-remote HOST
+                           Optional rsync/ssh destination host for binpkg sync.
+  --binpkg-sync-root DIR   Remote repository root (default: /srv/stage5-binpkgs).
   --use-file FILE          Flat USE override file (one flag token per line).
   --package-use-file FILE  package.use style overrides to install into config-root.
   --host-package-use-file FILE
@@ -68,6 +74,9 @@ sanitize_emerge_features() {
 ROOT_DIR=
 PACKAGE_LIST=
 PKGDIR=
+BINPKG_REPO_ID=
+BINPKG_SYNC_REMOTE=
+BINPKG_SYNC_ROOT=/srv/stage5-binpkgs
 USE_FILE=
 PACKAGE_USE_FILE=
 HOST_PACKAGE_USE_FILE=
@@ -86,6 +95,7 @@ DESCRIPTION=
 DEFAULT_CMD=/bin/bash
 DRY_RUN=false
 SANITIZED_FEATURES=
+BUILDAH_CONTAINER_ID=
 USE_OVERRIDE_FLAGS=()
 HOST_PACKAGE_USE_DEST=/etc/portage/package.use/99-build-gentoo-rootfs-container-host
 HOST_PACKAGE_MASK_DEST=/etc/portage/package.mask/99-build-gentoo-rootfs-container
@@ -102,6 +112,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --pkgdir)
       PKGDIR=${2-}
+      shift 2
+      ;;
+    --binpkg-repo-id)
+      BINPKG_REPO_ID=${2-}
+      shift 2
+      ;;
+    --binpkg-sync-remote)
+      BINPKG_SYNC_REMOTE=${2-}
+      shift 2
+      ;;
+    --binpkg-sync-root)
+      BINPKG_SYNC_ROOT=${2-}
       shift 2
       ;;
     --use-file)
@@ -180,6 +202,9 @@ done
 if [[ -z "${PKGDIR}" ]]; then
   PKGDIR="$(dirname "${ROOT_DIR%/}")/binpkgs"
 fi
+if [[ -n "${BINPKG_SYNC_REMOTE}" && -z "${BINPKG_REPO_ID}" ]]; then
+  die "--binpkg-sync-remote requires --binpkg-repo-id"
+fi
 if [[ -n "${USE_FILE}" ]]; then
   [[ -f "${USE_FILE}" ]] || die "use override file not found: ${USE_FILE}"
 fi
@@ -233,6 +258,9 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'sysroot=%s\n' "${SYSROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'pkgdir=%s\n' "${PKGDIR}"
+  printf 'binpkg-repo-id=%s\n' "${BINPKG_REPO_ID}"
+  printf 'binpkg-sync-remote=%s\n' "${BINPKG_SYNC_REMOTE}"
+  printf 'binpkg-sync-root=%s\n' "${BINPKG_SYNC_ROOT}"
   printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-use-file=%s\n' "${PACKAGE_USE_FILE}"
   printf 'host-package-use-file=%s\n' "${HOST_PACKAGE_USE_FILE}"
@@ -254,6 +282,9 @@ require_cmd emerge
 require_cmd install
 
 cleanup_rootfs_builder() {
+  if [[ -n "${BUILDAH_CONTAINER_ID}" ]]; then
+    buildah rm "${BUILDAH_CONTAINER_ID}" >/dev/null 2>&1 || true
+  fi
   rm -f "${HOST_PACKAGE_USE_DEST}" "${HOST_PACKAGE_MASK_DEST}"
   if [[ -n "${OVERLAY_REPO_NAME}" ]]; then
     rm -f \
@@ -266,7 +297,26 @@ cleanup_rootfs_builder() {
     rm -rf "${STAGED_OVERLAY_DIR}"
   fi
 }
-trap cleanup_rootfs_builder EXIT
+
+sync_binpkg_cache() {
+  [[ -n "${BINPKG_SYNC_REMOTE}" ]] || return 0
+  [[ -d "${PKGDIR}" ]] || return 0
+  "${SCRIPT_DIR}/sync-binpkgs-to-repo.sh" \
+    --pkgdir "${PKGDIR}" \
+    --repo-id "${BINPKG_REPO_ID}" \
+    --remote "${BINPKG_SYNC_REMOTE}" \
+    --remote-root "${BINPKG_SYNC_ROOT}"
+}
+
+on_rootfs_builder_exit() {
+  local status=$?
+  if ! sync_binpkg_cache; then
+    log "binpkg sync failed; preserving original exit status ${status}"
+  fi
+  cleanup_rootfs_builder
+  exit "${status}"
+}
+trap on_rootfs_builder_exit EXIT
 
 mkdir -p "${ROOT_DIR}"
 install -d -m 0755 "${PKGDIR}"
@@ -400,18 +450,14 @@ case "${RESOLVED_ENGINE}" in
   buildah)
     require_cmd buildah
     log "committing rootfs into ${IMAGE_REF} with buildah"
-    container_id="$(buildah from scratch)"
-    cleanup_buildah() {
-      buildah rm "${container_id}" >/dev/null 2>&1 || true
-    }
-    trap cleanup_buildah EXIT
-    buildah add "${container_id}" "${ROOT_DIR}" /
-    buildah config --cmd "[\"${DEFAULT_CMD}\"]" "${container_id}"
-    [[ -n "${SOURCE_URL}" ]] && buildah config --label "org.opencontainers.image.source=${SOURCE_URL}" "${container_id}"
-    [[ -n "${DESCRIPTION}" ]] && buildah config --label "org.opencontainers.image.description=${DESCRIPTION}" "${container_id}"
-    buildah commit "${container_id}" "${IMAGE_REF}" >/dev/null
-    trap - EXIT
-    cleanup_buildah
+    BUILDAH_CONTAINER_ID="$(buildah from scratch)"
+    buildah add "${BUILDAH_CONTAINER_ID}" "${ROOT_DIR}" /
+    buildah config --cmd "[\"${DEFAULT_CMD}\"]" "${BUILDAH_CONTAINER_ID}"
+    [[ -n "${SOURCE_URL}" ]] && buildah config --label "org.opencontainers.image.source=${SOURCE_URL}" "${BUILDAH_CONTAINER_ID}"
+    [[ -n "${DESCRIPTION}" ]] && buildah config --label "org.opencontainers.image.description=${DESCRIPTION}" "${BUILDAH_CONTAINER_ID}"
+    buildah commit "${BUILDAH_CONTAINER_ID}" "${IMAGE_REF}" >/dev/null
+    buildah rm "${BUILDAH_CONTAINER_ID}" >/dev/null
+    BUILDAH_CONTAINER_ID=
     ;;
   podman-import)
     require_cmd podman

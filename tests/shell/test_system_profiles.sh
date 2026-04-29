@@ -32,6 +32,7 @@ for profile in \
   telemetry-elasticsearch-exporter.yml \
   telemetry-node-exporter-client.yml \
   telemetry-podman-exporter.yml \
+  vm-binpkg-repository.yml \
   vm-container-services.yml \
   vm-elasticsearch-node.yml \
   vm-identity-controller.yml \
@@ -60,6 +61,7 @@ for metadata in \
   vm-elasticsearch-node.metadata.yml \
   vm-identity-controller.metadata.yml \
   vm-jenkins-controller.metadata.yml \
+  vm-binpkg-repository.metadata.yml \
   vm-guest-application-server.metadata.yml \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
@@ -83,6 +85,7 @@ for host_var in \
   vm-elasticsearch-node03.yml \
   vm-identity-controller.yml \
   vm-jenkins-controller.yml \
+  vm-binpkg-repository.yml \
   vm-container-services.yml \
   vm-guest-appserver.yml \
   vm-guest-simple.yml \
@@ -107,6 +110,7 @@ for package_list in \
   stage5-observability-metrics-podman-exporter.packages \
   stage5-virtual-host-base.packages \
   stage5-virtual-host-appserver.packages \
+  stage5-virtual-host-binpkg-repository.packages \
   stage5-virtual-host-elasticsearch-node.packages \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
