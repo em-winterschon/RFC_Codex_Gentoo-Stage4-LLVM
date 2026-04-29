@@ -121,6 +121,25 @@ The helper syncs `PKGDIR` to the repository host on exit when
 `--binpkg-sync-remote` is set, including failed exits. That preserves useful
 packages from partial runs.
 
+For already-running or externally launched builders, use the watch-sync helper.
+It stages remote PKGDIRs locally first, then publishes them to the repository:
+
+```bash
+repo_id=stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+
+setsid -f bash -c 'exec bash scripts/watch-sync-binpkgs-to-repo.sh \
+  --pkgdir root@10.9.8.89:/mnt/gentoo/mnt/gentoo/var/lib/container-services-ephemeral/images/binpkgs \
+  --repo-id "$1" \
+  --remote root@10.9.8.90 \
+  --remote-root /srv/stage5-binpkgs \
+  --staging-dir /var/tmp/stage5-binpkg-sync/container-services \
+  --watch-remote root@10.9.8.89 \
+  --watch-pid "$2" \
+  --interval 300 \
+  < /dev/null >>/var/log/stage5-binpkg-sync-watch-container-services.log 2>&1' \
+  stage5-binpkg-sync-watch "${repo_id}" "${remote_build_pid}"
+```
+
 ## Environmental Continuity
 
 Do not rely on the Path B live environment as the long-term builder state. It is
