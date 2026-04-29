@@ -276,7 +276,9 @@ src_install() {
 		rmdir "${ED}/bin" 2>/dev/null || true
 	fi
 
-	if use split-usr ; then
+	# The build host profile can force split-usr, but container roots are
+	# intentionally merged-usr. Do not re-split /bin inside those image roots.
+	if use split-usr && [[ ${merged_usr} -eq 0 ]] ; then
 		cd "${ED}"/usr/bin || die
 		dodir /bin
 
