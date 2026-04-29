@@ -13,6 +13,7 @@ isolated `10.9.8.0/24` segment. It is the config-as-code layer for:
 - SSH / HTTPS / serial-console expectations
 - SNMP posture
 - package and architecture caveats
+- WAN egress and NAT for the Path B lab
 - future HA notation
 
 ## Commands
@@ -50,9 +51,13 @@ ansible-playbook \
 
 ## Operational Defaults
 
-- gateway: `10.9.8.1/24`
+- LAN gateway: `10.9.8.1/24` on `pathb-lan`
 - lab network: `10.9.8.0/24`
+- WAN: `192.168.1.222/24` on `pathb-wan`
+- upstream gateway: `192.168.1.254`
+- upstream DNS: `9.9.9.9`, `8.8.8.8`
 - DHCP pool: `10.9.8.10-10.9.8.99`
+- DHCP client DNS: `10.9.8.1`
 - bootstrap URL: `http://10.9.8.108:8080/bootstrap.ipxe`
 - management CIDR: `10.9.8.0/24`
 - NTP client: enabled
@@ -62,6 +67,18 @@ ansible-playbook \
 - Winbox: disabled
 - HTTP: disabled
 - HTTPS: enabled
+- NAT: masquerade `10.9.8.0/24` out `pathb-wan`
+- WAN firewall: drop direct input from `pathb-wan`
+
+## Hypervisor Launch
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM
+FRESH_DISK=true WAN_PHYS_IF=eno2 bash gentoo-virt-qemu/qemu-launch-routeros-pathb-vm.sh
+```
+
+The launcher creates or reuses `br-ros-wan` without assigning a host IP, bridges
+`eno2` and `tap-ros-wan` into it, and exposes serial on `127.0.0.1:5001`.
 
 ## Future HA
 

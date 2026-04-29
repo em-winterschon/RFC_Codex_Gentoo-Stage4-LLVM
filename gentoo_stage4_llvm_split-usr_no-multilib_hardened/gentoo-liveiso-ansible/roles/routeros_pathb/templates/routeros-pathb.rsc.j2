@@ -7,16 +7,48 @@
 /system note set show-at-login=yes note="Managed by RFC Codex Path B role; UEFI-only netboot lab."
 /system clock set time-zone-name="{{ routeros_pathb_timezone }}"
 
-# Base L3 interface and DHCP scope for the Path B lab.
+# Base interfaces, L3 addresses, and DHCP scope for the Path B lab.
+{% if routeros_pathb_lan_default_name != routeros_pathb_lan_interface %}
+:if ([:len [/interface ethernet find where default-name="{{ routeros_pathb_lan_default_name }}"]] > 0) do={ /interface ethernet set [find default-name="{{ routeros_pathb_lan_default_name }}"] name="{{ routeros_pathb_lan_interface }}" }
+{% endif %}
+{% if routeros_pathb_wan_enabled | bool and routeros_pathb_wan_default_name != routeros_pathb_wan_interface %}
+:if ([:len [/interface ethernet find where default-name="{{ routeros_pathb_wan_default_name }}"]] > 0) do={ /interface ethernet set [find default-name="{{ routeros_pathb_wan_default_name }}"] name="{{ routeros_pathb_wan_interface }}" }
+{% endif %}
+{% if routeros_pathb_disable_dhcp_clients | bool %}
+/ip dhcp-client remove [find]
+{% endif %}
 /ip address remove [find comment="{{ routeros_pathb_lab_name }}"]
 /ip address add address={{ routeros_pathb_lan_cidr }} interface={{ routeros_pathb_lan_interface }} comment="{{ routeros_pathb_lab_name }}"
+{% if routeros_pathb_wan_enabled | bool %}
+/ip address remove [find comment="{{ routeros_pathb_lab_name }}-wan"]
+/ip address add address={{ routeros_pathb_wan_cidr }} interface={{ routeros_pathb_wan_interface }} comment="{{ routeros_pathb_lab_name }}-wan"
+/ip route remove [find comment="{{ routeros_pathb_lab_name }}-default"]
+/ip route add dst-address=0.0.0.0/0 gateway={{ routeros_pathb_wan_gateway }} distance={{ routeros_pathb_wan_route_distance }} comment="{{ routeros_pathb_lab_name }}-default"
+{% endif %}
 /ip dns set servers={{ routeros_pathb_dns_servers | join(',') }} allow-remote-requests={{ routeros_pathb_dns_allow_remote_requests | ternary("yes", "no") }}
 /ip pool remove [find name="{{ routeros_pathb_dhcp_pool_name }}"]
 /ip pool add name="{{ routeros_pathb_dhcp_pool_name }}" ranges={{ routeros_pathb_dhcp_pool_ranges | join(',') }}
 /ip dhcp-server remove [find name="{{ routeros_pathb_dhcp_server_name }}"]
 /ip dhcp-server add name="{{ routeros_pathb_dhcp_server_name }}" interface={{ routeros_pathb_lan_interface }} address-pool={{ routeros_pathb_dhcp_pool_name }} lease-time={{ routeros_pathb_dhcp_lease_time }} disabled=no
 /ip dhcp-server network remove [find comment="{{ routeros_pathb_lab_name }}"]
-/ip dhcp-server network add address={{ routeros_pathb_lan_network_cidr }} gateway={{ routeros_pathb_gateway }} dns-server={{ routeros_pathb_dns_servers | join(',') }} next-server={{ routeros_pathb_boot_next_server }} boot-file-name="{{ routeros_pathb_boot_file_name }}" comment="{{ routeros_pathb_lab_name }}"
+/ip dhcp-server network add address={{ routeros_pathb_lan_network_cidr }} gateway={{ routeros_pathb_gateway }} dns-server={{ routeros_pathb_dhcp_dns_servers | join(',') }} next-server={{ routeros_pathb_boot_next_server }} boot-file-name="{{ routeros_pathb_boot_file_name }}" comment="{{ routeros_pathb_lab_name }}"
+{% if routeros_pathb_nat_enabled | bool %}
+/ip firewall nat remove [find comment="{{ routeros_pathb_nat_comment }}"]
+/ip firewall nat add chain=srcnat src-address={{ routeros_pathb_lan_network_cidr }} out-interface={{ routeros_pathb_wan_interface }} action=masquerade comment="{{ routeros_pathb_nat_comment }}"
+{% endif %}
+{% if routeros_pathb_firewall_baseline_enabled | bool %}
+/ip firewall filter remove [find comment~"{{ routeros_pathb_firewall_comment_prefix }}-"]
+/ip firewall filter add chain=input action=accept connection-state=established,related,untracked comment="{{ routeros_pathb_firewall_comment_prefix }}-input-established"
+/ip firewall filter add chain=input action=drop connection-state=invalid comment="{{ routeros_pathb_firewall_comment_prefix }}-input-drop-invalid"
+/ip firewall filter add chain=input action=accept protocol=icmp comment="{{ routeros_pathb_firewall_comment_prefix }}-input-icmp"
+/ip firewall filter add chain=input action=accept in-interface={{ routeros_pathb_lan_interface }} comment="{{ routeros_pathb_firewall_comment_prefix }}-input-lan"
+/ip firewall filter add chain=input action=drop in-interface={{ routeros_pathb_wan_interface }} comment="{{ routeros_pathb_firewall_comment_prefix }}-input-drop-wan"
+/ip firewall filter add chain=forward action=accept connection-state=established,related,untracked comment="{{ routeros_pathb_firewall_comment_prefix }}-forward-established"
+/ip firewall filter add chain=forward action=drop connection-state=invalid comment="{{ routeros_pathb_firewall_comment_prefix }}-forward-drop-invalid"
+/ip firewall filter add chain=forward action=accept in-interface={{ routeros_pathb_lan_interface }} out-interface={{ routeros_pathb_wan_interface }} comment="{{ routeros_pathb_firewall_comment_prefix }}-forward-lan-wan"
+/ip firewall filter add chain=forward action=accept in-interface={{ routeros_pathb_wan_interface }} out-interface={{ routeros_pathb_lan_interface }} connection-nat-state=dstnat comment="{{ routeros_pathb_firewall_comment_prefix }}-forward-dstnat"
+/ip firewall filter add chain=forward action=drop in-interface={{ routeros_pathb_wan_interface }} comment="{{ routeros_pathb_firewall_comment_prefix }}-forward-drop-wan"
+{% endif %}
 
 # UEFI-only Path B policy: no legacy BIOS boot chain is configured.
 :log info "Path B is configured for UEFI HTTP/iPXE only; legacy BIOS is unsupported."
@@ -26,8 +58,8 @@
 /ip service set ftp disabled=yes
 /ip service set api disabled=yes
 /ip service set api-ssl disabled=yes
-/ip service set ssh disabled={{ (not routeros_pathb_ssh_enabled) | ternary("yes", "no") }} port={{ routeros_pathb_ssh_port }} strong-crypto={{ routeros_pathb_ssh_strong_crypto | ternary("yes", "no") }} address={{ routeros_pathb_management_cidrs | join(',') }}
-/ip ssh set strong-crypto={{ routeros_pathb_ssh_strong_crypto | ternary("yes", "no") }} password-authentication={{ routeros_pathb_ssh_password_authentication }} forwarding-enabled={{ routeros_pathb_ssh_forwarding }}
+/ip service set ssh disabled={{ (not routeros_pathb_ssh_enabled) | ternary("yes", "no") }} port={{ routeros_pathb_ssh_port }} address={{ routeros_pathb_management_cidrs | join(',') }}
+/ip ssh set strong-crypto={{ routeros_pathb_ssh_strong_crypto | ternary("yes", "no") }} forwarding-enabled={{ routeros_pathb_ssh_forwarding | bool | ternary("yes", "no") }}
 /ip service set winbox disabled={{ (not routeros_pathb_winbox_enabled) | ternary("yes", "no") }} port={{ routeros_pathb_winbox_port }} address={{ routeros_pathb_management_cidrs | join(',') }}
 
 # RouterOS native practice here is to disable plain HTTP and enable HTTPS.

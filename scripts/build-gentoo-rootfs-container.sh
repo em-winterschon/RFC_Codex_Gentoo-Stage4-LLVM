@@ -367,10 +367,16 @@ fi
 if [[ "${CONFIG_ROOT}" != "/" ]]; then
   install -d -m 0755 \
     "${CONFIG_ROOT}/etc/portage" \
+    "${CONFIG_ROOT}/etc/portage/gnupg" \
     "${CONFIG_ROOT}/etc/portage/repos.conf" \
     "${CONFIG_ROOT}/var/db/repos" \
     "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/metadata" \
     "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}"
+  chmod 0700 "${CONFIG_ROOT}/etc/portage/gnupg"
+  if [[ -f /etc/portage/gnupg/pubring.kbx && ! -f "${CONFIG_ROOT}/etc/portage/gnupg/pubring.kbx" ]]; then
+    cp -a /etc/portage/gnupg/. "${CONFIG_ROOT}/etc/portage/gnupg/"
+    chmod 0700 "${CONFIG_ROOT}/etc/portage/gnupg"
+  fi
   ln -snf /var/db/repos/gentoo "${CONFIG_ROOT}/var/db/repos/gentoo"
   printf '%s\n' "${PROFILE_OVERLAY_NAME}" > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/repo_name"
   printf 'repo-name = %s\nmasters = gentoo\nthin-manifests = true\n' "${PROFILE_OVERLAY_NAME}" \

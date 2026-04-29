@@ -3,6 +3,25 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-04-29
+
+### Added
+
+- Added a repo-managed RouterOS CHR Path B launcher with LAN tap on `br-pathb`
+  and WAN tap on a dedicated `br-ros-wan` bridge backed by `eno2`.
+- Added repeatable Path B container-base build launch helpers for binhost-backed
+  reruns under the restart watchdog.
+
+### Changed
+
+- Rebuilt RouterOS CHR from a fresh disk and moved active builder egress from
+  host NAT to RouterOS NAT through `192.168.1.222/24 -> 192.168.1.254`.
+- Extended the RouterOS Path B Ansible role to render optional WAN static
+  addressing, LAN-to-WAN masquerade, DHCP DNS split, and baseline WAN input
+  filtering.
+- Updated the container builder to use the Stage4/Stage5 binpkg repository
+  during reruns and preserve sync auth from inside the installed Gentoo chroot.
+
 ## 2026-04-28
 
 ### Added

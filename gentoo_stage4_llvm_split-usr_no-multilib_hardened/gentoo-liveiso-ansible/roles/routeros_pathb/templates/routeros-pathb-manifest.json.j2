@@ -13,6 +13,14 @@
   "lanInterface": "{{ routeros_pathb_lan_interface }}",
   "lanCidr": "{{ routeros_pathb_lan_cidr }}",
   "lanNetworkCidr": "{{ routeros_pathb_lan_network_cidr }}",
+  "wan": {
+    "enabled": {{ (routeros_pathb_wan_enabled | bool) | to_json }},
+    "interface": "{{ routeros_pathb_wan_interface }}",
+    "cidr": "{{ routeros_pathb_wan_cidr }}",
+    "gateway": "{{ routeros_pathb_wan_gateway }}",
+    "natEnabled": {{ (routeros_pathb_nat_enabled | bool) | to_json }},
+    "firewallBaselineEnabled": {{ (routeros_pathb_firewall_baseline_enabled | bool) | to_json }}
+  },
   "gateway": "{{ routeros_pathb_gateway }}",
   "dnsServers": {{ routeros_pathb_dns_servers | to_json }},
   "dnsAllowRemoteRequests": {{ (routeros_pathb_dns_allow_remote_requests | bool) | to_json }},
@@ -20,6 +28,7 @@
     "serverName": "{{ routeros_pathb_dhcp_server_name }}",
     "poolName": "{{ routeros_pathb_dhcp_pool_name }}",
     "poolRanges": {{ routeros_pathb_dhcp_pool_ranges | to_json }},
+    "dnsServers": {{ routeros_pathb_dhcp_dns_servers | to_json }},
     "leaseTime": "{{ routeros_pathb_dhcp_lease_time }}",
     "nextServer": "{{ routeros_pathb_boot_next_server }}",
     "bootFileName": "{{ routeros_pathb_boot_file_name }}"

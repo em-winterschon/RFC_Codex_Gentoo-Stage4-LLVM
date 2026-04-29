@@ -158,11 +158,9 @@ The following execution state is now validated:
 - the first simple-guest validation reached:
   - destructive storage layout on the target disk
   - stage3 tarball download during `chroot-bootstrap`
-- temporary upstream access for the provisioner currently uses:
-  - host-side NAT on the Gentoo control host
-  - guest-side default route override to `10.9.8.108`
-  - explicit `/etc/resolv.conf`
-- the container-services validation currently depends on that same temporary
-  upstream workaround until RouterOS has a proper upstream path
+- upstream access for the provisioner now uses the rebuilt RouterOS Path B
+  gateway at `10.9.8.1`
+- RouterOS owns WAN `192.168.1.222/24`, routes via `192.168.1.254`, and
+  masquerades `10.9.8.0/24` out `pathb-wan`
 - the current base-image rerun blocker is the merged-usr `awk` collision above,
   not transport, RouterOS, or Path B provisioning

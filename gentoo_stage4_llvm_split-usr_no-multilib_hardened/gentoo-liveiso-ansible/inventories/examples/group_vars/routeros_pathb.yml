@@ -1,15 +1,27 @@
 ---
 routeros_pathb_apply: false
 routeros_pathb_routeros_arch: x86
-routeros_pathb_identity: pathb-routeros-primary
-routeros_pathb_lan_interface: ether1
+routeros_pathb_identity: routeros-pathb
+routeros_pathb_lan_default_name: ether1
+routeros_pathb_lan_interface: pathb-lan
 routeros_pathb_lan_cidr: 10.9.8.1/24
 routeros_pathb_lan_network_cidr: 10.9.8.0/24
 routeros_pathb_gateway: 10.9.8.1
 routeros_pathb_dns_servers:
-  - 10.9.8.108
+  - 9.9.9.9
+  - 8.8.8.8
+routeros_pathb_dhcp_dns_servers:
+  - 10.9.8.1
+routeros_pathb_wan_enabled: true
+routeros_pathb_wan_default_name: ether2
+routeros_pathb_wan_interface: pathb-wan
+routeros_pathb_wan_cidr: 192.168.1.222/24
+routeros_pathb_wan_gateway: 192.168.1.254
+routeros_pathb_nat_enabled: true
+routeros_pathb_firewall_baseline_enabled: true
 routeros_pathb_dhcp_pool_ranges:
   - 10.9.8.10-10.9.8.99
+routeros_pathb_dhcp_lease_time: 12h
 routeros_pathb_boot_next_server: 10.9.8.108
 routeros_pathb_boot_file_name: http://10.9.8.108:8080/bootstrap.ipxe
 routeros_pathb_timezone: UTC

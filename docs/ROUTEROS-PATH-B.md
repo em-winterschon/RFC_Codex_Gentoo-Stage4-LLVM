@@ -43,12 +43,32 @@ Rendered local artifacts:
 ## Current Defaults
 
 - boot mode: `uefi-http-ipxe`
-- lab gateway: `10.9.8.1/24`
+- lab gateway / LAN: `10.9.8.1/24` on `pathb-lan`
 - lab network: `10.9.8.0/24`
+- upstream / WAN: `192.168.1.222/24` on `pathb-wan`
+- upstream gateway: `192.168.1.254`
+- upstream DNS: `9.9.9.9`, `8.8.8.8`
 - DHCP pool: `10.9.8.10-10.9.8.99`
 - iPXE bootstrap URL: `http://10.9.8.108:8080/bootstrap.ipxe`
+- DHCP client DNS: `10.9.8.1`
 - management CIDR: `10.9.8.0/24`
 - RouterOS architecture for CHR lab: `x86`
+
+## Hypervisor Launch
+
+The current validated launch path uses a fresh CHR qcow2 disk, one LAN tap on
+`br-pathb`, and one WAN tap on a dedicated L2 bridge backed by `eno2`.
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM
+FRESH_DISK=true \
+WAN_PHYS_IF=eno2 \
+bash gentoo-virt-qemu/qemu-launch-routeros-pathb-vm.sh
+```
+
+The launcher does not assign a host IP to `br-ros-wan`. It bridges `eno2` into
+the RouterOS WAN L2 so RouterOS owns `192.168.1.222/24` and routes via
+`192.168.1.254`.
 
 ## Security and Service Posture
 
@@ -59,7 +79,8 @@ The role currently enforces or documents these defaults:
 - SSH enabled and CIDR-restricted
 - `strong-crypto=yes`
 - SSH forwarding disabled
-- SSH password authentication defaulted to `no`
+- SSH password authentication is tracked as policy; first-boot CHR rebuilds use
+  a temporary local admin password until key-only management is installed
 - Winbox disabled
 - plain HTTP disabled
 - HTTPS enabled with a generated self-signed certificate
@@ -68,6 +89,8 @@ The role currently enforces or documents these defaults:
 - SNMP v2c read/write restricted to configured management ranges
 - SNMP v3 `authPriv` style configuration rendered with read/write enabled
 - remote syslog client configured
+- LAN-to-WAN masquerade enabled for `10.9.8.0/24`
+- baseline firewall drops direct input from `pathb-wan`
 
 ## Important Platform Constraints
 

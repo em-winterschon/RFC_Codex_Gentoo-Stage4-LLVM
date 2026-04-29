@@ -135,10 +135,13 @@ Additional validated findings:
   - live provisioner SSH
   - destructive storage layout on the target disk
   - stage3 tarball download during `chroot-bootstrap`
-- the current temporary upstream workaround for the provisioner is:
-  - host-side IPv4 forwarding and NAT on the Gentoo control host
-  - guest-side default route override to `10.9.8.108`
-  - explicit `/etc/resolv.conf` population in the provisioner
+- the previous temporary host-NAT workaround has been replaced for the active
+  builder path by a rebuilt RouterOS CHR gateway:
+  - LAN: `10.9.8.1/24` on `pathb-lan`
+  - WAN: `192.168.1.222/24` on `pathb-wan`
+  - upstream gateway: `192.168.1.254`
+  - DNS: `9.9.9.9`, `8.8.8.8`
+  - NAT: masquerade `10.9.8.0/24` out `pathb-wan`
 
 Key implementation findings now encoded in the repo:
 
@@ -167,8 +170,8 @@ Current container-services validation status on top of this lab:
 - generic guest CPU tuning is now required for this lab path:
   - `x86_64_v2_generic` preferred
   - `x86_64_v3_generic` optional for newer guest fleets
-- the container-services validation still relies on the temporary upstream
-  workaround documented below until RouterOS has a proper upstream path
+- the container-services validation now uses the rebuilt RouterOS upstream path
+  documented above
 - the first reusable Gentoo base-container image build is now wired to run from
   the installed container-services target using:
   - image-local package list

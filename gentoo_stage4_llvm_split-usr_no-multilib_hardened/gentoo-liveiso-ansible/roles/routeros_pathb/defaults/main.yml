@@ -13,6 +13,7 @@ routeros_pathb_lab_name: pathb-lab
 routeros_pathb_boot_mode: uefi-http-ipxe
 routeros_pathb_management_cidrs:
   - 10.9.8.0/24
+routeros_pathb_lan_default_name: ether1
 routeros_pathb_lan_interface: ether1
 routeros_pathb_lan_cidr: 10.9.8.1/24
 routeros_pathb_lan_network_cidr: 10.9.8.0/24
@@ -20,6 +21,18 @@ routeros_pathb_gateway: 10.9.8.1
 routeros_pathb_dns_servers:
   - 10.9.8.108
 routeros_pathb_dns_allow_remote_requests: true
+routeros_pathb_dhcp_dns_servers: "{{ routeros_pathb_dns_servers }}"
+routeros_pathb_disable_dhcp_clients: true
+routeros_pathb_wan_enabled: false
+routeros_pathb_wan_default_name: ether2
+routeros_pathb_wan_interface: ether2
+routeros_pathb_wan_cidr: ""
+routeros_pathb_wan_gateway: ""
+routeros_pathb_wan_route_distance: 1
+routeros_pathb_nat_enabled: "{{ routeros_pathb_wan_enabled }}"
+routeros_pathb_nat_comment: pathb-lan-masquerade
+routeros_pathb_firewall_baseline_enabled: "{{ routeros_pathb_wan_enabled }}"
+routeros_pathb_firewall_comment_prefix: pathb
 routeros_pathb_dhcp_pool_name: pathb-pool
 routeros_pathb_dhcp_pool_ranges:
   - 10.9.8.10-10.9.8.99

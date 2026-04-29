@@ -66,16 +66,15 @@ the QEMU host. This is intended for:
 - temporary container/image storage
 - faster ephemeral validation cycles on high-memory build hosts
 
-### Current Path B upstream workaround
+### Current Path B upstream
 
-For the live `10.9.8.0/24` lab, the current temporary upstream path is:
+For the live `10.9.8.0/24` lab, the current upstream path is:
 
-- guest default route override to `10.9.8.108`
-- explicit `resolv.conf` population in the provisioner and target
-- host-side IPv4 forwarding and NAT on the Gentoo control host
-
-This is a temporary lab workaround. The long-term fix is a proper upstream
-route or second WAN-facing NIC on the RouterOS Path B gateway.
+- RouterOS Path B gateway at `10.9.8.1`
+- RouterOS WAN address `192.168.1.222/24` on `pathb-wan`
+- upstream gateway `192.168.1.254`
+- DNS via RouterOS remote requests to `9.9.9.9` and `8.8.8.8`
+- LAN-to-WAN masquerade for `10.9.8.0/24`
 
 ## Current Validation Progress
 
@@ -107,7 +106,7 @@ Important fixes that made this possible:
 - scoped `package.unmask` support
 - scoped GCC compatibility env so fallback packages do not inherit LLVM-only
   `-flto=thin`
-- temporary upstream and DNS fix for the Path B lab
+- RouterOS-backed upstream and DNS for the Path B lab
 - netavark-safe network bootstrap helper without forced `interface_name`
 - explicit `ntfy` runtime data directory provisioning
 - explicit `nginx` cache/temp directory provisioning
