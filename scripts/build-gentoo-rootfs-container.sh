@@ -11,6 +11,7 @@ import or commit it into a local container image.
 Options:
   --root DIR               Target rootfs directory to populate.
   --package-list FILE      Flat package list file (one atom per line).
+  --pkgdir DIR             Local binpkg cache directory (default: sibling binpkgs/).
   --use-file FILE          Flat USE override file (one flag token per line).
   --package-use-file FILE  package.use style overrides to install into config-root.
   --host-package-use-file FILE
@@ -66,6 +67,7 @@ sanitize_emerge_features() {
 
 ROOT_DIR=
 PACKAGE_LIST=
+PKGDIR=
 USE_FILE=
 PACKAGE_USE_FILE=
 HOST_PACKAGE_USE_FILE=
@@ -96,6 +98,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --package-list)
       PACKAGE_LIST=${2-}
+      shift 2
+      ;;
+    --pkgdir)
+      PKGDIR=${2-}
       shift 2
       ;;
     --use-file)
@@ -171,6 +177,9 @@ done
 [[ -n "${ROOT_DIR}" ]] || die "--root is required"
 [[ -n "${PACKAGE_LIST}" ]] || die "--package-list is required"
 [[ -f "${PACKAGE_LIST}" ]] || die "package list not found: ${PACKAGE_LIST}"
+if [[ -z "${PKGDIR}" ]]; then
+  PKGDIR="$(dirname "${ROOT_DIR%/}")/binpkgs"
+fi
 if [[ -n "${USE_FILE}" ]]; then
   [[ -f "${USE_FILE}" ]] || die "use override file not found: ${USE_FILE}"
 fi
@@ -223,6 +232,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'config-root=%s\n' "${CONFIG_ROOT}"
   printf 'sysroot=%s\n' "${SYSROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
+  printf 'pkgdir=%s\n' "${PKGDIR}"
   printf 'use-file=%s\n' "${USE_FILE}"
   printf 'package-use-file=%s\n' "${PACKAGE_USE_FILE}"
   printf 'host-package-use-file=%s\n' "${HOST_PACKAGE_USE_FILE}"
@@ -259,6 +269,7 @@ cleanup_rootfs_builder() {
 trap cleanup_rootfs_builder EXIT
 
 mkdir -p "${ROOT_DIR}"
+install -d -m 0755 "${PKGDIR}"
 install -d -m 0755 \
   "${ROOT_DIR}/etc" \
   "${ROOT_DIR}/proc" \
@@ -333,11 +344,21 @@ fi
 log "building rootfs in ${ROOT_DIR}"
 emerge_env=(
   "CCACHE_DISABLE=1"
+  "BINPKG_COMPRESS=${BINPKG_COMPRESS:-zstd}"
+  "BINPKG_COMPRESS_FLAGS=${BINPKG_COMPRESS_FLAGS:--2}"
   "DISTCC_DISABLE=1"
+  "PKGDIR=${PKGDIR}"
+  "PORTAGE_BINPKG_FORMAT=${PORTAGE_BINPKG_FORMAT:-tar}"
 )
 if [[ -n "${SANITIZED_FEATURES}" ]]; then
-  emerge_env+=("FEATURES=${SANITIZED_FEATURES}")
+  sanitized_features="${SANITIZED_FEATURES}"
+else
+  sanitized_features=""
 fi
+if [[ " ${sanitized_features} " != *" buildpkg "* ]]; then
+  sanitized_features="${sanitized_features:+${sanitized_features} }buildpkg"
+fi
+emerge_env+=("FEATURES=${sanitized_features}")
 if [[ ${#USE_OVERRIDE_FLAGS[@]} -gt 0 ]]; then
   current_use="${USE:-}"
   current_use="${current_use:+${current_use} }${USE_OVERRIDE_FLAGS[*]}"
@@ -346,7 +367,12 @@ fi
 
 env "${emerge_env[@]}" \
   emerge \
+    --binpkg-respect-use=y \
+    --buildpkg=y \
+    --complete-graph=y \
+    --usepkg=y \
     --verbose \
+    --with-bdeps=y \
     --oneshot \
     --emptytree \
     --root="${ROOT_DIR}" \

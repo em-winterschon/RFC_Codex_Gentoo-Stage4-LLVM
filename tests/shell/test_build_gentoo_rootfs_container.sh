@@ -39,6 +39,7 @@ EOF
 
   assert_contains "${output}" "root=${temp_dir}/rootfs"
   assert_contains "${output}" "package-count=2"
+  assert_contains "${output}" "pkgdir=${temp_dir}/binpkgs"
   assert_contains "${output}" 'engine=none'
   assert_contains "${output}" "tarball=${temp_dir}/rootfs.tar.zst"
 }
@@ -260,6 +261,28 @@ EOF
   assert_contains "${output}" "sysroot=${temp_dir}/rootfs"
 }
 
+test_dry_run_explicit_pkgdir() {
+  local temp_dir package_list output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --pkgdir "${temp_dir}/custom-binpkgs" \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "pkgdir=${temp_dir}/custom-binpkgs"
+}
+
 test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
@@ -268,5 +291,6 @@ test_dry_run_overlay_dir
 test_dry_run_host_package_mask_file
 test_package_use_file_requires_explicit_config_root
 test_dry_run_sysroot
+test_dry_run_explicit_pkgdir
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

@@ -9,6 +9,9 @@ The first reusable base image path for this repo is:
 3. Import or commit it into a local Podman-compatible image.
 4. Publish the validated image through `scripts/publish-container-ghcr.sh`.
 
+The rootfs builder now caches local binpkgs by default under a sibling
+`binpkgs/` directory next to the rootfs path and reuses them on reruns.
+
 This is intended to run first on the validated `vm-container-services` host profile.
 
 CPU tuning note:
@@ -46,6 +49,7 @@ Use:
 ```bash
 bash scripts/build-gentoo-rootfs-container.sh \
   --root /var/lib/container-services/images/gentoo-stage4-rootfs \
+  --pkgdir /var/lib/container-services/images/binpkgs \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
   --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
@@ -70,10 +74,18 @@ split-usr behavior even though the container root is merged-usr. The current
 definition uses this to force merged-usr-safe host dependency behavior for
 `sys-apps/coreutils`.
 
+Use `--pkgdir` to pin the local binpkg cache location explicitly. If omitted,
+the helper defaults to `$(dirname ROOT)/binpkgs`, enables `buildpkg`, and
+reuses matching local binpkgs on reruns with `--usepkg=y`.
+
 Use `--overlay-dir` when the image build needs a narrow ebuild fix in the build
-host dependency path. The current image overlay only patches
-`app-alternatives/awk` so merged-usr build hosts do not trip over the
-`/bin/awk` versus `/usr/bin/awk` internal collision.
+host dependency path. The current image overlay patches:
+
+- `app-alternatives/awk`
+- `sys-apps/coreutils`
+
+Those fixes normalize merged-usr host-side install trees so reruns do not stop
+on `/bin/*` versus `/usr/bin/*` internal collisions.
 
 Use `--host-package-mask-file` when the build host must be forced away from a
 broken generic atom selection. The current image definition masks
