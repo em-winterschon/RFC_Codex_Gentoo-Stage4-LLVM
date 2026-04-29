@@ -155,11 +155,15 @@ setsid -f bash -c 'exec bash scripts/watch-sync-binpkgs-to-repo.sh \
   --remote-root /srv/stage5-binpkgs \
   --staging-dir /var/tmp/stage5-binpkg-sync/container-services \
   --watch-remote root@10.9.8.89 \
-  --watch-pid "$2" \
-  --interval 300 \
+  --watch-pattern "build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage4-rootfs" \
+  --interval 600 \
   < /dev/null >>/var/log/stage5-binpkg-sync-watch-container-services.log 2>&1' \
-  stage5-binpkg-sync-watch "${repo_id}" "${remote_build_pid}"
+  stage5-binpkg-sync-watch "${repo_id}"
 ```
+
+Use `--watch-pattern` rather than `--watch-pid` when a build restart watchdog
+is active; a PID watcher exits after the first failed process, while the
+pattern watcher survives bounded relaunches.
 
 ## Environmental Continuity
 
