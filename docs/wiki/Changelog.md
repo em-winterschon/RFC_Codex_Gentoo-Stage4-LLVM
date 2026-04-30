@@ -69,6 +69,16 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Published `gentoo-stage5-rsyslog-collector` to GHCR as `git-37a4d4a` and
   `latest`, both resolving to digest
   `sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7`.
+- Updated the `vm-container-services` and `container-rsyslog-collector`
+  profiles to consume the published GHCR Stage5 images instead of upstream
+  nginx, HAProxy, and rsyslog images.
+- Added explicit Gentoo service commands, tmpfs runtime mounts, and required
+  `NET_BIND_SERVICE` capability handling for the package-backed container
+  images under the OpenRC Podman wrapper.
+- Updated HAProxy deployment wiring to mount generated configuration at the
+  Gentoo package path, `/etc/haproxy/haproxy.cfg`.
+- Added a writable rsyslog collector spool volume while keeping the container
+  root filesystem read-only.
 
 ## 2026-04-29
 

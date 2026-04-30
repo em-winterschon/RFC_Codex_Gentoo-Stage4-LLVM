@@ -8,7 +8,7 @@ ANSIBLE_ROOT="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gen
 assert_file_contains() {
   local file=$1
   local pattern=$2
-  grep -q "${pattern}" "${file}"
+  grep -q -- "${pattern}" "${file}"
 }
 
 for role_dir in \
@@ -36,5 +36,15 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/main.yml" 'resolved_
 assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/load_profile_definition.yml" 'container_base_image'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/tasks/main.yml" 'base-image.yml'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/templates/base-image.yml.j2" 'resolved_profile_container_base_image'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ghcr.io/em-winterschon/gentoo-stage5-nginx:latest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_service_segments/templates/podman-app-run.sh.j2" '--tmpfs'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/tasks/main.yml" '/usr/sbin/nginx'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/usr/sbin/haproxy'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/etc/haproxy/haproxy.cfg'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/usr/sbin/rsyslogd'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
 
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -38,9 +38,11 @@
               'published_ports': container_haproxy_profile.published_ports | default(['80:80/tcp', '443:443/tcp']),
               'cap_add': container_haproxy_profile.cap_add | default([]),
               'environment': container_haproxy_profile.env | default({}),
+              'tmpfs': container_haproxy_profile.tmpfs | default(['/tmp:rw,noexec,nosuid,size=64m', '/run:rw,noexec,nosuid,size=16m']),
               'volumes': [
-                container_haproxy_config_dir + '/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'
+                container_haproxy_config_dir + '/haproxy.cfg:' + (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')) + ':ro'
               ],
+              'command': container_haproxy_profile.command | default(['/usr/sbin/haproxy', '-f', (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')), '-db']),
               'enabled': true
             }
           ]

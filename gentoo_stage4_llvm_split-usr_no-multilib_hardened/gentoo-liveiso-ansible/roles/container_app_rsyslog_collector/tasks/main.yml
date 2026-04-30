@@ -13,6 +13,23 @@
     - container_services_enabled
     - container_rsyslog_collector_profile.enabled | default(false) | bool
 
+- name: Ensure rsyslog collector runtime spool directory exists
+  ansible.builtin.file:
+    path: >-
+      {{
+        install_target_root
+        + (
+            resolved_profile_container_services.runtime_root
+            | default('/var/lib/container-services')
+          )
+        + '/data/rsyslog-collector-spool'
+      }}
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_rsyslog_collector_profile.enabled | default(false) | bool
+
 - name: Render rsyslog collector configuration
   ansible.builtin.template:
     src: rsyslog.conf.j2
@@ -37,9 +54,12 @@
               'published_ports': container_rsyslog_collector_profile.published_ports | default(['514:514/udp', '514:514/tcp']),
               'cap_add': container_rsyslog_collector_profile.cap_add | default([]),
               'environment': container_rsyslog_collector_profile.env | default({}),
+              'tmpfs': container_rsyslog_collector_profile.tmpfs | default(['/tmp:rw,noexec,nosuid,size=64m', '/run:rw,noexec,nosuid,size=16m']),
               'volumes': [
-                container_rsyslog_collector_config_dir + '/rsyslog.conf:/etc/rsyslog.conf:ro'
+                container_rsyslog_collector_config_dir + '/rsyslog.conf:/etc/rsyslog.conf:ro',
+                (resolved_profile_container_services.runtime_root | default('/var/lib/container-services')) + '/data/rsyslog-collector-spool:' + (container_rsyslog_collector_profile.spool_dir | default('/var/spool/rsyslog'))
               ],
+              'command': container_rsyslog_collector_profile.command | default(['/usr/sbin/rsyslogd', '-n', '-f', '/etc/rsyslog.conf']),
               'enabled': true
             }
           ]

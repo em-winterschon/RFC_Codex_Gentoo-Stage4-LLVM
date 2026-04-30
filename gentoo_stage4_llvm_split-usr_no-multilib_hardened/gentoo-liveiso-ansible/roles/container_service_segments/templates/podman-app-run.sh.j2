@@ -31,6 +31,9 @@ exec podman run \
 {% for volume_mount in container_runtime_app.volumes | default([]) %}
   -v {{ volume_mount | quote }} \
 {% endfor %}
+{% for tmpfs_mount in container_runtime_app.tmpfs | default([]) %}
+  --tmpfs {{ tmpfs_mount | quote }} \
+{% endfor %}
 {% for env_name, env_value in (container_runtime_app.environment | default({})).items() %}
   -e {{ (env_name + '=' + env_value) | quote }} \
 {% endfor %}

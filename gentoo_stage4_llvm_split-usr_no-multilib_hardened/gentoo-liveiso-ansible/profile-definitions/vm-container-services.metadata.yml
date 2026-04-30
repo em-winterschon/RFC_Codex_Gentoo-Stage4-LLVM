@@ -28,6 +28,7 @@ gentoo_system_profile_metadata:
     app_runtime_packages:
       - net-proxy/haproxy
       - www-servers/nginx
+      - app-admin/rsyslog
       - net-misc/curl
       - app-misc/jq
   systemd_exception_scope:
@@ -48,6 +49,7 @@ gentoo_system_profile_metadata:
     - ntfy
     - nginx
     - haproxy
+    - rsyslog_collector
   ipam:
     supported_sources:
       - flat-file-json

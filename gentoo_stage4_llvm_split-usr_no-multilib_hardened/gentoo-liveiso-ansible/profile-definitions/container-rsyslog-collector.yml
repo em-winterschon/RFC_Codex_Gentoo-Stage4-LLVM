@@ -3,9 +3,23 @@ gentoo_profile_definition:
   container_app_profiles:
     rsyslog_collector:
       enabled: true
-      image: docker.io/rsyslog/syslog_appliance_alpine:latest
+      image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
+      digest: sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
       network: mgmt
       ip_address: 10.77.0.40
+      command:
+        - /usr/sbin/rsyslogd
+        - "-n"
+        - "-f"
+        - /etc/rsyslog.conf
+      spool_dir: /var/spool/rsyslog
+      tmpfs:
+        - /tmp:rw,noexec,nosuid,size=64m
+        - /run:rw,noexec,nosuid,size=16m
+      cap_add:
+        - NET_BIND_SERVICE
       published_ports:
         - 514:514/udp
         - 514:514/tcp
