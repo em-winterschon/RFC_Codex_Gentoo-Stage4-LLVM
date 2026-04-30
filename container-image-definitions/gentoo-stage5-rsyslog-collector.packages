@@ -1,0 +1,6 @@
+app-misc/ca-certificates
+net-misc/curl
+sys-apps/iproute2
+sys-process/procps
+sys-process/psmisc
+app-admin/rsyslog

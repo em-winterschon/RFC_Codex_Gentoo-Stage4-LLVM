@@ -149,6 +149,25 @@ Current upstream-only service:
 
 - `ntfy`, because no Portage atom was present in the current builder tree
 
+Build a package-backed service layer on the Path B builder with:
+
+```bash
+CONTAINER_STAGE3_TARBALL=/var/lib/container-services-ephemeral/stage3-cache/stage3-amd64-llvm-openrc-20260419T164601Z.tar.xz \
+  bash scripts/run-container-service-layer-build-pathb.sh --service nginx
+```
+
+Supported service values:
+
+- `nginx`
+- `haproxy`
+- `rsyslog_collector`
+
+Dry-run the resolved paths and repo IDs with:
+
+```bash
+bash scripts/run-container-service-layer-build-pathb.sh --service nginx --dry-run
+```
+
 ## Build telemetry
 
 Export package burn-down and builder workload data from the live logs with:

@@ -17,6 +17,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added `container-image-definitions/service-layers.yml` to track service-image
   build mode, package atoms, runtime roles, and GHCR naming on top of the
   published base image.
+- Added package lists and a Path B launcher for package-backed service-layer
+  image builds:
+  - `gentoo-stage5-nginx`
+  - `gentoo-stage5-haproxy`
+  - `gentoo-stage5-rsyslog-collector`
 
 ### Changed
 
@@ -28,6 +33,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Classified `nginx`, `haproxy`, and `rsyslog_collector` as package-backed
   service-image candidates, with `ntfy` remaining upstream-image mode until an
   overlay ebuild exists.
+- Standardized service-layer binpkg repo IDs under
+  `stage3-llvm_clang_openrc__stage5-service_container-<service>__amd64__x86_64_v2_generic`.
 
 ## 2026-04-29
 

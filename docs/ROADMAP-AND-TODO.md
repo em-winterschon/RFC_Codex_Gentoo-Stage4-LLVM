@@ -70,6 +70,7 @@ Dependency:
 | `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Default to the standard stage3 base for the first image; keep hardened source-first work as a later, isolated track. |
 | `ST-007` | pending | Add rsyslog as a service-container layer | `CP-005` | `rsyslog` is intentionally out of the first base image because its same-transaction `--root` build cannot see `libestr` through pkg-config. |
 | `ST-008` | active | Wire service layers to the published base image | `CP-006` | `container-service-base-image.yml` defines GHCR base-image provenance and app build defaults; container hosts render `/etc/container-services/base-image.yml`; `service-layers.yml` tracks package-backed and upstream-image service candidates. |
+| `ST-009` | active | Add service-layer build automation | `ST-008` | `run-container-service-layer-build-pathb.sh` can build `nginx`, `haproxy`, and `rsyslog_collector` service images with per-service package lists and binpkg repo IDs. |
 
 ## Stage5 Service Tracks
 

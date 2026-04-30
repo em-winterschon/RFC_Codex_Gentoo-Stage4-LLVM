@@ -14,6 +14,7 @@ container_service_layers:
     nginx:
       build_mode: portage-layer
       image_name: gentoo-stage5-nginx
+      package_list: container-image-definitions/gentoo-stage5-nginx.packages
       packages:
         - www-servers/nginx
       config_role: container_app_nginx
@@ -21,6 +22,7 @@ container_service_layers:
     haproxy:
       build_mode: portage-layer
       image_name: gentoo-stage5-haproxy
+      package_list: container-image-definitions/gentoo-stage5-haproxy.packages
       packages:
         - net-proxy/haproxy
       config_role: container_app_haproxy
@@ -28,6 +30,7 @@ container_service_layers:
     rsyslog_collector:
       build_mode: portage-layer
       image_name: gentoo-stage5-rsyslog-collector
+      package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.packages
       packages:
         - app-admin/rsyslog
       config_role: container_app_rsyslog_collector
