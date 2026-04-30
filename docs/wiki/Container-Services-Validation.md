@@ -107,6 +107,10 @@ Important fixes that made this possible:
 - scoped GCC compatibility env so fallback packages do not inherit LLVM-only
   `-flto=thin`
 - RouterOS-backed upstream and DNS for the Path B lab
+- phased container rootfs build bootstrap for compiler/runtime sysroot
+  prerequisites before the main image graph
+- clang sysroot ABI checks for both C and C++ before entering the long
+  package closure
 - netavark-safe network bootstrap helper without forced `interface_name`
 - explicit `ntfy` runtime data directory provisioning
 - explicit `nginx` cache/temp directory provisioning
@@ -122,3 +126,19 @@ Important fixes that made this possible:
    only in the provisioner chroot
 2. build the first reusable `gentoo-stage4-llvm-clang-hardened` container image
 3. publish the validated image to `GHCR`
+
+## Build Graph Control
+
+The rootfs container builder now supports `--bootstrap-package-list`. The
+container profile uses this to install the minimal LLVM runtime closure before
+the main package graph:
+
+- `llvm-runtimes/libunwind`
+- `llvm-runtimes/libcxxabi`
+- `llvm-runtimes/libcxx`
+- `llvm-runtimes/compiler-rt`
+
+The bootstrap phase temporarily forces `clang --unwindlib=libgcc` and
+`clang++ --stdlib=libstdc++ --unwindlib=libgcc` so the runtime packages can be
+installed into an incomplete sysroot. After that, the builder verifies default
+clang C and C++ links against the target rootfs before starting the main graph.

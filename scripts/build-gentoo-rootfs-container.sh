@@ -13,6 +13,9 @@ import or commit it into a local container image.
 Options:
   --root DIR               Target rootfs directory to populate.
   --package-list FILE      Flat package list file (one atom per line).
+  --bootstrap-package-list FILE
+                           Flat package list to emerge before the main graph.
+                           Used for compiler/runtime sysroot prerequisites.
   --pkgdir DIR             Local binpkg cache directory (default: sibling binpkgs/).
   --binpkg-repo-id ID      Unique Stage4/Stage5 binpkg repository ID.
   --binpkg-sync-remote HOST
@@ -75,6 +78,7 @@ sanitize_emerge_features() {
 
 ROOT_DIR=
 PACKAGE_LIST=
+BOOTSTRAP_PACKAGE_LIST=
 PKGDIR=
 BINPKG_REPO_ID=
 BINPKG_SYNC_REMOTE=
@@ -113,6 +117,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --package-list)
       PACKAGE_LIST=${2-}
+      shift 2
+      ;;
+    --bootstrap-package-list)
+      BOOTSTRAP_PACKAGE_LIST=${2-}
       shift 2
       ;;
     --pkgdir)
@@ -208,6 +216,9 @@ done
 [[ -n "${ROOT_DIR}" ]] || die "--root is required"
 [[ -n "${PACKAGE_LIST}" ]] || die "--package-list is required"
 [[ -f "${PACKAGE_LIST}" ]] || die "package list not found: ${PACKAGE_LIST}"
+if [[ -n "${BOOTSTRAP_PACKAGE_LIST}" ]]; then
+  [[ -f "${BOOTSTRAP_PACKAGE_LIST}" ]] || die "bootstrap package list not found: ${BOOTSTRAP_PACKAGE_LIST}"
+fi
 if [[ -z "${PKGDIR}" ]]; then
   PKGDIR="$(dirname "${ROOT_DIR%/}")/binpkgs"
 fi
@@ -245,6 +256,10 @@ fi
 
 mapfile -t PACKAGE_ATOMS < <(grep -Ev '^[[:space:]]*($|#)' "${PACKAGE_LIST}")
 [[ ${#PACKAGE_ATOMS[@]} -gt 0 ]] || die "package list is empty: ${PACKAGE_LIST}"
+BOOTSTRAP_PACKAGE_ATOMS=()
+if [[ -n "${BOOTSTRAP_PACKAGE_LIST}" ]]; then
+  mapfile -t BOOTSTRAP_PACKAGE_ATOMS < <(grep -Ev '^[[:space:]]*($|#)' "${BOOTSTRAP_PACKAGE_LIST}")
+fi
 if [[ -n "${USE_FILE}" ]]; then
   mapfile -t USE_OVERRIDE_FLAGS < <(grep -Ev '^[[:space:]]*($|#)' "${USE_FILE}")
 fi
@@ -272,6 +287,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'config-root=%s\n' "${CONFIG_ROOT}"
   printf 'sysroot=%s\n' "${SYSROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
+  printf 'bootstrap-package-list=%s\n' "${BOOTSTRAP_PACKAGE_LIST}"
   printf 'pkgdir=%s\n' "${PKGDIR}"
   printf 'binpkg-repo-id=%s\n' "${BINPKG_REPO_ID}"
   printf 'binpkg-sync-remote=%s\n' "${BINPKG_SYNC_REMOTE}"
@@ -286,6 +302,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'overlay-repo-name=%s\n' "${OVERLAY_REPO_NAME}"
   printf 'staged-overlay-dir=%s\n' "${STAGED_OVERLAY_DIR}"
   printf 'package-count=%s\n' "${#PACKAGE_ATOMS[@]}"
+  printf 'bootstrap-package-count=%s\n' "${#BOOTSTRAP_PACKAGE_ATOMS[@]}"
   printf 'use-overrides=%s\n' "${USE_OVERRIDE_FLAGS[*]:-}"
   printf 'engine=%s\n' "${RESOLVED_ENGINE}"
   printf 'image-ref=%s\n' "${IMAGE_REF}"
@@ -302,6 +319,9 @@ cleanup_rootfs_builder() {
     buildah rm "${BUILDAH_CONTAINER_ID}" >/dev/null 2>&1 || true
   fi
   rm -f "${HOST_PACKAGE_USE_DEST}" "${HOST_PACKAGE_MASK_DEST}"
+  if [[ "${CONFIG_ROOT}" != "/" ]]; then
+    rm -f "/var/db/repos/${PROFILE_OVERLAY_NAME}"
+  fi
   if [[ -n "${OVERLAY_REPO_NAME}" ]]; then
     rm -f \
       "/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" \
@@ -404,6 +424,9 @@ auto-sync = no
 EOF
   ln -snf "../../var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}" \
     "${CONFIG_ROOT}/etc/portage/make.profile"
+  install -d -m 0755 /var/db/repos
+  ln -snf "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}" \
+    "/var/db/repos/${PROFILE_OVERLAY_NAME}"
 fi
 
 if [[ -n "${PACKAGE_USE_FILE}" ]]; then
@@ -473,8 +496,21 @@ if [[ ${#USE_OVERRIDE_FLAGS[@]} -gt 0 ]]; then
   emerge_env+=("USE=${current_use}")
 fi
 
-env "${emerge_env[@]}" \
-  emerge \
+rootfs_emerge() {
+  local phase=$1
+  local emptytree=$2
+  local extra_env_name=$3
+  local emerge_emptytree_args=()
+  shift
+  shift
+  shift
+  local -n extra_env_ref="${extra_env_name}"
+  if [[ "${emptytree}" == true ]]; then
+    emerge_emptytree_args=(--emptytree)
+  fi
+  log "emerging ${phase} package set: $*"
+  env "${emerge_env[@]}" "${extra_env_ref[@]}" \
+    emerge \
     --binpkg-respect-use=y \
     --buildpkg=y \
     --complete-graph=y \
@@ -482,11 +518,46 @@ env "${emerge_env[@]}" \
     --verbose \
     --with-bdeps=y \
     --oneshot \
-    --emptytree \
+    "${emerge_emptytree_args[@]}" \
     --root="${ROOT_DIR}" \
     --config-root="${CONFIG_ROOT}" \
     --sysroot="${SYSROOT}" \
-    "${PACKAGE_ATOMS[@]}"
+    "$@"
+}
+
+check_clang_sysroot_abi() {
+  local lang=$1
+  local compiler=$2
+  local suffix=$3
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  trap 'rm -rf "${tmpdir}"' RETURN
+  printf 'int main(void) { return 0; }\n' > "${tmpdir}/test.${suffix}"
+  if ! ${compiler} --sysroot="${ROOT_DIR}" "${tmpdir}/test.${suffix}" -o "${tmpdir}/test" >/tmp/build-gentoo-rootfs-container-${lang}-abi.log 2>&1; then
+    sed 's/^/[build-gentoo-rootfs-container] ABI check: /' "/tmp/build-gentoo-rootfs-container-${lang}-abi.log" >&2 || true
+    die "clang ${lang} ABI check failed for sysroot ${ROOT_DIR}"
+  fi
+  rm -rf "${tmpdir}"
+  trap - RETURN
+  log "clang ${lang} ABI check passed for sysroot ${ROOT_DIR}"
+}
+
+if [[ ${#BOOTSTRAP_PACKAGE_ATOMS[@]} -gt 0 ]]; then
+  log "bootstrapping compiler/runtime sysroot prerequisites with libgcc/libstdc++ fallback"
+  bootstrap_extra_env=(
+    "CC=clang --unwindlib=libgcc"
+    "CXX=clang++ --stdlib=libstdc++ --unwindlib=libgcc"
+  )
+  rootfs_emerge "bootstrap" \
+    false \
+    bootstrap_extra_env \
+    "${BOOTSTRAP_PACKAGE_ATOMS[@]}"
+  check_clang_sysroot_abi c clang c
+  check_clang_sysroot_abi cxx clang++ cc
+fi
+
+main_extra_env=()
+rootfs_emerge "main" true main_extra_env "${PACKAGE_ATOMS[@]}"
 
 if [[ -n "${TARBALL}" ]]; then
   require_cmd tar

@@ -3,6 +3,29 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-04-29
+
+### Added
+
+- Added an explicit compiler/runtime bootstrap package phase for the Gentoo
+  rootfs container builder.
+
+### Changed
+
+- Split container rootfs builds into a small runtime bootstrap phase followed
+  by the main image graph, so clang sysroot ABI failures are detected before
+  the long dependency tree reaches CMake packages.
+
+### Fixed
+
+- Fixed the repeated `dev-libs/json-c` CMake ABI failure path by bootstrapping
+  `llvm-runtimes/libunwind`, `libcxxabi`, `libcxx`, and `compiler-rt` with a
+  temporary `libgcc`/`libstdc++` fallback, then verifying normal
+  clang/libunwind C and C++ linking against the target rootfs.
+- Fixed the generated local container profile repository lookup by exposing the
+  config-root profile overlay through a host-side `/var/db/repos` symlink while
+  the builder is active.
+
 ## 2026-04-28
 
 ### Added

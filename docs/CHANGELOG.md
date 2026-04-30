@@ -11,6 +11,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   and WAN tap on a dedicated `br-ros-wan` bridge backed by `eno2`.
 - Added repeatable Path B container-base build launch helpers for binhost-backed
   reruns under the restart watchdog.
+- Added an explicit compiler/runtime bootstrap package phase for the Gentoo
+  rootfs container builder.
 
 ### Changed
 
@@ -21,6 +23,19 @@ infrastructure work. It is intentionally higher level than `git log`.
   filtering.
 - Updated the container builder to use the Stage4/Stage5 binpkg repository
   during reruns and preserve sync auth from inside the installed Gentoo chroot.
+- Split container rootfs builds into a small runtime bootstrap phase followed
+  by the main image graph, so clang sysroot ABI failures are detected before
+  the long dependency tree reaches CMake packages.
+
+### Fixed
+
+- Fixed the repeated `dev-libs/json-c` CMake ABI failure path by bootstrapping
+  `llvm-runtimes/libunwind`, `libcxxabi`, `libcxx`, and `compiler-rt` with a
+  temporary `libgcc`/`libstdc++` fallback, then verifying normal
+  clang/libunwind C and C++ linking against the target rootfs.
+- Fixed the generated local container profile repository lookup by exposing the
+  config-root profile overlay through a host-side `/var/db/repos` symlink while
+  the builder is active.
 
 ## 2026-04-28
 
