@@ -65,6 +65,7 @@ install_role_sequences:
           - container_net_policy
           - container_service_segments
           - services
+          - service_readiness
 
   full-modular-zfs:
     description: Modular installer sequence that keeps native ZFS, kernel, bootloader, and finalize roles explicit.
@@ -113,6 +114,7 @@ install_role_sequences:
           - platform_profile
           - identity
           - finalize
+          - service_readiness
 
   storage-foundation:
     description: Destructive storage-only foundation pass for device wiping, partitioning, and ZFS provisioning.
@@ -192,6 +194,7 @@ install_role_sequences:
           - container_net_policy
           - container_service_segments
           - services
+          - service_readiness
 
   repair-boot:
     description: Targeted rerun for ZFSBootMenu, kernel/initramfs materialization, and boot-time networking.
@@ -252,3 +255,4 @@ install_role_sequences:
           - container_net_policy
           - container_service_segments
           - services
+          - service_readiness

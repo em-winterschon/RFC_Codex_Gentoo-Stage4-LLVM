@@ -36,6 +36,7 @@
               'network': container_haproxy_profile.network | default('apps'),
               'ip_address': container_haproxy_profile.ip_address | default(''),
               'published_ports': container_haproxy_profile.published_ports | default(['80:80/tcp', '443:443/tcp']),
+              'pre_commands': container_haproxy_profile.pre_commands | default([]),
               'cap_add': container_haproxy_profile.cap_add | default([]),
               'environment': container_haproxy_profile.env | default({}),
               'tmpfs': container_haproxy_profile.tmpfs | default(['/tmp:rw,noexec,nosuid,size=64m', '/run:rw,noexec,nosuid,size=16m']),

@@ -52,6 +52,7 @@
       - container_net_policy
       - container_service_segments
       - services
+      - service_readiness
 
   tasks:
     - name: Validate requested install sequence

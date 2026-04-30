@@ -16,7 +16,7 @@ remember raw `telnet` / `socat` / `nc` commands.
 
 Options:
   --vm NAME     Known VM mapping:
-                routeros | simple-guest | container-services
+                routeros | simple-guest | container-services | binpkg-repository | elasticsearch-test
   --host HOST   TCP host to connect to. Default: 127.0.0.1
   --port PORT   TCP port to connect to. Overrides --vm mapping.
   --mode MODE   telnet (default), socat, or nc
@@ -27,6 +27,8 @@ Known mappings:
   routeros           -> 127.0.0.1:5001
   simple-guest       -> 127.0.0.1:5002
   container-services -> 127.0.0.1:5003
+  binpkg-repository  -> 127.0.0.1:5004
+  elasticsearch-test -> 127.0.0.1:5005
 
 Notes:
   - `telnet` is the safest default because it is easier to exit cleanly.
@@ -66,8 +68,16 @@ resolve_vm_defaults() {
     HOST='127.0.0.1'
     PORT='5003'
     ;;
+  binpkg-repository)
+    HOST='127.0.0.1'
+    PORT='5004'
+    ;;
+  elasticsearch-test)
+    HOST='127.0.0.1'
+    PORT='5005'
+    ;;
   *)
-    fail "Unknown --vm value: ${VM_NAME} (supported: routeros, simple-guest, container-services)"
+    fail "Unknown --vm value: ${VM_NAME} (supported: routeros, simple-guest, container-services, binpkg-repository, elasticsearch-test)"
     ;;
   esac
 }

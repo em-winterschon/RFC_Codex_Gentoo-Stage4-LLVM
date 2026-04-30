@@ -1,15 +1,20 @@
 [connection]
 id={{ item.name }}
 type={{ item.type | default('ethernet') }}
+{% if item.interface_name | default('') | length > 0 %}
 interface-name={{ item.interface_name }}
+{% endif %}
 autoconnect={{ (item.autoconnect | default(true) | bool) | ternary('true', 'false') }}
 
 [{{ item.type | default('ethernet') }}]
+{% if item.mac_address | default('') | length > 0 %}
+mac-address={{ item.mac_address }}
+{% endif %}
 
 [ipv4]
 method={{ item.ipv4_method | default('manual') }}
 {% for address in item.addresses | default([]) %}
-address{{ loop.index }}={{ address }}{% if loop.first and item.gateway4 is defined %},{{ item.gateway4 }}{% endif %}
+address{{ loop.index }}={{ address }}{{ (loop.first and item.gateway4 is defined) | ternary(',' ~ item.gateway4, '') }}
 {% endfor %}
 {% if item.dns4 is defined and item.dns4 | length > 0 %}
 dns={{ item.dns4 | join(';') }};

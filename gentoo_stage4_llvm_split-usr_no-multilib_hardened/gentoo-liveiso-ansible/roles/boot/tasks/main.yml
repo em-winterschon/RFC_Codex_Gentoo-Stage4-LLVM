@@ -86,11 +86,37 @@
   changed_when: false
   when: boot_strategy == 'zfsbootmenu'
 
+- name: Ensure dracut configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/dracut.conf.d"
+    state: directory
+    mode: '0755'
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Force ZFS support into generated root initramfs
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/dracut.conf.d/90-zfs-root.conf"
+    mode: '0644'
+    content: |
+      add_dracutmodules+=" zfs "
+      force_drivers+=" zfs "
+      install_items+=" /etc/zfs/zpool.cache "
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Generate target hostid for root-on-ZFS imports
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ 'zgenhostid -f' | quote }}
+  args:
+    creates: "{{ install_target_root }}/etc/hostid"
+  when: boot_strategy == 'zfsbootmenu'
+
 - name: Materialize kernel and initramfs into /boot for ZFSBootMenu
   ansible.builtin.shell: |
     set -euo pipefail
     kernel_version="{{ boot_kernel_version.stdout | trim }}"
     cp -Lf "{{ install_target_root }}/usr/lib/modules/${kernel_version}/vmlinuz" "{{ install_target_root }}/boot/vmlinuz-${kernel_version}"
+    {{ liveiso_work_dir }}/chroot-runner.sh {{ ('depmod -a ' + (boot_kernel_version.stdout | trim)) | quote }}
     {{ liveiso_work_dir }}/chroot-runner.sh {{ ('dracut --force /boot/initramfs-' + (boot_kernel_version.stdout | trim) + '.img ' + (boot_kernel_version.stdout | trim)) | quote }}
   args:
     executable: /bin/bash
@@ -143,12 +169,20 @@
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
 
+- name: Check for existing ZFSBootMenu EFI executable
+  ansible.builtin.stat:
+    path: "{{ install_target_root }}{{ zfsbootmenu_efi_directory }}/{{ zfsbootmenu_efi_filename }}"
+  register: zfsbootmenu_existing_efi
+  when: boot_strategy == 'zfsbootmenu'
+
 - name: Download prebuilt ZFSBootMenu EFI executable
   ansible.builtin.get_url:
     url: "{{ zfsbootmenu_efi_url }}"
     dest: "{{ install_target_root }}{{ zfsbootmenu_efi_directory }}/{{ zfsbootmenu_efi_filename }}"
     mode: '0755'
-  when: boot_strategy == 'zfsbootmenu'
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - zfsbootmenu_efi_refresh | bool or not (zfsbootmenu_existing_efi.stat.exists | default(false))
 
 - name: Write ZFSBootMenu EFI fallback command line
   ansible.builtin.copy:

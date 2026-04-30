@@ -18,6 +18,7 @@ Native host and VM roles:
 - `rsyslog_base`
 - `elasticsearch_cluster`
 - `kibana_interface`
+- `service_readiness`
 - `netbox_connector`
 - `zerotier_access`
 
@@ -35,10 +36,12 @@ Reusable overlays:
 - `zerotier-managed-access`
 - `container-rsyslog-collector`
 - `container-elastic-apm`
+- `container-haproxy-elasticsearch-test-vip`
 
 VM profiles:
 
 - `vm-elasticsearch-node`
+- `vm-elasticsearch-test`
 - `vm-kibana-interface`
 
 ## Current Intent
@@ -53,7 +56,11 @@ The `container-rsyslog-collector` overlay renders a containerized collector that
 
 - receive UDP and TCP syslog on port `514`
 - normalize messages with `rsyslog`
-- forward structured payloads to an Elasticsearch VIP
+- load `omelasticsearch`
+- forward structured bulk payloads to an Elasticsearch VIP
+
+The profile enforces `app-admin/rsyslog[elasticsearch]` and sets
+`esVersion.major=9` for the current Elasticsearch test target.
 
 The `container-elastic-apm` overlay renders a containerized APM ingress that publishes to the Elasticsearch cluster.
 
@@ -65,14 +72,29 @@ The example inventory now includes:
   - `vm_elasticsearch_node01`
   - `vm_elasticsearch_node02`
   - `vm_elasticsearch_node03`
+- `elasticsearch_test_nodes`
+  - `vm_elasticsearch_test` on `10.9.8.91`
 - `kibana_interfaces`
   - `vm_kibana_interface`
 
 The example cluster wiring uses:
 
+- `=app-misc/elasticsearch-9.3.1` as the native Gentoo-compatible Elasticsearch pin
 - `stage5-observability` as the cluster name
 - `elastic-vip.example.internal` as the client-facing Elasticsearch VIP
 - `log-vip.example.internal` as the syslog shipping target
+
+The Path B single-node test profile uses:
+
+- `vm-elasticsearch-test` at `10.9.8.91`
+- single-node discovery
+- disabled Elasticsearch security and HTTP TLS for local lab ingestion tests
+- `action.auto_create_index: stage5-*` for rsyslog bulk ingestion
+- a `stage5-syslog*` index template with one shard and zero replicas for
+  single-node lab health
+- HAProxy test VIP `10.9.8.92:9200`, backed by the test node
+- explicit `ES_JAVA_HOME=/opt/openjdk-bin-21.0.10_p7`
+- `localmount` ordering for ZFS-backed Elasticsearch paths
 
 ## HAProxy Service Types
 
@@ -89,6 +111,38 @@ means an explicit service such as `syslog-tcp` does not suppress the default
 HTTP frontend for `nginx` and `ntfy` when those runtime applications are
 registered.
 
+The `container-haproxy-elasticsearch-test-vip` overlay adds a Path B test
+frontend for Elasticsearch:
+
+- host-side VIP command: `ip address replace 10.9.8.92/32 dev eth0`
+- Podman published port: `10.9.8.92:9200:9200/tcp`
+- HAProxy frontend: `*:9200`
+- backend: `10.9.8.91:9200`
+
+Additional HAProxy service-type definitions now exist for Jenkins, FreeIPA /
+FreeRADIUS, Prometheus, Alertmanager, Grafana, Kibana, Elasticsearch,
+Elasticsearch exporter, node exporter, Podman exporter, IPMI exporter,
+Redfish exporter, rsyslog TCP, and Elastic APM.
+
+## Service Readiness
+
+`scripts/service_validator.py` wraps `nmap` and emits deterministic JSON for
+TCP and UDP readiness checks. The `service_readiness` Ansible role runs those
+checks through a modular task block, with per-check `target`, `port`,
+`protocol`, `retries`, `delay`, and `allow_open_filtered` controls.
+
+Example:
+
+```bash
+scripts/service_validator.py --target 10.9.8.92 --port 9200 --protocol tcp --service-name elasticsearch-test --json
+```
+
+Serial console helper mapping:
+
+```bash
+scripts/watch-vm-serial.sh --vm elasticsearch-test
+```
+
 Live Path B validation on `10.9.8.89` currently confirms:
 
 - `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy` start from generated
@@ -97,8 +151,32 @@ Live Path B validation on `10.9.8.89` currently confirms:
 - HAProxy routes default HTTP traffic to nginx and `Host: ntfy.local` traffic
   to ntfy, both returning HTTP `200`.
 - rsyslog collector receives UDP and TCP messages on port `514`.
-- rsyslog Elasticsearch forwarding is pending the real
-  `elastic-vip.example.internal` DNS/VIP target.
+- rsyslog Elasticsearch forwarding is wired to the Path B test VIP
+  `10.9.8.92:9200` for the next Elasticsearch VM validation pass.
+
+Live Elasticsearch validation on `10.9.8.91` currently confirms:
+
+- `nmap` readiness reports `tcp/9200` open.
+- Elasticsearch `9.3.1` responds on HTTP.
+- cluster health is `green`.
+- `elasticsearch_exporter` serves metrics on `tcp/9114`.
+- a test document can be written to and read back from `stage5-syslog`,
+  validating the index settings required by rsyslog `omelasticsearch`.
+
+If an existing test index was created before the zero-replica template was
+installed, apply the rendered helper and update the existing index settings:
+
+```bash
+/usr/local/sbin/stage5-elasticsearch-apply-index-templates
+curl -XPUT http://127.0.0.1:9200/stage5-syslog/_settings \
+  -H 'Content-Type: application/json' \
+  -d '{"index":{"number_of_replicas":0}}'
+```
+
+The `10.9.8.92:9200` HAProxy VIP is defined, but live exposure still depends
+on redeploying the container-services host into an installed Podman-ready
+state. The current host context at `10.9.8.89` is not a reliable installed
+container host for this validation pass.
 
 ## NetBox
 
@@ -117,8 +195,9 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 
 ## Remaining Work
 
-1. Validate the native Gentoo `elasticsearch` and `kibana-bin` service behavior on a fresh VM.
-2. Stand up the Elasticsearch VIP/cluster target and complete rsyslog
-   end-to-end forwarding validation.
-3. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
-4. Decide which host classes should get `zerotier-managed-access` by default versus remaining opt-in.
+1. Reapply the container-services profile with `container-haproxy-elasticsearch-test-vip`.
+2. Validate `10.9.8.92:9200` with `service_validator.py` after HAProxy is live.
+3. Complete a live rsyslog container-to-Elasticsearch forwarding run through
+   the HAProxy VIP.
+4. Validate the native Gentoo `kibana-bin` service behavior on a fresh VM.
+5. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.

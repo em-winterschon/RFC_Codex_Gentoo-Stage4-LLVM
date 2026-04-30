@@ -4,15 +4,20 @@ zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
 zfsbootmenu_boot_label: ZFSBootMenu
 zfsbootmenu_efi_directory: /efi/EFI/ZBM
 zfsbootmenu_efi_filename: VMLINUZ.EFI
+zfsbootmenu_efi_refresh: false
 zfsbootmenu_fallback_directory: /efi/EFI/BOOT
 zfsbootmenu_fallback_filename: BOOTX64.EFI
 zfsbootmenu_embed_efi_commandline: true
 zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
 zfsbootmenu_timeout: 0
+zfsbootmenu_import_policy: ""
 zfsbootmenu_efi_commandline: >-
   zbm.prefer={{ zfsbootmenu_prefer }}
   ro
   zbm.timeout={{ zfsbootmenu_timeout }}
+  {% if zfsbootmenu_import_policy | default('') | length > 0 -%}
+  zbm.import_policy={{ zfsbootmenu_import_policy }}
+  {% endif -%}
   console=tty0
   console=ttyS0,115200
 zfsbootmenu_root_commandline: >-

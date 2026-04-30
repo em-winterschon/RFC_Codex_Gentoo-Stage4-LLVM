@@ -21,3 +21,12 @@ gentoo_profile_definition:
             - chassis
             - dcmi
             - sel
+  haproxy_service_types:
+    - name: ipmi-exporter-http
+      bind: "*:9290"
+      mode: http
+      backend_name: be_ipmi_exporter_http
+      servers:
+        - name: ipmi-exporter
+          address: 10.77.0.50
+          port: 9290

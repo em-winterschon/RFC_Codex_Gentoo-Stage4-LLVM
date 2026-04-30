@@ -23,6 +23,12 @@
     state: directory
     mode: '0755'
 
+- name: Ensure package.license directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.license"
+    state: directory
+    mode: '0755'
+
 - name: Ensure package.unmask directory exists
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/package.unmask"
@@ -136,6 +142,15 @@
   loop: "{{ (resolved_portage_package_accept_keywords_files | default({})) | dict2items }}"
   loop_control:
     loop_var: portage_package_accept_keywords_file
+
+- name: Write extra package.license fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.license/{{ portage_package_license_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_license_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_license_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_license_file
 
 - name: Write extra env files from selected profile definitions
   ansible.builtin.copy:

@@ -55,5 +55,5 @@ CPU_FLAGS_X86="{{ resolved_cpu_flags_x86 | join(' ') }}"
 {% endif -%}
 {% if resolved_portage_make_conf_append | default('') | trim | length > 0 %}
 
-{{ resolved_portage_make_conf_append | trim }}
+{{ resolved_portage_make_conf_append | trim | replace('\\n', '\n') }}
 {% endif -%}

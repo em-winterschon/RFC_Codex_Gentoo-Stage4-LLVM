@@ -30,3 +30,28 @@ gentoo_profile_definition:
     base_dn: dc=example,dc=internal
     bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=example,dc=internal
     clients: []
+  haproxy_service_types:
+    - name: freeipa-https
+      bind: "*:443"
+      mode: tcp
+      backend_name: be_freeipa_https
+      servers:
+        - name: ipa-controller
+          address: 127.0.0.1
+          port: 443
+    - name: freeipa-ldaps
+      bind: "*:636"
+      mode: tcp
+      backend_name: be_freeipa_ldaps
+      servers:
+        - name: ipa-controller
+          address: 127.0.0.1
+          port: 636
+    - name: freeradius-auth
+      bind: "*:1812"
+      mode: tcp
+      backend_name: be_freeradius_auth
+      servers:
+        - name: radius-controller
+          address: 127.0.0.1
+          port: 1812

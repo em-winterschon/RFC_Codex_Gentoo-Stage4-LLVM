@@ -5,3 +5,12 @@ gentoo_profile_definition:
   telemetry:
     grafana:
       enabled: true
+  haproxy_service_types:
+    - name: grafana-http
+      bind: "*:3000"
+      mode: http
+      backend_name: be_grafana_http
+      servers:
+        - name: grafana
+          address: 127.0.0.1
+          port: 3000

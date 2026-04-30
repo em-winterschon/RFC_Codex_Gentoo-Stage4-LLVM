@@ -11,3 +11,36 @@ gentoo_profile_definition:
       enabled: true
     snmp_exporter:
       enabled: true
+  haproxy_service_types:
+    - name: prometheus-http
+      bind: "*:9090"
+      mode: http
+      backend_name: be_prometheus_http
+      servers:
+        - name: prometheus
+          address: 127.0.0.1
+          port: 9090
+    - name: alertmanager-http
+      bind: "*:9093"
+      mode: http
+      backend_name: be_alertmanager_http
+      servers:
+        - name: alertmanager
+          address: 127.0.0.1
+          port: 9093
+    - name: blackbox-exporter-http
+      bind: "*:9115"
+      mode: http
+      backend_name: be_blackbox_exporter_http
+      servers:
+        - name: blackbox-exporter
+          address: 127.0.0.1
+          port: 9115
+    - name: snmp-exporter-http
+      bind: "*:9116"
+      mode: http
+      backend_name: be_snmp_exporter_http
+      servers:
+        - name: snmp-exporter
+          address: 127.0.0.1
+          port: 9116

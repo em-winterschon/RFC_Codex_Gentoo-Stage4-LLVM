@@ -24,6 +24,19 @@
     mode: '0644'
   when: telemetry_elasticsearch_exporter_enabled
 
+- name: Ensure Elasticsearch exporter log directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/var/log/elasticsearch_exporter"
+    state: directory
+    mode: '0750'
+  when: telemetry_elasticsearch_exporter_enabled
+
+- name: Set Elasticsearch exporter log directory ownership in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ 'chown elasticsearch_exporter:elasticsearch_exporter /var/log/elasticsearch_exporter' | quote }}
+  when: telemetry_elasticsearch_exporter_enabled
+
 - name: Enable Elasticsearch exporter service
   ansible.builtin.set_fact:
     resolved_profile_openrc_services_enable: >-

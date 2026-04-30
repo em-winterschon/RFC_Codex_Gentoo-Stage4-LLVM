@@ -52,6 +52,21 @@
   args:
     executable: /bin/bash
 
+- name: Ensure root dataset contains mountpoint stubs for child ZFS datasets
+  ansible.builtin.shell: |
+    set -euo pipefail
+    zfs list -H -o name,canmount -r {{ zpool_name }} | while IFS=$'\t' read -r dataset canmount; do
+      mountpoint="$(zfs get -H -o value mountpoint "${dataset}")"
+      [[ "${dataset}" != "{{ zpool_name }}/ROOT/gentoo" ]] || continue
+      [[ "${mountpoint}" != "none" && "${mountpoint}" != "legacy" && "${mountpoint}" != "/" ]] || continue
+      [[ "${canmount}" != "off" ]] || continue
+      zfs unmount "${dataset}" >/dev/null 2>&1 || true
+      mkdir -p "{{ install_target_root }}${mountpoint}"
+    done
+    zfs mount -a
+  args:
+    executable: /bin/bash
+
 - name: Set bootfs on root pool
   ansible.builtin.command: "zpool set bootfs={{ zpool_name }}/ROOT/gentoo {{ zpool_name }}"
 

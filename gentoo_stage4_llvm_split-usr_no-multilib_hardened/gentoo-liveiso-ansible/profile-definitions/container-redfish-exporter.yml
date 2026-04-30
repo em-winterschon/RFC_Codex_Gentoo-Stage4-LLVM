@@ -13,3 +13,12 @@ gentoo_profile_definition:
       password: change-me
       timeout: 40
       job: redfish-stage5
+  haproxy_service_types:
+    - name: redfish-exporter-http
+      bind: "*:9220"
+      mode: http
+      backend_name: be_redfish_exporter_http
+      servers:
+        - name: redfish-exporter
+          address: 10.77.0.51
+          port: 9220

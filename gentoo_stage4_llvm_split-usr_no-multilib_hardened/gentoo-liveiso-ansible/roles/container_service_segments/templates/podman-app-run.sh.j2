@@ -2,6 +2,9 @@
 set -euo pipefail
 
 /usr/local/libexec/container-services/ensure-networks.sh
+{% for pre_command in container_runtime_app.pre_commands | default([]) %}
+{{ pre_command }}
+{% endfor %}
 podman rm -f {{ container_runtime_app.name | quote }} >/dev/null 2>&1 || true
 
 exec podman run \

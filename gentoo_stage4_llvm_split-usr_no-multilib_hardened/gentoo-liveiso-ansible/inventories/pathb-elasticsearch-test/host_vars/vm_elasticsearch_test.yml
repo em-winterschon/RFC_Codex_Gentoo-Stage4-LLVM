@@ -1,0 +1,21 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-elasticsearch-exporter.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-elasticsearch-test.yml"
+
+install_hostname: vm-elasticsearch-test
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-elasticsearch-test
+  local_hostname: vm-elasticsearch-test
+  disable_root: false
+  ssh_pwauth: false
+
+profile_elasticsearch_cluster:
+  node_name: vm-elasticsearch-test
+  publish_host: 10.9.8.91

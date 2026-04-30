@@ -1,5 +1,7 @@
 ---
 elasticsearch_cluster_default_enabled: false
+elasticsearch_cluster_default_version: 9.3.1
+elasticsearch_cluster_default_package_atom: =app-misc/elasticsearch-9.3.1
 elasticsearch_cluster_default_cluster_name: stage5-observability
 elasticsearch_cluster_default_node_name: ""
 elasticsearch_cluster_default_network_host: 0.0.0.0
@@ -16,3 +18,11 @@ elasticsearch_cluster_default_path_data: /var/lib/elasticsearch
 elasticsearch_cluster_default_path_logs: /var/log/elasticsearch
 elasticsearch_cluster_default_publish_host: ""
 elasticsearch_cluster_default_vip_hostname: ""
+elasticsearch_cluster_default_discovery_type: ""
+elasticsearch_cluster_default_security_enabled: false
+elasticsearch_cluster_default_http_ssl_enabled: false
+elasticsearch_cluster_default_transport_ssl_enabled: false
+elasticsearch_cluster_default_auto_create_index: stage5-*
+elasticsearch_cluster_default_java_home: ""
+elasticsearch_cluster_default_require_localmount: true
+elasticsearch_cluster_default_index_templates: []

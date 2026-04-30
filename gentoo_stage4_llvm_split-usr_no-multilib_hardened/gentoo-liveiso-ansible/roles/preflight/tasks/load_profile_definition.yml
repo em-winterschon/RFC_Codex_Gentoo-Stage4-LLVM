@@ -29,7 +29,7 @@
           loaded_profile_definition_file.gentoo_profile_definition.make_conf_append | default('')
         ]
         | reject('equalto', '')
-        | join('\n\n')
+        | join("\n\n")
       }}
     resolved_portage_package_use_files: >-
       {{
@@ -60,6 +60,14 @@
         resolved_portage_package_accept_keywords_files
         | combine(
             loaded_profile_definition_file.gentoo_profile_definition.package_accept_keywords_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_license_files: >-
+      {{
+        resolved_portage_package_license_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_license_files | default({}),
             recursive=True
           )
       }}
@@ -231,6 +239,14 @@
       {{
         resolved_profile_haproxy_service_types
         + (loaded_profile_definition_file.gentoo_profile_definition.haproxy_service_types | default([]))
+      }}
+    resolved_profile_service_readiness: >-
+      {{
+        resolved_profile_service_readiness
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.service_readiness | default({}),
+            recursive=True
+          )
       }}
     resolved_profile_container_base_image: >-
       {{

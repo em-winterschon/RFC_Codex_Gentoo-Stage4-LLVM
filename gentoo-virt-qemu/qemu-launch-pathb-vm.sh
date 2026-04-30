@@ -20,6 +20,8 @@ QEMU_BIN="${QEMU_BIN:-/usr/bin/qemu-system-x86_64}"
 EFI_FIRM="${EFI_FIRM:-/usr/share/edk2-ovmf/OVMF_CODE.fd}"
 EFI_VARS_TEMPLATE="${EFI_VARS_TEMPLATE:-/usr/share/edk2-ovmf/OVMF_VARS.fd}"
 EFI_VARS_FILE="${EFI_VARS_FILE:-${QEMU_VM_DIR}/OVMF_VARS.fd}"
+EFI_FIRM_FORMAT="${EFI_FIRM_FORMAT:-}"
+EFI_VARS_FORMAT="${EFI_VARS_FORMAT:-}"
 QEMU_MACHINE="${QEMU_MACHINE:-q35,accel=kvm}"
 QEMU_CPU="${QEMU_CPU:-host}"
 QEMU_SMP="${QEMU_SMP:-16}"
@@ -117,6 +119,7 @@ resolve_ovmf_paths() {
     resolve_nonempty_file \
       "${EFI_FIRM}" \
       /usr/share/edk2/OvmfX64/OVMF_CODE.fd \
+      /usr/share/edk2/OvmfX64/OVMF_CODE_4M.qcow2 \
       /usr/share/edk2/OvmfX64/OVMF_CODE.secboot.fd
   )" || fail "No usable OVMF code image found; checked ${EFI_FIRM} and standard edk2 paths"
 
@@ -124,8 +127,29 @@ resolve_ovmf_paths() {
     resolve_nonempty_file \
       "${EFI_VARS_TEMPLATE}" \
       /usr/share/edk2/OvmfX64/OVMF_VARS.fd \
+      /usr/share/edk2/OvmfX64/OVMF_VARS_4M.qcow2 \
       /usr/share/edk2/OvmfX64/OVMF_VARS.secboot.fd
   )" || fail "No usable OVMF vars template found; checked ${EFI_VARS_TEMPLATE} and standard edk2 paths"
+}
+
+infer_qemu_image_format() {
+  case "$1" in
+  *.qcow2)
+    printf 'qcow2'
+    ;;
+  *)
+    printf 'raw'
+    ;;
+  esac
+}
+
+resolve_ovmf_formats() {
+  if [[ -z "${EFI_FIRM_FORMAT}" ]]; then
+    EFI_FIRM_FORMAT="$(infer_qemu_image_format "${EFI_FIRM}")"
+  fi
+  if [[ -z "${EFI_VARS_FORMAT}" ]]; then
+    EFI_VARS_FORMAT="$(infer_qemu_image_format "${EFI_VARS_TEMPLATE}")"
+  fi
 }
 
 require_host_disk_ready() {
@@ -265,10 +289,11 @@ build_qemu_cmd() {
 
   case "${QEMU_PATHB_BOOT_MODE}" in
   ipxe)
+    resolve_ovmf_formats
     prepare_ovmf_vars_file
     QEMU_CMD+=(
-      -drive "if=pflash,format=raw,readonly=on,unit=0,file=${EFI_FIRM}"
-      -drive "if=pflash,format=raw,unit=1,file=${EFI_VARS_FILE}"
+      -drive "if=pflash,format=${EFI_FIRM_FORMAT},readonly=on,unit=0,file=${EFI_FIRM}"
+      -drive "if=pflash,format=${EFI_VARS_FORMAT},unit=1,file=${EFI_VARS_FILE}"
       -device 'ich9-ahci,id=ahci'
       -drive "if=none,id=efidisk,file=fat:rw:${QEMU_IPXE_EFI_DIR},format=raw,media=disk"
       -device 'ide-hd,drive=efidisk,bus=ahci.1,bootindex=1,serial=ipxe-efi'
@@ -287,10 +312,11 @@ build_qemu_cmd() {
     )
     ;;
   uefi-disk)
+    resolve_ovmf_formats
     prepare_ovmf_vars_file
     QEMU_CMD+=(
-      -drive "if=pflash,format=raw,readonly=on,unit=0,file=${EFI_FIRM}"
-      -drive "if=pflash,format=raw,unit=1,file=${EFI_VARS_FILE}"
+      -drive "if=pflash,format=${EFI_FIRM_FORMAT},readonly=on,unit=0,file=${EFI_FIRM}"
+      -drive "if=pflash,format=${EFI_VARS_FORMAT},unit=1,file=${EFI_VARS_FILE}"
       -device 'ich9-ahci,id=ahci'
       -drive "if=none,id=rootdisk,file=${QEMU_ROOTDISK},format=qcow2,cache=${HOST_DISK_CACHE}"
       -device 'ide-hd,drive=rootdisk,bus=ahci.1,bootindex=1,serial=stage4-root'
@@ -328,6 +354,7 @@ validate_inputs() {
   case "${QEMU_PATHB_BOOT_MODE}" in
   ipxe)
     resolve_ovmf_paths
+    resolve_ovmf_formats
     require_file "${EFI_FIRM}" 'EFI_FIRM'
     require_file "${EFI_VARS_TEMPLATE}" 'EFI_VARS_TEMPLATE'
     require_dir "${QEMU_IPXE_EFI_DIR}" 'QEMU_IPXE_EFI_DIR'
@@ -338,6 +365,7 @@ validate_inputs() {
     ;;
   uefi-disk)
     resolve_ovmf_paths
+    resolve_ovmf_formats
     require_file "${EFI_FIRM}" 'EFI_FIRM'
     require_file "${EFI_VARS_TEMPLATE}" 'EFI_VARS_TEMPLATE'
     ;;

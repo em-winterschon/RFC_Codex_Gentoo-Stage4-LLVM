@@ -5,3 +5,12 @@ gentoo_profile_definition:
   telemetry:
     podman_exporter:
       enabled: true
+  haproxy_service_types:
+    - name: podman-exporter-http
+      bind: "*:9882"
+      mode: http
+      backend_name: be_podman_exporter_http
+      servers:
+        - name: podman-exporter
+          address: 127.0.0.1
+          port: 9882
