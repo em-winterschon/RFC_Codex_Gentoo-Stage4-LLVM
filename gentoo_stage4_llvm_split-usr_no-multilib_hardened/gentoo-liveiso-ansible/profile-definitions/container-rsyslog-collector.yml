@@ -4,9 +4,9 @@ gentoo_profile_definition:
     rsyslog_collector:
       enabled: true
       image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
-      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a
-      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
-      digest: sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-396998a
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
+      digest: sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
       network: mgmt
       ip_address: 10.77.0.40
       command:

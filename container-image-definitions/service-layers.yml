@@ -41,9 +41,9 @@ container_service_layers:
       build_mode: portage-layer
       image_name: gentoo-stage5-rsyslog-collector
       image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
-      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a
-      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
-      digest: sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-396998a
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
+      digest: sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
       bootstrap_package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages
       package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.packages
       packages:
@@ -52,6 +52,7 @@ container_service_layers:
       runtime_profile: container-rsyslog-collector
       notes:
         - Built in two phases so libestr and libfastjson land before rsyslog pkg-config/configure.
+        - Enables app-admin/rsyslog[elasticsearch] for omelasticsearch forwarding.
     ntfy:
       build_mode: upstream-image
       image_name: ntfy

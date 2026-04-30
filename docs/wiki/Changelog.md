@@ -60,15 +60,15 @@ infrastructure work. It is intentionally higher level than `git log`.
   resolving to digest
   `sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37`.
 - Built and smoke-tested `localhost/gentoo-stage5-rsyslog-collector:latest`
-  with `app-admin/rsyslog-8.2602.0`; the smoke test reports `systemd support:
-  No`.
+  with `app-admin/rsyslog-8.2602.0` and `USE=elasticsearch`; the smoke test
+  confirms `omelasticsearch.so`, `imudp`, `imtcp`, and `systemd support: No`.
 - Built the rsyslog collector in two phases so `libestr` and `libfastjson`
   are installed before the rsyslog pkg-config/configure phase.
 - Synced the rsyslog collector service-layer binpkg repository to `10.9.8.90`
   with package index files and rsyslog-related gpkg artifacts.
-- Published `gentoo-stage5-rsyslog-collector` to GHCR as `git-37a4d4a` and
+- Published `gentoo-stage5-rsyslog-collector` to GHCR as `git-396998a` and
   `latest`, both resolving to digest
-  `sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7`.
+  `sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287`.
 - Updated the `vm-container-services` and `container-rsyslog-collector`
   profiles to consume the published GHCR Stage5 images instead of upstream
   nginx, HAProxy, and rsyslog images.

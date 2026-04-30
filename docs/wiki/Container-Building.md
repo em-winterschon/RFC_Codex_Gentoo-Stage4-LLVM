@@ -199,17 +199,19 @@ Validated service-layer images:
   - `CC = gcc`
 - `localhost/gentoo-stage5-rsyslog-collector:latest`
 - GHCR:
-  - `ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a`
+  - `ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-396998a`
   - `ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest`
-  - `sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7`
+  - `sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287`
 - image ID:
-  - `88fd310fe7ed`
+  - `e6bc3ce7483f`
 - artifact:
   - `/var/lib/container-services-ephemeral/images/gentoo-stage5-rsyslog-collector.tar.zst`
 - service binpkg repo:
   - `stage3-llvm_clang_openrc__stage5-service_container-rsyslog_collector__amd64__x86_64_v2_generic`
 - smoke test:
   - `rsyslogd 8.2602.0`
+  - `omelasticsearch.so`, `imudp.so`, and `imtcp.so` present
+  - `rsyslogd -N1` validates an Elasticsearch-forwarding config
   - `systemd support: No`
 
 ## Build telemetry
@@ -242,7 +244,8 @@ Artifacts produced:
   `libunwind`.
 - Rsyslog currently uses a two-phase service-layer build so `libestr` and
   `libfastjson` exist in the target rootfs before `app-admin/rsyslog` runs
-  pkg-config and configure.
+  pkg-config and configure. Its service-specific package.use enables
+  `app-admin/rsyslog[elasticsearch]` for `omelasticsearch` forwarding.
 - Build on the validated container-services VM so Portage policy, LLVM defaults,
   and package exceptions match the intended runtime host.
 
