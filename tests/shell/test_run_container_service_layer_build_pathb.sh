@@ -57,8 +57,20 @@ test_haproxy_uses_gcc_compat() {
   assert_contains "${output}" 'main-env=CXX=g++'
 }
 
+test_rsyslog_uses_two_phase_pkg_config() {
+  local output
+  output="$(bash "${LAUNCHER}" --service rsyslog_collector --dry-run)"
+
+  assert_contains "${output}" 'service=rsyslog_collector'
+  assert_contains "${output}" 'package-list=container-image-definitions/gentoo-stage5-rsyslog-collector.packages'
+  assert_contains "${output}" 'bootstrap-package-list=container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages'
+  assert_contains "${output}" 'main-env=PKG_CONFIG_SYSROOT_DIR='
+  assert_contains "${output}" 'main-env=PKG_CONFIG_LIBDIR='
+}
+
 test_nginx_plan
 test_unknown_service_fails
 test_haproxy_uses_gcc_compat
+test_rsyslog_uses_two_phase_pkg_config
 
 printf 'PASS: %s\n' "$(basename "$0")"

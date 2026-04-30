@@ -59,6 +59,7 @@ done
 [[ -n "${SERVICE}" ]] || fail '--service is required'
 
 SERVICE_MAIN_ENV=()
+SERVICE_BOOTSTRAP_PACKAGE_LIST=''
 
 case "${SERVICE}" in
   nginx)
@@ -83,6 +84,7 @@ case "${SERVICE}" in
   rsyslog_collector)
     IMAGE_NAME='gentoo-stage5-rsyslog-collector'
     PACKAGE_LIST='container-image-definitions/gentoo-stage5-rsyslog-collector.packages'
+    SERVICE_BOOTSTRAP_PACKAGE_LIST='container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages'
     DESCRIPTION='Gentoo Stage5 rsyslog collector service container'
     ;;
   *)
@@ -92,6 +94,9 @@ esac
 
 cd "${REPO_ROOT}"
 [[ -f "${PACKAGE_LIST}" ]] || fail "Package list not found: ${PACKAGE_LIST}"
+if [[ -n "${SERVICE_BOOTSTRAP_PACKAGE_LIST}" ]]; then
+  [[ -f "${SERVICE_BOOTSTRAP_PACKAGE_LIST}" ]] || fail "Bootstrap package list not found: ${SERVICE_BOOTSTRAP_PACKAGE_LIST}"
+fi
 
 REPO_ID="${STAGE5_BINPKG_REPO_ID:-stage3-llvm_clang_openrc__stage5-service_container-${SERVICE}__amd64__x86_64_v2_generic}"
 REPO_URL="${STAGE5_BINPKG_REPO_URL:-http://10.9.8.90:8088/${REPO_ID}}"
@@ -109,9 +114,20 @@ BINPKG_SYNC_ROOT="${BINPKG_SYNC_ROOT:-/srv/stage5-binpkgs}"
 EMERGE_JOBS="${EMERGE_JOBS:-20}"
 EMERGE_LOAD_AVERAGE="${EMERGE_LOAD_AVERAGE:-60}"
 
+if [[ "${SERVICE}" == 'rsyslog_collector' ]]; then
+  SERVICE_MAIN_ENV=(
+    "PKG_CONFIG_SYSROOT_DIR=${ROOTFS_DIR}"
+    "PKG_CONFIG_LIBDIR=${ROOTFS_DIR}/usr/lib64/pkgconfig:${ROOTFS_DIR}/usr/lib/pkgconfig:${ROOTFS_DIR}/usr/share/pkgconfig"
+    "PKG_CONFIG_PATH=${ROOTFS_DIR}/usr/lib64/pkgconfig:${ROOTFS_DIR}/usr/lib/pkgconfig:${ROOTFS_DIR}/usr/share/pkgconfig"
+  )
+fi
+
 if [[ "${DRY_RUN}" == '1' ]]; then
   printf 'service=%s\n' "${SERVICE}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
+  if [[ -n "${SERVICE_BOOTSTRAP_PACKAGE_LIST}" ]]; then
+    printf 'bootstrap-package-list=%s\n' "${SERVICE_BOOTSTRAP_PACKAGE_LIST}"
+  fi
   printf 'image-ref=%s\n' "${IMAGE_REF}"
   if [[ -f "${SERVICE_PACKAGE_USE_FILE}" ]]; then
     printf 'package-use-file=%s\n' "${SERVICE_PACKAGE_USE_FILE}"
@@ -155,20 +171,41 @@ if [[ -f "${SERVICE_PACKAGE_USE_FILE}" ]]; then
   package_use_args=(--package-use-file "${SERVICE_PACKAGE_USE_FILE}")
 fi
 
+builder_common_args=(
+  --root "${ROOTFS_DIR}"
+  --pkgdir "${PKGDIR}"
+  --binpkg-repo-id "${REPO_ID}"
+  --binpkg-sync-remote "${BINPKG_SYNC_REMOTE}"
+  --binpkg-sync-root "${BINPKG_SYNC_ROOT}"
+  --use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.use
+  "${package_use_args[@]}"
+  --config-root "${ROOTFS_DIR}"
+  --sysroot "${ROOTFS_DIR}"
+  --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM
+  --description "${DESCRIPTION}"
+)
+
+if [[ -n "${SERVICE_BOOTSTRAP_PACKAGE_LIST}" ]]; then
+  bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
+    "${builder_common_args[@]}" \
+    "${stage3_source_args[@]}" \
+    --reset-rootfs \
+    --package-list "${SERVICE_BOOTSTRAP_PACKAGE_LIST}" \
+    --engine none \
+    --main-emptytree false
+
+  exec env "${SERVICE_MAIN_ENV[@]}" bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
+    "${builder_common_args[@]}" \
+    --main-emptytree false \
+    --package-list "${PACKAGE_LIST}" \
+    --image-ref "${IMAGE_REF}" \
+    --tarball "${TARBALL}"
+fi
+
 exec env "${SERVICE_MAIN_ENV[@]}" bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
-  --root "${ROOTFS_DIR}" \
-  --pkgdir "${PKGDIR}" \
-  --binpkg-repo-id "${REPO_ID}" \
-  --binpkg-sync-remote "${BINPKG_SYNC_REMOTE}" \
-  --binpkg-sync-root "${BINPKG_SYNC_ROOT}" \
+  "${builder_common_args[@]}" \
   "${stage3_source_args[@]}" \
   --reset-rootfs \
   --package-list "${PACKAGE_LIST}" \
-  --use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.use \
-  "${package_use_args[@]}" \
-  --config-root "${ROOTFS_DIR}" \
-  --sysroot "${ROOTFS_DIR}" \
   --image-ref "${IMAGE_REF}" \
-  --tarball "${TARBALL}" \
-  --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
-  --description "${DESCRIPTION}"
+  --tarball "${TARBALL}"
