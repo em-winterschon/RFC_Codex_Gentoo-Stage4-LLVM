@@ -25,7 +25,15 @@ done
 
 assert_file_contains "${ANSIBLE_ROOT}/playbooks/install.yml" 'container_host'
 assert_file_contains "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'container_service_segments'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" '^gentoo_profile_definition:'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" 'ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" 'ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" '^gentoo_profile_definition:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" '^profile_definition_files:'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" 'container-service-base-image.yml'
+assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/main.yml" 'resolved_profile_container_base_image'
+assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/load_profile_definition.yml" 'container_base_image'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/tasks/main.yml" 'base-image.yml'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/templates/base-image.yml.j2" 'resolved_profile_container_base_image'
 
 printf 'PASS: %s\n' "$(basename "$0")"

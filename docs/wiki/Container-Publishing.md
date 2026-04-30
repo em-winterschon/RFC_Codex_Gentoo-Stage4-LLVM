@@ -16,7 +16,7 @@ The first supported registry target is `GHCR`:
 4. Push the image and record the digest.
 
 If you need to create the local image first, use the rootfs/image builder in
-[Container-Building](Container-Building).
+`docs/CONTAINER-BUILDING.md`.
 
 ## Helper script
 
@@ -24,12 +24,12 @@ Use:
 
 ```bash
 bash scripts/publish-container-ghcr.sh \
-  --local-image localhost/gentoo-stage4-base:latest \
-  --image-name gentoo-stage4-base \
+  --local-image localhost/gentoo-stage3-llvm-clang-openrc:latest \
+  --image-name gentoo-stage3-llvm-clang-openrc \
   --tag git-$(git rev-parse --short HEAD) \
   --namespace em-winterschon \
   --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
-  --description "Gentoo Stage4 LLVM/Clang hardened base container"
+  --description "Gentoo stage3 LLVM/Clang OpenRC service-container base"
 ```
 
 Token sources:
@@ -61,14 +61,32 @@ Always record:
 - profile name
 - source URL
 
+## Active base image
+
+The current service-container base image is:
+
+- local source image:
+  - `localhost/gentoo-stage3-llvm-clang-openrc:latest`
+- GHCR immutable tag:
+  - `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f`
+- GHCR promoted tag:
+  - `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest`
+- service-layer profile:
+  - `profile-definitions/container-service-base-image.yml`
+
+The container host role renders the resolved profile to
+`/etc/container-services/base-image.yml` so service-image build automation can
+use the same base image, immutable source tag, binpkg repo ID, and publication
+namespace.
+
 ## Later workflow
 
-Once the container-services VM is validated end-to-end, the next build path should
-create a Gentoo container rootfs from the Stage4 profile and feed it into
-`buildah`/`podman`, then publish the validated result through the same GHCR helper.
+Once service-specific images are validated, publish them through the same GHCR
+helper using image names derived from the Stage5 service profile.
 
 Current validation note:
 
-- the live `vm-container-services` Path B run has already advanced past the
-  earlier `buildah` and `skopeo` package blockers
-- complete the VM validation before promoting any image to `latest`
+- the active base image is the standard Gentoo `amd64-llvm-openrc` stage3 with
+  a small Stage5 service-container package layer
+- the hardened Stage4 image path remains deferred until the first service layer
+  is stable

@@ -89,6 +89,8 @@
     resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
     resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
+    resolved_profile_container_base_image: "{{ profile_container_base_image | default({}) }}"
+    resolved_profile_container_app_build_defaults: "{{ profile_container_app_build_defaults | default({}) }}"
     resolved_profile_container_services: "{{ profile_container_services | default({}) }}"
     resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
@@ -186,6 +188,16 @@
         profile_haproxy_service_types
         if profile_haproxy_service_types is defined
         else resolved_profile_haproxy_service_types
+      }}
+    resolved_profile_container_base_image: >-
+      {{
+        resolved_profile_container_base_image
+        | combine(profile_container_base_image | default({}), recursive=True)
+      }}
+    resolved_profile_container_app_build_defaults: >-
+      {{
+        resolved_profile_container_app_build_defaults
+        | combine(profile_container_app_build_defaults | default({}), recursive=True)
       }}
     resolved_profile_container_services: >-
       {{

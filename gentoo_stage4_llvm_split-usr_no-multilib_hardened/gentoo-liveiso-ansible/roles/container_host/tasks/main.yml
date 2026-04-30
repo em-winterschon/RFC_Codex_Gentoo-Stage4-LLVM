@@ -59,6 +59,13 @@
     mode: '0644'
   when: container_services_enabled
 
+- name: Render container service base-image metadata
+  ansible.builtin.template:
+    src: base-image.yml.j2
+    dest: "{{ install_target_root }}/etc/container-services/base-image.yml"
+    mode: '0644'
+  when: container_services_enabled
+
 - name: Render container host sysctl policy
   ansible.builtin.template:
     src: sysctl.conf.j2

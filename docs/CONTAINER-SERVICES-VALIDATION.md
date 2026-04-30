@@ -3,7 +3,9 @@
 ## Current Scope
 
 This document tracks the first end-to-end validation of the `vm-container-services`
-Stage 5 overlay on top of the Stage 4 Gentoo LLVM/Clang hardened baseline.
+Stage5 overlay. The active service-container image path now uses the standard
+Gentoo `amd64-llvm-openrc` stage3 base; the hardened Stage4 image path is
+deferred until the first service layer is stable.
 
 Current validation path:
 
@@ -44,10 +46,20 @@ Reason:
 
 The container host uses:
 
-- Stage 4 baseline
+- Stage3 LLVM/Clang OpenRC base image for container image work
 - `cloud-init-vm` overlay
 - `vm-guest-simple-ipxe` overlay
 - `vm-container-services` overlay
+
+Active service-container base image:
+
+- `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f`
+- `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest`
+
+The `container-service-base-image.yml` profile carries this base image,
+immutable source tag, source commit, and Stage5 binpkg repo ID. The
+`container_host` role renders those values into
+`/etc/container-services/base-image.yml` for later service-image automation.
 
 ### Container host policy
 

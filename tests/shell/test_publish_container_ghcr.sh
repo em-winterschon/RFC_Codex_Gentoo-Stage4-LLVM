@@ -53,7 +53,25 @@ test_dry_run() {
   assert_contains "${output}" 'source-url=https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM'
 }
 
+test_stage3_target() {
+  local output
+
+  output="$(
+    cd "${REPO_ROOT}" &&
+      bash "${PUBLISH_SCRIPT}" \
+        --local-image localhost/gentoo-stage3-llvm-clang-openrc:latest \
+        --image-name gentoo-stage3-llvm-clang-openrc \
+        --namespace em-winterschon \
+        --tag git-e5bf45f \
+        --print-target
+  )"
+
+  [[ "${output}" == 'ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f' ]] ||
+    fail "unexpected stage3 target: ${output}"
+}
+
 test_print_target
 test_dry_run
+test_stage3_target
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

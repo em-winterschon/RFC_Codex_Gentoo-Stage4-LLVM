@@ -3,6 +3,26 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-04-30
+
+### Added
+
+- Added `container-service-base-image.yml` as the Stage5 service-layer reference
+  for the published Gentoo stage3 LLVM/Clang OpenRC base image.
+- Added preflight merge support for `container_base_image` and
+  `container_app_build_defaults`.
+- Added container-host rendering of `/etc/container-services/base-image.yml` so
+  provisioned container hosts carry the base-image provenance and app build
+  defaults used for service-layer work.
+
+### Changed
+
+- Started GHCR publication for
+  `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc` with immutable
+  `git-e5bf45f` and promoted `latest` tags.
+- Wired `vm-container-services` example inventory to load the service-base
+  image profile before service-specific container profiles.
+
 ## 2026-04-29
 
 ### Added

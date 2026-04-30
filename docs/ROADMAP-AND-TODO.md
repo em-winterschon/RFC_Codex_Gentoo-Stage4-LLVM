@@ -11,7 +11,7 @@ This page tracks concrete next work, dependencies, and current blockers.
 | `CP-003` | completed | Restart base-container build against the simplified stage3 path | `CP-002` | Completed on `10.9.8.89` using cached Gentoo `amd64-llvm-openrc` stage3 and Stage5 service-container package layering without `--emptytree`. |
 | `CP-004` | completed | Keep successful packages synced during the rerun | `CP-003` | Stage3 repo synced to `10.9.8.90`; package index and reusable binpkgs are present. |
 | `CP-005` | completed | Validate finished local image and tarball | `CP-003` | Target image validated: `localhost/gentoo-stage3-llvm-clang-openrc:latest`; tarball exists at `633M`. |
-| `CP-006` | pending | Push validated image to GHCR | `CP-005` | Token source exists on-host at `~/.ssh/codex.d/tokens/GHCR_TOKEN`. |
+| `CP-006` | active | Push validated image to GHCR | `CP-005` | Publishing `git-e5bf45f` and `latest` for `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc`; builder egress is currently slow but active. |
 
 ## Active Infrastructure State
 
@@ -65,10 +65,11 @@ Dependency:
 | `ST-001` | pending | Add a repo-native mounted-target builder launcher | `CP-003` | Should enforce high-performance defaults and binpkg sync by default. |
 | `ST-002` | active | Reduce base-container closure | `CP-005` | Active path now starts from official stage3 and layers only Stage5 service-container packages. |
 | `ST-003` | pending | Add explicit binpkg cleanup/retention policy | binpkg VM stable | Decide retention by repo ID, profile generation, and disk pressure. |
-| `ST-004` | pending | Validate GHCR publish workflow end-to-end | `CP-006` | Include token auth, labels, and image promotion policy. |
+| `ST-004` | active | Validate GHCR publish workflow end-to-end | `CP-006` | Token auth and target calculation are tested; final validation requires registry digest after push completes. |
 | `ST-005` | pending | Add build metrics as CI artifacts | `CP-003` | Use `scripts/export_build_metrics.py` output in Jenkins later. |
 | `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Default to the standard stage3 base for the first image; keep hardened source-first work as a later, isolated track. |
 | `ST-007` | pending | Add rsyslog as a service-container layer | `CP-005` | `rsyslog` is intentionally out of the first base image because its same-transaction `--root` build cannot see `libestr` through pkg-config. |
+| `ST-008` | active | Wire service layers to the published base image | `CP-006` | `container-service-base-image.yml` defines GHCR base-image provenance and app build defaults; container hosts render `/etc/container-services/base-image.yml`. |
 
 ## Stage5 Service Tracks
 
