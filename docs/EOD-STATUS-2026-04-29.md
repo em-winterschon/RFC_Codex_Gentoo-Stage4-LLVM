@@ -107,6 +107,7 @@ Dry-run validation confirmed:
 | `BASE-STAGE3-004` | Local image validation | `BASE-STAGE3-003` | pending |
 | `BASE-STAGE3-005` | GHCR publish | `BASE-STAGE3-004` | pending |
 | `HARDENED-001` | Hardened Stage4 image revival | `BASE-STAGE3-005` | deferred |
+| `RSYSLOG-001` | Rsyslog service-container layer | `BASE-STAGE3-005` | pending |
 
 ## Notes For Resumption
 
@@ -114,3 +115,6 @@ The next operator-visible result should be a much smaller build graph. If it
 still attempts a hundreds-package LLVM rebuild, that is a signal that the
 stage3 profile was accidentally overridden or the package list grew beyond the
 intended service-container additions.
+
+`rsyslog` is no longer in the base image package list. It belongs in a
+service-container/logging profile layer after the base image is validated.

@@ -1,4 +1,3 @@
-app-admin/rsyslog
 app-misc/ca-certificates
 net-misc/curl
 sys-apps/iproute2

@@ -69,6 +69,7 @@ Dependency:
 | `ST-004` | pending | Validate GHCR publish workflow end-to-end | `CP-006` | Include token auth, labels, and image promotion policy. |
 | `ST-005` | pending | Add build metrics as CI artifacts | `CP-003` | Use `scripts/export_build_metrics.py` output in Jenkins later. |
 | `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Default to the standard stage3 base for the first image; keep hardened source-first work as a later, isolated track. |
+| `ST-007` | pending | Add rsyslog as a service-container layer | `CP-005` | `rsyslog` is intentionally out of the first base image because its same-transaction `--root` build cannot see `libestr` through pkg-config. |
 
 ## Stage5 Service Tracks
 
