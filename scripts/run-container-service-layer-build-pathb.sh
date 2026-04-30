@@ -58,6 +58,8 @@ done
 
 [[ -n "${SERVICE}" ]] || fail '--service is required'
 
+SERVICE_MAIN_ENV=()
+
 case "${SERVICE}" in
   nginx)
     IMAGE_NAME='gentoo-stage5-nginx'
@@ -68,6 +70,15 @@ case "${SERVICE}" in
     IMAGE_NAME='gentoo-stage5-haproxy'
     PACKAGE_LIST='container-image-definitions/gentoo-stage5-haproxy.packages'
     DESCRIPTION='Gentoo Stage5 HAProxy service container'
+    SERVICE_MAIN_ENV=(
+      'CC=gcc'
+      'CXX=g++'
+      'CPP=cpp'
+      'AR=gcc-ar'
+      'NM=gcc-nm'
+      'RANLIB=gcc-ranlib'
+      'LDFLAGS=-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd'
+    )
     ;;
   rsyslog_collector)
     IMAGE_NAME='gentoo-stage5-rsyslog-collector'
@@ -105,6 +116,9 @@ if [[ "${DRY_RUN}" == '1' ]]; then
   if [[ -f "${SERVICE_PACKAGE_USE_FILE}" ]]; then
     printf 'package-use-file=%s\n' "${SERVICE_PACKAGE_USE_FILE}"
   fi
+  for env_entry in "${SERVICE_MAIN_ENV[@]}"; do
+    printf 'main-env=%s\n' "${env_entry}"
+  done
   printf 'rootfs=%s\n' "${ROOTFS_DIR}"
   printf 'tarball=%s\n' "${TARBALL}"
   printf 'pkgdir=%s\n' "${PKGDIR}"
@@ -141,7 +155,7 @@ if [[ -f "${SERVICE_PACKAGE_USE_FILE}" ]]; then
   package_use_args=(--package-use-file "${SERVICE_PACKAGE_USE_FILE}")
 fi
 
-exec bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
+exec env "${SERVICE_MAIN_ENV[@]}" bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
   --root "${ROOTFS_DIR}" \
   --pkgdir "${PKGDIR}" \
   --binpkg-repo-id "${REPO_ID}" \

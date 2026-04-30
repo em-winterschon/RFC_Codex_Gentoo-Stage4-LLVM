@@ -16,6 +16,12 @@ assert_contains() {
   [[ "${haystack}" == *"${needle}"* ]] || fail "expected '${needle}' in output"
 }
 
+assert_not_contains() {
+  local haystack=$1
+  local needle=$2
+  [[ "${haystack}" != *"${needle}"* ]] || fail "did not expect '${needle}' in output"
+}
+
 test_nginx_plan() {
   local output
   output="$(
@@ -29,6 +35,7 @@ test_nginx_plan() {
   assert_contains "${output}" 'image-ref=localhost/gentoo-stage5-nginx:latest'
   assert_contains "${output}" 'binpkg-repo-id=stage3-llvm_clang_openrc__stage5-service_container-nginx__amd64__x86_64_v2_generic'
   assert_contains "${output}" 'stage3-tarball=/tmp/stage3.tar.xz'
+  assert_not_contains "${output}" 'main-env='
 }
 
 test_unknown_service_fails() {
@@ -40,7 +47,18 @@ test_unknown_service_fails() {
   assert_contains "${output}" 'Unsupported service layer: does-not-exist'
 }
 
+test_haproxy_uses_gcc_compat() {
+  local output
+  output="$(bash "${LAUNCHER}" --service haproxy --dry-run)"
+
+  assert_contains "${output}" 'service=haproxy'
+  assert_contains "${output}" 'package-use-file=container-image-definitions/gentoo-stage5-haproxy.package.use'
+  assert_contains "${output}" 'main-env=CC=gcc'
+  assert_contains "${output}" 'main-env=CXX=g++'
+}
+
 test_nginx_plan
 test_unknown_service_fails
+test_haproxy_uses_gcc_compat
 
 printf 'PASS: %s\n' "$(basename "$0")"
