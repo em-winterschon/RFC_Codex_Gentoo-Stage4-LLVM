@@ -53,11 +53,21 @@ Current state:
 - synced build artifacts:
   - focused `coreutils` binpkg sync completed
   - periodic watch-sync active during rerun
+- live service state:
+  - package-backed `rsyslog-collector`, `nginx`, and `haproxy` containers start
+    from generated OpenRC Podman wrappers
+  - upstream-image `ntfy` container starts from the generated wrapper and is
+    reachable through HAProxy with `Host: ntfy.local`
+  - direct nginx ingress on `127.0.0.1:8080` and HAProxy ingress on
+    `127.0.0.1:80` return HTTP `200`
+  - rsyslog UDP/TCP receive on port `514` works; Elasticsearch forwarding is
+    waiting on the real `elastic-vip.example.internal` VIP/DNS target
 
 Dependency:
 
-- next dependency is wiring the validated service-layer images into deployment
-  roles and continuing the remaining application-service layers.
+- next dependency is standing up the Elasticsearch VIP/cluster path so the
+  rsyslog collector can validate end-to-end forwarding instead of only receive
+  and queue behavior.
 
 ## Short-Term Work
 
@@ -70,10 +80,11 @@ Dependency:
 | `ST-005` | pending | Add build metrics as CI artifacts | `CP-003` | Use `scripts/export_build_metrics.py` output in Jenkins later. |
 | `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Default to the standard stage3 base for the first image; keep hardened source-first work as a later, isolated track. |
 | `ST-007` | completed | Add rsyslog as a service-container layer | `CP-005` | Two-phase `rsyslog_collector` service-layer image built, smoke-tested, published to GHCR, and synced to its service binpkg repo. |
-| `ST-008` | active | Wire service layers to the published base image | `CP-006` | `container-service-base-image.yml` defines GHCR base-image provenance and app build defaults; container hosts render `/etc/container-services/base-image.yml`; `service-layers.yml` tracks package-backed and upstream-image service candidates. |
+| `ST-008` | completed | Wire service layers to the published base image | `CP-006` | `container-service-base-image.yml` defines GHCR base-image provenance and app build defaults; container hosts render `/etc/container-services/base-image.yml`; `service-layers.yml` tracks package-backed and upstream-image service candidates. |
 | `ST-009` | completed | Add service-layer build automation | `ST-008` | `run-container-service-layer-build-pathb.sh` can build `nginx`, `haproxy`, and `rsyslog_collector` service images with per-service package lists and binpkg repo IDs. |
 | `ST-010` | completed | Validate package-backed service images | `ST-009` | `nginx`, `haproxy`, and `rsyslog_collector` images built, smoke-tested, published to GHCR, and synced to service binpkg repos. |
 | `ST-011` | completed | Wire package-backed images into runtime profiles | `ST-010` | `vm-container-services` now defaults nginx and HAProxy to the published GHCR Stage5 images; `container-rsyslog-collector` now uses the published GHCR rsyslog image with explicit command, tmpfs, and spool-volume handling. |
+| `ST-012` | completed | Live-validate generated Podman service wrappers on the container-services VM | `ST-011` | `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy` start on `10.9.8.89`; nginx direct, HAProxy-nginx, HAProxy-ntfy, and rsyslog UDP/TCP ingress smoke checks passed. |
 
 ## Stage5 Service Tracks
 
@@ -110,7 +121,7 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `LOG-001` | scaffolded | Validate rsyslog client templating everywhere | base profiles stable | Base rsyslog role now supports remote forwarding. |
-| `LOG-002` | active | Validate centralized rsyslog receiver container | container-services stable | Image and runtime profile wiring are in place; next step is live receive/forward validation from VMs, metal hosts, and containers. |
+| `LOG-002` | active | Validate centralized rsyslog receiver container | container-services stable | Live UDP/TCP receive is validated on `10.9.8.89`; Elasticsearch forwarding is blocked until `LOG-003` provides a real `elastic-vip.example.internal` target. |
 | `LOG-003` | pending | Validate 3-node Elasticsearch VM profile | VM provisioning stable | Must include load-balanced access path. |
 | `LOG-004` | pending | Validate Kibana VM profile | `LOG-003` | Connect to Elasticsearch VIP. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |

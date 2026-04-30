@@ -84,7 +84,21 @@ This is intended to describe frontends and backends for:
 - VM services such as `jenkins`, `elasticsearch`, `kibana`, and identity endpoints
 - future metal-host published services where HAProxy is the front door
 
-The current `container_app_haproxy` role will render this catalog when present; otherwise it falls back to the original `nginx` and `ntfy` behavior.
+The current `container_app_haproxy` role renders this catalog additively. That
+means an explicit service such as `syslog-tcp` does not suppress the default
+HTTP frontend for `nginx` and `ntfy` when those runtime applications are
+registered.
+
+Live Path B validation on `10.9.8.89` currently confirms:
+
+- `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy` start from generated
+  Podman wrappers.
+- direct nginx ingress on `127.0.0.1:8080` returns HTTP `200`.
+- HAProxy routes default HTTP traffic to nginx and `Host: ntfy.local` traffic
+  to ntfy, both returning HTTP `200`.
+- rsyslog collector receives UDP and TCP messages on port `514`.
+- rsyslog Elasticsearch forwarding is pending the real
+  `elastic-vip.example.internal` DNS/VIP target.
 
 ## NetBox
 
@@ -104,6 +118,7 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 ## Remaining Work
 
 1. Validate the native Gentoo `elasticsearch` and `kibana-bin` service behavior on a fresh VM.
-2. Validate the `rsyslog` collector container image choice and Elasticsearch module behavior in the live container-services lane.
+2. Stand up the Elasticsearch VIP/cluster target and complete rsyslog
+   end-to-end forwarding validation.
 3. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
 4. Decide which host classes should get `zerotier-managed-access` by default versus remaining opt-in.

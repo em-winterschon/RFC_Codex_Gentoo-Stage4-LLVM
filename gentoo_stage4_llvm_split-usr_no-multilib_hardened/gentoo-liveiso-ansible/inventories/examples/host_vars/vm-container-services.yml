@@ -8,6 +8,7 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/telemetry-podman-exporter.yml"
   - "{{ playbook_dir }}/../profile-definitions/netbox-managed-inventory.yml"
   - "{{ playbook_dir }}/../profile-definitions/container-service-base-image.yml"
+  - "{{ playbook_dir }}/../profile-definitions/container-rsyslog-collector.yml"
   - "{{ playbook_dir }}/../profile-definitions/container-ipmi-exporter.yml"
   - "{{ playbook_dir }}/../profile-definitions/container-redfish-exporter.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"

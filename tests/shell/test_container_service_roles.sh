@@ -32,6 +32,7 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" '^gentoo_profile_definition:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" '^profile_definition_files:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" 'container-service-base-image.yml'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" 'container-rsyslog-collector.yml'
 assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/main.yml" 'resolved_profile_container_base_image'
 assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/load_profile_definition.yml" 'container_base_image'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/tasks/main.yml" 'base-image.yml'
@@ -42,9 +43,55 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-coll
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_service_segments/templates/podman-app-run.sh.j2" '--tmpfs'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/tasks/main.yml" '/usr/sbin/nginx'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/tasks/main.yml" '/dev/stderr'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/templates/nginx.conf.j2" 'mime.types.nginx'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/templates/nginx.conf.j2" 'types_hash_max_size 4096'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/usr/sbin/haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/etc/haproxy/haproxy.cfg'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'user haproxy'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'group haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/usr/sbin/rsyslogd'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
+
+ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - <<'PY'
+import os
+from pathlib import Path
+
+import yaml
+from jinja2 import Environment, StrictUndefined
+
+ansible_root = Path(os.environ["ANSIBLE_ROOT"])
+vm_profile = yaml.safe_load((ansible_root / "profile-definitions/vm-container-services.yml").read_text(encoding="utf-8"))
+haproxy_caps = set(
+    vm_profile["gentoo_profile_definition"]["container_app_profiles"]["haproxy"]["cap_add"]
+)
+for expected_cap in ("NET_BIND_SERVICE", "SETGID", "SETUID"):
+    if expected_cap not in haproxy_caps:
+        raise SystemExit(f"missing HAProxy capability: {expected_cap}")
+
+template_path = ansible_root / "roles/container_app_haproxy/templates/haproxy.cfg.j2"
+template = Environment(undefined=StrictUndefined, trim_blocks=False, lstrip_blocks=False).from_string(
+    template_path.read_text(encoding="utf-8")
+)
+rendered = template.render(
+    resolved_haproxy_service_types_local=[
+        {
+            "name": "syslog-tcp",
+            "mode": "tcp",
+            "bind": "*:6514",
+            "backend_name": "be_syslog_tcp",
+            "servers": [{"name": "rsyslog-collector", "address": "10.77.0.40", "port": 514}],
+        }
+    ],
+    container_runtime_applications=[
+        {"name": "nginx", "ip_address": "10.77.1.30"},
+        {"name": "ntfy", "ip_address": "10.77.1.20"},
+    ],
+)
+
+for expected in ("frontend fe_syslog_tcp", "frontend fe_http", "backend be_nginx", "backend be_ntfy"):
+    if expected not in rendered:
+        raise SystemExit(f"missing rendered HAProxy section: {expected}")
+PY
 
 printf 'PASS: %s\n' "$(basename "$0")"

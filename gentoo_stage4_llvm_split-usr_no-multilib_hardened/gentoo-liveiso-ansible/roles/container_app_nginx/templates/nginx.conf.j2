@@ -9,8 +9,9 @@ events {
 }
 
 http {
-  include /etc/nginx/mime.types;
+  include /etc/nginx/mime.types.nginx;
   default_type application/octet-stream;
+  types_hash_max_size 4096;
   access_log /dev/stdout;
   sendfile on;
   keepalive_timeout 65;

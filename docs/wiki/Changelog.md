@@ -79,6 +79,32 @@ infrastructure work. It is intentionally higher level than `git log`.
   Gentoo package path, `/etc/haproxy/haproxy.cfg`.
 - Added a writable rsyslog collector spool volume while keeping the container
   root filesystem read-only.
+- Added the rsyslog collector profile to the `vm-container-services` example
+  inventory so the centralized logging container is included in live
+  container-host deployments.
+- Fixed Gentoo nginx runtime config for package-backed containers by using the
+  packaged `/etc/nginx/mime.types.nginx`, routing early nginx errors to
+  `/dev/stderr`, and increasing `types_hash_max_size` to avoid MIME hash
+  warnings.
+- Updated HAProxy rendering so explicit service-type frontends, such as
+  `syslog-tcp`, are additive instead of disabling the default HTTP reverse
+  proxy frontend for nginx and ntfy.
+- Hardened the HAProxy container config to drop privileges to the packaged
+  `haproxy` user and added narrowly scoped `SETGID`/`SETUID` capabilities to
+  the HAProxy app profile so the drop works with `--cap-drop all`.
+- Added shell coverage that renders the HAProxy template with both explicit
+  service types and runtime apps, catching regressions where catalog-driven
+  services suppress the default HTTP reverse proxy.
+- Live-validated the package-backed service layer on the Path B
+  `container-services` VM at `10.9.8.89`: generated OpenRC Podman wrappers,
+  config validation, and runtime startup all passed for rsyslog collector,
+  nginx, ntfy, and HAProxy.
+- Confirmed direct nginx ingress on `127.0.0.1:8080`, HAProxy-to-nginx ingress
+  on `127.0.0.1:80`, and HAProxy-to-ntfy ingress with `Host: ntfy.local`, each
+  returning HTTP `200`.
+- Confirmed rsyslog collector UDP and TCP ingress on port `514`; forwarding to
+  Elasticsearch remains blocked only by the expected placeholder DNS dependency
+  for `elastic-vip.example.internal`.
 
 ## 2026-04-29
 

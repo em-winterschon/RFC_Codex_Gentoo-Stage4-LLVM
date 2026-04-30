@@ -66,6 +66,8 @@ gentoo_profile_definition:
       ip_address: 10.77.1.30
       command:
         - /usr/sbin/nginx
+        - "-e"
+        - /dev/stderr
         - "-g"
         - "daemon off;"
         - "-c"
@@ -99,6 +101,8 @@ gentoo_profile_definition:
         - /run:rw,noexec,nosuid,size=16m
       cap_add:
         - NET_BIND_SERVICE
+        - SETGID
+        - SETUID
       published_ports:
         - 80:80/tcp
         - 443:443/tcp
