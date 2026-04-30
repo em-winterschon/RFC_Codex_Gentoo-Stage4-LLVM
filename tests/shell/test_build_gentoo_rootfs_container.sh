@@ -426,6 +426,54 @@ EOF
   fi
 }
 
+test_stage3_config_root_disables_inherited_binrepos() {
+  local temp_dir package_list stage3_dir stage3_tarball emerge_log stage5_conf disabled_conf
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  stage3_dir="${temp_dir}/stage3"
+  stage3_tarball="${temp_dir}/stage3-amd64-llvm-openrc-test.tar.xz"
+  emerge_log="${temp_dir}/emerge.log"
+  stage5_conf="${temp_dir}/rootfs/etc/portage/binrepos.conf/stage5-container.conf"
+  disabled_conf="${temp_dir}/rootfs/etc/portage/binrepos.conf.disabled-by-stage5-builder/gentoobinhost.conf"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  mkdir -p "${stage3_dir}/etc/portage/binrepos.conf" "${temp_dir}/bin"
+  printf 'Gentoo Base System release test\n' > "${stage3_dir}/etc/gentoo-release"
+  cat >"${stage3_dir}/etc/portage/binrepos.conf/gentoobinhost.conf" <<'EOF'
+[gentoobinhost]
+sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64
+verify-signature = true
+EOF
+  tar -C "${stage3_dir}" -cJf "${stage3_tarball}" .
+
+  cat >"${temp_dir}/bin/emerge" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" > "${emerge_log}"
+exit 0
+EOF
+  chmod +x "${temp_dir}/bin/emerge"
+
+  PATH="${temp_dir}/bin:${PATH}" \
+    PORTAGE_BINHOST='http://binhost.example.invalid/stage3-test' \
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --config-root "${temp_dir}/rootfs" \
+      --sysroot "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --stage3-tarball "${stage3_tarball}" \
+      --binpkg-repo-id stage3-test \
+      --engine none
+
+  [[ -f "${stage5_conf}" ]] || fail "stage5 binrepo config was not written"
+  assert_contains "$(<"${stage5_conf}")" 'sync-uri = http://binhost.example.invalid/stage3-test'
+  assert_contains "$(<"${stage5_conf}")" 'verify-signature = false'
+  [[ -f "${disabled_conf}" ]] || fail "inherited stage3 binrepo config was not disabled"
+}
+
 test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
@@ -440,5 +488,6 @@ test_dry_run_binpkg_sync
 test_dry_run_stage3_target_plan
 test_dry_run_stage3_tarball_plan
 test_stage3_tarball_extracts_before_rootfs_skeleton
+test_stage3_config_root_disables_inherited_binrepos
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

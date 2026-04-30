@@ -547,6 +547,33 @@ extract_stage3_rootfs() {
   tar xpf "${STAGE3_TARBALL}" --xattrs-include='*.*' --numeric-owner -C "${ROOT_DIR}"
 }
 
+configure_config_root_binrepo() {
+  local binhost_uri binrepo_conf disabled_dir
+  [[ "${CONFIG_ROOT}" != "/" ]] || return 0
+  [[ -n "${BINPKG_REPO_ID}" ]] || return 0
+  binhost_uri="${PORTAGE_BINHOST:-${BINHOST:-}}"
+  [[ -n "${binhost_uri}" ]] || return 0
+  binhost_uri="${binhost_uri%%[[:space:]]*}"
+
+  install -d -m 0755 \
+    "${CONFIG_ROOT}/etc/portage/binrepos.conf" \
+    "${CONFIG_ROOT}/etc/portage/binrepos.conf.disabled-by-stage5-builder"
+  disabled_dir="${CONFIG_ROOT}/etc/portage/binrepos.conf.disabled-by-stage5-builder"
+  for binrepo_conf in "${CONFIG_ROOT}"/etc/portage/binrepos.conf/*; do
+    [[ -e "${binrepo_conf}" ]] || continue
+    [[ "$(basename "${binrepo_conf}")" == "stage5-container.conf" ]] && continue
+    mv "${binrepo_conf}" "${disabled_dir}/$(basename "${binrepo_conf}")"
+  done
+
+  cat > "${CONFIG_ROOT}/etc/portage/binrepos.conf/stage5-container.conf" <<EOF
+[stage5-container]
+priority = 50
+sync-uri = ${binhost_uri}
+location = /var/cache/binhost/stage5-container
+verify-signature = false
+EOF
+}
+
 cleanup_rootfs_builder() {
   if [[ -n "${BUILDAH_CONTAINER_ID}" ]]; then
     buildah rm "${BUILDAH_CONTAINER_ID}" >/dev/null 2>&1 || true
@@ -638,6 +665,8 @@ if [[ "${CONFIG_ROOT}" != "/" ]]; then
   fi
   ln -snf /var/db/repos/gentoo "${CONFIG_ROOT}/var/db/repos/gentoo"
 fi
+
+configure_config_root_binrepo
 
 if [[ "${CONFIG_ROOT}" != "/" && ${#PROFILE_PARENTS[@]} -gt 0 ]]; then
   install -d -m 0755 \
