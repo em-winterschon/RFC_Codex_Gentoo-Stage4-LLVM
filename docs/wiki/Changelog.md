@@ -36,6 +36,13 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Standardized service-layer binpkg repo IDs under
   `stage3-llvm_clang_openrc__stage5-service_container-<service>__amd64__x86_64_v2_generic`.
 
+### Validated
+
+- Built and smoke-tested `localhost/gentoo-stage5-nginx:latest` with
+  `www-servers/nginx-1.29.5` and `curl` present.
+- Synced the nginx service-layer binpkg repository to `10.9.8.90` with package
+  index files and nginx-related gpkg artifacts.
+
 ## 2026-04-29
 
 ### Added

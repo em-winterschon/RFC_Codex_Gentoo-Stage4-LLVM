@@ -168,6 +168,18 @@ Dry-run the resolved paths and repo IDs with:
 bash scripts/run-container-service-layer-build-pathb.sh --service nginx --dry-run
 ```
 
+Validated service-layer image:
+
+- `localhost/gentoo-stage5-nginx:latest`
+- image ID:
+  - `893542194fef`
+- artifact:
+  - `/var/lib/container-services-ephemeral/images/gentoo-stage5-nginx.tar.zst`
+- service binpkg repo:
+  - `stage3-llvm_clang_openrc__stage5-service_container-nginx__amd64__x86_64_v2_generic`
+- smoke test:
+  - `nginx version: nginx/1.29.5`
+
 ## Build telemetry
 
 Export package burn-down and builder workload data from the live logs with:
