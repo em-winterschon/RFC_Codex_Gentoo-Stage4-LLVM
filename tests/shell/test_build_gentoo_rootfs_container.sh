@@ -209,6 +209,28 @@ EOF
   assert_contains "${output}" "host-package-mask-file=${mask_file}"
 }
 
+test_dry_run_bootstrap_runtime_seed() {
+  local temp_dir package_list output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --bootstrap-runtime-seed auto \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" 'bootstrap-runtime-seed=auto'
+}
+
 test_package_use_file_requires_explicit_config_root() {
   local temp_dir package_list package_use_file output
   temp_dir="$(mktemp -d)"
@@ -317,6 +339,7 @@ test_dry_run_sanitizes_features
 test_dry_run_use_file
 test_dry_run_overlay_dir
 test_dry_run_host_package_mask_file
+test_dry_run_bootstrap_runtime_seed
 test_package_use_file_requires_explicit_config_root
 test_dry_run_sysroot
 test_dry_run_explicit_pkgdir

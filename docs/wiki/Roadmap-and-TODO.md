@@ -8,8 +8,8 @@ This page tracks concrete next work, dependencies, and current blockers.
 | --- | --- | --- | --- | --- |
 | `CP-001` | completed | Fix `sys-apps/coreutils-9.10-r1` overlay patch failure | current failed build logs | Overlay now carries referenced patch files and skips split-usr relocation for merged-usr image roots. |
 | `CP-002` | completed | Validate `coreutils` in isolation | `CP-001` | `ebuild clean prepare` and focused `emerge --buildpkg` passed; binpkg published. |
-| `CP-003` | active | Restart base-container build against the binpkg repo | `CP-002` | Current rerun is active on `10.9.8.89` against the repository at `10.9.8.90:8088`; build now has a compiler/runtime bootstrap phase before the main graph. |
-| `CP-004` | active | Keep successful packages synced during the rerun | `CP-003` | Host watch-sync and remote restart watchdog are active at 10-minute intervals. |
+| `CP-003` | active | Restart base-container build against the binpkg repo | `CP-002` | Current rerun is active on `10.9.8.89` through RouterOS gateway `10.9.8.1`; build now seeds Clang runtime libraries, verifies C/C++ sysroot ABI, then enters the main graph. |
+| `CP-004` | active | Keep successful packages synced during the rerun | `CP-003` | Remote restart watchdog is active; chroot-local SSH sync auth to `10.9.8.90` has been repaired. |
 | `CP-005` | pending | Validate finished local image and tarball | `CP-003` | Target image: `localhost/gentoo-stage4-llvm-clang-hardened:latest`. |
 | `CP-006` | pending | Push validated image to GHCR | `CP-005` | Token source exists on-host at `~/.ssh/codex.d/tokens/GHCR_TOKEN`. |
 
@@ -27,9 +27,9 @@ Current repo:
   - `10.9.8.90`
 - HTTP endpoint:
   - `http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
-- last observed package index after coreutils sync:
-  - `257` package records
-  - `259` files
+- last observed package index:
+  - `286` package records
+  - `288` files
 
 Dependency:
 
@@ -48,9 +48,12 @@ Current state:
   - prior failing atom resolved: `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
   - current blocker path addressed: `dev-libs/json-c` failed because clang
     linked the target sysroot with `-lunwind` before `libunwind` existed there
-  - corrective flow: bootstrap `llvm-runtimes/libunwind`, `libcxxabi`,
-    `libcxx`, and `compiler-rt`, verify clang C/C++ ABI, then run the main
-    graph
+  - corrective flow: seed host `libunwind`, `libc++`, and `libc++abi` library
+    chains into the target sysroot, verify clang C/C++ ABI, then run the main
+    graph and let Portage install package-owned runtime libraries
+  - avoided blocker path: package-bootstraping the LLVM runtime closure pulled
+    in `llvm-core/llvm` too early and hit non-PIC `libLLVM.so.21.1` link
+    errors before the binpkg-backed main graph could proceed
 - synced build artifacts:
   - focused `coreutils` binpkg sync completed
   - periodic watch-sync active during rerun

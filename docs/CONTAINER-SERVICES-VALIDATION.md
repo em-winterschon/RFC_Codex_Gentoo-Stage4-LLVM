@@ -129,16 +129,27 @@ Important fixes that made this possible:
 
 ## Build Graph Control
 
-The rootfs container builder now supports `--bootstrap-package-list`. The
-container profile uses this to install the minimal LLVM runtime closure before
-the main package graph:
+The rootfs container builder now supports `--bootstrap-runtime-seed auto`.
+The live container profile uses this as the first bootstrap path. It copies the
+host Clang runtime library/linker-script chains into the target rootfs before
+Portage enters the long dependency graph:
 
-- `llvm-runtimes/libunwind`
-- `llvm-runtimes/libcxxabi`
-- `llvm-runtimes/libcxx`
-- `llvm-runtimes/compiler-rt`
+- `libunwind.so`
+- `libc++.so`
+- `libc++_shared.so`
+- `libc++abi.so`
 
-The bootstrap phase temporarily forces `clang --unwindlib=libgcc` and
-`clang++ --stdlib=libstdc++ --unwindlib=libgcc` so the runtime packages can be
-installed into an incomplete sysroot. After that, the builder verifies default
-clang C and C++ links against the target rootfs before starting the main graph.
+This avoids pulling `llvm-core/llvm` into a separate bootstrap emerge. That
+earlier package-bootstrap path fixed the missing `libunwind` symptom but
+created a larger failure surface by compiling full LLVM before the main graph.
+
+After seeding, the builder verifies default clang C and C++ links against the
+target rootfs before starting the main graph. The normal Portage transaction
+still installs the real `llvm-runtimes/*` packages and produces binpkgs, so the
+seed is only a sysroot continuity bridge. While runtime seeding is enabled, the
+builder disables `collision-protect` for the controlled rootfs seed files so
+Portage can replace them with package-owned runtime files.
+
+`--bootstrap-package-list` remains available as an explicit fallback or
+diagnostic path, but it should not be the default for this profile because it
+can drag the full LLVM build into the bootstrap phase.

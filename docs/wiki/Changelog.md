@@ -7,21 +7,40 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added a repo-managed RouterOS CHR Path B launcher with LAN tap on `br-pathb`
+  and WAN tap on a dedicated `br-ros-wan` bridge backed by `eno2`.
+- Added repeatable Path B container-base build launch helpers for binhost-backed
+  reruns under the restart watchdog.
 - Added an explicit compiler/runtime bootstrap package phase for the Gentoo
   rootfs container builder.
+- Added a seeded Clang runtime bootstrap mode for container rootfs builds so
+  early sysroot ABI checks do not require compiling full LLVM first.
 
 ### Changed
 
+- Rebuilt RouterOS CHR from a fresh disk and moved active builder egress from
+  host NAT to RouterOS NAT through `192.168.1.222/24 -> 192.168.1.254`.
+- Extended the RouterOS Path B Ansible role to render optional WAN static
+  addressing, LAN-to-WAN masquerade, DHCP DNS split, and baseline WAN input
+  filtering.
+- Updated the container builder to use the Stage4/Stage5 binpkg repository
+  during reruns and preserve sync auth from inside the installed Gentoo chroot.
 - Split container rootfs builds into a small runtime bootstrap phase followed
   by the main image graph, so clang sysroot ABI failures are detected before
   the long dependency tree reaches CMake packages.
+- Switched the Path B container-base launcher from `--bootstrap-package-list`
+  to `--bootstrap-runtime-seed auto`; the package bootstrap path remains as a
+  diagnostic fallback but is no longer the default.
 
 ### Fixed
 
-- Fixed the repeated `dev-libs/json-c` CMake ABI failure path by bootstrapping
-  `llvm-runtimes/libunwind`, `libcxxabi`, `libcxx`, and `compiler-rt` with a
-  temporary `libgcc`/`libstdc++` fallback, then verifying normal
-  clang/libunwind C and C++ linking against the target rootfs.
+- Fixed the repeated `dev-libs/json-c` CMake ABI failure path by seeding
+  `libunwind`, `libc++`, and `libc++abi` into the target rootfs before the main
+  graph, then verifying normal clang/libunwind C and C++ linking against the
+  target rootfs.
+- Avoided a bad bootstrap retry loop where the runtime-package bootstrap pulled
+  in `llvm-core/llvm-21.1.8` and failed linking `libLLVM.so.21.1` from non-PIC
+  static archives before the main graph could use available binpkgs.
 - Fixed the generated local container profile repository lookup by exposing the
   config-root profile overlay through a host-side `/var/db/repos` symlink while
   the builder is active.

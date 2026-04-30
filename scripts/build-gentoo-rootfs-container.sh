@@ -16,6 +16,9 @@ Options:
   --bootstrap-package-list FILE
                            Flat package list to emerge before the main graph.
                            Used for compiler/runtime sysroot prerequisites.
+  --bootstrap-runtime-seed MODE
+                           Seed compiler runtime libraries before the main graph.
+                           Modes: none, auto (default: none).
   --pkgdir DIR             Local binpkg cache directory (default: sibling binpkgs/).
   --binpkg-repo-id ID      Unique Stage4/Stage5 binpkg repository ID.
   --binpkg-sync-remote HOST
@@ -79,6 +82,7 @@ sanitize_emerge_features() {
 ROOT_DIR=
 PACKAGE_LIST=
 BOOTSTRAP_PACKAGE_LIST=
+BOOTSTRAP_RUNTIME_SEED=none
 PKGDIR=
 BINPKG_REPO_ID=
 BINPKG_SYNC_REMOTE=
@@ -121,6 +125,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --bootstrap-package-list)
       BOOTSTRAP_PACKAGE_LIST=${2-}
+      shift 2
+      ;;
+    --bootstrap-runtime-seed)
+      BOOTSTRAP_RUNTIME_SEED=${2-}
       shift 2
       ;;
     --pkgdir)
@@ -250,6 +258,7 @@ if [[ -n "${OVERLAY_DIR}" ]]; then
   STAGED_OVERLAY_DIR="/var/tmp/build-gentoo-rootfs-container/overlays/${OVERLAY_REPO_NAME}"
 fi
 [[ "${ENGINE}" =~ ^(auto|buildah|podman-import|none)$ ]] || die "unsupported engine: ${ENGINE}"
+[[ "${BOOTSTRAP_RUNTIME_SEED}" =~ ^(none|auto)$ ]] || die "unsupported bootstrap runtime seed mode: ${BOOTSTRAP_RUNTIME_SEED}"
 if [[ "${ENGINE}" != "none" ]]; then
   [[ -n "${IMAGE_REF}" ]] || die "--image-ref is required unless --engine none is used"
 fi
@@ -288,6 +297,7 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'sysroot=%s\n' "${SYSROOT}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'bootstrap-package-list=%s\n' "${BOOTSTRAP_PACKAGE_LIST}"
+  printf 'bootstrap-runtime-seed=%s\n' "${BOOTSTRAP_RUNTIME_SEED}"
   printf 'pkgdir=%s\n' "${PKGDIR}"
   printf 'binpkg-repo-id=%s\n' "${BINPKG_REPO_ID}"
   printf 'binpkg-sync-remote=%s\n' "${BINPKG_SYNC_REMOTE}"
@@ -489,6 +499,9 @@ fi
 if [[ " ${sanitized_features} " != *" buildpkg "* ]]; then
   sanitized_features="${sanitized_features:+${sanitized_features} }buildpkg"
 fi
+if [[ "${BOOTSTRAP_RUNTIME_SEED}" != "none" && " ${sanitized_features} " != *" -collision-protect "* ]]; then
+  sanitized_features="${sanitized_features:+${sanitized_features} }-collision-protect"
+fi
 emerge_env+=("FEATURES=${sanitized_features}")
 if [[ ${#USE_OVERRIDE_FLAGS[@]} -gt 0 ]]; then
   current_use="${USE:-}"
@@ -541,6 +554,70 @@ check_clang_sysroot_abi() {
   trap - RETURN
   log "clang ${lang} ABI check passed for sysroot ${ROOT_DIR}"
 }
+
+normalize_existing_path() {
+  local input_path=$1
+  local input_dir input_base
+  input_dir="$(dirname "${input_path}")"
+  input_base="$(basename "${input_path}")"
+  printf '%s/%s' "$(cd "${input_dir}" && pwd -P)" "${input_base}"
+}
+
+seed_runtime_path() {
+  local source_path=$1
+  local current_path target_path destination_path copied=0
+  current_path="$(normalize_existing_path "${source_path}")"
+
+  while :; do
+    [[ ${copied} -lt 16 ]] || die "runtime seed symlink loop suspected at ${source_path}"
+    [[ -e "${current_path}" || -L "${current_path}" ]] || die "runtime seed path not found: ${current_path}"
+
+    destination_path="${ROOT_DIR}${current_path}"
+    install -d -m 0755 "$(dirname "${destination_path}")"
+    rm -f "${destination_path}"
+    cp -a "${current_path}" "${destination_path}"
+    log "seeded runtime path ${current_path} -> ${destination_path}"
+    copied=$((copied + 1))
+
+    if [[ ! -L "${current_path}" ]]; then
+      break
+    fi
+
+    target_path="$(readlink "${current_path}")"
+    if [[ "${target_path}" != /* ]]; then
+      target_path="$(dirname "${current_path}")/${target_path}"
+    fi
+    current_path="$(normalize_existing_path "${target_path}")"
+  done
+}
+
+seed_clang_runtime_libraries() {
+  local runtime_spec compiler_name library_name library_path
+  [[ "${ROOT_DIR}" != "/" ]] || die "--bootstrap-runtime-seed cannot target /"
+  require_cmd clang
+  require_cmd clang++
+
+  log "seeding host Clang runtime libraries into ${ROOT_DIR}"
+  for runtime_spec in \
+    "clang:libunwind.so" \
+    "clang++:libc++.so" \
+    "clang++:libc++_shared.so" \
+    "clang++:libc++abi.so"
+  do
+    compiler_name="${runtime_spec%%:*}"
+    library_name="${runtime_spec#*:}"
+    library_path="$("${compiler_name}" --print-file-name="${library_name}")"
+    [[ "${library_path}" == /* && ( -e "${library_path}" || -L "${library_path}" ) ]] \
+      || die "${compiler_name} could not resolve ${library_name}: ${library_path}"
+    seed_runtime_path "${library_path}"
+  done
+}
+
+if [[ "${BOOTSTRAP_RUNTIME_SEED}" == "auto" ]]; then
+  seed_clang_runtime_libraries
+  check_clang_sysroot_abi c clang c
+  check_clang_sysroot_abi cxx clang++ cc
+fi
 
 if [[ ${#BOOTSTRAP_PACKAGE_ATOMS[@]} -gt 0 ]]; then
   log "bootstrapping compiler/runtime sysroot prerequisites with libgcc/libstdc++ fallback"

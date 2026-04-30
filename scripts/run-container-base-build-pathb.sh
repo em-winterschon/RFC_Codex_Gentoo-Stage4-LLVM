@@ -65,7 +65,7 @@ exec bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
   --binpkg-repo-id "${REPO_ID}" \
   --binpkg-sync-remote "${BINPKG_SYNC_REMOTE}" \
   --binpkg-sync-root "${BINPKG_SYNC_ROOT}" \
-  --bootstrap-package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.bootstrap.packages \
+  --bootstrap-runtime-seed auto \
   --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
   --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
   --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
