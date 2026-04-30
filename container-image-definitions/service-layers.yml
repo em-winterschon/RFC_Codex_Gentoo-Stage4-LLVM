@@ -1,0 +1,44 @@
+---
+container_service_layers:
+  base:
+    image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest
+    immutable_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f
+    source_commit: e5bf45f
+    profile_definition: gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/container-service-base-image.yml
+  defaults:
+    registry_namespace: ghcr.io/em-winterschon
+    runtime_init: openrc
+    systemd_policy: without-systemd
+    binpkg_repo_id: stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic
+  services:
+    nginx:
+      build_mode: portage-layer
+      image_name: gentoo-stage5-nginx
+      packages:
+        - www-servers/nginx
+      config_role: container_app_nginx
+      runtime_profile: vm-container-services
+    haproxy:
+      build_mode: portage-layer
+      image_name: gentoo-stage5-haproxy
+      packages:
+        - net-proxy/haproxy
+      config_role: container_app_haproxy
+      runtime_profile: vm-container-services
+    rsyslog_collector:
+      build_mode: portage-layer
+      image_name: gentoo-stage5-rsyslog-collector
+      packages:
+        - app-admin/rsyslog
+      config_role: container_app_rsyslog_collector
+      runtime_profile: container-rsyslog-collector
+      notes:
+        - Build as a service layer instead of the base image because same-transaction rootfs builds can miss libestr pkg-config state.
+    ntfy:
+      build_mode: upstream-image
+      image_name: ntfy
+      upstream_image: docker.io/binwiederhier/ntfy:v2.14.0
+      config_role: container_app_ntfy
+      runtime_profile: vm-container-services
+      notes:
+        - No Gentoo Portage atom was present in the current builder tree; keep upstream-image mode until an overlay ebuild exists.

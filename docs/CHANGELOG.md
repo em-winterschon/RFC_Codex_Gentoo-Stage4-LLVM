@@ -14,6 +14,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added container-host rendering of `/etc/container-services/base-image.yml` so
   provisioned container hosts carry the base-image provenance and app build
   defaults used for service-layer work.
+- Added `container-image-definitions/service-layers.yml` to track service-image
+  build mode, package atoms, runtime roles, and GHCR naming on top of the
+  published base image.
 
 ### Changed
 
@@ -22,6 +25,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   `git-e5bf45f` and promoted `latest` tags.
 - Wired `vm-container-services` example inventory to load the service-base
   image profile before service-specific container profiles.
+- Classified `nginx`, `haproxy`, and `rsyslog_collector` as package-backed
+  service-image candidates, with `ntfy` remaining upstream-image mode until an
+  overlay ebuild exists.
 
 ## 2026-04-29
 

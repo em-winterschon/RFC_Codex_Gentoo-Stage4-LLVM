@@ -125,6 +125,30 @@ bash scripts/publish-container-ghcr.sh \
   --description "Gentoo Stage3 LLVM/Clang OpenRC base container"
 ```
 
+## Service layers
+
+Service-image build intent is tracked in:
+
+- `container-image-definitions/service-layers.yml`
+
+The manifest pins service-layer work to the published stage3 base image and
+splits services by build mode:
+
+- `portage-layer`
+  - build a small service image from the GHCR base image plus service packages
+- `upstream-image`
+  - keep using an upstream image until a Gentoo ebuild or overlay exists
+
+Current `portage-layer` candidates:
+
+- `www-servers/nginx`
+- `net-proxy/haproxy`
+- `app-admin/rsyslog`
+
+Current upstream-only service:
+
+- `ntfy`, because no Portage atom was present in the current builder tree
+
 ## Build telemetry
 
 Export package burn-down and builder workload data from the live logs with:

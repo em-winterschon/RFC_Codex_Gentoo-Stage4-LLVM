@@ -61,6 +61,12 @@ immutable source tag, source commit, and Stage5 binpkg repo ID. The
 `container_host` role renders those values into
 `/etc/container-services/base-image.yml` for later service-image automation.
 
+Service-layer image intent is tracked in
+`container-image-definitions/service-layers.yml`. The first package-backed
+service-image candidates are `nginx`, `haproxy`, and `rsyslog_collector`.
+`ntfy` remains in upstream-image mode until the repo carries an overlay ebuild
+or another package source is selected.
+
 ### Container host policy
 
 - default repo stance remains `without-systemd`
