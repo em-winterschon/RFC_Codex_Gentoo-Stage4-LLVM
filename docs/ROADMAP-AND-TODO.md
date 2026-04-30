@@ -8,9 +8,9 @@ This page tracks concrete next work, dependencies, and current blockers.
 | --- | --- | --- | --- | --- |
 | `CP-001` | completed | Fix `sys-apps/coreutils-9.10-r1` overlay patch failure | current failed build logs | Overlay now carries referenced patch files and skips split-usr relocation for merged-usr image roots. |
 | `CP-002` | completed | Validate `coreutils` in isolation | `CP-001` | `ebuild clean prepare` and focused `emerge --buildpkg` passed; binpkg published. |
-| `CP-003` | active | Restart base-container build against the binpkg repo | `CP-002` | Current rerun is active on `10.9.8.89` through RouterOS gateway `10.9.8.1`; build now seeds Clang runtime libraries, verifies C/C++ sysroot ABI, then enters the main graph. |
+| `CP-003` | active | Restart base-container build against the simplified stage3 path | `CP-002` | Current rerun is on `10.9.8.89` through RouterOS gateway `10.9.8.1`; active image now extracts Gentoo `amd64-llvm-openrc` stage3 and layers the Stage5 service-container package list without `--emptytree`. |
 | `CP-004` | active | Keep successful packages synced during the rerun | `CP-003` | Remote restart watchdog is active; chroot-local SSH sync auth to `10.9.8.90` has been repaired. |
-| `CP-005` | pending | Validate finished local image and tarball | `CP-003` | Target image: `localhost/gentoo-stage4-llvm-clang-hardened:latest`. |
+| `CP-005` | pending | Validate finished local image and tarball | `CP-003` | Target image: `localhost/gentoo-stage3-llvm-clang-openrc:latest`. |
 | `CP-006` | pending | Push validated image to GHCR | `CP-005` | Token source exists on-host at `~/.ssh/codex.d/tokens/GHCR_TOKEN`. |
 
 ## Active Infrastructure State
@@ -20,20 +20,21 @@ This page tracks concrete next work, dependencies, and current blockers.
 Current repo:
 
 - ID:
-  - `stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
+  - `stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
 - VM:
   - `binpkg-repository`
 - address:
   - `10.9.8.90`
 - HTTP endpoint:
-  - `http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
+  - `http://10.9.8.90:8088/stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
 - last observed package index:
   - `286` package records
   - `288` files
 
 Dependency:
 
-- base-container reruns should use this binhost before building from source.
+- base-container reruns should use this binhost before building missing
+  Stage5 service-container packages.
 
 ### Container-Services Builder
 
@@ -44,35 +45,30 @@ Current state:
 - address:
   - `10.9.8.89`
 - last build state:
-  - active rerun under watchdog
-  - prior failing atom resolved: `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
-  - current blocker path addressed: `dev-libs/json-c` failed because clang
-    linked the target sysroot with `-lunwind` before `libunwind` existed there
-  - corrective flow: seed host `libunwind`, `libc++`, and `libc++abi` library
-    chains into the target sysroot, verify clang C/C++ ABI, then run the main
-    graph and let Portage install package-owned runtime libraries
-  - avoided blocker path: package-bootstraping the LLVM runtime closure pulled
-    in `llvm-core/llvm` too early and hit non-PIC `libLLVM.so.21.1` link
-    errors before the binpkg-backed main graph could proceed
+  - active path switched to the official Gentoo `amd64-llvm-openrc` stage3
+  - hardened source-first graph deferred because it repeatedly hit late
+    toolchain/filesystem-layout blockers
+  - stage3 rootfs extraction preserves the upstream profile and layers only the
+    small Stage5 service-container package list
 - synced build artifacts:
   - focused `coreutils` binpkg sync completed
   - periodic watch-sync active during rerun
 
 Dependency:
 
-- allow the active rerun to continue unless it stops or hits a new package
-  blocker; the remote watchdog may relaunch up to two times.
+- allow the active stage3-backed rerun to continue unless it stops or hits a
+  new package blocker; the remote watchdog may relaunch bounded retries.
 
 ## Short-Term Work
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `ST-001` | pending | Add a repo-native mounted-target builder launcher | `CP-003` | Should enforce high-performance defaults and binpkg sync by default. |
-| `ST-002` | pending | Reduce base-container closure | `CP-005` | Move from "mini system build" toward runtime-only image once the first image exists. |
+| `ST-002` | active | Reduce base-container closure | `CP-005` | Active path now starts from official stage3 and layers only Stage5 service-container packages. |
 | `ST-003` | pending | Add explicit binpkg cleanup/retention policy | binpkg VM stable | Decide retention by repo ID, profile generation, and disk pressure. |
 | `ST-004` | pending | Validate GHCR publish workflow end-to-end | `CP-006` | Include token auth, labels, and image promotion policy. |
 | `ST-005` | pending | Add build metrics as CI artifacts | `CP-003` | Use `scripts/export_build_metrics.py` output in Jenkins later. |
-| `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Keep adding explicit bootstrap/preflight phases where implicit toolchain runtime assumptions can invalidate late package builds. |
+| `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Default to the standard stage3 base for the first image; keep hardened source-first work as a later, isolated track. |
 
 ## Stage5 Service Tracks
 

@@ -19,6 +19,18 @@ Options:
   --bootstrap-runtime-seed MODE
                            Seed compiler runtime libraries before the main graph.
                            Modes: none, auto (default: none).
+  --stage3-target TARGET   Extract the latest Gentoo stage3 before package layering.
+                           Supported: amd64-llvm-openrc, arm64-llvm-openrc,
+                           power9le-openrc.
+  --stage3-tarball FILE    Extract this local stage3 tarball instead of resolving
+                           latest-stage3 metadata.
+  --stage3-cache-dir DIR   Stage3 download cache directory.
+  --stage3-mirror-root URL Gentoo releases mirror root.
+  --stage3-verify-checksum MODE
+                           Verify downloaded stage3 tarballs. Modes: true, false.
+  --main-emptytree MODE    Whether main package layering uses --emptytree.
+                           Modes: auto, true, false. Auto is false for stage3.
+  --reset-rootfs           Remove existing rootfs contents before building.
   --pkgdir DIR             Local binpkg cache directory (default: sibling binpkgs/).
   --binpkg-repo-id ID      Unique Stage4/Stage5 binpkg repository ID.
   --binpkg-sync-remote HOST
@@ -83,6 +95,21 @@ ROOT_DIR=
 PACKAGE_LIST=
 BOOTSTRAP_PACKAGE_LIST=
 BOOTSTRAP_RUNTIME_SEED=none
+STAGE3_TARGET=
+STAGE3_MIRROR_ROOT=https://distfiles.gentoo.org/releases
+STAGE3_CACHE_DIR=
+STAGE3_TARBALL=
+STAGE3_VERIFY_CHECKSUM=true
+STAGE3_RELEASE_ARCH=
+STAGE3_CURRENT_DIR=
+STAGE3_LATEST_TXT=
+STAGE3_LATEST_URL=
+STAGE3_TARBALL_NAME=
+STAGE3_TARBALL_URL=
+STAGE3_SHA256_URL=
+STAGE3_SHA256_PATH=
+MAIN_EMPTYTREE=auto
+RESET_ROOTFS=false
 PKGDIR=
 BINPKG_REPO_ID=
 BINPKG_SYNC_REMOTE=
@@ -130,6 +157,34 @@ while [[ $# -gt 0 ]]; do
     --bootstrap-runtime-seed)
       BOOTSTRAP_RUNTIME_SEED=${2-}
       shift 2
+      ;;
+    --stage3-target)
+      STAGE3_TARGET=${2-}
+      shift 2
+      ;;
+    --stage3-tarball)
+      STAGE3_TARBALL=${2-}
+      shift 2
+      ;;
+    --stage3-cache-dir)
+      STAGE3_CACHE_DIR=${2-}
+      shift 2
+      ;;
+    --stage3-mirror-root)
+      STAGE3_MIRROR_ROOT=${2-}
+      shift 2
+      ;;
+    --stage3-verify-checksum)
+      STAGE3_VERIFY_CHECKSUM=${2-}
+      shift 2
+      ;;
+    --main-emptytree)
+      MAIN_EMPTYTREE=${2-}
+      shift 2
+      ;;
+    --reset-rootfs)
+      RESET_ROOTFS=true
+      shift
       ;;
     --pkgdir)
       PKGDIR=${2-}
@@ -230,6 +285,9 @@ fi
 if [[ -z "${PKGDIR}" ]]; then
   PKGDIR="$(dirname "${ROOT_DIR%/}")/binpkgs"
 fi
+if [[ -z "${STAGE3_CACHE_DIR}" ]]; then
+  STAGE3_CACHE_DIR="$(dirname "${ROOT_DIR%/}")/stage3-cache"
+fi
 if [[ -n "${BINPKG_SYNC_REMOTE}" && -z "${BINPKG_REPO_ID}" ]]; then
   die "--binpkg-sync-remote requires --binpkg-repo-id"
 fi
@@ -259,6 +317,11 @@ if [[ -n "${OVERLAY_DIR}" ]]; then
 fi
 [[ "${ENGINE}" =~ ^(auto|buildah|podman-import|none)$ ]] || die "unsupported engine: ${ENGINE}"
 [[ "${BOOTSTRAP_RUNTIME_SEED}" =~ ^(none|auto)$ ]] || die "unsupported bootstrap runtime seed mode: ${BOOTSTRAP_RUNTIME_SEED}"
+[[ "${STAGE3_VERIFY_CHECKSUM}" =~ ^(true|false)$ ]] || die "unsupported stage3 checksum mode: ${STAGE3_VERIFY_CHECKSUM}"
+[[ "${MAIN_EMPTYTREE}" =~ ^(auto|true|false)$ ]] || die "unsupported main emptytree mode: ${MAIN_EMPTYTREE}"
+if [[ -n "${STAGE3_TARBALL}" ]]; then
+  [[ -f "${STAGE3_TARBALL}" ]] || die "stage3 tarball not found: ${STAGE3_TARBALL}"
+fi
 if [[ "${ENGINE}" != "none" ]]; then
   [[ -n "${IMAGE_REF}" ]] || die "--image-ref is required unless --engine none is used"
 fi
@@ -272,7 +335,47 @@ fi
 if [[ -n "${USE_FILE}" ]]; then
   mapfile -t USE_OVERRIDE_FLAGS < <(grep -Ev '^[[:space:]]*($|#)' "${USE_FILE}")
 fi
-if [[ ${#PROFILE_PARENTS[@]} -eq 0 ]]; then
+supported_stage3_targets() {
+  printf '%s\n' 'amd64-llvm-openrc arm64-llvm-openrc power9le-openrc'
+}
+
+resolve_stage3_target() {
+  case "${STAGE3_TARGET}" in
+    amd64-llvm-openrc)
+      STAGE3_RELEASE_ARCH=amd64
+      STAGE3_CURRENT_DIR=current-stage3-amd64-llvm-openrc
+      STAGE3_LATEST_TXT=latest-stage3-amd64-llvm-openrc.txt
+      ;;
+    arm64-llvm-openrc)
+      STAGE3_RELEASE_ARCH=arm64
+      STAGE3_CURRENT_DIR=current-stage3-arm64-llvm-openrc
+      STAGE3_LATEST_TXT=latest-stage3-arm64-llvm-openrc.txt
+      ;;
+    power9le-openrc)
+      STAGE3_RELEASE_ARCH=ppc
+      STAGE3_CURRENT_DIR=current-stage3-power9le-openrc
+      STAGE3_LATEST_TXT=latest-stage3-power9le-openrc.txt
+      ;;
+    *)
+      die "unsupported stage3 target: ${STAGE3_TARGET} (supported: $(supported_stage3_targets))"
+      ;;
+  esac
+
+  STAGE3_LATEST_URL="${STAGE3_MIRROR_ROOT}/${STAGE3_RELEASE_ARCH}/autobuilds/${STAGE3_CURRENT_DIR}/${STAGE3_LATEST_TXT}"
+}
+
+if [[ -n "${STAGE3_TARGET}" ]]; then
+  resolve_stage3_target
+fi
+if [[ "${MAIN_EMPTYTREE}" == auto ]]; then
+  if [[ -n "${STAGE3_TARGET}" || -n "${STAGE3_TARBALL}" ]]; then
+    MAIN_EMPTYTREE=false
+  else
+    MAIN_EMPTYTREE=true
+  fi
+fi
+
+if [[ ${#PROFILE_PARENTS[@]} -eq 0 && -z "${STAGE3_TARGET}" && -z "${STAGE3_TARBALL}" ]]; then
   PROFILE_PARENTS=(
     gentoo:default/linux/amd64/23.0/llvm
     gentoo:default/linux/amd64/23.0/no-multilib/hardened
@@ -298,6 +401,15 @@ if [[ "${DRY_RUN}" == true ]]; then
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'bootstrap-package-list=%s\n' "${BOOTSTRAP_PACKAGE_LIST}"
   printf 'bootstrap-runtime-seed=%s\n' "${BOOTSTRAP_RUNTIME_SEED}"
+  printf 'stage3-target=%s\n' "${STAGE3_TARGET}"
+  printf 'stage3-release-arch=%s\n' "${STAGE3_RELEASE_ARCH}"
+  printf 'stage3-current-dir=%s\n' "${STAGE3_CURRENT_DIR}"
+  printf 'stage3-latest-url=%s\n' "${STAGE3_LATEST_URL}"
+  printf 'stage3-tarball=%s\n' "${STAGE3_TARBALL}"
+  printf 'stage3-cache-dir=%s\n' "${STAGE3_CACHE_DIR}"
+  printf 'stage3-verify-checksum=%s\n' "${STAGE3_VERIFY_CHECKSUM}"
+  printf 'main-emptytree=%s\n' "${MAIN_EMPTYTREE}"
+  printf 'reset-rootfs=%s\n' "${RESET_ROOTFS}"
   printf 'pkgdir=%s\n' "${PKGDIR}"
   printf 'binpkg-repo-id=%s\n' "${BINPKG_REPO_ID}"
   printf 'binpkg-sync-remote=%s\n' "${BINPKG_SYNC_REMOTE}"
@@ -323,6 +435,117 @@ fi
 
 require_cmd emerge
 require_cmd install
+
+find_fetch_tool() {
+  if command -v curl >/dev/null 2>&1; then
+    printf 'curl'
+    return 0
+  fi
+  if command -v wget >/dev/null 2>&1; then
+    printf 'wget'
+    return 0
+  fi
+  die "missing required command: curl or wget"
+}
+
+download_file() {
+  local url=$1
+  local destination=$2
+  local fetch_tool
+  fetch_tool="$(find_fetch_tool)"
+  case "${fetch_tool}" in
+    curl)
+      curl -fL --retry 5 --retry-delay 2 -o "${destination}" "${url}"
+      ;;
+    wget)
+      wget -O "${destination}" "${url}"
+      ;;
+  esac
+}
+
+download_stdout() {
+  local url=$1
+  local fetch_tool
+  fetch_tool="$(find_fetch_tool)"
+  case "${fetch_tool}" in
+    curl)
+      curl -fsSL --retry 5 --retry-delay 2 "${url}"
+      ;;
+    wget)
+      wget -qO- "${url}"
+      ;;
+  esac
+}
+
+reset_rootfs_contents() {
+  [[ "${ROOT_DIR}" != "/" ]] || die "--reset-rootfs cannot target /"
+  [[ -n "${ROOT_DIR}" ]] || die "--reset-rootfs requires --root"
+  if [[ -d "${ROOT_DIR}" ]]; then
+    log "resetting rootfs contents in ${ROOT_DIR}"
+    find "${ROOT_DIR}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+  fi
+}
+
+resolve_latest_stage3_tarball() {
+  local info_text
+  [[ -n "${STAGE3_TARGET}" ]] || return 0
+  install -d -m 0755 "${STAGE3_CACHE_DIR}"
+  log "resolving latest stage3 metadata from ${STAGE3_LATEST_URL}"
+  info_text="$(download_stdout "${STAGE3_LATEST_URL}")"
+  STAGE3_TARBALL_NAME="$(printf '%s\n' "${info_text}" | grep -Eo 'stage3-[^[:space:]]+\.tar\.xz' | head -n1 || true)"
+  [[ -n "${STAGE3_TARBALL_NAME}" ]] || die "unable to parse stage3 tarball from ${STAGE3_LATEST_URL}"
+  STAGE3_TARBALL_URL="${STAGE3_MIRROR_ROOT}/${STAGE3_RELEASE_ARCH}/autobuilds/${STAGE3_CURRENT_DIR}/${STAGE3_TARBALL_NAME}"
+  STAGE3_SHA256_URL="${STAGE3_TARBALL_URL}.sha256"
+  STAGE3_TARBALL="${STAGE3_CACHE_DIR}/${STAGE3_TARBALL_NAME}"
+  STAGE3_SHA256_PATH="${STAGE3_TARBALL}.sha256"
+}
+
+verify_stage3_tarball() {
+  local tarball_name sha256
+  [[ "${STAGE3_VERIFY_CHECKSUM}" == true ]] || return 0
+  [[ -n "${STAGE3_SHA256_URL}" ]] || return 0
+  require_cmd sha256sum
+
+  tarball_name="$(basename "${STAGE3_TARBALL}")"
+  log "downloading stage3 checksum ${STAGE3_SHA256_URL}"
+  download_file "${STAGE3_SHA256_URL}" "${STAGE3_SHA256_PATH}"
+  sha256="$(grep -E "^[A-Fa-f0-9]{64}[[:space:]]+${tarball_name}$" "${STAGE3_SHA256_PATH}" | awk '{print $1}' | head -n1 || true)"
+  [[ -n "${sha256}" ]] || die "unable to parse SHA256 for ${tarball_name} from ${STAGE3_SHA256_PATH}"
+  (cd "$(dirname "${STAGE3_TARBALL}")" && printf '%s  %s\n' "${sha256}" "${tarball_name}" | sha256sum -c -)
+}
+
+prepare_stage3_tarball() {
+  if [[ -z "${STAGE3_TARGET}" && -z "${STAGE3_TARBALL}" ]]; then
+    return 0
+  fi
+  if [[ -z "${STAGE3_TARBALL}" ]]; then
+    resolve_latest_stage3_tarball
+  fi
+  [[ -f "${STAGE3_TARBALL}" ]] || {
+    [[ -n "${STAGE3_TARBALL_URL}" ]] || die "stage3 tarball path does not exist and no URL was resolved: ${STAGE3_TARBALL}"
+    log "downloading stage3 tarball ${STAGE3_TARBALL_URL}"
+    download_file "${STAGE3_TARBALL_URL}" "${STAGE3_TARBALL}"
+  }
+  verify_stage3_tarball
+}
+
+rootfs_has_stage3() {
+  [[ -f "${ROOT_DIR}/etc/gentoo-release" ]]
+}
+
+extract_stage3_rootfs() {
+  [[ -n "${STAGE3_TARGET}" || -n "${STAGE3_TARBALL}" ]] || return 0
+  require_cmd tar
+  if rootfs_has_stage3; then
+    log "existing Gentoo rootfs detected in ${ROOT_DIR}; skipping stage3 extraction"
+    return 0
+  fi
+  if find "${ROOT_DIR}" -mindepth 1 -maxdepth 1 | grep -q .; then
+    die "rootfs is not empty and does not look like a Gentoo stage3: ${ROOT_DIR}; use --reset-rootfs"
+  fi
+  log "extracting stage3 tarball ${STAGE3_TARBALL} into ${ROOT_DIR}"
+  tar xpf "${STAGE3_TARBALL}" --xattrs-include='*.*' --numeric-owner -C "${ROOT_DIR}"
+}
 
 cleanup_rootfs_builder() {
   if [[ -n "${BUILDAH_CONTAINER_ID}" ]]; then
@@ -365,8 +588,16 @@ on_rootfs_builder_exit() {
 }
 trap on_rootfs_builder_exit EXIT
 
+if [[ "${RESET_ROOTFS}" == true ]]; then
+  reset_rootfs_contents
+fi
+
 mkdir -p "${ROOT_DIR}"
 install -d -m 0755 "${PKGDIR}"
+
+prepare_stage3_tarball
+extract_stage3_rootfs
+
 install -d -m 0755 \
   "${ROOT_DIR}/etc" \
   "${ROOT_DIR}/proc" \
@@ -399,15 +630,19 @@ if [[ "${CONFIG_ROOT}" != "/" ]]; then
     "${CONFIG_ROOT}/etc/portage" \
     "${CONFIG_ROOT}/etc/portage/gnupg" \
     "${CONFIG_ROOT}/etc/portage/repos.conf" \
-    "${CONFIG_ROOT}/var/db/repos" \
-    "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/metadata" \
-    "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}"
+    "${CONFIG_ROOT}/var/db/repos"
   chmod 0700 "${CONFIG_ROOT}/etc/portage/gnupg"
   if [[ -f /etc/portage/gnupg/pubring.kbx && ! -f "${CONFIG_ROOT}/etc/portage/gnupg/pubring.kbx" ]]; then
     cp -a /etc/portage/gnupg/. "${CONFIG_ROOT}/etc/portage/gnupg/"
     chmod 0700 "${CONFIG_ROOT}/etc/portage/gnupg"
   fi
   ln -snf /var/db/repos/gentoo "${CONFIG_ROOT}/var/db/repos/gentoo"
+fi
+
+if [[ "${CONFIG_ROOT}" != "/" && ${#PROFILE_PARENTS[@]} -gt 0 ]]; then
+  install -d -m 0755 \
+    "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/metadata" \
+    "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}"
   printf '%s\n' "${PROFILE_OVERLAY_NAME}" > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/repo_name"
   printf 'repo-name = %s\nmasters = gentoo\nthin-manifests = true\n' "${PROFILE_OVERLAY_NAME}" \
     > "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/metadata/layout.conf"
@@ -634,7 +869,7 @@ if [[ ${#BOOTSTRAP_PACKAGE_ATOMS[@]} -gt 0 ]]; then
 fi
 
 main_extra_env=()
-rootfs_emerge "main" true main_extra_env "${PACKAGE_ATOMS[@]}"
+rootfs_emerge "main" "${MAIN_EMPTYTREE}" main_extra_env "${PACKAGE_ATOMS[@]}"
 
 if [[ -n "${TARBALL}" ]]; then
   require_cmd tar

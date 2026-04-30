@@ -333,6 +333,99 @@ EOF
   assert_contains "${output}" 'binpkg-sync-root=/srv/stage5-binpkgs'
 }
 
+test_dry_run_stage3_target_plan() {
+  local temp_dir package_list output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --stage3-target amd64-llvm-openrc \
+      --stage3-cache-dir "${temp_dir}/stage3-cache" \
+      --reset-rootfs \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" 'stage3-target=amd64-llvm-openrc'
+  assert_contains "${output}" 'stage3-release-arch=amd64'
+  assert_contains "${output}" 'stage3-current-dir=current-stage3-amd64-llvm-openrc'
+  assert_contains "${output}" 'stage3-latest-url=https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-llvm-openrc/latest-stage3-amd64-llvm-openrc.txt'
+  assert_contains "${output}" "stage3-cache-dir=${temp_dir}/stage3-cache"
+  assert_contains "${output}" 'main-emptytree=false'
+  assert_contains "${output}" 'reset-rootfs=true'
+}
+
+test_dry_run_stage3_tarball_plan() {
+  local temp_dir package_list stage3_tarball output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  stage3_tarball="${temp_dir}/stage3-amd64-llvm-openrc-test.tar.xz"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+  : > "${stage3_tarball}"
+
+  output="$(
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --stage3-tarball "${stage3_tarball}" \
+      --engine none \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "stage3-tarball=${stage3_tarball}"
+  assert_contains "${output}" 'main-emptytree=false'
+}
+
+test_stage3_tarball_extracts_before_rootfs_skeleton() {
+  local temp_dir package_list stage3_dir stage3_tarball emerge_log
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+  package_list="${temp_dir}/packages.txt"
+  stage3_dir="${temp_dir}/stage3"
+  stage3_tarball="${temp_dir}/stage3-amd64-llvm-openrc-test.tar.xz"
+  emerge_log="${temp_dir}/emerge.log"
+
+  cat >"${package_list}" <<'EOF'
+app-shells/bash
+EOF
+
+  mkdir -p "${stage3_dir}/etc" "${temp_dir}/bin"
+  printf 'Gentoo Base System release test\n' > "${stage3_dir}/etc/gentoo-release"
+  tar -C "${stage3_dir}" -cJf "${stage3_tarball}" .
+
+  cat >"${temp_dir}/bin/emerge" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" > "${emerge_log}"
+exit 0
+EOF
+  chmod +x "${temp_dir}/bin/emerge"
+
+  PATH="${temp_dir}/bin:${PATH}" \
+    bash "${BUILD_SCRIPT}" \
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --stage3-tarball "${stage3_tarball}" \
+      --engine none
+
+  [[ -f "${temp_dir}/rootfs/etc/gentoo-release" ]] || fail "stage3 gentoo-release was not extracted"
+  [[ -f "${emerge_log}" ]] || fail "stub emerge was not called"
+  if grep -q -- '--emptytree' "${emerge_log}"; then
+    fail "stage3-backed package layering should not use --emptytree"
+  fi
+}
+
 test_dry_run
 test_auto_engine_prefers_buildah
 test_dry_run_sanitizes_features
@@ -344,5 +437,8 @@ test_package_use_file_requires_explicit_config_root
 test_dry_run_sysroot
 test_dry_run_explicit_pkgdir
 test_dry_run_binpkg_sync
+test_dry_run_stage3_target_plan
+test_dry_run_stage3_tarball_plan
+test_stage3_tarball_extracts_before_rootfs_skeleton
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

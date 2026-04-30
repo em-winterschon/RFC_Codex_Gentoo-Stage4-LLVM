@@ -124,15 +124,25 @@ Important fixes that made this possible:
 
 1. validate the same container-services stack on the installed target boot, not
    only in the provisioner chroot
-2. build the first reusable `gentoo-stage4-llvm-clang-hardened` container image
+2. build the first reusable `gentoo-stage3-llvm-clang-openrc` container image
 3. publish the validated image to `GHCR`
 
 ## Build Graph Control
 
-The rootfs container builder now supports `--bootstrap-runtime-seed auto`.
-The live container profile uses this as the first bootstrap path. It copies the
-host Clang runtime library/linker-script chains into the target rootfs before
-Portage enters the long dependency graph:
+The active base-container path has been simplified. It now extracts Gentoo's
+official `amd64-llvm-openrc` stage3 and layers only the Stage5
+service-container package list on top. This avoids the repeated late failures
+from the hardened source-first `--emptytree` graph while keeping the output on a
+known LLVM/Clang OpenRC baseline.
+
+The rootfs container builder supports `--stage3-target amd64-llvm-openrc` for
+this flow. It resolves `latest-stage3-amd64-llvm-openrc.txt`, downloads the
+tarball and `.sha256`, verifies the checksum, extracts the rootfs, preserves the
+stage3 profile, then runs the package list without `--emptytree`.
+
+The earlier hardened image path still supports `--bootstrap-runtime-seed auto`.
+That mode copies the host Clang runtime library/linker-script chains into the
+target rootfs before Portage enters the long dependency graph:
 
 - `libunwind.so`
 - `libc++.so`
@@ -143,12 +153,12 @@ This avoids pulling `llvm-core/llvm` into a separate bootstrap emerge. That
 earlier package-bootstrap path fixed the missing `libunwind` symptom but
 created a larger failure surface by compiling full LLVM before the main graph.
 
-After seeding, the builder verifies default clang C and C++ links against the
-target rootfs before starting the main graph. The normal Portage transaction
-still installs the real `llvm-runtimes/*` packages and produces binpkgs, so the
-seed is only a sysroot continuity bridge. While runtime seeding is enabled, the
-builder disables `collision-protect` for the controlled rootfs seed files so
-Portage can replace them with package-owned runtime files.
+After seeding, the hardened path verifies default clang C and C++ links against
+the target rootfs before starting the main graph. The normal Portage
+transaction still installs the real `llvm-runtimes/*` packages and produces
+binpkgs, so the seed is only a sysroot continuity bridge. While runtime seeding
+is enabled, the builder disables `collision-protect` for the controlled rootfs
+seed files so Portage can replace them with package-owned runtime files.
 
 `--bootstrap-package-list` remains available as an explicit fallback or
 diagnostic path, but it should not be the default for this profile because it

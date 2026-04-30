@@ -15,6 +15,11 @@ infrastructure work. It is intentionally higher level than `git log`.
   rootfs container builder.
 - Added a seeded Clang runtime bootstrap mode for container rootfs builds so
   early sysroot ABI checks do not require compiling full LLVM first.
+- Added stage3-backed rootfs build support to the container builder, including
+  latest-stage3 resolution, checksum verification, resettable rootfs extraction,
+  and non-`--emptytree` package layering.
+- Added the active `gentoo-stage3-llvm-clang-openrc` container definition for
+  the standard Gentoo llvm-clang OpenRC stage3 path.
 
 ### Changed
 
@@ -31,6 +36,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Switched the Path B container-base launcher from `--bootstrap-package-list`
   to `--bootstrap-runtime-seed auto`; the package bootstrap path remains as a
   diagnostic fallback but is no longer the default.
+- Switched the active Path B container-base launcher away from the hardened
+  source-first Stage4 graph and onto the official Gentoo
+  `amd64-llvm-openrc` stage3 plus small Stage5 service-container package
+  layering.
 
 ### Fixed
 

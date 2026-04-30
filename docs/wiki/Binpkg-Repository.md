@@ -9,7 +9,7 @@ there, including runs that later fail on a different atom.
 Current default repository ID:
 
 ```text
-stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic
 ```
 
 That name is intentionally specific. It lets operators switch between package
@@ -25,8 +25,8 @@ Profile:
 Important paths:
 
 - repository root: `/srv/stage5-binpkgs`
-- default repo path: `/srv/stage5-binpkgs/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
-- HTTP endpoint: `http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic`
+- default repo path: `/srv/stage5-binpkgs/stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
+- HTTP endpoint: `http://10.9.8.90:8088/stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
 
 Role behavior:
 
@@ -88,22 +88,21 @@ Recommended starting point:
 mkdir -p /dev/shm/stage5-build/images
 
 bash scripts/build-gentoo-rootfs-container.sh \
-  --root /dev/shm/stage5-build/images/gentoo-stage4-rootfs \
-  --pkgdir /dev/shm/stage5-build/images/binpkgs \
-  --binpkg-repo-id stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic \
+  --root /dev/shm/stage5-build/images/gentoo-stage3-llvm-clang-openrc-rootfs \
+  --pkgdir /dev/shm/stage5-build/images/gentoo-stage3-llvm-clang-openrc-binpkgs \
+  --binpkg-repo-id stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic \
   --binpkg-sync-remote root@10.9.8.90 \
   --binpkg-sync-root /srv/stage5-binpkgs \
-  --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
-  --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
-  --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
-  --host-package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.use \
-  --host-package-mask-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask \
-  --rootfs-links-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links \
-  --overlay-dir container-image-definitions/overlays/gentoo-stage4-image-fixes \
-  --config-root /dev/shm/stage5-build/images/gentoo-stage4-rootfs \
-  --sysroot /dev/shm/stage5-build/images/gentoo-stage4-rootfs \
+  --stage3-target amd64-llvm-openrc \
+  --stage3-cache-dir /dev/shm/stage5-build/stage3-cache \
+  --reset-rootfs \
+  --package-list container-image-definitions/gentoo-stage3-llvm-clang-openrc.packages \
+  --use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.use \
+  --package-use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.package.use \
+  --config-root /dev/shm/stage5-build/images/gentoo-stage3-llvm-clang-openrc-rootfs \
+  --sysroot /dev/shm/stage5-build/images/gentoo-stage3-llvm-clang-openrc-rootfs \
   --engine none \
-  --tarball /dev/shm/stage5-build/images/gentoo-stage4-llvm-clang-hardened.tar.zst
+  --tarball /dev/shm/stage5-build/images/gentoo-stage3-llvm-clang-openrc.tar.zst
 ```
 
 Set the calling environment for high parallelism:
@@ -130,8 +129,8 @@ times if the detached build exits before `completed rootfs build`.
 setsid -f bash -c 'exec scripts/watch-container-base-build.sh \
   --launch-script /root/run-container-base-build-coreutils-fix.sh \
   --build-log /root/container-base-rerun.log \
-  --watch-pattern "build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage4-rootfs" \
-  --pkgdir /var/lib/container-services-ephemeral/images/binpkgs \
+  --watch-pattern "build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-rootfs" \
+  --pkgdir /var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-binpkgs \
   --repo-id "$1" \
   --sync-remote root@10.9.8.90 \
   --sync-root /srv/stage5-binpkgs \
@@ -146,16 +145,16 @@ For already-running or externally launched builders, use the watch-sync helper.
 It stages remote PKGDIRs locally first, then publishes them to the repository:
 
 ```bash
-repo_id=stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+repo_id=stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic
 
 setsid -f bash -c 'exec bash scripts/watch-sync-binpkgs-to-repo.sh \
-  --pkgdir root@10.9.8.89:/mnt/gentoo/mnt/gentoo/var/lib/container-services-ephemeral/images/binpkgs \
+  --pkgdir root@10.9.8.89:/mnt/gentoo/mnt/gentoo/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-binpkgs \
   --repo-id "$1" \
   --remote root@10.9.8.90 \
   --remote-root /srv/stage5-binpkgs \
   --staging-dir /var/tmp/stage5-binpkg-sync/container-services \
   --watch-remote root@10.9.8.89 \
-  --watch-pattern "build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage4-rootfs" \
+  --watch-pattern "build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-rootfs" \
   --interval 600 \
   < /dev/null >>/var/log/stage5-binpkg-sync-watch-container-services.log 2>&1' \
   stage5-binpkg-sync-watch "${repo_id}"

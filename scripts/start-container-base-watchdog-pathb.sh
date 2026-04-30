@@ -3,11 +3,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-REPO_ID="${STAGE5_BINPKG_REPO_ID:-stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic}"
+REPO_ID="${STAGE5_BINPKG_REPO_ID:-stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic}"
 LAUNCH_SCRIPT="${CONTAINER_BASE_LAUNCH_SCRIPT:-/root/run-container-base-build-pathb.sh}"
 BUILD_LOG="${CONTAINER_BASE_BUILD_LOG:-/root/container-base-rerun.log}"
-WATCH_PATTERN="${CONTAINER_BASE_WATCH_PATTERN:-build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage4-rootfs}"
-PKGDIR="${CONTAINER_PKGDIR:-/var/lib/container-services-ephemeral/images/binpkgs}"
+WATCH_PATTERN="${CONTAINER_BASE_WATCH_PATTERN:-build-gentoo-rootfs-container.sh --root /var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-rootfs}"
+PKGDIR="${CONTAINER_PKGDIR:-/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-binpkgs}"
 SYNC_REMOTE="${BINPKG_SYNC_REMOTE:-root@10.9.8.90}"
 SYNC_ROOT="${BINPKG_SYNC_ROOT:-/srv/stage5-binpkgs}"
 INTERVAL="${CONTAINER_BASE_WATCH_INTERVAL:-300}"

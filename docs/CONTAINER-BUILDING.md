@@ -4,10 +4,16 @@
 
 The first reusable base image path for this repo is:
 
-1. Build a Gentoo rootfs with `emerge --root`.
-2. Archive it with `zstd -2 --rsyncable --auto-threads=physical --exclude-compressed`.
-3. Import or commit it into a local Podman-compatible image.
-4. Publish the validated image through `scripts/publish-container-ghcr.sh`.
+1. Extract the official Gentoo `amd64-llvm-openrc` stage3 tarball.
+2. Preserve the upstream stage3 profile instead of synthesizing a hardened profile.
+3. Layer the Stage5 service-container package list with `emerge --root`.
+4. Archive it with `zstd -2 --rsyncable --auto-threads=physical --exclude-compressed`.
+5. Import or commit it into a local Podman-compatible image.
+6. Publish the validated image through `scripts/publish-container-ghcr.sh`.
+
+The active base image is intentionally not hardened. Hardened Stage4 container
+builds remain a follow-on track after the simple stage3-derived image is
+functional and publishable.
 
 The rootfs builder now caches local binpkgs by default under a sibling
 `binpkgs/` directory next to the rootfs path and reuses them on reruns.
@@ -20,27 +26,19 @@ CPU tuning note:
 - use `x86_64_v3_generic` only when the guest fleet contract supports it
 - avoid host-specific microarchitecture profiles for portable guest/container
   images because Rust/Python build helpers can fault later with `invalid opcode`
-- container rootfs builds in this workflow are merged-usr, so the image-level
-  USE override file disables `split-usr`
+- the active stage3-backed workflow keeps the upstream stage3 filesystem and
+  profile layout unchanged
 
 ## Default image definition
 
 - metadata:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.metadata.yml`
+  - `container-image-definitions/gentoo-stage3-llvm-clang-openrc.metadata.yml`
 - package list:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages`
+  - `container-image-definitions/gentoo-stage3-llvm-clang-openrc.packages`
 - USE overrides:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.use`
+  - `container-image-definitions/gentoo-stage3-llvm-clang-openrc.use`
 - package.use overrides:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use`
-- host package.use overrides:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.use`
-- host package.mask overrides:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask`
-- rootfs compatibility links:
-  - `container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links`
-- local overlay fixes:
-  - `container-image-definitions/overlays/gentoo-stage4-image-fixes`
+  - `container-image-definitions/gentoo-stage3-llvm-clang-openrc.package.use`
 
 ## Rootfs build helper
 
@@ -48,34 +46,29 @@ Use:
 
 ```bash
 bash scripts/build-gentoo-rootfs-container.sh \
-  --root /var/lib/container-services/images/gentoo-stage4-rootfs \
-  --pkgdir /var/lib/container-services/images/binpkgs \
-  --binpkg-repo-id stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic \
+  --root /var/lib/container-services/images/gentoo-stage3-llvm-clang-openrc-rootfs \
+  --pkgdir /var/lib/container-services/images/gentoo-stage3-llvm-clang-openrc-binpkgs \
+  --binpkg-repo-id stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic \
   --binpkg-sync-remote root@10.66.40.20 \
   --binpkg-sync-root /srv/stage5-binpkgs \
-  --package-list container-image-definitions/gentoo-stage4-llvm-clang-hardened.packages \
-  --use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.use \
-  --package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.package.use \
-  --host-package-use-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.use \
-  --host-package-mask-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.host.package.mask \
-  --rootfs-links-file container-image-definitions/gentoo-stage4-llvm-clang-hardened.rootfs-links \
-  --overlay-dir container-image-definitions/overlays/gentoo-stage4-image-fixes \
-  --config-root /var/lib/container-services/images/gentoo-stage4-rootfs \
-  --sysroot /var/lib/container-services/images/gentoo-stage4-rootfs \
-  --image-ref localhost/gentoo-stage4-llvm-clang-hardened:latest \
-  --tarball /var/lib/container-services/images/gentoo-stage4-llvm-clang-hardened.tar.zst \
+  --stage3-target amd64-llvm-openrc \
+  --stage3-cache-dir /var/lib/container-services/stage3-cache \
+  --reset-rootfs \
+  --package-list container-image-definitions/gentoo-stage3-llvm-clang-openrc.packages \
+  --use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.use \
+  --package-use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.package.use \
+  --config-root /var/lib/container-services/images/gentoo-stage3-llvm-clang-openrc-rootfs \
+  --sysroot /var/lib/container-services/images/gentoo-stage3-llvm-clang-openrc-rootfs \
+  --image-ref localhost/gentoo-stage3-llvm-clang-openrc:latest \
+  --tarball /var/lib/container-services/images/gentoo-stage3-llvm-clang-openrc.tar.zst \
   --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
-  --description "Gentoo Stage4 LLVM/Clang hardened base container"
+  --description "Gentoo Stage3 LLVM/Clang OpenRC base container"
 ```
 
-Use `--package-use-file` for scoped image quirks such as `app-alternatives/awk`
-under merged-usr. Keep those exceptions image-local rather than weakening the
-host or Stage 4 profile globally.
-
-Use `--host-package-use-file` when host-side build dependencies still default to
-split-usr behavior even though the container root is merged-usr. The current
-definition uses this to force merged-usr-safe host dependency behavior for
-`sys-apps/coreutils`.
+Use `--stage3-target amd64-llvm-openrc` to resolve the current Gentoo stage3
+from `latest-stage3-amd64-llvm-openrc.txt`. The builder downloads the tarball
+and `.sha256`, verifies the checksum, extracts the rootfs, and then layers the
+package list without `--emptytree`.
 
 Use `--pkgdir` to pin the local binpkg cache location explicitly. If omitted,
 the helper defaults to `$(dirname ROOT)/binpkgs`, enables `buildpkg`, and
@@ -85,8 +78,8 @@ Use `--binpkg-sync-remote` with `--binpkg-repo-id` to push every successfully
 built package to the Stage4/Stage5 binpkg repository host on script exit,
 including failed exits.
 
-Use `--overlay-dir` when the image build needs a narrow ebuild fix in the build
-host dependency path. The current image overlay patches:
+Use `--overlay-dir` only when the image build needs a narrow ebuild fix in the
+build host dependency path. The deferred hardened image overlay patches:
 
 - `app-alternatives/awk`
 - `sys-apps/coreutils`
@@ -94,10 +87,9 @@ host dependency path. The current image overlay patches:
 Those fixes normalize merged-usr host-side install trees so reruns do not stop
 on `/bin/*` versus `/usr/bin/*` internal collisions.
 
-Use `--host-package-mask-file` when the build host must be forced away from a
-broken generic atom selection. The current image definition masks
-`=app-alternatives/awk-4::gentoo` on the host so the patched overlay package
-wins for the source-first image build.
+Use `--host-package-use-file` and `--host-package-mask-file` only for the
+deferred source-first hardened image path. They are not part of the active
+standard stage3 base-container path.
 
 Use `--rootfs-links-file` when the target container root should materialize
 merged-usr compatibility links such as `/bin -> usr/bin` and `/sbin -> usr/sbin`
@@ -121,12 +113,12 @@ After validating the local image:
 
 ```bash
 bash scripts/publish-container-ghcr.sh \
-  --local-image localhost/gentoo-stage4-llvm-clang-hardened:latest \
-  --image-name gentoo-stage4-llvm-clang-hardened \
+  --local-image localhost/gentoo-stage3-llvm-clang-openrc:latest \
+  --image-name gentoo-stage3-llvm-clang-openrc \
   --tag git-$(git rev-parse --short HEAD) \
   --namespace em-winterschon \
   --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
-  --description "Gentoo Stage4 LLVM/Clang hardened base container"
+  --description "Gentoo Stage3 LLVM/Clang OpenRC base container"
 ```
 
 ## Build telemetry
@@ -159,18 +151,15 @@ Artifacts produced:
 ## Current Validation State
 
 - container-services runtime validation is complete on the Path B lab VM
-- the first source-first base-image build currently uses:
+- the active base-image build now uses:
   - guest size: `32` vCPU, `32 GiB` RAM
   - Portage parallelism: `MAKEOPTS="-j64"`, `EMERGE_DEFAULT_OPTS="--jobs=16"`
-  - package graph: `471`
-- latest resolved blocker:
-  - failing atom: `sys-apps/coreutils-9.10-r1::gentoo-stage4-image-fixes`
-  - fix: stage referenced overlay patch files and skip split-usr relocation
-    when building merged-usr image roots
-- active rerun:
+  - source: official `stage3-amd64-llvm-openrc` tarball
+  - package layering graph: Stage5 service-container additions only
+- prior hardened/source-first blocker class:
+  - repeated late failures in a large `--emptytree` graph
+  - split-usr versus merged-usr and libc++ sysroot continuity issues
+- active rerun after refactor:
   - binhost: `10.9.8.90:8088`
-  - last observed progress: `97 / 471`
-  - periodic binpkg sync and a bounded restart watchdog are active
-- current timing forecast for the active rerun:
-  - `p90`: `2` to `4` hours
-  - `p95`: `4` to `6` hours
+  - repo ID: `stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
+  - periodic binpkg sync and a bounded restart watchdog remain active
