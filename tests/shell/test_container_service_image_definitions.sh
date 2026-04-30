@@ -28,6 +28,8 @@ assert_file_contains "${MANIFEST}" 'ghcr.io/em-winterschon/gentoo-stage5-haproxy
 assert_file_contains "${MANIFEST}" 'sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37'
 assert_file_contains "${MANIFEST}" '^    rsyslog_collector:'
 assert_file_contains "${MANIFEST}" 'app-admin/rsyslog'
+assert_file_contains "${MANIFEST}" 'ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a'
+assert_file_contains "${MANIFEST}" 'sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7'
 assert_file_contains "${MANIFEST}" '^    ntfy:'
 assert_file_contains "${MANIFEST}" 'build_mode: upstream-image'
 

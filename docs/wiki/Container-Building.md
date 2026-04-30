@@ -197,6 +197,20 @@ Validated service-layer images:
 - smoke test:
   - `HAProxy version 3.3.5-f0a2d1bf5`
   - `CC = gcc`
+- `localhost/gentoo-stage5-rsyslog-collector:latest`
+- GHCR:
+  - `ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a`
+  - `ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest`
+  - `sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7`
+- image ID:
+  - `88fd310fe7ed`
+- artifact:
+  - `/var/lib/container-services-ephemeral/images/gentoo-stage5-rsyslog-collector.tar.zst`
+- service binpkg repo:
+  - `stage3-llvm_clang_openrc__stage5-service_container-rsyslog_collector__amd64__x86_64_v2_generic`
+- smoke test:
+  - `rsyslogd 8.2602.0`
+  - `systemd support: No`
 
 ## Build telemetry
 
@@ -226,6 +240,9 @@ Artifacts produced:
   launcher runs only that service build with GCC/binutils-bfd because the
   default LLVM path failed at link time with `ld.lld` and incompatible
   `libunwind`.
+- Rsyslog currently uses a two-phase service-layer build so `libestr` and
+  `libfastjson` exist in the target rootfs before `app-admin/rsyslog` runs
+  pkg-config and configure.
 - Build on the validated container-services VM so Portage policy, LLVM defaults,
   and package exceptions match the intended runtime host.
 

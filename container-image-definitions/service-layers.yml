@@ -40,13 +40,18 @@ container_service_layers:
     rsyslog_collector:
       build_mode: portage-layer
       image_name: gentoo-stage5-rsyslog-collector
+      image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
+      digest: sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7
+      bootstrap_package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages
       package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.packages
       packages:
         - app-admin/rsyslog
       config_role: container_app_rsyslog_collector
       runtime_profile: container-rsyslog-collector
       notes:
-        - Build as a service layer instead of the base image because same-transaction rootfs builds can miss libestr pkg-config state.
+        - Built in two phases so libestr and libfastjson land before rsyslog pkg-config/configure.
     ntfy:
       build_mode: upstream-image
       image_name: ntfy
