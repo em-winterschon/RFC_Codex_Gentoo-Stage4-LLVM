@@ -25,6 +25,7 @@ test_nginx_plan() {
 
   assert_contains "${output}" 'service=nginx'
   assert_contains "${output}" 'package-list=container-image-definitions/gentoo-stage5-nginx.packages'
+  assert_contains "${output}" 'package-use-file=container-image-definitions/gentoo-stage5-nginx.package.use'
   assert_contains "${output}" 'image-ref=localhost/gentoo-stage5-nginx:latest'
   assert_contains "${output}" 'binpkg-repo-id=stage3-llvm_clang_openrc__stage5-service_container-nginx__amd64__x86_64_v2_generic'
   assert_contains "${output}" 'stage3-tarball=/tmp/stage3.tar.xz'

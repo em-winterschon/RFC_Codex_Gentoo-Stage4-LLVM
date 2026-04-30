@@ -89,6 +89,7 @@ ROOTFS_DIR="${CONTAINER_ROOTFS_DIR:-${SERVICE_ROOT}/${IMAGE_NAME}-rootfs}"
 PKGDIR="${CONTAINER_PKGDIR:-${SERVICE_ROOT}/${IMAGE_NAME}-binpkgs}"
 TARBALL="${CONTAINER_TARBALL:-${SERVICE_ROOT}/${IMAGE_NAME}.tar.zst}"
 IMAGE_REF="${CONTAINER_IMAGE_REF:-localhost/${IMAGE_NAME}:latest}"
+SERVICE_PACKAGE_USE_FILE="container-image-definitions/${IMAGE_NAME}.package.use"
 STAGE3_TARGET="${CONTAINER_STAGE3_TARGET:-amd64-llvm-openrc}"
 STAGE3_CACHE_DIR="${CONTAINER_STAGE3_CACHE_DIR:-/var/lib/container-services-ephemeral/stage3-cache}"
 STAGE3_TARBALL="${CONTAINER_STAGE3_TARBALL:-}"
@@ -101,6 +102,9 @@ if [[ "${DRY_RUN}" == '1' ]]; then
   printf 'service=%s\n' "${SERVICE}"
   printf 'package-list=%s\n' "${PACKAGE_LIST}"
   printf 'image-ref=%s\n' "${IMAGE_REF}"
+  if [[ -f "${SERVICE_PACKAGE_USE_FILE}" ]]; then
+    printf 'package-use-file=%s\n' "${SERVICE_PACKAGE_USE_FILE}"
+  fi
   printf 'rootfs=%s\n' "${ROOTFS_DIR}"
   printf 'tarball=%s\n' "${TARBALL}"
   printf 'pkgdir=%s\n' "${PKGDIR}"
@@ -132,6 +136,11 @@ else
   stage3_source_args=(--stage3-target "${STAGE3_TARGET}" --stage3-cache-dir "${STAGE3_CACHE_DIR}")
 fi
 
+package_use_args=(--package-use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.package.use)
+if [[ -f "${SERVICE_PACKAGE_USE_FILE}" ]]; then
+  package_use_args=(--package-use-file "${SERVICE_PACKAGE_USE_FILE}")
+fi
+
 exec bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
   --root "${ROOTFS_DIR}" \
   --pkgdir "${PKGDIR}" \
@@ -142,7 +151,7 @@ exec bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
   --reset-rootfs \
   --package-list "${PACKAGE_LIST}" \
   --use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.use \
-  --package-use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.package.use \
+  "${package_use_args[@]}" \
   --config-root "${ROOTFS_DIR}" \
   --sysroot "${ROOTFS_DIR}" \
   --image-ref "${IMAGE_REF}" \
