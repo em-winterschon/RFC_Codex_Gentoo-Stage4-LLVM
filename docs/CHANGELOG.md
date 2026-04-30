@@ -25,9 +25,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Changed
 
-- Started GHCR publication for
-  `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc` with immutable
-  `git-e5bf45f` and promoted `latest` tags.
+- Published `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc` with
+  immutable `git-e5bf45f` and promoted `latest` tags.
+- Recorded the published base-image digest in the service base-image profile,
+  service-layer manifest, and rendered container-host provenance template.
 - Wired `vm-container-services` example inventory to load the service-base
   image profile before service-specific container profiles.
 - Classified `nginx`, `haproxy`, and `rsyslog_collector` as package-backed
@@ -35,6 +36,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   overlay ebuild exists.
 - Standardized service-layer binpkg repo IDs under
   `stage3-llvm_clang_openrc__stage5-service_container-<service>__amd64__x86_64_v2_generic`.
+- Added a service-scoped GCC/binutils-bfd fallback for HAProxy service-layer
+  builds so the default LLVM/Clang container policy does not leak into an atom
+  that currently fails with `ld.lld` and an incompatible `libunwind`.
 
 ### Validated
 
@@ -42,6 +46,19 @@ infrastructure work. It is intentionally higher level than `git log`.
   `www-servers/nginx-1.29.5` and `curl` present.
 - Synced the nginx service-layer binpkg repository to `10.9.8.90` with package
   index files and nginx-related gpkg artifacts.
+- Published both base-image GHCR tags with digest
+  `sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6`.
+- Built and smoke-tested `localhost/gentoo-stage5-haproxy:latest` with
+  `net-proxy/haproxy-3.3.5`; the smoke test reports `CC = gcc`, OpenSSL, zlib,
+  network namespace, transparent proxy, and PCRE2 support.
+- Synced the HAProxy service-layer binpkg repository to `10.9.8.90` with
+  package index files and HAProxy-related gpkg artifacts.
+- Published `gentoo-stage5-nginx` to GHCR as `git-d5104ae` and `latest`, both
+  resolving to digest
+  `sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90`.
+- Published `gentoo-stage5-haproxy` to GHCR as `git-d5104ae` and `latest`, both
+  resolving to digest
+  `sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37`.
 
 ## 2026-04-29
 

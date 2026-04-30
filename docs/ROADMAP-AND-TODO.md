@@ -11,7 +11,7 @@ This page tracks concrete next work, dependencies, and current blockers.
 | `CP-003` | completed | Restart base-container build against the simplified stage3 path | `CP-002` | Completed on `10.9.8.89` using cached Gentoo `amd64-llvm-openrc` stage3 and Stage5 service-container package layering without `--emptytree`. |
 | `CP-004` | completed | Keep successful packages synced during the rerun | `CP-003` | Stage3 repo synced to `10.9.8.90`; package index and reusable binpkgs are present. |
 | `CP-005` | completed | Validate finished local image and tarball | `CP-003` | Target image validated: `localhost/gentoo-stage3-llvm-clang-openrc:latest`; tarball exists at `633M`. |
-| `CP-006` | active | Push validated image to GHCR | `CP-005` | Publishing `git-e5bf45f` and `latest` for `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc`; builder egress is currently slow but active. |
+| `CP-006` | completed | Push validated image to GHCR | `CP-005` | Published `git-e5bf45f` and `latest` for `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc`; both resolve to digest `sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6`. |
 
 ## Active Infrastructure State
 
@@ -56,7 +56,8 @@ Current state:
 
 Dependency:
 
-- next dependency is GHCR publication of the validated local image.
+- next dependency is publishing validated service-layer images and finishing the
+  `rsyslog_collector` service layer.
 
 ## Short-Term Work
 
@@ -65,13 +66,13 @@ Dependency:
 | `ST-001` | pending | Add a repo-native mounted-target builder launcher | `CP-003` | Should enforce high-performance defaults and binpkg sync by default. |
 | `ST-002` | active | Reduce base-container closure | `CP-005` | Active path now starts from official stage3 and layers only Stage5 service-container packages. |
 | `ST-003` | pending | Add explicit binpkg cleanup/retention policy | binpkg VM stable | Decide retention by repo ID, profile generation, and disk pressure. |
-| `ST-004` | active | Validate GHCR publish workflow end-to-end | `CP-006` | Token auth and target calculation are tested; final validation requires registry digest after push completes. |
+| `ST-004` | completed | Validate GHCR publish workflow end-to-end | `CP-006` | Base image published to GHCR; VM-side Podman was too slow, so host-side `crane` pushed the docker archive and recorded the registry digest. |
 | `ST-005` | pending | Add build metrics as CI artifacts | `CP-003` | Use `scripts/export_build_metrics.py` output in Jenkins later. |
 | `ST-006` | active | Reduce dependency-tree failure blast radius | `CP-003` | Default to the standard stage3 base for the first image; keep hardened source-first work as a later, isolated track. |
 | `ST-007` | pending | Add rsyslog as a service-container layer | `CP-005` | `rsyslog` is intentionally out of the first base image because its same-transaction `--root` build cannot see `libestr` through pkg-config. |
 | `ST-008` | active | Wire service layers to the published base image | `CP-006` | `container-service-base-image.yml` defines GHCR base-image provenance and app build defaults; container hosts render `/etc/container-services/base-image.yml`; `service-layers.yml` tracks package-backed and upstream-image service candidates. |
 | `ST-009` | completed | Add service-layer build automation | `ST-008` | `run-container-service-layer-build-pathb.sh` can build `nginx`, `haproxy`, and `rsyslog_collector` service images with per-service package lists and binpkg repo IDs. |
-| `ST-010` | active | Validate first package-backed service image | `ST-009` | `localhost/gentoo-stage5-nginx:latest` built and smoke-tested; nginx binpkg repo synced to `10.9.8.90`. |
+| `ST-010` | active | Validate package-backed service images | `ST-009` | `nginx` and `haproxy` images built, smoke-tested, published to GHCR, and synced to service binpkg repos; `rsyslog_collector` remains next. |
 
 ## Stage5 Service Tracks
 

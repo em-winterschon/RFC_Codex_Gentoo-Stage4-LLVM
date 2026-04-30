@@ -28,6 +28,7 @@ assert_file_contains "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'container_ser
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" '^gentoo_profile_definition:'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" 'ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" 'ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-service-base-image.yml" 'sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" '^gentoo_profile_definition:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" '^profile_definition_files:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-container-services.yml" 'container-service-base-image.yml'

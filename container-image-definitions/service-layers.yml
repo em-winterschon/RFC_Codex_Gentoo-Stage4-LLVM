@@ -3,6 +3,8 @@ container_service_layers:
   base:
     image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest
     immutable_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f
+    immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc@sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
+    digest: sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
     source_commit: e5bf45f
     profile_definition: gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/container-service-base-image.yml
   defaults:
@@ -14,6 +16,10 @@ container_service_layers:
     nginx:
       build_mode: portage-layer
       image_name: gentoo-stage5-nginx
+      image: ghcr.io/em-winterschon/gentoo-stage5-nginx:latest
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-nginx@sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
+      digest: sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
       package_list: container-image-definitions/gentoo-stage5-nginx.packages
       packages:
         - www-servers/nginx
@@ -22,6 +28,10 @@ container_service_layers:
     haproxy:
       build_mode: portage-layer
       image_name: gentoo-stage5-haproxy
+      image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy@sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      digest: sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
       package_list: container-image-definitions/gentoo-stage5-haproxy.packages
       packages:
         - net-proxy/haproxy

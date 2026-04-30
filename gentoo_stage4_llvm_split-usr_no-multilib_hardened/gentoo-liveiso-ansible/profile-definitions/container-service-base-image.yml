@@ -6,6 +6,8 @@ gentoo_profile_definition:
     namespace: em-winterschon
     image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest
     immutable_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f
+    immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc@sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
+    digest: sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
     local_image: localhost/gentoo-stage3-llvm-clang-openrc:latest
     source_commit: e5bf45f
     source_profile: gentoo-stage3-llvm-clang-openrc
@@ -15,6 +17,8 @@ gentoo_profile_definition:
   container_app_build_defaults:
     base_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest
     immutable_base_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f
+    immutable_base_digest_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc@sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
+    base_digest: sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
     publish_namespace: ghcr.io/em-winterschon
     tag_policy:
       immutable_prefix: git-

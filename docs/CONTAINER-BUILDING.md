@@ -168,9 +168,13 @@ Dry-run the resolved paths and repo IDs with:
 bash scripts/run-container-service-layer-build-pathb.sh --service nginx --dry-run
 ```
 
-Validated service-layer image:
+Validated service-layer images:
 
 - `localhost/gentoo-stage5-nginx:latest`
+- GHCR:
+  - `ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae`
+  - `ghcr.io/em-winterschon/gentoo-stage5-nginx:latest`
+  - `sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90`
 - image ID:
   - `893542194fef`
 - artifact:
@@ -179,6 +183,20 @@ Validated service-layer image:
   - `stage3-llvm_clang_openrc__stage5-service_container-nginx__amd64__x86_64_v2_generic`
 - smoke test:
   - `nginx version: nginx/1.29.5`
+- `localhost/gentoo-stage5-haproxy:latest`
+- GHCR:
+  - `ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae`
+  - `ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest`
+  - `sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37`
+- image ID:
+  - `443bc4e2aa6a`
+- artifact:
+  - `/var/lib/container-services-ephemeral/images/gentoo-stage5-haproxy.tar.zst`
+- service binpkg repo:
+  - `stage3-llvm_clang_openrc__stage5-service_container-haproxy__amd64__x86_64_v2_generic`
+- smoke test:
+  - `HAProxy version 3.3.5-f0a2d1bf5`
+  - `CC = gcc`
 
 ## Build telemetry
 
@@ -204,6 +222,10 @@ Artifacts produced:
 
 - Keep `without-systemd` as the default repo posture.
 - Use narrow package-local compatibility exceptions only when required.
+- HAProxy is currently one of those narrow exceptions: the service-layer
+  launcher runs only that service build with GCC/binutils-bfd because the
+  default LLVM path failed at link time with `ld.lld` and incompatible
+  `libunwind`.
 - Build on the validated container-services VM so Portage policy, LLVM defaults,
   and package exceptions match the intended runtime host.
 

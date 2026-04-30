@@ -6,7 +6,8 @@ The first supported registry target is `GHCR`:
 
 - registry: `ghcr.io`
 - namespace: GitHub owner or org
-- transport: standard OCI/Docker registry API via Podman
+- transport: standard OCI/Docker registry API via Podman, or host-side `crane`
+  from a docker archive when VM egress is slow
 
 ## Immediate workflow
 
@@ -71,6 +72,10 @@ The current service-container base image is:
   - `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f`
 - GHCR promoted tag:
   - `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest`
+- published digest:
+  - `sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6`
+- digest-pinned reference:
+  - `ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc@sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6`
 - service-layer profile:
   - `profile-definitions/container-service-base-image.yml`
 
@@ -83,6 +88,17 @@ namespace.
 
 Once service-specific images are validated, publish them through the same GHCR
 helper using image names derived from the Stage5 service profile.
+
+Current published service images:
+
+- `ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae`
+- `ghcr.io/em-winterschon/gentoo-stage5-nginx:latest`
+- nginx digest:
+  - `sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90`
+- `ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae`
+- `ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest`
+- HAProxy digest:
+  - `sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37`
 
 Current validation note:
 
