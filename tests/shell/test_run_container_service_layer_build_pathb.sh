@@ -64,8 +64,10 @@ test_rsyslog_uses_two_phase_pkg_config() {
   assert_contains "${output}" 'service=rsyslog_collector'
   assert_contains "${output}" 'package-list=container-image-definitions/gentoo-stage5-rsyslog-collector.packages'
   assert_contains "${output}" 'bootstrap-package-list=container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages'
+  assert_contains "${output}" 'package-use-file=container-image-definitions/gentoo-stage5-rsyslog-collector.package.use'
   assert_contains "${output}" 'main-env=PKG_CONFIG_SYSROOT_DIR='
   assert_contains "${output}" 'main-env=PKG_CONFIG_LIBDIR='
+  assert_contains "${output}" 'main-env=PKG_CONFIG_PATH='
 }
 
 test_nginx_plan

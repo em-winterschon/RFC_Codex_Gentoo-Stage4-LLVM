@@ -30,6 +30,7 @@ assert_file_contains "${MANIFEST}" '^    rsyslog_collector:'
 assert_file_contains "${MANIFEST}" 'app-admin/rsyslog'
 assert_file_contains "${MANIFEST}" 'ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-37a4d4a'
 assert_file_contains "${MANIFEST}" 'sha256:451ca03a0b7aff452cc75ebbf50eea19e322a16b23aab200c19875ecfe7c45f7'
+assert_file_contains "${REPO_ROOT}/container-image-definitions/gentoo-stage5-rsyslog-collector.package.use" 'app-admin/rsyslog elasticsearch'
 assert_file_contains "${MANIFEST}" '^    ntfy:'
 assert_file_contains "${MANIFEST}" 'build_mode: upstream-image'
 
