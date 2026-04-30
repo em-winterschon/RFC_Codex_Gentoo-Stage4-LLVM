@@ -40,6 +40,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   source-first Stage4 graph and onto the official Gentoo
   `amd64-llvm-openrc` stage3 plus small Stage5 service-container package
   layering.
+- Deferred `rsyslog` out of the first base image because its same-transaction
+  `--root` build could not see `libestr` through pkg-config; it remains a
+  service/logging layer requirement.
 
 ### Fixed
 
@@ -53,6 +56,15 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Fixed the generated local container profile repository lookup by exposing the
   config-root profile overlay through a host-side `/var/db/repos` symlink while
   the builder is active.
+- Fixed stage3-backed binpkg use by disabling inherited stage3 binhost configs
+  inside the target config-root and writing the Stage5 binhost with
+  `verify-signature = false`.
+
+### Validated
+
+- Built and smoke-tested `localhost/gentoo-stage3-llvm-clang-openrc:latest`.
+- Produced `/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc.tar.zst`
+  on the container-services builder VM.
 
 ## 2026-04-28
 

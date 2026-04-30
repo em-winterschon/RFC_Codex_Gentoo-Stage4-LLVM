@@ -8,9 +8,9 @@ This page tracks concrete next work, dependencies, and current blockers.
 | --- | --- | --- | --- | --- |
 | `CP-001` | completed | Fix `sys-apps/coreutils-9.10-r1` overlay patch failure | current failed build logs | Overlay now carries referenced patch files and skips split-usr relocation for merged-usr image roots. |
 | `CP-002` | completed | Validate `coreutils` in isolation | `CP-001` | `ebuild clean prepare` and focused `emerge --buildpkg` passed; binpkg published. |
-| `CP-003` | active | Restart base-container build against the simplified stage3 path | `CP-002` | Current rerun is on `10.9.8.89` through RouterOS gateway `10.9.8.1`; active image now extracts Gentoo `amd64-llvm-openrc` stage3 and layers the Stage5 service-container package list without `--emptytree`. |
-| `CP-004` | active | Keep successful packages synced during the rerun | `CP-003` | Remote restart watchdog is active; chroot-local SSH sync auth to `10.9.8.90` has been repaired. |
-| `CP-005` | pending | Validate finished local image and tarball | `CP-003` | Target image: `localhost/gentoo-stage3-llvm-clang-openrc:latest`. |
+| `CP-003` | completed | Restart base-container build against the simplified stage3 path | `CP-002` | Completed on `10.9.8.89` using cached Gentoo `amd64-llvm-openrc` stage3 and Stage5 service-container package layering without `--emptytree`. |
+| `CP-004` | completed | Keep successful packages synced during the rerun | `CP-003` | Stage3 repo synced to `10.9.8.90`; package index and reusable binpkgs are present. |
+| `CP-005` | completed | Validate finished local image and tarball | `CP-003` | Target image validated: `localhost/gentoo-stage3-llvm-clang-openrc:latest`; tarball exists at `633M`. |
 | `CP-006` | pending | Push validated image to GHCR | `CP-005` | Token source exists on-host at `~/.ssh/codex.d/tokens/GHCR_TOKEN`. |
 
 ## Active Infrastructure State
@@ -28,8 +28,8 @@ Current repo:
 - HTTP endpoint:
   - `http://10.9.8.90:8088/stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
 - last observed package index:
-  - `286` package records
-  - `288` files
+  - `12` repository files for the stage3 container repo, including `Packages`
+    and `Packages.gz`
 
 Dependency:
 
@@ -56,8 +56,7 @@ Current state:
 
 Dependency:
 
-- allow the active stage3-backed rerun to continue unless it stops or hits a
-  new package blocker; the remote watchdog may relaunch bounded retries.
+- next dependency is GHCR publication of the validated local image.
 
 ## Short-Term Work
 

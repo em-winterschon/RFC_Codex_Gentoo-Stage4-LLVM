@@ -103,8 +103,8 @@ Dry-run validation confirmed:
 | --- | --- | --- | --- |
 | `BASE-STAGE3-001` | Stage3-backed builder support | local tests | complete |
 | `BASE-STAGE3-002` | Path B launcher refactor | `BASE-STAGE3-001` | complete |
-| `BASE-STAGE3-003` | Builder VM restart | `BASE-STAGE3-002` | pending |
-| `BASE-STAGE3-004` | Local image validation | `BASE-STAGE3-003` | pending |
+| `BASE-STAGE3-003` | Builder VM restart | `BASE-STAGE3-002` | complete |
+| `BASE-STAGE3-004` | Local image validation | `BASE-STAGE3-003` | complete |
 | `BASE-STAGE3-005` | GHCR publish | `BASE-STAGE3-004` | pending |
 | `HARDENED-001` | Hardened Stage4 image revival | `BASE-STAGE3-005` | deferred |
 | `RSYSLOG-001` | Rsyslog service-container layer | `BASE-STAGE3-005` | pending |
@@ -118,3 +118,22 @@ intended service-container additions.
 
 `rsyslog` is no longer in the base image package list. It belongs in a
 service-container/logging profile layer after the base image is validated.
+
+## Post-Refactor Build Result
+
+The stage3-backed build completed on `10.9.8.89`.
+
+Validated artifacts:
+
+- image: `localhost/gentoo-stage3-llvm-clang-openrc:latest`
+- image ID: `bb1cdf7450c8`
+- tarball: `/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc.tar.zst`
+- tarball size: `633M`
+- binpkg repo: `/srv/stage5-binpkgs/stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
+
+Smoke validation inside the image confirmed:
+
+- `/etc/gentoo-release`
+- `/usr/bin/curl`
+- `/usr/bin/ip`
+- `/usr/bin/ps`

@@ -163,7 +163,10 @@ Artifacts produced:
 - prior hardened/source-first blocker class:
   - repeated late failures in a large `--emptytree` graph
   - split-usr versus merged-usr and libc++ sysroot continuity issues
-- active rerun after refactor:
+- completed rerun after refactor:
   - binhost: `10.9.8.90:8088`
   - repo ID: `stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic`
-  - periodic binpkg sync and a bounded restart watchdog remain active
+  - image: `localhost/gentoo-stage3-llvm-clang-openrc:latest`
+  - tarball: `/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc.tar.zst`
+  - tarball size: `633M`
+  - smoke test passed for `/etc/gentoo-release`, `curl`, `ip`, and `ps`
