@@ -13,6 +13,7 @@ ROOTFS_DIR="${CONTAINER_ROOTFS_DIR:-/var/lib/container-services-ephemeral/images
 PKGDIR="${CONTAINER_PKGDIR:-/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc-binpkgs}"
 STAGE3_TARGET="${CONTAINER_STAGE3_TARGET:-amd64-llvm-openrc}"
 STAGE3_CACHE_DIR="${CONTAINER_STAGE3_CACHE_DIR:-/var/lib/container-services-ephemeral/stage3-cache}"
+STAGE3_TARBALL="${CONTAINER_STAGE3_TARBALL:-}"
 BINPKG_SYNC_REMOTE="${BINPKG_SYNC_REMOTE:-root@10.9.8.90}"
 BINPKG_SYNC_ROOT="${BINPKG_SYNC_ROOT:-/srv/stage5-binpkgs}"
 TARBALL="${CONTAINER_TARBALL:-/var/lib/container-services-ephemeral/images/gentoo-stage3-llvm-clang-openrc.tar.zst}"
@@ -51,14 +52,20 @@ location = /var/cache/binhost/stage5-container
 verify-signature = false
 EOF
 
+stage3_source_args=()
+if [[ -n "${STAGE3_TARBALL}" ]]; then
+  stage3_source_args=(--stage3-tarball "${STAGE3_TARBALL}")
+else
+  stage3_source_args=(--stage3-target "${STAGE3_TARGET}" --stage3-cache-dir "${STAGE3_CACHE_DIR}")
+fi
+
 exec bash "${SCRIPT_DIR}/build-gentoo-rootfs-container.sh" \
   --root "${ROOTFS_DIR}" \
   --pkgdir "${PKGDIR}" \
   --binpkg-repo-id "${REPO_ID}" \
   --binpkg-sync-remote "${BINPKG_SYNC_REMOTE}" \
   --binpkg-sync-root "${BINPKG_SYNC_ROOT}" \
-  --stage3-target "${STAGE3_TARGET}" \
-  --stage3-cache-dir "${STAGE3_CACHE_DIR}" \
+  "${stage3_source_args[@]}" \
   --reset-rootfs \
   --package-list container-image-definitions/gentoo-stage3-llvm-clang-openrc.packages \
   --use-file container-image-definitions/gentoo-stage3-llvm-clang-openrc.use \

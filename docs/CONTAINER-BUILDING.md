@@ -70,6 +70,10 @@ from `latest-stage3-amd64-llvm-openrc.txt`. The builder downloads the tarball
 and `.sha256`, verifies the checksum, extracts the rootfs, and then layers the
 package list without `--emptytree`.
 
+For fast lab reruns, set `CONTAINER_STAGE3_TARBALL=/path/to/stage3.tar.xz`
+when launching `scripts/run-container-base-build-pathb.sh`. That bypasses the
+WAN metadata/download step and extracts the known local stage3 tarball instead.
+
 Use `--pkgdir` to pin the local binpkg cache location explicitly. If omitted,
 the helper defaults to `$(dirname ROOT)/binpkgs`, enables `buildpkg`, and
 reuses matching local binpkgs on reruns with `--usepkg=y`.

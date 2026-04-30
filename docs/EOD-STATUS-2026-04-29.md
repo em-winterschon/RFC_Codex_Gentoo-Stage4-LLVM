@@ -45,6 +45,9 @@ Added builder support for:
 - `--main-emptytree`
 - `--reset-rootfs`
 
+The Path B launcher also accepts `CONTAINER_STAGE3_TARBALL=/path/to/stage3.tar.xz`
+for fast reruns from a known local stage3 cache.
+
 The builder now:
 
 - resolves latest Gentoo stage3 metadata
