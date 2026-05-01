@@ -1,0 +1,72 @@
+---
+gentoo_profile_definition:
+  netbox_connector:
+    planned_prefixes:
+      - name: pathb-lab
+        prefix: 10.9.8.0/24
+        role: lab-routing
+        description: Current Path B lab network for container-services, binpkg, and Elasticsearch testing.
+      - name: routeros-upstream-wan
+        prefix: 192.168.1.0/24
+        role: upstream-wan
+        description: Upstream provider-router segment; gateway is 192.168.1.254.
+      - name: container-mgmt
+        prefix: 10.77.0.0/24
+        role: podman-management
+        description: Proposed netavark management segment.
+      - name: container-apps
+        prefix: 10.77.1.0/24
+        role: podman-applications
+        description: Proposed netavark application segment.
+      - name: oob
+        prefix: TBD
+        role: out-of-band
+        description: Reserve for BlackBox OOB, UPS, ATS, and PDU management after the management network is confirmed.
+      - name: builder-farm
+        prefix: TBD
+        role: build-fabric
+        description: Reserve for six Atom C3758 distcc workers and Jenkins/build-controller traffic.
+      - name: zerotier-overlay
+        prefix: TBD
+        role: overlay-access
+        description: Reserve after the ZeroTier network ID and address plan are selected.
+    planned_ip_addresses:
+      - name: pathb-gateway
+        address: 10.9.8.1/24
+        role: gateway
+        description: Current QEMU RouterOS Path B LAN gateway; CCR2004 migration target.
+      - name: container-services
+        address: 10.9.8.89/24
+        role: container-host
+      - name: binpkg-repository
+        address: 10.9.8.90/24
+        role: binpkg-repository
+      - name: elasticsearch-test
+        address: 10.9.8.91/24
+        role: elasticsearch-test-node
+      - name: elasticsearch-test-vip
+        address: 10.9.8.92/24
+        role: service-vip
+      - name: routeros-upstream-gateway
+        address: 192.168.1.254/24
+        role: upstream-gateway
+      - name: routeros-chr-wan-static
+        address: 192.168.1.222/24
+        role: previous-chr-wan
+    planned_devices:
+      - name: proxmox-host
+        role: hypervisor
+        status: discovered
+        notes: Management address and SSH user must be confirmed before inventory activation.
+      - name: netbox-vm
+        role: ipam-dcim
+        status: discovered
+        notes: API URL and token must be provided before snapshot or write operations.
+      - name: ccr2004-pcie-routeros
+        role: router
+        status: discovered
+        notes: Upgraded RouterOS PCIe card; management-only baseline should be applied before routing migration.
+      - name: routeros-chr-pathb
+        role: rollback-router
+        status: active
+        notes: Keep running until CCR2004 DNS, egress, binpkg, and VIP validation passes.

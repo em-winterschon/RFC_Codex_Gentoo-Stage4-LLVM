@@ -4,3 +4,9 @@ api_url: {{ resolved_netbox_connector.api_url | to_json }}
 validate_certs: {{ resolved_netbox_connector.validate_certs | bool | lower }}
 snapshot_enabled: {{ resolved_netbox_connector.snapshot_enabled | bool | lower }}
 snapshot_endpoints: {{ resolved_netbox_connector.snapshot_endpoints | to_nice_yaml(indent=2) | indent(2, true) }}
+planned_prefixes:
+{{ resolved_netbox_connector.planned_prefixes | to_nice_yaml(indent=2) | indent(2, true) }}
+planned_ip_addresses:
+{{ resolved_netbox_connector.planned_ip_addresses | to_nice_yaml(indent=2) | indent(2, true) }}
+planned_devices:
+{{ resolved_netbox_connector.planned_devices | to_nice_yaml(indent=2) | indent(2, true) }}

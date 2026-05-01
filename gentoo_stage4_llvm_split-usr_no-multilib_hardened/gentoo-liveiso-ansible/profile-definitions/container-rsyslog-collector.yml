@@ -7,6 +7,7 @@ gentoo_profile_definition:
     rsyslog_collector:
       enabled: true
       image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
+      pull_policy: missing
       immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-396998a
       immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
       digest: sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287

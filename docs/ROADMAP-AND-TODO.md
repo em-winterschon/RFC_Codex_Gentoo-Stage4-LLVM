@@ -87,7 +87,7 @@ Dependency:
 | `ST-012` | completed | Live-validate generated Podman service wrappers on the container-services VM | `ST-011` | Initial chroot/live validation passed for `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy`. Post-outage installed-disk redeploy currently validates `rsyslog-collector`, `nginx`, and `haproxy`; `ntfy` is blocked on upstream image acquisition. |
 | `ST-013` | completed | Validate post-outage installed-disk container-services redeploy | `ST-012` | Host-side checks passed for `10.9.8.89:8080`, `10.9.8.89:80`, `10.9.8.89:514/tcp`, and `10.9.8.92:9200`. |
 | `ST-014` | pending | Replace `ntfy` upstream-image dependency | `ST-013` | Build a package-backed Stage5 image or add a controlled archive preload path so redeploys do not depend on Docker Hub availability. |
-| `ST-015` | pending | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Package-backed GHCR images should use local images when present and avoid repeated external pulls during redeploy cycles. |
+| `ST-015` | completed | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Generated Podman wrappers emit `--pull`; package-backed GHCR profiles default to `missing`, and the live Path B `ntfy` override uses `never` while the upstream-image path is blocked. |
 
 ## Proxmox, NetBox, And RouterOS
 
@@ -95,7 +95,7 @@ Dependency:
 | --- | --- | --- | --- | --- |
 | `PNR-001` | pending | Bootstrap Codex SSH access to Proxmox, NetBox VM, and CCR2004 RouterOS | operator-provided addresses and credentials | Required before Ansible inventory can be validated. |
 | `PNR-002` | planned | Confirm management subnet and NetBox API access | `PNR-001` | Do not write IPAM objects until the exact management prefix is known. |
-| `PNR-003` | planned | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | See `docs/PROXMOX-NETBOX-ROUTEROS-ACTION-PLAN.md`. |
+| `PNR-003` | scaffolded | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | Read-only planning profile exists at `profile-definitions/netbox-pathb-lab-ipam-plan.yml`; live NetBox writes still wait for confirmed management prefix and API token. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |
@@ -135,7 +135,7 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `LOG-001` | scaffolded | Validate rsyslog client templating everywhere | base profiles stable | Base rsyslog role now supports remote forwarding. |
-| `LOG-002` | active | Validate centralized rsyslog receiver container | container-services stable | Live UDP/TCP receive is validated on `10.9.8.89`; Elasticsearch forwarding is blocked until `LOG-003` provides a real `elastic-vip.example.internal` target. |
+| `LOG-002` | active | Validate centralized rsyslog receiver container | container-services stable | Live TCP receive is validated on `10.9.8.89`; HAProxy exposes the Elasticsearch test VIP at `10.9.8.92:9200`; end-to-end rsyslog-to-index validation remains pending. |
 | `LOG-003` | pending | Validate 3-node Elasticsearch VM profile | VM provisioning stable | Must include load-balanced access path. |
 | `LOG-004` | pending | Validate Kibana VM profile | `LOG-003` | Connect to Elasticsearch VIP. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |

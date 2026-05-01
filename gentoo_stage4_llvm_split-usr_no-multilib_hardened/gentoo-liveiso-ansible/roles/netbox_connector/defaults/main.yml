@@ -9,3 +9,6 @@ netbox_connector_default_snapshot_endpoints:
   - virtualization/virtual-machines/
   - ipam/prefixes/
   - ipam/ip-addresses/
+netbox_connector_default_planned_prefixes: []
+netbox_connector_default_planned_ip_addresses: []
+netbox_connector_default_planned_devices: []

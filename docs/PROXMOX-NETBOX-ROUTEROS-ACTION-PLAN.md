@@ -77,6 +77,13 @@ Create or reconcile:
   - HAProxy VIPs
   - infrastructure service endpoints
 
+The repo now includes a read-only planning profile for this seed data:
+
+- `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/netbox-pathb-lab-ipam-plan.yml`
+
+That profile renders planned prefixes, IP addresses, and devices into the
+NetBox connector manifest. It does not write NetBox objects by itself.
+
 ## SSH Bootstrap
 
 1. Generate or reuse the Codex ed25519 public key from this host.

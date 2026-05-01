@@ -11,6 +11,7 @@ exec podman run \
   --name {{ container_runtime_app.name | quote }} \
   --replace \
   --rm \
+  --pull {{ container_runtime_app.pull_policy | default('missing') | quote }} \
   --detach=false \
   --network {{ container_runtime_app.network | quote }} \
 {% if container_runtime_app.ip_address | default('') | length > 0 %}

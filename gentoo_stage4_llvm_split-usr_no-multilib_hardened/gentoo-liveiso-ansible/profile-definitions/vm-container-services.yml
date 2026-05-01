@@ -65,6 +65,7 @@ gentoo_profile_definition:
     ntfy:
       enabled: false
       image: docker.io/binwiederhier/ntfy:v2.14.0
+      pull_policy: missing
       network: apps
       ip_address: 10.77.1.20
       published_ports: []
@@ -73,6 +74,7 @@ gentoo_profile_definition:
     nginx:
       enabled: false
       image: ghcr.io/em-winterschon/gentoo-stage5-nginx:latest
+      pull_policy: missing
       immutable_image: ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae
       immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-nginx@sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
       digest: sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
@@ -99,6 +101,7 @@ gentoo_profile_definition:
     haproxy:
       enabled: false
       image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest
+      pull_policy: missing
       immutable_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae
       immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy@sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
       digest: sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37

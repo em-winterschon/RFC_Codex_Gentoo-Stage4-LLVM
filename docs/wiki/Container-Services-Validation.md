@@ -154,6 +154,11 @@ Post-outage installed-disk redeploy validation:
   - `container-ntfy` is stopped because the upstream Docker Hub image pull
     stalled after the site outage; replace it with a package-backed Stage5
     image or controlled archive preload path.
+- redeploy guardrail:
+  - generated Podman wrappers now support explicit `pull_policy`
+  - package-backed GHCR app profiles default to `missing`
+  - the live Path B `ntfy` override is disabled with `pull_policy: never` until
+    a controlled image source exists
 
 ## Next Validation Goals
 

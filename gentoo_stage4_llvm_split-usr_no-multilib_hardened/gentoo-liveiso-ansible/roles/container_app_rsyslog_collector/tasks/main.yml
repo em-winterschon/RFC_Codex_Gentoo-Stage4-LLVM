@@ -49,6 +49,7 @@
               'name': 'rsyslog-collector',
               'description': 'centralized rsyslog collector and elastic forwarder',
               'image': container_rsyslog_collector_profile.image,
+              'pull_policy': container_rsyslog_collector_profile.pull_policy | default('missing'),
               'network': container_rsyslog_collector_profile.network | default('mgmt'),
               'ip_address': container_rsyslog_collector_profile.ip_address | default(''),
               'published_ports': container_rsyslog_collector_profile.published_ports | default(['514:514/udp', '514:514/tcp']),

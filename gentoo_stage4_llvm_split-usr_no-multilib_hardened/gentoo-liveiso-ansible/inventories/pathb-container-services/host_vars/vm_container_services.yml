@@ -33,11 +33,14 @@ profile_container_services:
 
 profile_container_app_profiles:
   ntfy:
-    enabled: true
+    enabled: false
+    pull_policy: never
   nginx:
     enabled: true
+    pull_policy: missing
   haproxy:
     enabled: true
+    pull_policy: missing
 
 profile_memory_storage:
   enabled: true

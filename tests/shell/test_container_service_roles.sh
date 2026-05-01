@@ -63,19 +63,25 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/memory_storage/tasks/main.yml" 'zfs 
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_net_policy/templates/nftables.conf.j2" 'port_map.*-2'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_net_policy/templates/nftables.conf.j2" 'oifname "podman\*" accept'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_service_segments/templates/podman-app-run.sh.j2" '--tmpfs'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_service_segments/templates/podman-app-run.sh.j2" '--pull'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/tasks/main.yml" '/usr/sbin/nginx'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/tasks/main.yml" '/dev/stderr'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/templates/nginx.conf.j2" 'mime.types.nginx'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_nginx/templates/nginx.conf.j2" 'types_hash_max_size 4096'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/usr/sbin/haproxy'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/etc/haproxy/haproxy.cfg'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'user haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'group haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/usr/sbin/rsyslogd'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'pull_policy: never'
 
 ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - <<'PY'
 import os
+import shlex
 from pathlib import Path
 
 import yaml
@@ -93,6 +99,7 @@ for expected_cap in ("NET_BIND_SERVICE", "SETGID", "SETUID"):
 template_path = ansible_root / "roles/container_app_haproxy/templates/haproxy.cfg.j2"
 env = Environment(undefined=StrictUndefined, trim_blocks=False, lstrip_blocks=False)
 env.filters["bool"] = bool
+env.filters["quote"] = shlex.quote
 template = env.from_string(
     template_path.read_text(encoding="utf-8")
 )
@@ -146,6 +153,34 @@ if "tcp dport 9200 accept" not in nft_rendered:
     raise SystemExit("nftables render did not expose the VIP host port")
 if "dport 10.9.8.92" in nft_rendered:
     raise SystemExit("nftables render used the VIP address as a port")
+
+podman_template_path = ansible_root / "roles/container_service_segments/templates/podman-app-run.sh.j2"
+podman_template = env.from_string(
+    podman_template_path.read_text(encoding="utf-8")
+)
+podman_rendered = podman_template.render(
+    container_runtime_app={
+        "name": "ntfy",
+        "image": "docker.io/binwiederhier/ntfy:v2.14.0",
+        "pull_policy": "never",
+        "network": "apps",
+        "published_ports": [],
+        "volumes": [],
+        "tmpfs": [],
+        "environment": {},
+        "command": ["serve"],
+    },
+    resolved_profile_site_security_profile={
+        "isolation": {
+            "read_only_rootfs": True,
+            "drop_capabilities": True,
+            "userns": "host",
+        }
+    },
+)
+
+if "--pull never" not in podman_rendered:
+    raise SystemExit("podman wrapper render did not include pull policy")
 PY
 
 printf 'PASS: %s\n' "$(basename "$0")"

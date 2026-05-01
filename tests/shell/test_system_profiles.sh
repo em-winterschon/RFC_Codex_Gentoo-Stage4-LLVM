@@ -29,6 +29,7 @@ for profile in \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
   netbox-managed-inventory.yml \
+  netbox-pathb-lab-ipam-plan.yml \
   telemetry-elasticsearch-exporter.yml \
   telemetry-node-exporter-client.yml \
   telemetry-podman-exporter.yml \

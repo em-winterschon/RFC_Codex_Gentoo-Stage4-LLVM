@@ -132,6 +132,13 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Corrected the live container-services status to show `ntfy` as blocked by the
   stalled upstream pull after redeploy, while `nginx`, `haproxy`, and
   `rsyslog-collector` remain validated.
+- Added first-class Podman `pull_policy` support to generated service wrappers.
+  Runtime profiles now default package-backed images to `missing`, and the live
+  Path B inventory disables `ntfy` with `pull_policy: never` until a controlled
+  image source exists.
+- Added a read-only `netbox-pathb-lab-ipam-plan.yml` profile that carries the
+  draft Path B, container, OOB, builder-farm, ZeroTier, Proxmox, NetBox, and
+  CCR2004 objects for tomorrow's NetBox import planning.
 
 ## 2026-04-29
 

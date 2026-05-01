@@ -28,6 +28,7 @@ done
 for profile in \
   logging-rsyslog-client.yml \
   netbox-managed-inventory.yml \
+  netbox-pathb-lab-ipam-plan.yml \
   zerotier-managed-access.yml \
   container-rsyslog-collector.yml \
   container-elastic-apm.yml \
@@ -95,6 +96,9 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-coll
 assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/validate_check.yml" 'scripts/service_validator.py'
 assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/main.yml" 'block:'
 assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/main.yml" 'resolved_service_readiness_phase'
+assert_file_contains "${ANSIBLE_ROOT}/roles/netbox_connector/templates/netbox-connector.yml.j2" 'planned_prefixes'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/netbox-pathb-lab-ipam-plan.yml" '10.9.8.0/24'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/netbox-pathb-lab-ipam-plan.yml" 'ccr2004-pcie-routeros'
 assert_file_contains "${ANSIBLE_ROOT}/roles/telemetry_elasticsearch_exporter/tasks/main.yml" '/var/log/elasticsearch_exporter'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-test.yml" 'post_boot'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-test.yml" 'number_of_replicas: 0'

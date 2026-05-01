@@ -14,7 +14,10 @@
           'token': resolved_profile_netbox_connector.token | default(netbox_connector_default_token),
           'validate_certs': resolved_profile_netbox_connector.validate_certs | default(netbox_connector_default_validate_certs),
           'snapshot_enabled': resolved_profile_netbox_connector.snapshot_enabled | default(netbox_connector_default_snapshot_enabled),
-          'snapshot_endpoints': resolved_profile_netbox_connector.snapshot_endpoints | default(netbox_connector_default_snapshot_endpoints)
+          'snapshot_endpoints': resolved_profile_netbox_connector.snapshot_endpoints | default(netbox_connector_default_snapshot_endpoints),
+          'planned_prefixes': resolved_profile_netbox_connector.planned_prefixes | default(netbox_connector_default_planned_prefixes),
+          'planned_ip_addresses': resolved_profile_netbox_connector.planned_ip_addresses | default(netbox_connector_default_planned_ip_addresses),
+          'planned_devices': resolved_profile_netbox_connector.planned_devices | default(netbox_connector_default_planned_devices)
         }
       }}
 

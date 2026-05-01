@@ -18,6 +18,7 @@ assert_file_contains() {
 
 test -f "${MANIFEST}"
 assert_file_contains "${MANIFEST}" 'ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest'
+assert_file_contains "${MANIFEST}" 'runtime_pull_policy: missing'
 assert_file_contains "${MANIFEST}" '^    nginx:'
 assert_file_contains "${MANIFEST}" 'www-servers/nginx'
 assert_file_contains "${MANIFEST}" 'ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae'
@@ -33,5 +34,6 @@ assert_file_contains "${MANIFEST}" 'sha256:2acfd8f06d7aa3a9524a95bade090793543c2
 assert_file_contains "${REPO_ROOT}/container-image-definitions/gentoo-stage5-rsyslog-collector.package.use" 'app-admin/rsyslog elasticsearch'
 assert_file_contains "${MANIFEST}" '^    ntfy:'
 assert_file_contains "${MANIFEST}" 'build_mode: upstream-image'
+assert_file_contains "${MANIFEST}" 'runtime_pull_policy: never'
 
 printf 'PASS: %s\n' "$(basename "$0")"

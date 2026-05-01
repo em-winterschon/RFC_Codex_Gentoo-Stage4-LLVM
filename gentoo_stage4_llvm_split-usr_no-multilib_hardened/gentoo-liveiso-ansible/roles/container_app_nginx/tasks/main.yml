@@ -88,6 +88,7 @@
               'name': 'nginx',
               'description': 'nginx web service',
               'image': container_nginx_profile.image,
+              'pull_policy': container_nginx_profile.pull_policy | default('missing'),
               'network': container_nginx_profile.network | default('apps'),
               'ip_address': container_nginx_profile.ip_address | default(''),
               'published_ports': container_nginx_profile.published_ports | default(['8080:80/tcp']),
