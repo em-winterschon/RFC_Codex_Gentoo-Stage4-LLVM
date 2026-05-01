@@ -126,6 +126,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   fallback when post-outage external image pulls were too slow; `ntfy` remains
   the upstream Docker Hub image path until a package-backed service image is
   added.
+- Added the 2026-04-30 EOD status and Proxmox/NetBox/RouterOS tomorrow action
+  plan, including a draft IPAM model for Path B, service VIPs, container
+  segments, OOB, builder-farm, and ZeroTier follow-up.
+- Corrected the live container-services status to show `ntfy` as blocked by the
+  stalled upstream pull after redeploy, while `nginx`, `haproxy`, and
+  `rsyslog-collector` remain validated.
 
 ## 2026-04-29
 

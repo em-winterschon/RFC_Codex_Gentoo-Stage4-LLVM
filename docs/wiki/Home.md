@@ -50,6 +50,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 
 - [Architecture and Design](Architecture-and-Design)
 - [Workflows](Workflows)
+- [Proxmox NetBox RouterOS Action Plan](Proxmox-NetBox-RouterOS-Action-Plan)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)
@@ -59,6 +60,8 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)
 - [Changelog](Changelog)
+- [EOD Status 2026-04-30](EOD-Status-2026-04-30)
+- [EOD Status 2026-04-29](EOD-Status-2026-04-29)
 - [EOD Status 2026-04-28](EOD-Status-2026-04-28)
 - [Repository Layout](Repository-Layout)
 - [Roadmap and TODO](Roadmap-and-TODO)

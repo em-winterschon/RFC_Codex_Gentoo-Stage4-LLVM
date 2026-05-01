@@ -146,14 +146,14 @@ scripts/watch-vm-serial.sh --vm elasticsearch-test
 
 Live Path B validation on `10.9.8.89` currently confirms:
 
-- `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy` start from generated
-  Podman wrappers.
-- direct nginx ingress on `127.0.0.1:8080` returns HTTP `200`.
-- HAProxy routes default HTTP traffic to nginx and `Host: ntfy.local` traffic
-  to ntfy, both returning HTTP `200`.
-- rsyslog collector receives UDP and TCP messages on port `514`.
-- rsyslog Elasticsearch forwarding is wired to the Path B test VIP
-  `10.9.8.92:9200` for the next Elasticsearch VM validation pass.
+- `rsyslog-collector`, `nginx`, and `haproxy` start from generated Podman
+  wrappers.
+- direct nginx ingress on `10.9.8.89:8080` returns HTTP `200`.
+- HAProxy routes default HTTP traffic to nginx on `10.9.8.89:80`.
+- rsyslog collector receives TCP messages on `10.9.8.89:514`.
+- HAProxy exposes the Elasticsearch test VIP on `10.9.8.92:9200`.
+- `ntfy` is currently stopped because the upstream Docker Hub image pull
+  stalled after the site outage.
 
 Live Elasticsearch validation on `10.9.8.91` currently confirms:
 

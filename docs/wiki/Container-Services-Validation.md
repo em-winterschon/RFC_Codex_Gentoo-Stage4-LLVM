@@ -110,7 +110,6 @@ Validated so far:
 - package transaction advanced into later system and container-host packages
 - Podman runtime validation inside the target chroot:
   - `nginx` container up on `0.0.0.0:8080`
-  - `ntfy` container up on the internal `apps` segment
   - `haproxy` container up on `0.0.0.0:80` and `0.0.0.0:443`
   - `curl -I http://127.0.0.1:8080/` returns `200 OK`
   - `curl -I http://127.0.0.1:80/` returns `200 OK` through haproxy
@@ -137,6 +136,24 @@ Important fixes that made this possible:
   instead of saving and reloading dynamic netavark state
 - app-specific capability overrides for hardened containers:
   - `nginx`: `CHOWN`, `SETGID`, `SETUID`
+
+Post-outage installed-disk redeploy validation:
+
+- VM address:
+  - `10.9.8.89`
+- validated running services:
+  - `container-nginx`
+  - `container-haproxy`
+  - `container-rsyslog-collector`
+- validated ingress:
+  - `10.9.8.89:8080/tcp`
+  - `10.9.8.89:80/tcp`
+  - `10.9.8.89:514/tcp`
+  - `10.9.8.92:9200/tcp`
+- current blocker:
+  - `container-ntfy` is stopped because the upstream Docker Hub image pull
+    stalled after the site outage; replace it with a package-backed Stage5
+    image or controlled archive preload path.
 
 ## Next Validation Goals
 

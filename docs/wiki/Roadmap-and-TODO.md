@@ -56,18 +56,18 @@ Current state:
 - live service state:
   - package-backed `rsyslog-collector`, `nginx`, and `haproxy` containers start
     from generated OpenRC Podman wrappers
-  - upstream-image `ntfy` container starts from the generated wrapper and is
-    reachable through HAProxy with `Host: ntfy.local`
-  - direct nginx ingress on `127.0.0.1:8080` and HAProxy ingress on
-    `127.0.0.1:80` return HTTP `200`
-  - rsyslog UDP/TCP receive on port `514` works; Elasticsearch forwarding is
-    waiting on the real `elastic-vip.example.internal` VIP/DNS target
+  - upstream-image `ntfy` is currently stopped after the Docker Hub pull
+    stalled during the post-outage redeploy
+  - direct nginx ingress on `10.9.8.89:8080` and HAProxy ingress on
+    `10.9.8.89:80` return HTTP `200`
+  - rsyslog TCP receive on `10.9.8.89:514` works
+  - HAProxy Elasticsearch test VIP on `10.9.8.92:9200` reaches the test
+    Elasticsearch backend
 
 Dependency:
 
-- next dependency is standing up the Elasticsearch VIP/cluster path so the
-  rsyslog collector can validate end-to-end forwarding instead of only receive
-  and queue behavior.
+- next dependencies are replacing or preloading the `ntfy` image path and
+  moving Path B routing/IPAM source-of-truth into Proxmox/NetBox/CCR2004.
 
 ## Short-Term Work
 
@@ -84,7 +84,21 @@ Dependency:
 | `ST-009` | completed | Add service-layer build automation | `ST-008` | `run-container-service-layer-build-pathb.sh` can build `nginx`, `haproxy`, and `rsyslog_collector` service images with per-service package lists and binpkg repo IDs. |
 | `ST-010` | completed | Validate package-backed service images | `ST-009` | `nginx`, `haproxy`, and `rsyslog_collector` images built, smoke-tested, published to GHCR, and synced to service binpkg repos. |
 | `ST-011` | completed | Wire package-backed images into runtime profiles | `ST-010` | `vm-container-services` now defaults nginx and HAProxy to the published GHCR Stage5 images; `container-rsyslog-collector` now uses the published GHCR rsyslog image with explicit command, tmpfs, and spool-volume handling. |
-| `ST-012` | completed | Live-validate generated Podman service wrappers on the container-services VM | `ST-011` | `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy` start on `10.9.8.89`; nginx direct, HAProxy-nginx, HAProxy-ntfy, and rsyslog UDP/TCP ingress smoke checks passed. |
+| `ST-012` | completed | Live-validate generated Podman service wrappers on the container-services VM | `ST-011` | Initial chroot/live validation passed for `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy`. Post-outage installed-disk redeploy currently validates `rsyslog-collector`, `nginx`, and `haproxy`; `ntfy` is blocked on upstream image acquisition. |
+| `ST-013` | completed | Validate post-outage installed-disk container-services redeploy | `ST-012` | Host-side checks passed for `10.9.8.89:8080`, `10.9.8.89:80`, `10.9.8.89:514/tcp`, and `10.9.8.92:9200`. |
+| `ST-014` | pending | Replace `ntfy` upstream-image dependency | `ST-013` | Build a package-backed Stage5 image or add a controlled archive preload path so redeploys do not depend on Docker Hub availability. |
+| `ST-015` | pending | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Package-backed GHCR images should use local images when present and avoid repeated external pulls during redeploy cycles. |
+
+## Proxmox, NetBox, And RouterOS
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `PNR-001` | pending | Bootstrap Codex SSH access to Proxmox, NetBox VM, and CCR2004 RouterOS | operator-provided addresses and credentials | Required before Ansible inventory can be validated. |
+| `PNR-002` | planned | Confirm management subnet and NetBox API access | `PNR-001` | Do not write IPAM objects until the exact management prefix is known. |
+| `PNR-003` | planned | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | See `docs/PROXMOX-NETBOX-ROUTEROS-ACTION-PLAN.md`. |
+| `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
+| `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
+| `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |
 
 ## Stage5 Service Tracks
 
