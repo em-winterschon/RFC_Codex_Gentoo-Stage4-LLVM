@@ -40,6 +40,19 @@ infrastructure work. It is intentionally higher level than `git log`.
   builds so the default LLVM/Clang container policy does not leak into an atom
   that currently fails with `ld.lld` and an incompatible `libunwind`.
 
+### Fixed
+
+- Fixed ZFS child-dataset mount ordering during provisioning so target writes
+  under `/usr/local`, `/var/lib`, and `/var/log` land in the mounted child
+  datasets instead of being hidden on first boot.
+- Preserved the provisioning hostid into the target root-on-ZFS install so the
+  installed initramfs does not require a forced import of the freshly created
+  root pool.
+- Fixed container-service nftables generation for Podman published ports that
+  include a bind address, such as `10.9.8.92:9200:9200/tcp`.
+- Fixed nftables Podman forward matching by using `podman*` interface
+  wildcards instead of the iptables-style `podman+` pattern.
+
 ### Validated
 
 - Built and smoke-tested `localhost/gentoo-stage5-nginx:latest` with
@@ -105,6 +118,14 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Confirmed rsyslog collector UDP and TCP ingress on port `514`; forwarding to
   Elasticsearch remains blocked only by the expected placeholder DNS dependency
   for `elastic-vip.example.internal`.
+- Redeployed the Path B `container-services` VM from installed disk after the
+  site outage and validated host-side ingress to `10.9.8.89:8080`,
+  `10.9.8.89:80`, `10.9.8.89:514/tcp`, and the HAProxy Elasticsearch test VIP
+  at `10.9.8.92:9200`.
+- Loaded locally exported service image archives into the VM as a deterministic
+  fallback when post-outage external image pulls were too slow; `ntfy` remains
+  the upstream Docker Hub image path until a package-backed service image is
+  added.
 
 ## 2026-04-29
 

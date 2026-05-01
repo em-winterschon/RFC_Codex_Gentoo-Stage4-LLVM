@@ -1,7 +1,5 @@
 ---
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
-  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
   - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
   - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
@@ -12,32 +10,8 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
   - "{{ playbook_dir }}/../profile-definitions/container-rsyslog-collector.yml"
   - "{{ playbook_dir }}/../profile-definitions/container-haproxy-elasticsearch-test-vip.yml"
-  - "{{ playbook_dir }}/../profile-definitions/container-ipmi-exporter.yml"
-  - "{{ playbook_dir }}/../profile-definitions/container-redfish-exporter.yml"
 
-install_networkmanager: true
-install_openssh: true
 install_hostname: container-services
-
-portage_buildpkg_enabled: true
-portage_usepkg_enabled: true
-portage_getbinpkg_enabled: true
-portage_pkgdir: /var/lib/container-services-ephemeral/binpkgs
-portage_makeopts_jobs: 64
-portage_emerge_jobs: 16
-portage_load_average: 60
-portage_binhost: http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
-portage_emerge_default_opts_extra:
-  - --autounmask=y
-  - --autounmask-backtrack=y
-  - --autounmask-continue=y
-  - --autounmask-unrestricted-atoms=y
-  - --autounmask-use=y
-  - --autounmask-write=y
-portage_binrepos:
-  - name: stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
-    priority: 10
-    sync_uri: http://10.9.8.90:8088/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
 
 profile_cloud_init:
   enabled: true
@@ -54,6 +28,9 @@ profile_local_user_accounts:
     sudo_nopasswd: true
     ssh_authorized_keys: []
 
+profile_container_services:
+  runtime_root: /var/lib/container-services-ephemeral
+
 profile_container_app_profiles:
   ntfy:
     enabled: true
@@ -61,13 +38,6 @@ profile_container_app_profiles:
     enabled: true
   haproxy:
     enabled: true
-  ipmi_exporter:
-    enabled: true
-  redfish_exporter:
-    enabled: true
-
-profile_container_services:
-  runtime_root: /var/lib/container-services-ephemeral
 
 profile_memory_storage:
   enabled: true
@@ -92,7 +62,7 @@ profile_site_security_profile:
   ipam:
     source: flat-file-json
     flat_file_json:
-      site: example-lab
+      site: pathb-lab
       networks:
         apps:
           gateway: 10.77.1.1
@@ -106,3 +76,39 @@ profile_rsyslog:
   forward_hostname: log-vip.example.internal
   forward_protocol: tcp
   forward_port: 514
+
+profile_service_readiness:
+  enabled: true
+  checks:
+    - name: container-services-nginx
+      target: 10.9.8.89
+      port: 8080
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5
+    - name: container-services-haproxy-http
+      target: 10.9.8.89
+      port: 80
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5
+    - name: container-services-rsyslog-tcp
+      target: 10.9.8.89
+      port: 514
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5
+    - name: elasticsearch-test-vip-http
+      target: 10.9.8.92
+      port: 9200
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5

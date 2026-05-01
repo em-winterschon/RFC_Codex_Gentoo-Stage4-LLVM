@@ -123,6 +123,17 @@
   register: root_dataset_mount_result
   changed_when: "'mounted' in root_dataset_mount_result.stdout"
 
+- name: Mount target child ZFS datasets after root dataset
+  ansible.builtin.command: "zfs mount -a"
+  changed_when: false
+
+- name: Preserve provisioning hostid for target root-on-ZFS imports
+  ansible.builtin.copy:
+    src: /etc/hostid
+    dest: "{{ install_target_root }}/etc/hostid"
+    remote_src: true
+    mode: '0644'
+
 - name: Mount boot dataset for split boot/root ZFS
   ansible.builtin.shell: |
     set -euo pipefail

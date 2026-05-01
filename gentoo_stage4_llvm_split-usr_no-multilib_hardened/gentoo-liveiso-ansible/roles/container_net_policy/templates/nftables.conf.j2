@@ -25,7 +25,7 @@ table inet filter {
 {% set published_fields = published_port.split('/') %}
 {% set proto = published_fields[1] if published_fields|length > 1 else 'tcp' %}
 {% set port_map = published_fields[0].split(':') %}
-{% set host_port = port_map[0] %}
+{% set host_port = port_map[-2] if port_map|length > 2 else port_map[0] %}
     {{ proto }} dport {{ host_port }} accept
 {% endfor %}
 {% endfor %}
@@ -35,8 +35,8 @@ table inet filter {
     type filter hook forward priority 0;
     policy {{ resolved_site_security_profile_local.firewall.default_policy_forward | default('drop') }};
     ct state established,related accept
-    iifname "podman+" accept
-    oifname "podman+" accept
+    iifname "podman*" accept
+    oifname "podman*" accept
   }
 
   chain output {

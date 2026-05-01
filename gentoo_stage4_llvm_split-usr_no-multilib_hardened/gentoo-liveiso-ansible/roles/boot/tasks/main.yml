@@ -79,7 +79,19 @@
 - name: Resolve installed kernel version for boot artifact generation
   ansible.builtin.shell: |
     set -euo pipefail
-    {{ liveiso_work_dir }}/chroot-runner.sh 'ls -1 /usr/lib/modules | sort -V | tail -n1'
+    kernel_version="$(
+      find "{{ install_target_root }}/usr/lib/modules" \
+        -mindepth 2 \
+        -maxdepth 2 \
+        \( -type f -o -xtype f \) \
+        -name vmlinuz \
+        -printf '%h\n' |
+      xargs -r -n1 basename |
+      sort -V |
+      tail -n1
+    )"
+    test -n "${kernel_version}"
+    printf '%s\n' "${kernel_version}"
   args:
     executable: /bin/bash
   register: boot_kernel_version
@@ -109,6 +121,36 @@
     {{ 'zgenhostid -f' | quote }}
   args:
     creates: "{{ install_target_root }}/etc/hostid"
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Check whether ZFS module exists for the selected target kernel
+  ansible.builtin.stat:
+    path: "{{ install_target_root }}/usr/lib/modules/{{ boot_kernel_version.stdout | trim }}/extra/zfs.ko"
+  register: boot_target_zfs_module
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Rebuild ZFS kernel module against the selected target kernel when needed
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ 'KERNEL_DIR=/usr/src/linux emerge --oneshot --usepkg-exclude sys-fs/zfs-kmod sys-fs/zfs-kmod' | quote }}
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - not (boot_target_zfs_module.stat.exists | default(false))
+
+- name: Recheck ZFS module for the selected target kernel
+  ansible.builtin.stat:
+    path: "{{ install_target_root }}/usr/lib/modules/{{ boot_kernel_version.stdout | trim }}/extra/zfs.ko"
+  register: boot_target_zfs_module_recheck
+  when: boot_strategy == 'zfsbootmenu'
+
+- name: Assert selected target kernel has a ZFS module
+  ansible.builtin.assert:
+    that:
+      - boot_target_zfs_module_recheck.stat.exists | default(false)
+    fail_msg: >-
+      ZFS module is missing for {{ boot_kernel_version.stdout | trim }} after
+      zfs-kmod rebuild. Refusing to generate a root-on-ZFS initramfs that cannot
+      import the root pool.
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Materialize kernel and initramfs into /boot for ZFSBootMenu

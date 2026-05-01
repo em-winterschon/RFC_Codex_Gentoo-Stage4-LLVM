@@ -2,6 +2,9 @@
 gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-observability-metrics-podman-exporter.packages
+  package_accept_keywords_files:
+    40-prometheus-podman-exporter: |
+      app-metrics/prometheus-podman-exporter ~amd64
   telemetry:
     podman_exporter:
       enabled: true

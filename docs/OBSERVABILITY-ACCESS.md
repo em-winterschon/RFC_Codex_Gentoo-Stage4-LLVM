@@ -114,7 +114,8 @@ registered.
 The `container-haproxy-elasticsearch-test-vip` overlay adds a Path B test
 frontend for Elasticsearch:
 
-- host-side VIP command: `ip address replace 10.9.8.92/32 dev eth0`
+- host-side VIP command: resolve the default Path B interface with
+  `ip -o route get 10.9.8.1`, then add `10.9.8.92/32` to that interface
 - Podman published port: `10.9.8.92:9200:9200/tcp`
 - HAProxy frontend: `*:9200`
 - backend: `10.9.8.91:9200`

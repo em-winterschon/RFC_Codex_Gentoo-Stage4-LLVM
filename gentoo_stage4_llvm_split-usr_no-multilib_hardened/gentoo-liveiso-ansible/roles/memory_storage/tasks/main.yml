@@ -13,6 +13,16 @@
         | default(profile_memory_storage_default_mounts)
       }}
 
+- name: Ensure target ZFS datasets are mounted before guest memory storage directories exist
+  ansible.builtin.command: "zfs mount -a"
+  register: guest_memory_storage_zfs_mounts
+  changed_when: false
+  failed_when: guest_memory_storage_zfs_mounts.rc not in [0]
+  when:
+    - guest_memory_storage_enabled
+    - storage_layout is defined
+    - storage_layout in ['single-drive', 'zfs-mirror', 'zfs-boot-root-mirror', 'zraid1', 'zraid2', 'zraid3', 'draid']
+
 - name: Ensure guest memory storage mount directories exist
   ansible.builtin.file:
     path: "{{ install_target_root }}{{ guest_memory_mount.path }}"
