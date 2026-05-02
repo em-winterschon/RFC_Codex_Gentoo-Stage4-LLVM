@@ -20,6 +20,12 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added `scripts/configure-freeradius-freeipa.sh` to configure the FreeRADIUS
   LDAP bridge against FreeIPA, seed central `codex-admin` SSH identity, and run
   a redacted RADIUS authentication validation.
+- Added operational validation playbooks for the new NetBox and identity
+  control-plane state:
+  - `playbooks/identity-controller-validate.yml`
+  - `playbooks/netbox-local-fabric-seed.yml`
+- Added the infrastructure inventory intake checklist for the next
+  cluster/datacenter import pass.
 
 ### Changed
 
@@ -45,6 +51,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 - `svc_identity_ipa01` now has FreeIPA, SSSD, and FreeRADIUS active, with UDP
   listeners on `1812` and `1813`; Proxmox snapshot
   `codex-freeipa-radius-live` captures the validated state.
+- The identity controller validation playbook passed against live VM `1063`
+  with `6` active services, `6` TCP listeners, and `4` UDP listeners.
+- The NetBox fabric seed playbook completed a no-change dry run against live
+  VM `1062` using a private token-file path.
 
 ## 2026-05-01
 

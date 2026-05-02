@@ -8,6 +8,7 @@
 - [Proxmox NetBox RouterOS Action Plan](Proxmox-NetBox-RouterOS-Action-Plan)
 - [Hasslehoff Inventory](Hasslehoff-Inventory)
 - [NetBox Essentials](NetBox-Essentials)
+- [Infrastructure Inventory Intake](Infrastructure-Inventory-Intake)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)

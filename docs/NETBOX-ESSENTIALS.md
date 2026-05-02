@@ -102,3 +102,18 @@ script is intentionally conservative: it creates missing sites, VLANs, prefixes,
 device roles, manufacturers, device types, devices, and management IP addresses
 from `inventories/local-network/group_vars/all/network_fabric.yml`. It does not
 overwrite existing records unless `--update-existing` is passed.
+
+Dry-run through Ansible:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/netbox-local-fabric-seed.yml \
+  -e netbox_seed_token_file=/root/operator-private/netbox/svc-netbox-stage4-admin-token
+```
+
+Apply intentionally by adding:
+
+```bash
+-e netbox_seed_apply=true
+```

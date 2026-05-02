@@ -49,6 +49,8 @@ image, the first live controller is a dedicated Rocky 9 VM on Hasslehoff:
   - `sssd.service`
   - `radiusd.service`
 - recovery snapshot: `codex-freeipa-radius-live`
+- validation playbook:
+  - `playbooks/identity-controller-validate.yml`
 
 Secrets for the controller are generated outside the repo under
 `/root/operator-private/identity/` and are copied to root-only state on the VM.
@@ -59,6 +61,17 @@ The initial live policy includes:
 - `radius-test` as the redacted validation identity, in `network-readonly`
 - `radiusd` LDAP bind account under `cn=sysaccounts,cn=etc`
 - local management RADIUS client scope: `172.16.99.0/24`
+
+Validate the live controller with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/identity-controller-validate.yml
+```
+
+The optional `radtest` path is disabled by default to avoid passing secrets in
+normal operator output. Enable it only with vault-backed variables.
 
 ## Important Constraint
 
