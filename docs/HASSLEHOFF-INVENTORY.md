@@ -61,3 +61,25 @@ By default, snapshots are written outside the repo under:
 ```
 
 Set `LOCAL_NETWORK_SNAPSHOT_ROOT` to override that destination.
+
+Validate the vaulted Proxmox API token with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/proxmox-api-validate.yml
+```
+
+The API playbook marks token-bearing URI tasks `no_log: true` and emits only a
+sanitized version and VM-count summary.
+
+The current token is privilege-separated and requires an explicit token ACL for
+inventory visibility:
+
+```bash
+pveum acl modify / --tokens 'root@pam!cdex-root-localnet' --roles PVEAuditor
+```
+
+Without that ACL, API authentication succeeds but VM inventory endpoints return
+an empty list. With the ACL applied, `proxmox-api-validate.yml` reports Proxmox
+`8.4.13` and `vm_count=3`.

@@ -97,6 +97,8 @@ Current status:
 - Proxmox SSH to `hasslehoff` is validated through the `local-network`
   inventory.
 - Proxmox API token values are encrypted in the local-network Ansible vault.
+- The Proxmox API token has a token-scoped `PVEAuditor` ACL at `/`; without
+  that ACL the token authenticates but returns an empty VM inventory.
 - CRS354 bootstrap credentials are encrypted in the local-network Ansible vault.
 - Hasslehoff repo-safe host facts and observed VM state are tracked in
   `inventories/local-network/host_vars/hasslehoff.yml`.
@@ -108,6 +110,14 @@ Refresh Hasslehoff inventory with:
 scripts/with-ansible-vault-env.sh ansible-playbook \
   -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
   gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/local-network-inventory.yml
+```
+
+Validate the vaulted Proxmox API token with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/proxmox-api-validate.yml
 ```
 
 ## RouterOS Migration Sequence

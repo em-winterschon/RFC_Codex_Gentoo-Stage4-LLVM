@@ -74,3 +74,14 @@ proxmox_observed_vms:
       - rocky
       - sourcebot
       - ephemeral
+
+proxmox_api_access:
+  token_identity: "{{ vault_hasslehoff_proxmox_api_token_id }}"
+  minimum_validated_acl:
+    path: /
+    role: PVEAuditor
+    reason: Required for API-backed VM inventory visibility with privsep tokens.
+  validation:
+    playbook: playbooks/proxmox-api-validate.yml
+    last_validated_at: "2026-05-01T18:49:06-07:00"
+    observed_vm_count: 3

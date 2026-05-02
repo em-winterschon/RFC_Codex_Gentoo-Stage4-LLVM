@@ -23,6 +23,7 @@ hasslehoff_vars="${ANSIBLE_ROOT}/inventories/local-network/host_vars/hasslehoff.
 network_fabric="${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/network_fabric.yml"
 vault_file="${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/vault.yml"
 playbook="${ANSIBLE_ROOT}/playbooks/local-network-inventory.yml"
+proxmox_api_playbook="${ANSIBLE_ROOT}/playbooks/proxmox-api-validate.yml"
 
 assert_file_contains "${inventory}" "hasslehoff:"
 assert_file_contains "${inventory}" "proxmox_api_token_secret: \"{{ vault_hasslehoff_proxmox_api_token_secret }}\""
@@ -45,6 +46,10 @@ assert_file_contains "${playbook}" "Capture local network inventory snapshots"
 assert_file_contains "${playbook}" "pvesh"
 assert_file_contains "${playbook}" "local_network_snapshot_root"
 
+assert_file_contains "${proxmox_api_playbook}" "Validate Proxmox API access"
+assert_file_contains "${proxmox_api_playbook}" "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+assert_file_contains "${proxmox_api_playbook}" "no_log: true"
+
 if command -v ansible-playbook >/dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -f "${tmp_inventory}"' EXIT
@@ -58,6 +63,7 @@ all:
           ansible_connection: local
 EOF
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${proxmox_api_playbook}" >/dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"
