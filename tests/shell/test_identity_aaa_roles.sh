@@ -59,5 +59,9 @@ assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-identity
 
 test -f "${REPO_ROOT}/docs/IDENTITY-AAA.md"
 test -f "${REPO_ROOT}/docs/wiki/Identity-AAA.md"
+test -x "${REPO_ROOT}/scripts/configure-freeradius-freeipa.sh"
+assert_file_contains "${REPO_ROOT}/scripts/configure-freeradius-freeipa.sh" 'codex-admin'
+assert_file_contains "${REPO_ROOT}/scripts/configure-freeradius-freeipa.sh" 'network-readonly'
+assert_file_contains "${REPO_ROOT}/scripts/configure-freeradius-freeipa.sh" 'FreeRADIUS FreeIPA bridge validated'
 
 printf 'PASS: %s\n' "$(basename "$0")"

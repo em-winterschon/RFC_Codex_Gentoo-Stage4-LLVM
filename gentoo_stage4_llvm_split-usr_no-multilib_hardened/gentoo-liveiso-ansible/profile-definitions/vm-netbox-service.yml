@@ -26,6 +26,44 @@ gentoo_profile_definition:
       host: 127.0.0.1
       port: 6379
       database: 0
+  netbox_essentials:
+    enabled: true
+    install_root: /opt/netbox-essentials
+    venv_path: /opt/netbox-essentials/venv
+    source_root: /opt/netbox-essentials/src
+    data_root: /var/lib/netbox-essentials
+    python_packages:
+      - pynetbox
+      - requests
+      - pyyaml
+    repositories:
+      - name: netbox-agent
+        url: https://github.com/Solvik/netbox-agent.git
+        purpose: on-host inventory automation
+      - name: netbox-sync
+        url: https://github.com/bb-Ricardo/netbox-sync.git
+        purpose: Redfish and host inventory synchronization
+      - name: netbox-tools
+        url: https://github.com/allenrobel/netbox-tools.git
+        purpose: operational NetBox tools and Ansible Vault integration helpers
+      - name: devicetype-library
+        url: https://github.com/netbox-community/devicetype-library.git
+        purpose: community device type, module type, and manufacturer definitions
+      - name: Device-Type-Library-Import
+        url: https://github.com/netbox-community/Device-Type-Library-Import.git
+        purpose: automated import tooling for devicetype-library
+    device_type_import:
+      enabled: true
+      vendors:
+        - APC
+        - Arista
+        - Cisco
+        - CyberPower
+        - Eaton
+        - Juniper
+        - MikroTik
+        - Opengear
+      log_path: /var/log/netbox-essentials/device-type-import-essential.log
   openrc_services_enable:
     - postgresql-18
     - redis

@@ -20,6 +20,8 @@
             | default(freeradius_bridge_default_bind_dn),
           'bind_password_file': resolved_profile_freeradius_bridge.bind_password_file
             | default(freeradius_bridge_default_bind_password_file),
+          'bind_password': resolved_profile_freeradius_bridge.bind_password
+            | default(freeradius_bridge_default_bind_password),
           'auth_port': resolved_profile_freeradius_bridge.auth_port
             | default(freeradius_bridge_default_auth_port),
           'acct_port': resolved_profile_freeradius_bridge.acct_port

@@ -35,6 +35,7 @@
       - elasticsearch_cluster
       - kibana_interface
       - netbox_server
+      - netbox_essentials
       - netbox_connector
       - zerotier_access
       - platform_profile

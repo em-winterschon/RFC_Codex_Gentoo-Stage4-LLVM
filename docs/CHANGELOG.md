@@ -3,6 +3,49 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-02
+
+### Added
+
+- Added the `netbox_essentials` role and wired it into the `vm-netbox-service`
+  profile so `pynetbox`, `netbox-agent`, `netbox-sync`, `netbox-tools`,
+  `devicetype-library`, and `Device-Type-Library-Import` are installed before
+  any NetBox write workflows.
+- Added `scripts/netbox_seed_local_network.py` for conservative NetBox seeding
+  from the repo-safe local network fabric inventory.
+- Added `scripts/proxmox-create-freeipa-rocky-vm.sh` and
+  `scripts/bootstrap-freeipa-rocky.sh` to build a dedicated Rocky 9 FreeIPA
+  controller VM when native FreeIPA server packaging is unavailable in the
+  Gentoo image.
+- Added `scripts/configure-freeradius-freeipa.sh` to configure the FreeRADIUS
+  LDAP bridge against FreeIPA, seed central `codex-admin` SSH identity, and run
+  a redacted RADIUS authentication validation.
+
+### Changed
+
+- Added `svc_identity_ipa01` to the local-network inventory as Proxmox VM
+  `1063` at `172.16.99.63`, with FreeIPA realm `RFC1918.HOST` and domain
+  `rfc1918.host`.
+- Updated the Hasslehoff inventory and network fabric model to treat
+  `svc-netbox-stage4` as the active NetBox service and to track the identity
+  controller bootstrap separately.
+
+### Operational Notes
+
+- NetBox essentials are intentionally isolated under `/opt/netbox-essentials`
+  instead of being loaded as in-process NetBox Django plugins.
+- The first device-type import set covers APC, Arista, Cisco, CyberPower,
+  Eaton, Juniper, MikroTik, and Opengear.
+- The local network fabric seed created `42` baseline NetBox objects for the
+  site, VLANs, prefixes, devices, and management IPs.
+- NetBox recovery snapshots now include `codex-netbox-after-essential-import`
+  and `codex-netbox-after-fabric-seed`.
+- FreeIPA bootstrap secrets are stored outside the repo under
+  `/root/operator-private/identity/` and copied to root-only state on the VM.
+- `svc_identity_ipa01` now has FreeIPA, SSSD, and FreeRADIUS active, with UDP
+  listeners on `1812` and `1813`; Proxmox snapshot
+  `codex-freeipa-radius-live` captures the validated state.
+
 ## 2026-05-01
 
 ### Added

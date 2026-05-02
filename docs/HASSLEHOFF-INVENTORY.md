@@ -44,6 +44,7 @@ Summary:
 | `1011` | `ctbsd-rfc99-jailerprime-099099` | stopped-retired | `4` | `16384` | `128` | `freebsd`, `jail-host`, `oci-bsd`; former NetBox FreeBSD jail host |
 | `1012` | `eph-sun99-sourcebot-099229` | stopped | `4` | `16384` | `64` | `linux`, `rocky`, `sourcebot`, `ephemeral` |
 | `1062` | `svc-netbox-stage4` | running | `4` | `16384` | `80` | `gentoo`, `stage4`, `netbox`; replacement NetBox VM |
+| `1063` | `svc-identity-ipa01` | running | `4` | `12288` | `80` | `rocky`, `freeipa`, `radius`, `identity`; central RBAC/AAA candidate |
 
 ## Observed Proxmox Cluster
 
@@ -73,9 +74,12 @@ Current replacement VM path:
 - Target NetBox release: `v4.5.9`
 - Service profile: `vm-netbox-service`
 - Deployment method: native source on Gentoo-managed PostgreSQL, Redis, nginx, pip, and virtualenv
+- Essentials root: `/opt/netbox-essentials`
 - Validated URL: `http://172.16.99.62/api/`
 - Validated services: `postgresql-18`, `redis`, `netbox`, `netbox-rq`, `nginx`, `sshd`
 - Proxmox recovery snapshot: `codex-netbox-stage4-live`
+- Post-essentials snapshot: `codex-netbox-after-essential-import`
+- Post-fabric-seed snapshot: `codex-netbox-after-fabric-seed`
 
 Operational note: NetBox is not packaged in the current Gentoo tree on this
 image. The service profile therefore treats NetBox as a native-source
@@ -89,12 +93,41 @@ Completed deployment sequence:
 4. Initialized Gentoo-managed PostgreSQL `18`, Redis, gunicorn, RQ worker, and nginx under OpenRC.
 5. Generated local root-only NetBox application secret, API pepper, admin password, and bootstrap token files.
 6. Ran migrations, collected static assets, and validated `/api/` from the VM and from the build host.
+7. Installed NetBox essential operational integrations under `/opt/netbox-essentials`.
+8. Started the essential device-type library import for APC, Arista, Cisco, CyberPower, Eaton, Juniper, MikroTik, and Opengear.
+9. Seeded repo-safe local fabric objects into NetBox from `network_fabric.yml`.
 
 Next integration sequence:
 
 1. Move the root-only NetBox secrets into Ansible Vault before codifying repeated deployment.
-2. Add read-only NetBox API validation tasks, then gated write workflows.
+2. Add NetBox-backed inventory lookups to consume the seeded source of truth.
 3. Decide whether `netbox_server` remains native-source or becomes a Podman-backed service after the container-services stack is stable.
+
+## Identity Controller Location
+
+The first centralized RBAC/AAA controller is Proxmox VM `1063`,
+`svc-identity-ipa01`, on `hasslehoff`.
+
+Current controller path:
+
+- Management address: `172.16.99.63/24`
+- Proxmox parent: `hasslehoff`
+- Proxmox VMID: `1063`
+- Base image: Rocky 9 GenericCloud
+- Disk: `80G`
+- Hostname: `ipa01.rfc1918.host`
+- Realm: `RFC1918.HOST`
+- Domain: `rfc1918.host`
+- Validated services: `ipa`, `dirsrv`, `krb5kdc`, `httpd`, `sssd`, `radiusd`
+- RADIUS listeners: UDP `1812` and `1813`
+- Recovery snapshot: `codex-freeipa-radius-live`
+- Bootstrap scripts:
+  - `scripts/proxmox-create-freeipa-rocky-vm.sh`
+  - `scripts/bootstrap-freeipa-rocky.sh`
+  - `scripts/configure-freeradius-freeipa.sh`
+
+This is the pragmatic controller path until a repeatable native Gentoo FreeIPA
+server package source exists.
 
 ## Refresh Workflow
 

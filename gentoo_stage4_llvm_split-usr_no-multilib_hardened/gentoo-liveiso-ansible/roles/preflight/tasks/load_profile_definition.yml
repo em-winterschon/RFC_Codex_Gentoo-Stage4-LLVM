@@ -211,6 +211,14 @@
             recursive=True
           )
       }}
+    resolved_profile_netbox_essentials: >-
+      {{
+        resolved_profile_netbox_essentials
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.netbox_essentials | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_zerotier: >-
       {{
         resolved_profile_zerotier

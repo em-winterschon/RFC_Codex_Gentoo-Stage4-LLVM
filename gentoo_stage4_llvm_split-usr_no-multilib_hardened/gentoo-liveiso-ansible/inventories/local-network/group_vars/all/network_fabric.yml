@@ -42,14 +42,31 @@ network_fabric_devices:
     hypervisor: hasslehoff
     proxmox_vmid: 1062
     runtime: gentoo-stage4-vm
-    status: provisioning
+    status: active
     management_ip: 172.16.99.62
     api_url: http://172.16.99.62
     target_version: 4.5.9
     notes:
       - Stage4 Gentoo VM imported from the populated LLVM OpenRC QCOW image.
       - VM disk was expanded to 80 GiB before NetBox dependency bootstrap.
-      - API validation should be rerun after native NetBox deployment completes.
+      - NetBox API validation passes with the root-only bootstrap token.
+      - Essential NetBox operational integrations are installed under /opt/netbox-essentials.
+      - Repo-safe local fabric seed created baseline site, VLAN, prefix, device, and management IP records.
+  svc_identity_ipa01:
+    role: identity-controller
+    hypervisor: hasslehoff
+    proxmox_vmid: 1063
+    runtime: rocky-freeipa-vm
+    status: active
+    management_ip: 172.16.99.63
+    fqdn: ipa01.rfc1918.host
+    realm: RFC1918.HOST
+    domain: rfc1918.host
+    notes:
+      - Rocky 9 FreeIPA controller candidate for centralized RBAC and AAA.
+      - FreeRADIUS bridge is co-located initially for switch, router, firewall, WAP, and VPN AAA.
+      - DNS remains external/static until RouterOS or NetBox-backed DNS is normalized.
+      - FreeIPA, SSSD, and FreeRADIUS are validated; recovery snapshot is codex-freeipa-radius-live.
 
 network_fabric_links:
   - endpoint_a:

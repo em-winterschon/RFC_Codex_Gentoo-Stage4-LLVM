@@ -93,10 +93,11 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `PNR-001` | active | Bootstrap Codex SSH access to Proxmox, NetBox jail host, and CCR2004 RouterOS | operator-provided addresses and credentials | Proxmox SSH/API token and CRS354 vaulting are complete; Hasslehoff inventory validates through Ansible. NetBox API root is reachable at `172.16.99.62`; NetBox token and CCR2004 auth remain next. |
-| `PNR-002` | active | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; the old FreeBSD jail NetBox path is retired, and replacement Stage4 VM `1062` is booted at `172.16.99.62`. NetBox API validation waits for native service deployment. |
-| `PNR-003` | scaffolded | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | Read-only planning profile exists at `profile-definitions/netbox-pathb-lab-ipam-plan.yml`; live NetBox writes still wait for confirmed management prefix and API token. |
-| `PNR-007` | active | Deploy NetBox `v4.5.9` on Stage4 VM `1062` | `PNR-002` | Gentoo dependency bootstrap is running on `svc-netbox-stage4`; VM disk was expanded to `80G` after the imported `24G` base image constrained `/var/tmp`. |
+| `PNR-001` | active | Bootstrap Codex SSH access to Proxmox, NetBox jail host, and CCR2004 RouterOS | operator-provided addresses and credentials | Proxmox SSH/API token and CRS354 vaulting are complete; Hasslehoff inventory validates through Ansible. NetBox API root is reachable at `172.16.99.62`; CCR2004 auth remains next. |
+| `PNR-002` | completed | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; replacement Stage4 VM `1062` serves NetBox `v4.5.9` at `172.16.99.62`. |
+| `PNR-003` | completed | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-008` | `scripts/netbox_seed_local_network.py` created `42` conservative fabric objects from the local network fabric inventory. |
+| `PNR-007` | completed | Deploy NetBox `v4.5.9` on Stage4 VM `1062` | `PNR-002` | NetBox is live under OpenRC with PostgreSQL, Redis, gunicorn, RQ worker, nginx, and API token validation. |
+| `PNR-008` | completed | Install essential NetBox operational integrations before writes | `PNR-007` | `pynetbox`, `netbox-agent`, `netbox-sync`, `netbox-tools`, `devicetype-library`, and `Device-Type-Library-Import` are isolated under `/opt/netbox-essentials`; the initial device-type import loaded `1924` device types. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |
@@ -116,10 +117,10 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `AAA-001` | scaffolded | Validate FreeIPA server/client roles on fresh VMs | basic VM provisioning stable | Keep SSSD client behavior compatible with Gentoo/OpenRC. |
-| `AAA-002` | scaffolded | Validate FreeRADIUS against LDAP/FreeIPA backend | `AAA-001` | Required for switches, WAPs, routers, and firewalls. |
+| `AAA-001` | completed | Validate FreeIPA server/client roles on fresh VMs | basic VM provisioning stable | Rocky 9 controller VM `1063` / `svc_identity_ipa01` is live at `172.16.99.63`; FreeIPA, SSSD, and central SSH key identity are validated. |
+| `AAA-002` | completed | Validate FreeRADIUS against LDAP/FreeIPA backend | `AAA-001` | FreeRADIUS LDAP bind and `radtest` validation passed; UDP `1812`/`1813` are listening. |
 | `AAA-003` | pending | Define optional TACACS+ bridge | `AAA-002` | Only needed for Cisco devices if RADIUS is insufficient. |
-| `AAA-004` | pending | Map RBAC policy to SSH keys, VPN users, switches, smartcards | `AAA-001` | Use domain policy as the source of truth. |
+| `AAA-004` | active | Map RBAC policy to SSH keys, VPN users, switches, smartcards | `AAA-001` | Initial `codex-admin`, `linux-admin`, `network-readonly`, and RADIUS validation mappings exist; next step is enrolling real devices and hosts. |
 
 ### Observability, Logs, And Telemetry
 

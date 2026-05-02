@@ -26,6 +26,40 @@ New policy data:
 
 The scaffold is intentionally opt-in. Existing install flows do not become domain-bound unless a host profile includes the identity overlays.
 
+## Live Bootstrap
+
+Because native FreeIPA server packaging is not available in the current Gentoo
+image, the first live controller is a dedicated Rocky 9 VM on Hasslehoff:
+
+- inventory host: `svc_identity_ipa01`
+- Proxmox VMID: `1063`
+- management address: `172.16.99.63/24`
+- hostname: `ipa01.rfc1918.host`
+- realm: `RFC1918.HOST`
+- domain: `rfc1918.host`
+- bootstrap scripts:
+  - `scripts/proxmox-create-freeipa-rocky-vm.sh`
+  - `scripts/bootstrap-freeipa-rocky.sh`
+  - `scripts/configure-freeradius-freeipa.sh`
+- validated services:
+  - `ipa.service`
+  - `dirsrv@RFC1918-HOST.service`
+  - `krb5kdc.service`
+  - `httpd.service`
+  - `sssd.service`
+  - `radiusd.service`
+- recovery snapshot: `codex-freeipa-radius-live`
+
+Secrets for the controller are generated outside the repo under
+`/root/operator-private/identity/` and are copied to root-only state on the VM.
+
+The initial live policy includes:
+
+- `codex-admin` as the central non-root SSH identity, in `linux-admin`
+- `radius-test` as the redacted validation identity, in `network-readonly`
+- `radiusd` LDAP bind account under `cn=sysaccounts,cn=etc`
+- local management RADIUS client scope: `172.16.99.0/24`
+
 ## Important Constraint
 
 The current local Gentoo tree used by this repo exposes the directory, Kerberos, SSSD, and FreeRADIUS primitives, but it does **not** currently expose a native `FreeIPA` server package. Because of that:
@@ -80,8 +114,8 @@ This keeps group and role naming stable while allowing vendor-specific RADIUS re
 
 ## Next Steps
 
-1. Introduce the selected FreeIPA server package source through an overlay or external packaging path.
-2. Validate one `vm-identity-controller` install end to end.
-3. Enroll the Jenkins controller as the first `aaa-domain-client`.
-4. Enroll one builder-farm node.
-5. Validate `radiusd` against one switch or router before widening device rollout.
+1. Move identity controller secrets into Ansible Vault and replace live helper scripts with role-driven operations.
+2. Enroll the Jenkins controller as the first `aaa-domain-client`.
+3. Enroll one builder-farm node.
+4. Validate network AAA against one switch or router before widening device rollout.
+5. Decide whether TACACS+ is needed for Cisco device coverage.

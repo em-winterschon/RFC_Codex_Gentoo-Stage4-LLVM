@@ -86,6 +86,7 @@
     resolved_profile_elasticsearch_cluster: "{{ profile_elasticsearch_cluster | default({}) }}"
     resolved_profile_kibana: "{{ profile_kibana | default({}) }}"
     resolved_profile_netbox_connector: "{{ profile_netbox_connector | default({}) }}"
+    resolved_profile_netbox_essentials: "{{ profile_netbox_essentials | default({}) }}"
     resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
     resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
@@ -169,6 +170,11 @@
       {{
         resolved_profile_netbox_connector
         | combine(profile_netbox_connector | default({}), recursive=True)
+      }}
+    resolved_profile_netbox_essentials: >-
+      {{
+        resolved_profile_netbox_essentials
+        | combine(profile_netbox_essentials | default({}), recursive=True)
       }}
     resolved_profile_zerotier: >-
       {{

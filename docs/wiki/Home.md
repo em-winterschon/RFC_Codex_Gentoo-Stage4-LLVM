@@ -51,6 +51,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Architecture and Design](Architecture-and-Design)
 - [Workflows](Workflows)
 - [Proxmox NetBox RouterOS Action Plan](Proxmox-NetBox-RouterOS-Action-Plan)
+- [NetBox Essentials](NetBox-Essentials)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)

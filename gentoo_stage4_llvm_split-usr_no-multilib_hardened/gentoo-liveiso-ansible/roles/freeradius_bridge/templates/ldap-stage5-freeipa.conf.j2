@@ -2,7 +2,9 @@
 ldap stage5_freeipa {
   server = {{ resolved_freeradius_bridge.ldap_uri | quote }}
   identity = {{ resolved_freeradius_bridge.bind_dn | quote }}
-  password = ${readfile:{{ resolved_freeradius_bridge.bind_password_file }}}
+  # FreeRADIUS parses ${...} as a configuration reference here. Render a
+  # vault-backed secret directly into this root/radiusd-readable file.
+  password = {{ resolved_freeradius_bridge.bind_password | default('CHANGE-ME-IN-VAULT') | quote }}
   base_dn = {{ resolved_freeradius_bridge.base_dn | quote }}
   tls {
     require_cert = {{ resolved_freeradius_bridge.tls_require_cert }}

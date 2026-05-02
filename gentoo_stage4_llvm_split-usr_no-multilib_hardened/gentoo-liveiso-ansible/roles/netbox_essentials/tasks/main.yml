@@ -1,0 +1,52 @@
+---
+- name: Resolve NetBox essentials settings
+  ansible.builtin.set_fact:
+    netbox_essentials_enabled: >-
+      {{
+        resolved_profile_netbox_essentials.enabled
+        | default(netbox_essentials_default_enabled)
+        | bool
+      }}
+    resolved_netbox_essentials: >-
+      {{
+        {
+          'install_root': resolved_profile_netbox_essentials.install_root | default(netbox_essentials_default_install_root),
+          'venv_path': resolved_profile_netbox_essentials.venv_path | default(netbox_essentials_default_venv_path),
+          'source_root': resolved_profile_netbox_essentials.source_root | default(netbox_essentials_default_source_root),
+          'data_root': resolved_profile_netbox_essentials.data_root | default(netbox_essentials_default_data_root),
+          'python_packages': resolved_profile_netbox_essentials.python_packages | default(netbox_essentials_default_python_packages),
+          'repositories': resolved_profile_netbox_essentials.repositories | default(netbox_essentials_default_repositories),
+          'device_type_import': resolved_profile_netbox_essentials.device_type_import | default(netbox_essentials_default_device_type_import),
+          'packages': resolved_profile_netbox_essentials.packages | default(netbox_essentials_default_packages)
+        }
+      }}
+
+- name: Add NetBox essentials package atoms to the resolved profile
+  ansible.builtin.set_fact:
+    resolved_profile_package_atoms: >-
+      {{
+        (resolved_profile_package_atoms | default([]) + resolved_netbox_essentials.packages) | unique
+      }}
+  when: netbox_essentials_enabled
+
+- name: Ensure NetBox essentials directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ netbox_essentials_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/stage5-services
+    - /etc/stage5-services/netbox
+    - "{{ resolved_netbox_essentials.install_root }}"
+    - "{{ resolved_netbox_essentials.source_root }}"
+    - "{{ resolved_netbox_essentials.data_root }}"
+  loop_control:
+    loop_var: netbox_essentials_dir
+  when: netbox_essentials_enabled
+
+- name: Render NetBox essentials manifest
+  ansible.builtin.template:
+    src: netbox-essentials.yml.j2
+    dest: "{{ install_target_root }}/etc/stage5-services/netbox/netbox-essentials.yml"
+    mode: '0644'
+  when: netbox_essentials_enabled

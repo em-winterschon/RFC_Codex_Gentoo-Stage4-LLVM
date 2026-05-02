@@ -5,6 +5,7 @@ freeradius_bridge_default_ldap_uri: ldaps://ipa01.example.internal
 freeradius_bridge_default_base_dn: dc=example,dc=internal
 freeradius_bridge_default_bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=example,dc=internal
 freeradius_bridge_default_bind_password_file: /etc/raddb/radiusd-ldap.secret
+freeradius_bridge_default_bind_password: CHANGE-ME-IN-VAULT
 freeradius_bridge_default_auth_port: 1812
 freeradius_bridge_default_acct_port: 1813
 freeradius_bridge_default_listen_addresses:

@@ -92,6 +92,22 @@ proxmox_observed_vms:
       - gentoo
       - stage4
       - netbox
+  - vmid: 1063
+    name: svc-identity-ipa01
+    status: running
+    maxcpu: 4
+    memory_mb: 12288
+    disk_gb: 80
+    service_notes:
+      - Rocky 9 FreeIPA controller candidate for centralized RBAC and AAA.
+      - Static management IP 172.16.99.63/24 on vmbr0.
+      - FreeIPA, SSSD, and FreeRADIUS are validated.
+      - Recovery snapshot codex-freeipa-radius-live was created after RADIUS LDAP bridge validation.
+    tags:
+      - rocky
+      - freeipa
+      - radius
+      - identity
 
 proxmox_api_access:
   token_identity: "{{ vault_hasslehoff_proxmox_api_token_id }}"
