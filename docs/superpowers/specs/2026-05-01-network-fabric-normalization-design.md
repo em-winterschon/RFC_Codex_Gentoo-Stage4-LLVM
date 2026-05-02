@@ -156,9 +156,41 @@ The first normalized VLAN set should be conservative:
 | 1200 | OOB and power management | operator-assigned prefix | UPS/PDU/ATS/OOB devices |
 | 1300 | builder farm | operator-assigned prefix | Atom C3758 distcc/Jenkins workers |
 | 1400 | RoCE-v2 fabric control | operator-assigned prefix | only if L3 control is needed |
+| 1500 | LLM/RAG service control | operator-assigned prefix | Ollama, OpenWebUI, vLLM, SourceBot, API proxy control plane |
+| 1501 | LLM/RAG inference data | operator-assigned prefix | GPU-backed inference, embedding, vector/RAG data path |
 
 NetBox should hold the final VLAN IDs and prefixes before CSS326 or CRS354 are
 converted from optional VLAN behavior to strict trunk/access behavior.
+
+## LLM API And RAG Service Track
+
+The network fabric must reserve room for a follow-on service track that fronts
+multiple LLM providers and local GPU resources.
+
+Known future components:
+
+- Ollama server
+- OpenWebUI
+- vLLM providers
+- SourceBot
+- LLM API proxy that can route traffic across local vLLM providers and external
+  APIs such as OpenAI
+- RAG pipeline services for document ingestion, embedding, retrieval, and
+  provider-aware request routing
+
+Initial network requirements:
+
+- dedicated service-control VLAN and prefix for management/API control traffic
+- separate inference/data VLAN and prefix for GPU/RAG data paths
+- HAProxy VIPs for OpenWebUI, LLM API proxy, vLLM provider pools, embedding
+  endpoints, and SourceBot
+- rsyslog and metrics collection for every API proxy, model runtime, and RAG
+  component
+- NetBox records for provider pools, VIPs, GPU hosts, and service ownership
+
+This is intentionally a next-phase requirement. The current fabric work should
+not block on it, but VLAN/VIP naming and NetBox models must avoid assumptions
+that make the LLM/RAG service layer hard to add later.
 
 ## Observability And Logging
 
@@ -193,6 +225,8 @@ Implementation should add these repo-managed units:
   networking, and ConnectX-5 RoCE reservation.
 - NetBox seed/validation data for devices, interfaces, cables, VLANs, prefixes,
   IPs, and VIPs.
+- LLM/RAG service inventory stubs for future Ollama, OpenWebUI, vLLM, SourceBot,
+  API proxy, provider pool, and VIP definitions.
 
 ## Rollout Sequence
 
