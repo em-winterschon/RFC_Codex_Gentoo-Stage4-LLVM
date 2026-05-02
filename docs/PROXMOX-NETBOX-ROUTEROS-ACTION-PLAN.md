@@ -103,6 +103,9 @@ Current status:
 - Hasslehoff repo-safe host facts and observed VM state are tracked in
   `inventories/local-network/host_vars/hasslehoff.yml`.
 - Private live snapshots are written under `/root/operator-private/`.
+- Proxmox cluster `prx-rfc99-prime` currently sees `hasslehoff` online and
+  `nanoprime` offline; quorum reports false, so HA-sensitive changes should
+  wait until quorum policy is understood.
 
 Refresh Hasslehoff inventory with:
 

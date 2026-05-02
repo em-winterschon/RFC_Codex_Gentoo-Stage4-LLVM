@@ -85,3 +85,23 @@ proxmox_api_access:
     playbook: playbooks/proxmox-api-validate.yml
     last_validated_at: "2026-05-01T18:49:06-07:00"
     observed_vm_count: 3
+
+proxmox_cluster_observed:
+  captured_at: "2026-05-01T18:50:00-07:00"
+  name: prx-rfc99-prime
+  quorate: false
+  nodes:
+    - name: hasslehoff
+      ip: 172.16.99.9
+      nodeid: 1
+      online: true
+      local: true
+      maxcpu: 8
+      maxmem_mb: 64121
+    - name: nanoprime
+      ip: 172.16.99.13
+      nodeid: 2
+      online: false
+      local: false
+      maxcpu: 8
+      maxmem_mb: 7922

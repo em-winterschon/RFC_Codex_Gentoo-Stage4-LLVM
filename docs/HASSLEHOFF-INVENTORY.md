@@ -44,6 +44,19 @@ Summary:
 | `1011` | `ctbsd-rfc99-jailerprime-099099` | stopped | `4` | `16384` | `128` | `freebsd`, `jail-host`, `oci-bsd` |
 | `1012` | `eph-sun99-sourcebot-099229` | stopped | `4` | `16384` | `64` | `linux`, `rocky`, `sourcebot`, `ephemeral` |
 
+## Observed Proxmox Cluster
+
+The cluster reports as `prx-rfc99-prime` with two nodes:
+
+| Node | IP | Status | Notes |
+| --- | --- | --- | --- |
+| `hasslehoff` | `172.16.99.9` | online | Local node; API and SSH validated. |
+| `nanoprime` | `172.16.99.13` | offline | Visible in Proxmox cluster state; not yet added as a managed inventory target. |
+
+The cluster currently reports `quorate=0`, which is expected for a two-node
+cluster when one node is offline. Do not schedule new HA-sensitive VM changes
+until quorum behavior is explicitly addressed.
+
 ## Refresh Workflow
 
 Run the inventory snapshot playbook through the vault wrapper:
