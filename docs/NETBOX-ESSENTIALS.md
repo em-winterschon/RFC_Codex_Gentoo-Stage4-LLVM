@@ -51,6 +51,8 @@ Current service:
   `codex-netbox-after-essential-import`
 - Recovery snapshot after local fabric seed:
   `codex-netbox-after-fabric-seed`
+- Recovery snapshot after structured inventory intake apply:
+  `codex-netbox-after-intake-apply`
 
 The first required import targets:
 
@@ -117,3 +119,37 @@ Apply intentionally by adding:
 ```bash
 -e netbox_seed_apply=true
 ```
+
+## Structured Inventory Intake Workflow
+
+The local fabric now also has a normalized structured intake file:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/local-rfc1918-lab.yml
+```
+
+Validate and dry-run before applying:
+
+```bash
+python3 scripts/validate_netbox_inventory_intake.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites
+
+python3 scripts/netbox_apply_inventory_intake.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites \
+  --api-url http://172.16.99.62
+```
+
+Apply through the token-file path only after reviewing the dry-run plan:
+
+```bash
+python3 scripts/netbox_apply_inventory_intake.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites \
+  --api-url http://172.16.99.62 \
+  --token-file /root/operator-private/netbox/svc-netbox-stage4-admin-token \
+  --apply \
+  --update-existing
+```
+
+The first live structured intake pass created the missing Proxmox and Stage4
+service cluster records plus the `rsyslog-ingest-vip` and `elasticsearch-vip`
+IP records. A second apply pass completed with `0` creates and `0` updates.

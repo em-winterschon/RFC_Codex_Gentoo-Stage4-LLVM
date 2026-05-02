@@ -69,7 +69,9 @@ assert_file_contains "${proxmox_api_playbook}" "PVEAPIToken={{ proxmox_api_token
 assert_file_contains "${proxmox_api_playbook}" "no_log: true"
 
 assert_file_contains "${netbox_api_playbook}" "Validate NetBox API reachability"
-assert_file_contains "${netbox_api_playbook}" "Token {{ netbox_api_token }}"
+assert_file_contains "${netbox_api_playbook}" "Authorization"
+assert_file_contains "${netbox_api_playbook}" "netbox_api_token_file"
+assert_file_contains "${netbox_api_playbook}" "netbox_api_auth_header"
 assert_file_contains "${netbox_api_playbook}" "no_log: true"
 
 if command -v ansible-playbook >/dev/null 2>&1; then

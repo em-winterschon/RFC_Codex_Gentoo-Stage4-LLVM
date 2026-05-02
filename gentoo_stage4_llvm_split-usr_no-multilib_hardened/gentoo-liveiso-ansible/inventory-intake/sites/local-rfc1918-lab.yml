@@ -1,0 +1,199 @@
+---
+inventory_intake_version: 1
+
+datacenters:
+  - name: local-rfc1918-lab
+    slug: local-rfc1918-lab
+    timezone: America/Los_Angeles
+    facility: local-lab
+    management_prefixes:
+      - 172.16.99.0/24
+    access_paths:
+      - local-management-lan
+      - serial-console
+      - future-zerotier-overlay
+    owners:
+      - codex-ops
+
+prefixes:
+  - prefix: 172.16.99.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: management
+    gateway: 172.16.99.1
+    vlan:
+      id: 1
+      name: management-compat
+  - prefix: 172.16.98.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: proxmox-sdn-lab
+    vlan:
+      id: 98
+      name: proxmox-sdn-lab
+  - prefix: 10.9.8.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: pathb-lab-services
+    vlan:
+      id: 1098
+      name: pathb-lab-services
+  - prefix: 10.77.0.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: container-management
+    vlan:
+      id: 1077
+      name: container-management
+  - prefix: 10.77.1.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: container-applications
+    vlan:
+      id: 1078
+      name: container-applications
+
+devices:
+  - name: hasslehoff
+    site: local-rfc1918-lab
+    role: proxmox-hypervisor
+    manufacturer: Generic
+    model: Proxmox-8.4-host
+    status: active
+    management_ip: 172.16.99.9
+    interfaces:
+      - name: vmbr0
+        type: bridge
+        purpose: management
+      - name: bond0
+        type: lag
+        purpose: css326-lacp
+      - name: eno1
+        type: 1gbase-t
+        lag: bond0
+      - name: eno2
+        type: 1gbase-t
+        lag: bond0
+    notes:
+      - Management bridge rides bond0 over CSS326 ge5/ge6.
+      - ConnectX-5 ports are reserved for RoCE-v2 and must not join vmbr0.
+  - name: sw_mgmt_css326
+    site: local-rfc1918-lab
+    role: access-switch
+    manufacturer: MikroTik
+    model: CSS326-24G-2S+
+    status: active
+    management_ip: 172.16.99.6
+    management_protocol: swos-http
+    interfaces:
+      - name: ge4
+        purpose: ccr2004-management
+      - name: ge5
+        lag: hasslehoff-bond0
+      - name: ge6
+        lag: hasslehoff-bond0
+      - name: ge24
+        purpose: crs354-management
+      - name: sfp1
+        purpose: opnsense-management-gateway
+      - name: sfp2
+        purpose: crs354-uplink
+  - name: sw_mgmt_mkcrs354
+    site: local-rfc1918-lab
+    role: distribution-switch
+    manufacturer: MikroTik
+    model: CRS354-48G-4S+2Q+
+    status: active
+    management_ip: 172.16.99.7
+    software_target: RouterOS 7.22.2
+    serial_console: /dev/ttyUSB1
+  - name: rtr_mgmt_ccr2004
+    site: local-rfc1918-lab
+    role: routeros-gateway-candidate
+    manufacturer: MikroTik
+    model: CCR2004-1G-2XS-PCIe
+    status: planned
+    management_ip: 172.16.99.120
+  - name: svc_netbox_stage4
+    site: local-rfc1918-lab
+    role: ipam-dcim
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: active
+    management_ip: 172.16.99.62
+    hypervisor: hasslehoff
+    vmid: 1062
+  - name: svc_identity_ipa01
+    site: local-rfc1918-lab
+    role: identity-controller
+    manufacturer: Rocky
+    model: rocky-freeipa-vm
+    status: active
+    management_ip: 172.16.99.63
+    fqdn: ipa01.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1063
+
+clusters:
+  - name: hasslehoff-proxmox
+    site: local-rfc1918-lab
+    role: proxmox
+    endpoint: https://172.16.99.9:8006
+    members:
+      - hasslehoff
+    storage_pools:
+      - local-lvm
+      - local
+    bridges:
+      - vmbr0
+  - name: local-stage4-services
+    site: local-rfc1918-lab
+    role: stage4-service-vms
+    endpoint: https://172.16.99.9:8006
+    members:
+      - svc_netbox_stage4
+      - svc_identity_ipa01
+
+service_vips:
+  - name: netbox-http
+    site: local-rfc1918-lab
+    address: 172.16.99.62
+    owners:
+      - ipam-dcim
+    listeners:
+      - protocol: http
+        port: 80
+  - name: identity-ldap-radius
+    site: local-rfc1918-lab
+    address: 172.16.99.63
+    owners:
+      - identity-aaa
+    listeners:
+      - protocol: tcp
+        port: 389
+      - protocol: tcp
+        port: 636
+      - protocol: udp
+        port: 1812
+      - protocol: udp
+        port: 1813
+  - name: rsyslog-ingest-vip
+    site: local-rfc1918-lab
+    address: 10.9.8.20
+    owners:
+      - observability
+    listeners:
+      - protocol: tcp
+        port: 514
+      - protocol: udp
+        port: 514
+  - name: elasticsearch-vip
+    site: local-rfc1918-lab
+    address: 10.9.8.21
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 9200
+      - protocol: tcp
+        port: 9300

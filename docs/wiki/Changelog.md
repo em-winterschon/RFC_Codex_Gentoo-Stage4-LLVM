@@ -26,6 +26,13 @@ infrastructure work. It is intentionally higher level than `git log`.
   - `playbooks/netbox-local-fabric-seed.yml`
 - Added the infrastructure inventory intake checklist for the next
   cluster/datacenter import pass.
+- Added structured NetBox inventory intake definitions and dry-run/apply
+  tooling:
+  - `inventory-intake/sites/local-rfc1918-lab.yml`
+  - `scripts/validate_netbox_inventory_intake.py`
+  - `scripts/netbox_apply_inventory_intake.py`
+  - `playbooks/netbox-inventory-intake-validate.yml`
+  - `playbooks/netbox-inventory-intake-apply.yml`
 
 ### Changed
 
@@ -35,6 +42,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Updated the Hasslehoff inventory and network fabric model to treat
   `svc-netbox-stage4` as the active NetBox service and to track the identity
   controller bootstrap separately.
+- Updated `playbooks/netbox-api-validate.yml` to support token-file
+  authentication for NetBox instances that reject anonymous `/api/` access.
 
 ### Operational Notes
 
@@ -55,6 +64,13 @@ infrastructure work. It is intentionally higher level than `git log`.
   with `6` active services, `6` TCP listeners, and `4` UDP listeners.
 - The NetBox fabric seed playbook completed a no-change dry run against live
   VM `1062` using a private token-file path.
+- Structured inventory intake was applied to NetBox VM `1062`; the first live
+  pass created the missing Proxmox/service-cluster records plus rsyslog and
+  Elasticsearch VIP IP records, and the second pass was idempotent with `0`
+  creates and `0` updates.
+- NetBox recovery snapshot `codex-netbox-after-intake-apply` was created after
+  the structured intake apply. Proxmox reported the QEMU guest agent was not
+  running, but storage snapshots for the root disk and EFI disk completed.
 
 ## 2026-05-01
 

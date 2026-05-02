@@ -66,6 +66,61 @@ datacenters, and service domains into NetBox IPAM/DCIM.
 5. Attach interfaces, LAGs, cables, tagged VLANs, and OOB links.
 6. Enable validation playbooks and service readiness tests.
 
+## Structured Intake Files
+
+Repo-safe inventory intake files live under:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/
+```
+
+Validate them locally before using them for NetBox writes:
+
+```bash
+python3 scripts/validate_netbox_inventory_intake.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites
+```
+
+Validate the same contract through Ansible:
+
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/netbox-inventory-intake-validate.yml
+```
+
+Build a NetBox apply plan without touching the API:
+
+```bash
+python3 scripts/netbox_apply_inventory_intake.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites \
+  --api-url http://172.16.99.62
+```
+
+Run the same dry-run through Ansible:
+
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/netbox-inventory-intake-apply.yml
+```
+
+Apply writes only after reviewing the dry-run plan:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/netbox-inventory-intake-apply.yml \
+  -e netbox_inventory_apply=true \
+  -e netbox_inventory_update_existing=true \
+  -e netbox_seed_token_file=/root/operator-private/netbox/svc-netbox-stage4-admin-token
+```
+
+The first supported object groups are `datacenters`, `prefixes`, `devices`,
+`clusters`, and `service_vips`. Keep credentials, device passwords, API tokens,
+and sensitive serial-console values out of these files; store secrets in
+Ansible Vault or operator-private paths.
+
 ## Current Local Baseline
 
 The `local-rfc1918-lab` site has already been seeded from:
@@ -76,3 +131,9 @@ gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/invento
 
 Use `playbooks/netbox-local-fabric-seed.yml` for repeatable dry-run and apply
 operations as the local fabric evolves.
+
+The structured baseline equivalent is:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/local-rfc1918-lab.yml
+```

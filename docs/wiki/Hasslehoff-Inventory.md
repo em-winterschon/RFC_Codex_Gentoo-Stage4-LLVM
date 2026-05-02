@@ -80,6 +80,7 @@ Current replacement VM path:
 - Proxmox recovery snapshot: `codex-netbox-stage4-live`
 - Post-essentials snapshot: `codex-netbox-after-essential-import`
 - Post-fabric-seed snapshot: `codex-netbox-after-fabric-seed`
+- Post-structured-intake snapshot: `codex-netbox-after-intake-apply`
 
 Operational note: NetBox is not packaged in the current Gentoo tree on this
 image. The service profile therefore treats NetBox as a native-source
@@ -96,12 +97,15 @@ Completed deployment sequence:
 7. Installed NetBox essential operational integrations under `/opt/netbox-essentials`.
 8. Started the essential device-type library import for APC, Arista, Cisco, CyberPower, Eaton, Juniper, MikroTik, and Opengear.
 9. Seeded repo-safe local fabric objects into NetBox from `network_fabric.yml`.
+10. Applied normalized structured intake from `inventory-intake/sites/local-rfc1918-lab.yml` and validated an idempotent second pass.
 
 Next integration sequence:
 
 1. Move the root-only NetBox secrets into Ansible Vault before codifying repeated deployment.
 2. Add NetBox-backed inventory lookups to consume the seeded source of truth.
-3. Decide whether `netbox_server` remains native-source or becomes a Podman-backed service after the container-services stack is stable.
+3. Add the next datacenter or cluster as a new structured intake file, validate
+   it, dry-run it, then apply it.
+4. Decide whether `netbox_server` remains native-source or becomes a Podman-backed service after the container-services stack is stable.
 
 ## Identity Controller Location
 

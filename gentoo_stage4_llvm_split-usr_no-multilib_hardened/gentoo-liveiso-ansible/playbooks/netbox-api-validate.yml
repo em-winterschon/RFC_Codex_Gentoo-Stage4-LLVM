@@ -2,31 +2,69 @@
 - name: Validate NetBox API reachability
   hosts: netbox_services
   gather_facts: false
+  vars:
+    netbox_api_token_file: "{{ netbox_seed_token_file | default('') }}"
+    netbox_api_effective_token: "{{ netbox_api_token | default('') }}"
+
+  pre_tasks:
+    - name: Read NetBox API token file when configured
+      ansible.builtin.slurp:
+        src: "{{ netbox_api_token_file }}"
+      delegate_to: localhost
+      register: netbox_api_token_file_content
+      no_log: true
+      when:
+        - netbox_api_effective_token | length == 0
+        - netbox_api_token_file | length > 0
+
+    - name: Resolve NetBox API auth header
+      ansible.builtin.set_fact:
+        netbox_api_effective_token: >-
+          {{
+            netbox_api_effective_token
+            if netbox_api_effective_token | length > 0
+            else ((netbox_api_token_file_content.content | default('') | b64decode).strip())
+          }}
+        netbox_api_auth_header: >-
+          {{
+            {'Authorization': 'Token ' ~ (
+              netbox_api_effective_token
+              if netbox_api_effective_token | length > 0
+              else ((netbox_api_token_file_content.content | default('') | b64decode).strip())
+            )}
+            if (
+              netbox_api_effective_token | length > 0
+              or (netbox_api_token_file_content.content | default('') | length > 0)
+            )
+            else {}
+          }}
+      no_log: true
 
   tasks:
     - name: Query NetBox API root
       ansible.builtin.uri:
         url: "{{ netbox_api_url.rstrip('/') }}/api/"
         method: GET
+        headers: "{{ netbox_api_auth_header }}"
         validate_certs: "{{ netbox_validate_certs | default(true) }}"
         return_content: true
         status_code: 200
       delegate_to: localhost
       register: netbox_api_root_response
+      no_log: "{{ netbox_api_effective_token | length > 0 }}"
 
     - name: Query NetBox status when an API token is configured
       ansible.builtin.uri:
         url: "{{ netbox_api_url.rstrip('/') }}/api/status/"
         method: GET
-        headers:
-          Authorization: "Token {{ netbox_api_token }}"
+        headers: "{{ netbox_api_auth_header }}"
         validate_certs: "{{ netbox_validate_certs | default(true) }}"
         return_content: true
         status_code: 200
       delegate_to: localhost
       register: netbox_api_status_response
       no_log: true
-      when: netbox_api_token | default('') | length > 0
+      when: netbox_api_effective_token | length > 0
 
     - name: Report sanitized NetBox validation summary
       ansible.builtin.debug:
@@ -34,4 +72,4 @@
           NetBox API root validated for {{ inventory_hostname }}
           at {{ netbox_api_url }};
           endpoints={{ netbox_api_root_response.json.keys() | list | sort | length }},
-          token_configured={{ (netbox_api_token | default('') | length > 0) | bool }}.
+          token_configured={{ (netbox_api_effective_token | length > 0) | bool }}.
