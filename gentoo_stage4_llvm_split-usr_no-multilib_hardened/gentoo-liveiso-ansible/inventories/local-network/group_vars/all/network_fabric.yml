@@ -30,25 +30,26 @@ network_fabric_devices:
     management_ip: 172.16.99.120
     model: CCR2004-1G-2XS-PCIe
   ctbsd_rfc99_jailerprime_099099:
-    role: freebsd-jail-host
+    role: retired-freebsd-jail-host
     hypervisor: hasslehoff
     proxmox_vmid: 1011
-    status: running
+    status: stopped-retired
     notes:
-      - Hosts the NetBox service inside a FreeBSD jail.
-      - Boot and jail inventory discovery are required before NetBox API writes.
-  netbox_jail:
+      - Former NetBox jail host.
+      - Superseded by svc_netbox_stage4 after repeated FreeBSD jail path instability.
+  svc_netbox_stage4:
     role: ipam-dcim
-    parent_host: ctbsd_rfc99_jailerprime_099099
-    runtime: freebsd-jail
-    status: api-root-validated
+    hypervisor: hasslehoff
+    proxmox_vmid: 1062
+    runtime: gentoo-stage4-vm
+    status: provisioning
     management_ip: 172.16.99.62
-    api_url: https://172.16.99.62
-    observed_version: 3.6.9
+    api_url: http://172.16.99.62
+    target_version: 4.5.9
     notes:
-      - NetBox is not a standalone Proxmox guest.
-      - Access path is VM 1011 on Hasslehoff, then jail-level discovery.
-      - API root is reachable without token; status and write workflows require a vaulted API token.
+      - Stage4 Gentoo VM imported from the populated LLVM OpenRC QCOW image.
+      - VM disk was expanded to 80 GiB before NetBox dependency bootstrap.
+      - API validation should be rerun after native NetBox deployment completes.
 
 network_fabric_links:
   - endpoint_a:

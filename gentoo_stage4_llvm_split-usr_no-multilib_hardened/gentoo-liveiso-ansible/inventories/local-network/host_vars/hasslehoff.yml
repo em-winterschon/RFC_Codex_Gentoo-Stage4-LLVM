@@ -55,14 +55,13 @@ proxmox_observed_vms:
       - vyos
   - vmid: 1011
     name: ctbsd-rfc99-jailerprime-099099
-    status: running
+    status: stopped
     maxcpu: 4
     memory_mb: 16384
     disk_gb: 128
     service_notes:
-      - FreeBSD jail host for NetBox.
-      - NetBox jail API root discovered at https://172.16.99.62/.
-      - Vault NetBox API token before NetBox write workflows.
+      - Retired FreeBSD jail host path for NetBox.
+      - User directed replacement with a Stage4 Gentoo VM on Hasslehoff.
     tags:
       - freebsd
       - jail-host
@@ -78,6 +77,21 @@ proxmox_observed_vms:
       - rocky
       - sourcebot
       - ephemeral
+  - vmid: 1062
+    name: svc-netbox-stage4
+    status: running
+    maxcpu: 4
+    memory_mb: 16384
+    disk_gb: 80
+    service_notes:
+      - Stage4 Gentoo replacement NetBox VM.
+      - Imported from populated Stage4 QCOW, stamped with static management IP 172.16.99.62/24.
+      - Root filesystem expanded to 80 GiB after the initial 24 GiB image caused Portage scratch-space pressure.
+      - Native NetBox service dependency bootstrap is tracked through /var/log/codex-netbox-bootstrap-deps.log on the guest.
+    tags:
+      - gentoo
+      - stage4
+      - netbox
 
 proxmox_api_access:
   token_identity: "{{ vault_hasslehoff_proxmox_api_token_id }}"
@@ -88,7 +102,7 @@ proxmox_api_access:
   validation:
     playbook: playbooks/proxmox-api-validate.yml
     last_validated_at: "2026-05-01T18:49:06-07:00"
-    observed_vm_count: 3
+    observed_vm_count: 4
 
 proxmox_cluster_observed:
   captured_at: "2026-05-01T18:50:00-07:00"

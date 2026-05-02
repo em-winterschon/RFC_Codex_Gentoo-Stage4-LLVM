@@ -34,6 +34,7 @@
       - freeradius_bridge
       - elasticsearch_cluster
       - kibana_interface
+      - netbox_server
       - netbox_connector
       - zerotier_access
       - platform_profile

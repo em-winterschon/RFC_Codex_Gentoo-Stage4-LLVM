@@ -94,8 +94,9 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `PNR-001` | active | Bootstrap Codex SSH access to Proxmox, NetBox jail host, and CCR2004 RouterOS | operator-provided addresses and credentials | Proxmox SSH/API token and CRS354 vaulting are complete; Hasslehoff inventory validates through Ansible. NetBox API root is reachable at `172.16.99.62`; NetBox token and CCR2004 auth remain next. |
-| `PNR-002` | active | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; NetBox API root is validated, but token-backed status/write access is still pending. |
+| `PNR-002` | active | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; the old FreeBSD jail NetBox path is retired, and replacement Stage4 VM `1062` is booted at `172.16.99.62`. NetBox API validation waits for native service deployment. |
 | `PNR-003` | scaffolded | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | Read-only planning profile exists at `profile-definitions/netbox-pathb-lab-ipam-plan.yml`; live NetBox writes still wait for confirmed management prefix and API token. |
+| `PNR-007` | active | Deploy NetBox `v4.5.9` on Stage4 VM `1062` | `PNR-002` | Gentoo dependency bootstrap is running on `svc-netbox-stage4`; VM disk was expanded to `80G` after the imported `24G` base image constrained `/var/tmp`. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |

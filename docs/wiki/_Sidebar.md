@@ -6,6 +6,7 @@
 - [ITIL Change Control: Path B RouterOS Lab](ITIL-Change-Control-Path-B-RouterOS-Lab)
 - [RouterOS Path B](RouterOS-Path-B)
 - [Proxmox NetBox RouterOS Action Plan](Proxmox-NetBox-RouterOS-Action-Plan)
+- [Hasslehoff Inventory](Hasslehoff-Inventory)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)

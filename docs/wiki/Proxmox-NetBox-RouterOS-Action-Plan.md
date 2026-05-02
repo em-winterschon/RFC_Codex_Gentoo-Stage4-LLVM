@@ -15,9 +15,9 @@ Collect these before changing live networking:
 
 - Proxmox management IP or DNS name
 - Proxmox SSH user and sudo policy
-- NetBox URL
+- NetBox URL for the replacement VM
 - NetBox API token
-- NetBox VM SSH target
+- NetBox Stage4 VM SSH/API access path
 - CCR2004 RouterOS management IP or MAC-neighbor access method
 - RouterOS admin user or dedicated automation user
 - exact management subnet prefix
@@ -30,6 +30,7 @@ Treat this as a draft until the management subnet is confirmed.
 | Purpose | Prefix Or Address | Source |
 | --- | --- | --- |
 | Path B lab | `10.9.8.0/24` | current working lab |
+| Replacement NetBox VM | `172.16.99.62/24` | VM `1062`, `svc-netbox-stage4`, on Hasslehoff |
 | RouterOS upstream WAN | `192.168.1.0/24` | upstream router is `192.168.1.254` |
 | Previous CHR WAN static | `192.168.1.222/24` | current Path B CHR design |
 | Container-services VM | `10.9.8.89/32` | current VM |
@@ -50,7 +51,7 @@ Create or reconcile:
 - devices:
   - Proxmox host
   - CCR2004 RouterOS PCIe card
-  - NetBox VM
+  - NetBox Stage4 VM `1062`
   - current Path B RouterOS CHR VM
   - container-services VM
   - binpkg repository VM
@@ -88,9 +89,47 @@ NetBox connector manifest. It does not write NetBox objects by itself.
 
 1. Generate or reuse the Codex ed25519 public key from this host.
 2. Install the key on Proxmox with passwordless sudo only where needed.
-3. Install the key on the NetBox VM for file/API helper work.
+3. Validate root SSH to the replacement NetBox Stage4 VM.
 4. Create a RouterOS automation user for SSH/API access.
 5. Verify noninteractive SSH before committing inventory entries.
+
+Current status:
+
+- Proxmox SSH to `hasslehoff` is validated through the `local-network`
+  inventory.
+- Proxmox API token values are encrypted in the local-network Ansible vault.
+- The Proxmox API token has a token-scoped `PVEAuditor` ACL at `/`; without
+  that ACL the token authenticates but returns an empty VM inventory.
+- CRS354 bootstrap credentials are encrypted in the local-network Ansible vault.
+- Hasslehoff repo-safe host facts and observed VM state are tracked in
+  `inventories/local-network/host_vars/hasslehoff.yml`.
+- Private live snapshots are written under `/root/operator-private/`.
+- Proxmox cluster `prx-rfc99-prime` currently sees `hasslehoff` online and
+  `nanoprime` offline; quorum reports false, so HA-sensitive changes should
+  wait until quorum policy is understood.
+- The FreeBSD jail NetBox path on VM `1011` is retired.
+- Replacement NetBox runs as standalone VM `1062`, `svc-netbox-stage4`, on
+  `hasslehoff`.
+- The VM is reachable over SSH at `172.16.99.62`; NetBox API validation should
+  be rerun after the native-source service deployment completes.
+- Target NetBox release is `v4.5.9`, backed by Gentoo-managed PostgreSQL,
+  Redis, nginx, pip, and virtualenv.
+
+Refresh Hasslehoff inventory with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/local-network-inventory.yml
+```
+
+Validate the vaulted Proxmox API token with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/proxmox-api-validate.yml
+```
 
 ## RouterOS Migration Sequence
 
@@ -108,9 +147,10 @@ NetBox connector manifest. It does not write NetBox objects by itself.
 
 ## Ansible Work Items
 
-- Add Proxmox inventory skeleton.
+- Add Proxmox inventory skeleton. Completed for `hasslehoff`.
 - Add NetBox inventory source or connector variables.
 - Add RouterOS CCR2004 host variables separate from the QEMU CHR role.
+  Scaffolded as `rtr_mgmt_ccr2004`; live credentials still need operator input.
 - Add a read-only NetBox API validation task before write tasks.
 - Add prefix/address creation tasks guarded by explicit operator variables.
 - Add a RouterOS config export backup task before mutations.

@@ -15,9 +15,9 @@ Collect these before changing live networking:
 
 - Proxmox management IP or DNS name
 - Proxmox SSH user and sudo policy
-- NetBox URL
+- NetBox URL for the replacement VM
 - NetBox API token
-- NetBox FreeBSD jail API URL and host/jail access path
+- NetBox Stage4 VM SSH/API access path
 - CCR2004 RouterOS management IP or MAC-neighbor access method
 - RouterOS admin user or dedicated automation user
 - exact management subnet prefix
@@ -30,6 +30,7 @@ Treat this as a draft until the management subnet is confirmed.
 | Purpose | Prefix Or Address | Source |
 | --- | --- | --- |
 | Path B lab | `10.9.8.0/24` | current working lab |
+| Replacement NetBox VM | `172.16.99.62/24` | VM `1062`, `svc-netbox-stage4`, on Hasslehoff |
 | RouterOS upstream WAN | `192.168.1.0/24` | upstream router is `192.168.1.254` |
 | Previous CHR WAN static | `192.168.1.222/24` | current Path B CHR design |
 | Container-services VM | `10.9.8.89/32` | current VM |
@@ -50,7 +51,7 @@ Create or reconcile:
 - devices:
   - Proxmox host
   - CCR2004 RouterOS PCIe card
-  - NetBox FreeBSD jail inside VM `1011`
+  - NetBox Stage4 VM `1062`
   - current Path B RouterOS CHR VM
   - container-services VM
   - binpkg repository VM
@@ -88,8 +89,7 @@ NetBox connector manifest. It does not write NetBox objects by itself.
 
 1. Generate or reuse the Codex ed25519 public key from this host.
 2. Install the key on Proxmox with passwordless sudo only where needed.
-3. Install or validate access to the FreeBSD jail host VM for NetBox jail
-   discovery and file/API helper work.
+3. Validate root SSH to the replacement NetBox Stage4 VM.
 4. Create a RouterOS automation user for SSH/API access.
 5. Verify noninteractive SSH before committing inventory entries.
 
@@ -107,11 +107,13 @@ Current status:
 - Proxmox cluster `prx-rfc99-prime` currently sees `hasslehoff` online and
   `nanoprime` offline; quorum reports false, so HA-sensitive changes should
   wait until quorum policy is understood.
-- NetBox runs inside a FreeBSD jail hosted by VM `1011`
-  (`ctbsd-rfc99-jailerprime-099099`) on `hasslehoff`; it is not a standalone
-  Proxmox VM.
-- NetBox API root is reachable at `https://172.16.99.62/api/`; token-backed
-  status and write workflows still need a vaulted API token.
+- The FreeBSD jail NetBox path on VM `1011` is retired.
+- Replacement NetBox runs as standalone VM `1062`, `svc-netbox-stage4`, on
+  `hasslehoff`.
+- The VM is reachable over SSH at `172.16.99.62`; NetBox API validation should
+  be rerun after the native-source service deployment completes.
+- Target NetBox release is `v4.5.9`, backed by Gentoo-managed PostgreSQL,
+  Redis, nginx, pip, and virtualenv.
 
 Refresh Hasslehoff inventory with:
 

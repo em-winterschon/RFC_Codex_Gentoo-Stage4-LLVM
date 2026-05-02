@@ -1,0 +1,81 @@
+---
+- name: Resolve NetBox server settings
+  ansible.builtin.set_fact:
+    netbox_server_enabled: >-
+      {{
+        resolved_profile_netbox_server.enabled
+        | default(netbox_server_default_enabled)
+        | bool
+      }}
+    resolved_netbox_server: >-
+      {{
+        {
+          'version': resolved_profile_netbox_server.version | default(netbox_server_default_version),
+          'deployment_method': resolved_profile_netbox_server.deployment_method | default(netbox_server_default_deployment_method),
+          'service_host': resolved_profile_netbox_server.service_host | default(netbox_server_default_service_host),
+          'service_port': resolved_profile_netbox_server.service_port | default(netbox_server_default_service_port),
+          'base_url': resolved_profile_netbox_server.base_url | default(netbox_server_default_base_url),
+          'install_root': resolved_profile_netbox_server.install_root | default(netbox_server_default_install_root),
+          'venv_path': resolved_profile_netbox_server.venv_path | default(netbox_server_default_venv_path),
+          'data_root': resolved_profile_netbox_server.data_root | default(netbox_server_default_data_root),
+          'packages': resolved_profile_netbox_server.packages | default(netbox_server_default_packages),
+          'package_use': resolved_profile_netbox_server.package_use | default(netbox_server_default_package_use),
+          'openrc_services': resolved_profile_netbox_server.openrc_services | default(netbox_server_default_openrc_services),
+          'database': resolved_profile_netbox_server.database | default(netbox_server_default_database),
+          'redis': resolved_profile_netbox_server.redis | default(netbox_server_default_redis)
+        }
+      }}
+
+- name: Add NetBox package atoms to the resolved profile
+  ansible.builtin.set_fact:
+    resolved_profile_package_atoms: >-
+      {{
+        (resolved_profile_package_atoms | default([]) + resolved_netbox_server.packages) | unique
+      }}
+  when: netbox_server_enabled
+
+- name: Add NetBox OpenRC services to the resolved profile
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + resolved_netbox_server.openrc_services
+        ) | unique
+      }}
+  when: netbox_server_enabled
+
+- name: Ensure NetBox Portage package.use directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.use"
+    state: directory
+    mode: '0755'
+  when: netbox_server_enabled
+
+- name: Render NetBox Portage package.use requirements
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.use/40-netbox-service"
+    mode: '0644'
+    content: "{{ resolved_netbox_server.package_use | join('\n') }}\n"
+  when: netbox_server_enabled
+
+- name: Ensure NetBox service directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ netbox_server_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/stage5-services
+    - /etc/stage5-services/netbox
+    - "{{ resolved_netbox_server.install_root }}"
+    - "{{ resolved_netbox_server.data_root }}"
+  loop_control:
+    loop_var: netbox_server_dir
+  when: netbox_server_enabled
+
+- name: Render NetBox service manifest
+  ansible.builtin.template:
+    src: netbox-service.yml.j2
+    dest: "{{ install_target_root }}/etc/stage5-services/netbox/service.yml"
+    mode: '0644'
+  when: netbox_server_enabled

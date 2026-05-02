@@ -93,9 +93,10 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `PNR-001` | pending | Bootstrap Codex SSH access to Proxmox, NetBox VM, and CCR2004 RouterOS | operator-provided addresses and credentials | Required before Ansible inventory can be validated. |
-| `PNR-002` | planned | Confirm management subnet and NetBox API access | `PNR-001` | Do not write IPAM objects until the exact management prefix is known. |
+| `PNR-001` | active | Bootstrap Codex SSH access to Proxmox, NetBox jail host, and CCR2004 RouterOS | operator-provided addresses and credentials | Proxmox SSH/API token and CRS354 vaulting are complete; Hasslehoff inventory validates through Ansible. NetBox API root is reachable at `172.16.99.62`; NetBox token and CCR2004 auth remain next. |
+| `PNR-002` | active | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; the old FreeBSD jail NetBox path is retired, and replacement Stage4 VM `1062` is booted at `172.16.99.62`. NetBox API validation waits for native service deployment. |
 | `PNR-003` | scaffolded | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | Read-only planning profile exists at `profile-definitions/netbox-pathb-lab-ipam-plan.yml`; live NetBox writes still wait for confirmed management prefix and API token. |
+| `PNR-007` | active | Deploy NetBox `v4.5.9` on Stage4 VM `1062` | `PNR-002` | Gentoo dependency bootstrap is running on `svc-netbox-stage4`; VM disk was expanded to `80G` after the imported `24G` base image constrained `/var/tmp`. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |
@@ -139,6 +140,15 @@ Dependency:
 | `LOG-003` | pending | Validate 3-node Elasticsearch VM profile | VM provisioning stable | Must include load-balanced access path. |
 | `LOG-004` | pending | Validate Kibana VM profile | `LOG-003` | Connect to Elasticsearch VIP. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |
+
+### LLM API And RAG Services
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `LLM-001` | planned | Reserve VLAN, VIP, and NetBox model space for LLM/RAG service traffic | network fabric source of truth | Track Ollama, OpenWebUI, vLLM, SourceBot, API proxy, provider pools, GPU hosts, and RAG data paths without blocking current fabric work. |
+| `LLM-002` | pending | Scaffold LLM API proxy service role | `LLM-001`, container-services stable | Proxy must route across local vLLM providers and external APIs such as OpenAI. |
+| `LLM-003` | pending | Scaffold OpenWebUI and Ollama service definitions | `LLM-001`, GPU service inventory access | Operator already has separate deployment automation; import only after Codex access is available. |
+| `LLM-004` | pending | Scaffold RAG ingestion, embedding, and retrieval pipeline roles | `LLM-002`, `LLM-003` | Keep metrics, logs, provider routing, and service VIPs explicit. |
 
 ## Medium-Term Work
 

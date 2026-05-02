@@ -3,6 +3,25 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-01
+
+### Added
+
+- Added the `vm-netbox-service` Stage5 profile and `netbox_server` role scaffold
+  for native-source NetBox `v4.5.9` deployment on Gentoo-managed PostgreSQL,
+  Redis, nginx, pip, and virtualenv.
+
+### Changed
+
+- Retired the Hasslehoff FreeBSD jail path for NetBox and moved the active
+  inventory target to Stage4 Gentoo VM `svc-netbox-stage4` at `172.16.99.62`.
+
+### Operational Notes
+
+- The replacement NetBox VM was imported from the populated Stage4 QCOW image,
+  then resized from a `24G` root disk to an `80G` root filesystem before
+  continuing Portage work.
+
 ## 2026-04-30
 
 ### Added

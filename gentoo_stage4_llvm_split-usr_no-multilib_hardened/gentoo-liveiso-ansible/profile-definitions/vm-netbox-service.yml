@@ -1,0 +1,44 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-netbox-service
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-netbox-service.packages
+  package_use_files:
+    40-netbox-service: |
+      app-misc/mime-types nginx
+      dev-libs/jemalloc stats
+  netbox_server:
+    enabled: true
+    version: v4.5.9
+    deployment_method: native-source
+    service_host: 172.16.99.62
+    service_port: 8000
+    base_url: http://172.16.99.62
+    install_root: /opt/netbox
+    venv_path: /opt/netbox/venv
+    data_root: /var/lib/netbox
+    database:
+      name: netbox
+      user: netbox
+      host: 127.0.0.1
+      port: 5432
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+  openrc_services_enable:
+    - postgresql-18
+    - redis
+    - nginx
+  rsyslog:
+    enabled: true
+    forward_enabled: false
+  haproxy_service_types:
+    - name: netbox-http
+      bind: "*:8000"
+      mode: http
+      backend_name: be_netbox_http
+      servers:
+        - name: netbox-local
+          address: 127.0.0.1
+          port: 8000
