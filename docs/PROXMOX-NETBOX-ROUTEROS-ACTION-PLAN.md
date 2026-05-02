@@ -17,7 +17,7 @@ Collect these before changing live networking:
 - Proxmox SSH user and sudo policy
 - NetBox URL
 - NetBox API token
-- NetBox VM SSH target
+- NetBox FreeBSD jail API URL and host/jail access path
 - CCR2004 RouterOS management IP or MAC-neighbor access method
 - RouterOS admin user or dedicated automation user
 - exact management subnet prefix
@@ -50,7 +50,7 @@ Create or reconcile:
 - devices:
   - Proxmox host
   - CCR2004 RouterOS PCIe card
-  - NetBox VM
+  - NetBox FreeBSD jail inside VM `1011`
   - current Path B RouterOS CHR VM
   - container-services VM
   - binpkg repository VM
@@ -88,7 +88,8 @@ NetBox connector manifest. It does not write NetBox objects by itself.
 
 1. Generate or reuse the Codex ed25519 public key from this host.
 2. Install the key on Proxmox with passwordless sudo only where needed.
-3. Install the key on the NetBox VM for file/API helper work.
+3. Install or validate access to the FreeBSD jail host VM for NetBox jail
+   discovery and file/API helper work.
 4. Create a RouterOS automation user for SSH/API access.
 5. Verify noninteractive SSH before committing inventory entries.
 
@@ -106,6 +107,11 @@ Current status:
 - Proxmox cluster `prx-rfc99-prime` currently sees `hasslehoff` online and
   `nanoprime` offline; quorum reports false, so HA-sensitive changes should
   wait until quorum policy is understood.
+- NetBox runs inside a FreeBSD jail hosted by VM `1011`
+  (`ctbsd-rfc99-jailerprime-099099`) on `hasslehoff`; it is not a standalone
+  Proxmox VM.
+- NetBox API root is reachable at `https://172.16.99.62/api/`; token-backed
+  status and write workflows still need a vaulted API token.
 
 Refresh Hasslehoff inventory with:
 

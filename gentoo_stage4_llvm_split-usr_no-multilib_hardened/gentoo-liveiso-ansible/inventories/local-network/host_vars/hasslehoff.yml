@@ -59,6 +59,10 @@ proxmox_observed_vms:
     maxcpu: 4
     memory_mb: 16384
     disk_gb: 128
+    service_notes:
+      - FreeBSD jail host for NetBox.
+      - NetBox jail API root discovered at https://172.16.99.62/.
+      - Vault NetBox API token before NetBox write workflows.
     tags:
       - freebsd
       - jail-host

@@ -29,6 +29,26 @@ network_fabric_devices:
     role: routeros-gateway-candidate
     management_ip: 172.16.99.120
     model: CCR2004-1G-2XS-PCIe
+  ctbsd_rfc99_jailerprime_099099:
+    role: freebsd-jail-host
+    hypervisor: hasslehoff
+    proxmox_vmid: 1011
+    status: stopped
+    notes:
+      - Hosts the NetBox service inside a FreeBSD jail.
+      - Boot and jail inventory discovery are required before NetBox API writes.
+  netbox_jail:
+    role: ipam-dcim
+    parent_host: ctbsd_rfc99_jailerprime_099099
+    runtime: freebsd-jail
+    status: api-root-validated
+    management_ip: 172.16.99.62
+    api_url: https://172.16.99.62
+    observed_version: 3.6.9
+    notes:
+      - NetBox is not a standalone Proxmox guest.
+      - Access path is VM 1011 on Hasslehoff, then jail-level discovery.
+      - API root is reachable without token; status and write workflows require a vaulted API token.
 
 network_fabric_links:
   - endpoint_a:

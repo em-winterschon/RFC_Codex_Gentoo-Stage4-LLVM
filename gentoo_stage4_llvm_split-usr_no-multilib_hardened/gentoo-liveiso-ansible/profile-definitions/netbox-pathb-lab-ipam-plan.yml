@@ -58,10 +58,10 @@ gentoo_profile_definition:
         role: hypervisor
         status: discovered
         notes: Management address and SSH user must be confirmed before inventory activation.
-      - name: netbox-vm
+      - name: netbox-freebsd-jail
         role: ipam-dcim
         status: discovered
-        notes: API URL and token must be provided before snapshot or write operations.
+        notes: Runs inside FreeBSD jail hosted by Proxmox VM 1011; API token must be vaulted before snapshot or write operations.
       - name: ccr2004-pcie-routeros
         role: router
         status: discovered

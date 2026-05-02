@@ -41,7 +41,7 @@ Summary:
 | VMID | Name | Status | CPU | Memory MiB | Disk GiB | Tags |
 | --- | --- | --- | --- | --- | --- | --- |
 | `1001` | `gw-rfc99-vyos-routeprime` | stopped | `2` | `2048` | `0` | `network-appliance`, `router`, `vyos` |
-| `1011` | `ctbsd-rfc99-jailerprime-099099` | stopped | `4` | `16384` | `128` | `freebsd`, `jail-host`, `oci-bsd` |
+| `1011` | `ctbsd-rfc99-jailerprime-099099` | stopped | `4` | `16384` | `128` | `freebsd`, `jail-host`, `oci-bsd`; parent VM for NetBox FreeBSD jail |
 | `1012` | `eph-sun99-sourcebot-099229` | stopped | `4` | `16384` | `64` | `linux`, `rocky`, `sourcebot`, `ephemeral` |
 
 ## Observed Proxmox Cluster
@@ -56,6 +56,28 @@ The cluster reports as `prx-rfc99-prime` with two nodes:
 The cluster currently reports `quorate=0`, which is expected for a two-node
 cluster when one node is offline. Do not schedule new HA-sensitive VM changes
 until quorum behavior is explicitly addressed.
+
+## NetBox Location
+
+NetBox is not a standalone Proxmox VM in the visible inventory. It runs inside a
+FreeBSD jail hosted by VM `1011`, `ctbsd-rfc99-jailerprime-099099`, on
+`hasslehoff`.
+
+Discovered service path:
+
+- NetBox jail/API endpoint: `https://172.16.99.62/`
+- NetBox UI/API observed version: `3.6.9`
+- Parent VM: `1011`, `ctbsd-rfc99-jailerprime-099099`
+- API root is reachable without authentication at `/api/`
+- `/api/status/` and write workflows require an API token
+
+Next discovery sequence:
+
+1. Add the NetBox API token to Ansible Vault as `vault_netbox_api_token`.
+2. Enumerate FreeBSD jails from inside VM `1011` once SSH access is available.
+3. Confirm the NetBox jail name and persistent jail configuration.
+4. Enable read-only NetBox API snapshots.
+5. Enable guarded NetBox write workflows only after token and object model review.
 
 ## Refresh Workflow
 
@@ -96,3 +118,11 @@ pveum acl modify / --tokens 'root@pam!cdex-root-localnet' --roles PVEAuditor
 Without that ACL, API authentication succeeds but VM inventory endpoints return
 an empty list. With the ACL applied, `proxmox-api-validate.yml` reports Proxmox
 `8.4.13` and `vm_count=3`.
+
+Validate NetBox API root reachability with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/netbox-api-validate.yml
+```

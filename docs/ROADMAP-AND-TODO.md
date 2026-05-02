@@ -93,8 +93,8 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `PNR-001` | active | Bootstrap Codex SSH access to Proxmox, NetBox VM, and CCR2004 RouterOS | operator-provided addresses and credentials | Proxmox SSH/API token and CRS354 vaulting are complete; Hasslehoff inventory validates through Ansible. NetBox and CCR2004 auth remain next. |
-| `PNR-002` | active | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; NetBox API endpoint/token still pending before writes. |
+| `PNR-001` | active | Bootstrap Codex SSH access to Proxmox, NetBox jail host, and CCR2004 RouterOS | operator-provided addresses and credentials | Proxmox SSH/API token and CRS354 vaulting are complete; Hasslehoff inventory validates through Ansible. NetBox API root is reachable at `172.16.99.62`; NetBox token and CCR2004 auth remain next. |
+| `PNR-002` | active | Confirm management subnet and NetBox API access | `PNR-001` | Management subnet is tracked as `172.16.99.0/24`; NetBox API root is validated, but token-backed status/write access is still pending. |
 | `PNR-003` | scaffolded | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-002` | Read-only planning profile exists at `profile-definitions/netbox-pathb-lab-ipam-plan.yml`; live NetBox writes still wait for confirmed management prefix and API token. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
