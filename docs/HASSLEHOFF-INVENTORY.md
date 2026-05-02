@@ -73,19 +73,28 @@ Current replacement VM path:
 - Target NetBox release: `v4.5.9`
 - Service profile: `vm-netbox-service`
 - Deployment method: native source on Gentoo-managed PostgreSQL, Redis, nginx, pip, and virtualenv
+- Validated URL: `http://172.16.99.62/api/`
+- Validated services: `postgresql-18`, `redis`, `netbox`, `netbox-rq`, `nginx`, `sshd`
+- Proxmox recovery snapshot: `codex-netbox-stage4-live`
 
 Operational note: NetBox is not packaged in the current Gentoo tree on this
 image. The service profile therefore treats NetBox as a native-source
 application layer on top of Gentoo-managed platform packages.
 
-Next deployment sequence:
+Completed deployment sequence:
 
-1. Finish the dependency bootstrap on `svc-netbox-stage4`.
-2. Initialize PostgreSQL and Redis under OpenRC.
-3. Install NetBox `v4.5.9` from upstream source into `/opt/netbox`.
-4. Generate a vaulted NetBox application secret and bootstrap token.
-5. Run migrations and validate `/api/`.
-6. Enable read-only NetBox API snapshots, then gated write workflows.
+1. Booted `svc-netbox-stage4` from the populated Stage4 image and assigned `172.16.99.62/24`.
+2. Resized the imported root disk to `80G`.
+3. Installed NetBox `v4.5.9` from upstream source into `/opt/netbox`.
+4. Initialized Gentoo-managed PostgreSQL `18`, Redis, gunicorn, RQ worker, and nginx under OpenRC.
+5. Generated local root-only NetBox application secret, API pepper, admin password, and bootstrap token files.
+6. Ran migrations, collected static assets, and validated `/api/` from the VM and from the build host.
+
+Next integration sequence:
+
+1. Move the root-only NetBox secrets into Ansible Vault before codifying repeated deployment.
+2. Add read-only NetBox API validation tasks, then gated write workflows.
+3. Decide whether `netbox_server` remains native-source or becomes a Podman-backed service after the container-services stack is stable.
 
 ## Refresh Workflow
 

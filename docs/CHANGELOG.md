@@ -21,6 +21,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 - The replacement NetBox VM was imported from the populated Stage4 QCOW image,
   then resized from a `24G` root disk to an `80G` root filesystem before
   continuing Portage work.
+- `svc-netbox-stage4` now serves NetBox `v4.5.9` at `http://172.16.99.62/`;
+  `/api/` returns the expected unauthenticated API response through nginx.
+- A Proxmox recovery snapshot named `codex-netbox-stage4-live` was created for
+  VM `1062` after PostgreSQL, Redis, gunicorn, RQ worker, nginx, and SSH were
+  validated under OpenRC.
 
 ## 2026-04-30
 

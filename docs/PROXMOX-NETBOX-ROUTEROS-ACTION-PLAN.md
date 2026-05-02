@@ -110,10 +110,12 @@ Current status:
 - The FreeBSD jail NetBox path on VM `1011` is retired.
 - Replacement NetBox runs as standalone VM `1062`, `svc-netbox-stage4`, on
   `hasslehoff`.
-- The VM is reachable over SSH at `172.16.99.62`; NetBox API validation should
-  be rerun after the native-source service deployment completes.
+- The VM is reachable over SSH at `172.16.99.62`; NetBox API validation passes
+  at `http://172.16.99.62/api/` with the expected unauthenticated API response.
 - Target NetBox release is `v4.5.9`, backed by Gentoo-managed PostgreSQL,
   Redis, nginx, pip, and virtualenv.
+- VM `1062` has recovery snapshot `codex-netbox-stage4-live` after service
+  validation.
 
 Refresh Hasslehoff inventory with:
 
