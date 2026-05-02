@@ -1,8 +1,8 @@
 ---
 local_inventory_observed:
-  captured_at: "2026-05-02T01:41:17Z"
+  captured_at: "2026-05-02T02:03:00Z"
   source: ansible-ssh
-  private_snapshot_path: /root/operator-private/local-network/hasslehoff-20260501-184118
+  private_snapshot_path: /root/operator-private/local-network/hasslehoff-20260501-190301
   fqdn: cls0-rfc99-hasslehoff-099009.rfc1918.host
   os_family: Debian
   os_version: "12.12"
@@ -55,7 +55,7 @@ proxmox_observed_vms:
       - vyos
   - vmid: 1011
     name: ctbsd-rfc99-jailerprime-099099
-    status: stopped
+    status: running
     maxcpu: 4
     memory_mb: 16384
     disk_gb: 128

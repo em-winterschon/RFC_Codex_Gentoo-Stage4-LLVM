@@ -33,7 +33,7 @@ network_fabric_devices:
     role: freebsd-jail-host
     hypervisor: hasslehoff
     proxmox_vmid: 1011
-    status: stopped
+    status: running
     notes:
       - Hosts the NetBox service inside a FreeBSD jail.
       - Boot and jail inventory discovery are required before NetBox API writes.

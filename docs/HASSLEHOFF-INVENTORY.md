@@ -18,11 +18,11 @@ credentials. Repo-safe topology and observed host state live in normal YAML.
 
 ## Observed Host Facts
 
-The first playbook-based Ansible snapshot was captured on `2026-05-02T01:41:17Z` and is
+The current playbook-based Ansible snapshot was captured on `2026-05-02T02:03:00Z` and is
 stored privately under:
 
 ```text
-/root/operator-private/local-network/hasslehoff-20260501-184118
+/root/operator-private/local-network/hasslehoff-20260501-190301
 ```
 
 Summary:
@@ -41,7 +41,7 @@ Summary:
 | VMID | Name | Status | CPU | Memory MiB | Disk GiB | Tags |
 | --- | --- | --- | --- | --- | --- | --- |
 | `1001` | `gw-rfc99-vyos-routeprime` | stopped | `2` | `2048` | `0` | `network-appliance`, `router`, `vyos` |
-| `1011` | `ctbsd-rfc99-jailerprime-099099` | stopped | `4` | `16384` | `128` | `freebsd`, `jail-host`, `oci-bsd`; parent VM for NetBox FreeBSD jail |
+| `1011` | `ctbsd-rfc99-jailerprime-099099` | running | `4` | `16384` | `128` | `freebsd`, `jail-host`, `oci-bsd`; parent VM for NetBox FreeBSD jail |
 | `1012` | `eph-sun99-sourcebot-099229` | stopped | `4` | `16384` | `64` | `linux`, `rocky`, `sourcebot`, `ephemeral` |
 
 ## Observed Proxmox Cluster
