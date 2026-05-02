@@ -1,0 +1,93 @@
+---
+- name: Capture local network inventory snapshots
+  hosts: proxmox_hypervisors
+  gather_facts: true
+  vars:
+    local_network_snapshot_root: "{{ lookup('env', 'LOCAL_NETWORK_SNAPSHOT_ROOT') | default('/root/operator-private/local-network', true) }}"
+
+  tasks:
+    - name: Resolve private snapshot directory once
+      ansible.builtin.set_fact:
+        local_network_snapshot_dir: "{{ local_network_snapshot_root }}/{{ inventory_hostname }}-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+
+    - name: List Proxmox QEMU VMs
+      ansible.builtin.command:
+        argv:
+          - qm
+          - list
+      register: local_network_qm_list
+      changed_when: false
+
+    - name: Read Proxmox VM resources as JSON
+      ansible.builtin.command:
+        argv:
+          - pvesh
+          - get
+          - /cluster/resources
+          - --type
+          - vm
+          - --output-format
+          - json
+      register: local_network_pve_vm_resources
+      changed_when: false
+
+    - name: Capture host link summary
+      ansible.builtin.command:
+        argv:
+          - ip
+          - -brief
+          - link
+      register: local_network_ip_link
+      changed_when: false
+
+    - name: Build repo-safe local network inventory snapshot
+      ansible.builtin.set_fact:
+        local_network_snapshot:
+          captured_at: "{{ ansible_date_time.iso8601 }}"
+          inventory_host: "{{ inventory_hostname }}"
+          fqdn: "{{ ansible_fqdn }}"
+          os:
+            distribution: "{{ ansible_distribution }}"
+            version: "{{ ansible_distribution_version }}"
+            kernel: "{{ ansible_kernel }}"
+          hardware:
+            vcpus: "{{ ansible_processor_vcpus }}"
+            cores: "{{ ansible_processor_cores }}"
+            memory_mb: "{{ ansible_memtotal_mb }}"
+          virtualization:
+            type: "{{ ansible_virtualization_type }}"
+            role: "{{ ansible_virtualization_role }}"
+          interfaces: "{{ ansible_interfaces | sort }}"
+          proxmox_vms: "{{ local_network_pve_vm_resources.stdout | from_json }}"
+
+    - name: Create private local snapshot directory
+      ansible.builtin.file:
+        path: "{{ local_network_snapshot_dir }}"
+        state: directory
+        mode: "0700"
+      delegate_to: localhost
+
+    - name: Write repo-safe JSON inventory snapshot
+      ansible.builtin.copy:
+        dest: "{{ local_network_snapshot_dir }}/inventory-summary.json"
+        content: "{{ local_network_snapshot | to_nice_json }}\n"
+        mode: "0600"
+      delegate_to: localhost
+
+    - name: Write raw qm list snapshot
+      ansible.builtin.copy:
+        dest: "{{ local_network_snapshot_dir }}/qm-list.txt"
+        content: "{{ local_network_qm_list.stdout }}\n"
+        mode: "0600"
+      delegate_to: localhost
+
+    - name: Write raw interface snapshot
+      ansible.builtin.copy:
+        dest: "{{ local_network_snapshot_dir }}/ip-link.txt"
+        content: "{{ local_network_ip_link.stdout }}\n"
+        mode: "0600"
+      delegate_to: localhost
+
+    - name: Report private snapshot path
+      ansible.builtin.debug:
+        msg: "local network inventory snapshot stored at {{ local_network_snapshot_dir }}"

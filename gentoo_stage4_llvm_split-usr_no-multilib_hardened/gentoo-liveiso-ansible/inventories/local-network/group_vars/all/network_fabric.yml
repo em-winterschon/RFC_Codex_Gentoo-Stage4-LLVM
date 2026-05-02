@@ -1,0 +1,132 @@
+---
+network_fabric_site: local-rfc1918-lab
+
+network_fabric_management_prefix: 172.16.99.0/24
+network_fabric_management_gateway: 172.16.99.1
+
+network_fabric_devices:
+  hasslehoff:
+    role: proxmox-hypervisor
+    management_ip: 172.16.99.9
+    management_interface: vmbr0
+    notes:
+      - Proxmox 8.4 host.
+      - Management bridge rides bond0 over CSS326 ge5/ge6.
+      - ConnectX-5 ports are reserved for RoCE-v2 and must not join vmbr0.
+  sw_mgmt_css326:
+    role: access-switch
+    management_ip: 172.16.99.6
+    management_protocol: swos-http
+    model: CSS326-24G-2S+
+  sw_mgmt_mkcrs354:
+    role: distribution-switch
+    management_ip: 172.16.99.7
+    serial_console: /dev/ttyUSB1
+    serial_baud: 115200
+    model: CRS354-48G-4S+2Q+
+    routeros_version_target: 7.22.2
+  rtr_mgmt_ccr2004:
+    role: routeros-gateway-candidate
+    management_ip: 172.16.99.120
+    model: CCR2004-1G-2XS-PCIe
+
+network_fabric_links:
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge4
+    endpoint_b:
+      device: rtr_mgmt_ccr2004
+      interface: management-1gbe
+    purpose: ccr2004-management
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge5
+    endpoint_b:
+      device: hasslehoff
+      interface: eno1
+    purpose: hasslehoff-lacp-member
+    lag: hasslehoff-bond0
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge6
+    endpoint_b:
+      device: hasslehoff
+      interface: eno2
+    purpose: hasslehoff-lacp-member
+    lag: hasslehoff-bond0
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge24
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: ether1
+    purpose: crs354-management
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: sfp1
+    endpoint_b:
+      device: opnsense
+      interface: management-lan
+    purpose: current-management-gateway
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: sfp2
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus2
+    purpose: crs354-uplink
+
+network_fabric_lags:
+  hasslehoff-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge5
+      - ge6
+    host: hasslehoff
+    host_ports:
+      - eno1
+      - eno2
+    validated: true
+
+network_fabric_vlan_plan:
+  - vlan_id: 1
+    name: management-compat
+    prefix: 172.16.99.0/24
+    status: active-transition
+  - vlan_id: 98
+    name: proxmox-sdn-lab
+    prefix: 172.16.98.0/24
+    status: active-local
+  - vlan_id: 1098
+    name: pathb-lab-services
+    prefix: 10.9.8.0/24
+    status: active-chr-backed
+  - vlan_id: 1077
+    name: container-management
+    prefix: 10.77.0.0/24
+    status: planned
+  - vlan_id: 1078
+    name: container-applications
+    prefix: 10.77.1.0/24
+    status: planned
+  - vlan_id: 1200
+    name: oob-power-management
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1300
+    name: builder-farm
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1400
+    name: roce-v2-control
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1500
+    name: llm-rag-service-control
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1501
+    name: llm-rag-inference-data
+    prefix: operator-assigned
+    status: planned

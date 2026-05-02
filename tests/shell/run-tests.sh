@@ -17,6 +17,8 @@ for script in "${shell_scripts[@]}"; do
 done
 
 bash "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
+bash "${SCRIPT_DIR}/test_ansible_vault_tools.sh"
+bash "${SCRIPT_DIR}/test_local_network_inventory.sh"
 bash "${SCRIPT_DIR}/test_ntfy_tools.sh"
 bash "${SCRIPT_DIR}/test_control_flow_tools.sh"
 bash "${SCRIPT_DIR}/test_system_profiles.sh"

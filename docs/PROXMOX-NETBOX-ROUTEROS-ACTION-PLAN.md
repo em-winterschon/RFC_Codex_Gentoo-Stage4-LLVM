@@ -92,6 +92,24 @@ NetBox connector manifest. It does not write NetBox objects by itself.
 4. Create a RouterOS automation user for SSH/API access.
 5. Verify noninteractive SSH before committing inventory entries.
 
+Current status:
+
+- Proxmox SSH to `hasslehoff` is validated through the `local-network`
+  inventory.
+- Proxmox API token values are encrypted in the local-network Ansible vault.
+- CRS354 bootstrap credentials are encrypted in the local-network Ansible vault.
+- Hasslehoff repo-safe host facts and observed VM state are tracked in
+  `inventories/local-network/host_vars/hasslehoff.yml`.
+- Private live snapshots are written under `/root/operator-private/`.
+
+Refresh Hasslehoff inventory with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/local-network-inventory.yml
+```
+
 ## RouterOS Migration Sequence
 
 1. Export the current QEMU RouterOS Path B config and store it in repo docs or
@@ -108,9 +126,10 @@ NetBox connector manifest. It does not write NetBox objects by itself.
 
 ## Ansible Work Items
 
-- Add Proxmox inventory skeleton.
+- Add Proxmox inventory skeleton. Completed for `hasslehoff`.
 - Add NetBox inventory source or connector variables.
 - Add RouterOS CCR2004 host variables separate from the QEMU CHR role.
+  Scaffolded as `rtr_mgmt_ccr2004`; live credentials still need operator input.
 - Add a read-only NetBox API validation task before write tasks.
 - Add prefix/address creation tasks guarded by explicit operator variables.
 - Add a RouterOS config export backup task before mutations.

@@ -1,0 +1,76 @@
+---
+local_inventory_observed:
+  captured_at: "2026-05-02T01:41:17Z"
+  source: ansible-ssh
+  private_snapshot_path: /root/operator-private/local-network/hasslehoff-20260501-184118
+  fqdn: cls0-rfc99-hasslehoff-099009.rfc1918.host
+  os_family: Debian
+  os_version: "12.12"
+  kernel: 6.8.12-14-pve
+  cpu:
+    vcpus: 8
+    cores: 4
+  memory_mb: 64121
+  virtualization:
+    type: kvm
+    role: host
+  interfaces:
+    management_bond:
+      name: bond0
+      state: up
+      members:
+        - eno1
+        - eno2
+      switch: sw_mgmt_css326
+      switch_ports:
+        - ge5
+        - ge6
+    management_bridge:
+      name: vmbr0
+      state: up
+      address_family: management-compat
+    proxmox_sdn:
+      name: sdn0vn0
+      state: up
+      address_family: proxmox-sdn-lab
+    ccr2004_pcie_ports:
+      - enp1s0f0
+      - enp1s0f1
+      - enp1s0f2
+      - enp1s0f3
+    roce_v2_reserved_ports:
+      - enp2s0f0np0
+      - enp2s0f1np1
+
+proxmox_observed_vms:
+  - vmid: 1001
+    name: gw-rfc99-vyos-routeprime
+    status: stopped
+    maxcpu: 2
+    memory_mb: 2048
+    disk_gb: 0
+    tags:
+      - network-appliance
+      - router
+      - vyos
+  - vmid: 1011
+    name: ctbsd-rfc99-jailerprime-099099
+    status: stopped
+    maxcpu: 4
+    memory_mb: 16384
+    disk_gb: 128
+    tags:
+      - freebsd
+      - jail-host
+      - oci-bsd
+  - vmid: 1012
+    name: eph-sun99-sourcebot-099229
+    status: stopped
+    maxcpu: 4
+    memory_mb: 16384
+    disk_gb: 64
+    tags:
+      - linux
+      - rocky
+      - sourcebot
+      - ephemeral
