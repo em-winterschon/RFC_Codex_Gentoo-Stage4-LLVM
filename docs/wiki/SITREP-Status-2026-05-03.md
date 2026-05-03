@@ -33,22 +33,39 @@ Local intake validation passes across all structured site files:
 | clusters | 5 |
 | service VIPs | 4 |
 
-An offline NetBox dry-run apply plan generated `94` planned object operations.
-No live NetBox writes were attempted.
+The live multisite NetBox intake apply completed after taking a pre-apply
+snapshot. The first pass created `21` objects and updated `78`; the second pass
+confirmed idempotence with `0` creates and `0` updates. A post-apply snapshot
+was created after validation.
+
+Post-apply NetBox object counts:
+
+| Object Class | Count |
+| --- | ---: |
+| sites | 5 |
+| devices | 12 |
+| manufacturers | 14 |
+| device types | 1935 |
+| device roles | 11 |
+| prefixes | 24 |
+| IP addresses | 12 |
+| VLANs | 5 |
+| clusters | 5 |
+| cluster types | 5 |
+
+The Hetzner DNS dry-run planner generated `7` RRsets from NetBox `dns_name`
+fields and skipped `5` management IPs that do not yet have DNS names.
 
 ## Live Reachability
 
-Management reachability from this host is still degraded:
+Management reachability from this host recovered:
 
 - `eno1` is up with `172.16.99.108/24`
-- route lookup for `172.16.99.62` uses `eno1`
-- ARP neighbor lookup for `172.16.99.62` is failed
-- ping to `172.16.99.62` fails
-- TCP checks to `172.16.99.62:80`, `172.16.99.9:22`, and
-  `172.16.99.63:1812` time out
+- `172.16.99.9` Hasslehoff is reachable over SSH and Proxmox API
+- `172.16.99.62` NetBox is reachable over SSH, HTTP, and authenticated API
+- `172.16.99.63` FreeIPA is reachable over SSH, HTTP/HTTPS, LDAP, and LDAPS
 
-This blocks live NetBox API validation, Proxmox snapshots through SSH, and live
-NetBox apply. It does not prove the NetBox or FreeIPA guests are down.
+NetBox HTTPS on `443` is not enabled yet.
 
 ## CRS309 Router Status
 
@@ -66,10 +83,9 @@ and must not be imported unattended. Current blockers:
 ## Next Steps
 
 1. Restore `172.16.99.0/24` management L2 reachability from the Codex host.
-2. Validate live NetBox API at `http://172.16.99.62`.
-3. Snapshot NetBox VM `1062` on Hasslehoff.
-4. Review the offline intake dry-run plan and apply with token-file
-   authentication.
-5. Re-run the apply path for idempotence and snapshot NetBox again.
+2. Enable TLS for NetBox or front it through the HAProxy TLS termination path.
+3. Add DNS names for remaining management devices where appropriate.
+4. Review `/tmp/hetzner-dns-plan-from-netbox.json`.
+5. Implement Hetzner DNS apply path with explicit apply/delete gates.
 6. Recover CRS309 admin access through serial/reset.
 7. Execute only the CRS309 management-only bootstrap first.

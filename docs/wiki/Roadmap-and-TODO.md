@@ -98,9 +98,9 @@ Dependency:
 | `PNR-003` | completed | Import draft Path B, VIP, container, OOB, and builder prefixes into NetBox | `PNR-008` | `scripts/netbox_seed_local_network.py` created `42` conservative fabric objects from the local network fabric inventory. |
 | `PNR-007` | completed | Deploy NetBox `v4.5.9` on Stage4 VM `1062` | `PNR-002` | NetBox is live under OpenRC with PostgreSQL, Redis, gunicorn, RQ worker, nginx, and API token validation. |
 | `PNR-008` | completed | Install essential NetBox operational integrations before writes | `PNR-007` | `pynetbox`, `netbox-agent`, `netbox-sync`, `netbox-tools`, `devicetype-library`, and `Device-Type-Library-Import` are isolated under `/opt/netbox-essentials`; the initial device-type import loaded `1924` device types. |
-| `PNR-009` | active | Inventory additional clusters and datacenters into NetBox | `PNR-010` | Local structured intake is live; next work should add one site/cluster at a time and validate with NetBox dry-run/apply playbooks before writing. |
+| `PNR-009` | completed | Inventory additional clusters and datacenters into NetBox | `PNR-010` | RFC99, SUN99, YKS99, and FMT2 structured intake applied live with pre/post snapshots and idempotence validation. |
 | `PNR-010` | completed | Add structured NetBox inventory intake and apply workflow | `PNR-003` | Validator, dry-run/apply script, Ansible wrappers, local baseline file, live apply, idempotence pass, and post-apply snapshot are complete. |
-| `PNR-011` | completed | Convert RFC99/SUN99/FMT2 host/IP/MAC source file into structured NetBox intake | `PNR-010` | `/tmp/rfc99-sun99-host-networking.md` is archived under operator-private storage; sanitized `rfc99`, `sun99`, `yks99`, and `fmt2` intake files validate locally. Live apply remains gated by management reachability. |
+| `PNR-011` | completed | Convert RFC99/SUN99/FMT2 host/IP/MAC source file into structured NetBox intake | `PNR-010` | `/tmp/rfc99-sun99-host-networking.md` is archived under operator-private storage; sanitized `rfc99`, `sun99`, `yks99`, and `fmt2` intake files validate locally and were applied live on 2026-05-03. |
 | `PNR-012` | planned | Replace failed OPNsense path with CRS309 RouterOS after NetBox staging | `PNR-011` | `/tmp/crs309-router-mode-idc.wip.rsc` is destructive; execute only after backup, serial fallback, CRS309 admin recovery, management-only bootstrap, NetBox dry-run/apply, and validation gates. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
@@ -151,7 +151,7 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `DNS-001` | completed | Vault Hetzner Cloud DNS API token groups | Ansible Vault workflow | Imported `rfc1918`, `vernetzen`, and `yukon` token groups into encrypted local-network vault and validated API access without printing token values. |
-| `DNS-002` | scaffolded | Generate Hetzner DNS RRset plans from NetBox | `DNS-001`, NetBox IPAM/DCIM apply | Keep apply disabled and deletion-disabled until NetBox ownership tags and stale-record behavior are explicit. |
+| `DNS-002` | completed | Generate Hetzner DNS RRset plans from NetBox | `DNS-001`, NetBox IPAM/DCIM apply | Dry-run planner generated `7` RRsets from NetBox and skipped `5` unnamed management IPs; apply and delete remain disabled. |
 | `DNS-003` | pending | Apply controlled Hetzner DNS CRUD operations | `DNS-002` | Use reviewable RRset plans and require explicit apply/delete gates. |
 
 ### LLM API And RAG Services

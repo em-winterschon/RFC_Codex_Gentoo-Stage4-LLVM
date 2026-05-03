@@ -22,4 +22,12 @@ dns_hetzner_cloud_token_groups:
     api_token: "{{ vault_hetzner_dns_yukon_api_token | default('') }}"
     zones: "{{ vault_hetzner_dns_yukon_zones | default([]) }}"
 
+dns_hetzner_cloud_zone_groups:
+  - name: rfc1918
+    zones: "{{ vault_hetzner_dns_rfc1918_zones | default([]) }}"
+  - name: vernetzen
+    zones: "{{ vault_hetzner_dns_vernetzen_zones | default([]) }}"
+  - name: yukon
+    zones: "{{ vault_hetzner_dns_yukon_zones | default([]) }}"
+
 dns_hetzner_cloud_managed_rrsets: []

@@ -140,6 +140,13 @@ class NetBoxClient:
             return rows[0]
         return None
 
+    def first_query(self, endpoint: str, query: dict[str, str]) -> dict[str, Any] | None:
+        result = self.request_json("GET", endpoint, query=query)
+        rows = result.get("results", [])
+        if isinstance(rows, list) and rows:
+            return rows[0]
+        return None
+
     def dry_run_object(self, obj: NetBoxObject) -> dict[str, Any]:
         if obj.label not in self._dry_run_objects:
             self._dry_run_objects[obj.label] = {"id": self._next_dry_run_id, **obj.payload}
@@ -225,12 +232,32 @@ def ensure_device_role(client: NetBoxClient, role: str) -> dict[str, Any]:
 
 
 def ensure_device_type(client: NetBoxClient, manufacturer: dict[str, Any], model: str) -> dict[str, Any]:
+    slug = slugify(model)
+    if client.dry_run:
+        return client.ensure(
+            NetBoxObject(
+                "dcim/device-types",
+                "slug",
+                slug,
+                {"manufacturer": manufacturer["id"], "model": model, "slug": slug},
+            )
+        )
+
+    existing = client.first_query(
+        "dcim/device-types",
+        {"manufacturer_id": str(manufacturer["id"]), "model": model},
+    )
+    if existing:
+        label = f"dcim/device-types:{model}"
+        client.existing.append(label)
+        return existing
+
     return client.ensure(
         NetBoxObject(
             "dcim/device-types",
             "slug",
-            slugify(model),
-            {"manufacturer": manufacturer["id"], "model": model, "slug": slugify(model)},
+            slug,
+            {"manufacturer": manufacturer["id"], "model": model, "slug": slug},
         )
     )
 

@@ -17,8 +17,10 @@ infrastructure work. It is intentionally higher level than `git log`.
   management reachability, and CRS309 execution gates.
 - Added Hetzner Cloud DNS token import and validation scaffolding:
   - `scripts/import-hetzner-dns-vault.sh`
+  - `scripts/plan-hetzner-dns-from-netbox.py`
   - `group_vars/all/dns_hetzner_cloud.yml`
   - `playbooks/hetzner-dns-api-validate.yml`
+  - `playbooks/hetzner-dns-plan-from-netbox.yml`
   - `docs/HETZNER-DNS-AUTOMATION.md`
 
 ### Changed
@@ -29,6 +31,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   live NetBox writes gated by management reachability.
 - Added `hetzner.hcloud` to Ansible collection requirements for future Hetzner
   Cloud DNS CRUD automation.
+- Fixed NetBox intake device-type lookup to use manufacturer plus model during
+  live applies, avoiding collisions with existing Device-Type-Library imports.
 
 ### Operational Notes
 
@@ -40,6 +44,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   this host.
 - Hetzner Cloud DNS API token validation passed for the `rfc1918`, `vernetzen`,
   and `yukon` token groups without printing token values.
+- Multisite NetBox intake applied live after snapshot `nb-pre-ms-20260503`; the
+  first pass created `21` objects and updated `78`, and the idempotence pass
+  produced `0` creates and `0` updates.
+- NetBox post-apply snapshot `nb-post-ms-20260503` was created.
+- Hetzner DNS dry-run plan from NetBox generated `7` RRsets and skipped `5`
+  IPs missing DNS names; no DNS writes were performed.
 
 ## 2026-05-02
 

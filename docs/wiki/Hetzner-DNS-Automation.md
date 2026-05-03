@@ -64,11 +64,39 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
   gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-api-validate.yml
 ```
 
+Generate a dry-run DNS plan from NetBox IP address `dns_name` fields:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-plan-from-netbox.yml
+```
+
+The generated plan is written to:
+
+```text
+/tmp/hetzner-dns-plan-from-netbox.json
+```
+
+Current live dry-run result:
+
+- records: `7`
+- skipped: `5`
+- apply: `false`
+- allow_delete: `false`
+
+The first records are for `rfc1918.host` service VIPs and `rfc1918.io`
+switch/gateway management names.
+
 ## Automation Contract
 
 The first supported contract is token validation and safe policy staging. Future
 DNS CRUD should consume NetBox DNS names/IPAM objects and generate desired RRset
-operations from that source of truth.
+operations from that source of truth. The first dry-run planner is:
+
+```text
+scripts/plan-hetzner-dns-from-netbox.py
+```
 
 Default safety posture:
 

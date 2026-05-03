@@ -43,6 +43,8 @@ assert_file_contains "${apply_script}" "dry_run"
 assert_file_contains "${apply_script}" "dcim/sites"
 assert_file_contains "${apply_script}" "virtualization/clusters"
 assert_file_contains "${apply_script}" "ipam/ip-addresses"
+assert_file_contains "${apply_script}" "first_query"
+assert_file_contains "${apply_script}" "manufacturer_id"
 
 assert_file_contains "${example}" "inventory_intake_version: 1"
 assert_file_contains "${example}" "datacenters:"

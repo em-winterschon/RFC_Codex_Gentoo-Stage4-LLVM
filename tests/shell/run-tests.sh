@@ -19,6 +19,7 @@ done
 bash "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
 bash "${SCRIPT_DIR}/test_ansible_vault_tools.sh"
 bash "${SCRIPT_DIR}/test_hetzner_dns_vault.sh"
+bash "${SCRIPT_DIR}/test_hetzner_dns_plan_from_netbox.sh"
 bash "${SCRIPT_DIR}/test_local_network_inventory.sh"
 bash "${SCRIPT_DIR}/test_ntfy_tools.sh"
 bash "${SCRIPT_DIR}/test_control_flow_tools.sh"

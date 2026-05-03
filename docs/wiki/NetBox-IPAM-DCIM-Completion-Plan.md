@@ -39,8 +39,10 @@ Current mixed-environment intake state:
   - `fmt2`
 - Local validation currently covers `5` files, `5` sites, `25` prefixes, `11`
   devices, `5` clusters, and `4` service VIPs.
-- Live NetBox apply is still gated by management reachability to
-  `172.16.99.62` and the usual pre-write snapshot requirement.
+- Live NetBox apply completed on 2026-05-03 after pre-apply snapshot
+  `nb-pre-ms-20260503`.
+- Idempotence pass completed with `0` creates and `0` updates.
+- Post-apply snapshot `nb-post-ms-20260503` was created after validation.
 
 ## Raw Input Handling
 
@@ -125,14 +127,19 @@ Safe work that is complete locally:
 3. Local schema/reference validation passed.
 4. Offline dry-run apply plan generated.
 
-Work still blocked until management reachability is restored:
+Work completed on 2026-05-03:
 
 1. Live NetBox API validation against `http://172.16.99.62`.
 2. Proxmox snapshot of VM `1062` before write.
 3. Live NetBox apply with token-file authentication.
 4. Idempotence apply.
 5. Proxmox snapshot of VM `1062` after write.
-6. CRS309 management-only bootstrap and router migration.
+
+Remaining gated work:
+
+1. CRS309 management-only bootstrap and router migration.
+2. NetBox HTTPS or HAProxy TLS termination.
+3. DNS apply path after dry-run plan review.
 
 ## Acceptance Criteria
 
@@ -159,5 +166,5 @@ NetBox IPAM/DCIM is considered complete for this phase when:
   migration aids only.
 - The raw host/networking source contains credentials and malformed inline data;
   only sanitized intake files should enter the repo.
-- Live apply is blocked while `172.16.99.0/24` management reachability from the
-  Codex host remains degraded.
+- Hetzner DNS writes must remain dry-run only until explicit apply/delete gates
+  are implemented and reviewed.

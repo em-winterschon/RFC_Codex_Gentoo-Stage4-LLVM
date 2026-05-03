@@ -150,3 +150,10 @@ gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/invento
 Those files are sanitized from `/tmp/rfc99-sun99-host-networking.md`; raw
 credentials and destructive RouterOS import content are intentionally excluded
 from the repo.
+
+The 2026-05-03 live apply sequence completed with:
+
+- pre-apply snapshot: `nb-pre-ms-20260503`
+- first apply: `21` creates and `78` updates
+- idempotence apply: `0` creates and `0` updates
+- post-apply snapshot: `nb-post-ms-20260503`
