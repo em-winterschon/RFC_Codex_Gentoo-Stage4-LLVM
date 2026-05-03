@@ -84,7 +84,7 @@ def load_zone_groups(args: argparse.Namespace) -> list[dict[str, Any]]:
 
 
 def normalize_dns_name(value: str) -> str:
-    return value.strip().rstrip(".").lower()
+    return value.strip().strip("{}").strip().rstrip(".").lower()
 
 
 def zone_for_name(fqdn: str, zone_groups: list[dict[str, Any]]) -> tuple[str, str] | None:

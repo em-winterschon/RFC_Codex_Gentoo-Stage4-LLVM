@@ -56,6 +56,14 @@ Post-apply NetBox object counts:
 The Hetzner DNS dry-run planner generated `7` RRsets from NetBox `dns_name`
 fields and skipped `5` management IPs that do not yet have DNS names.
 
+The read-only Hetzner provider inventory report validated all configured zones
+through the API:
+
+- zones_readable: `8/8`
+- records_total: `221`
+- connectivity_hosts: `99`
+- errors: `0`
+
 ## Live Reachability
 
 Management reachability from this host recovered:
@@ -85,7 +93,9 @@ and must not be imported unattended. Current blockers:
 1. Restore `172.16.99.0/24` management L2 reachability from the Codex host.
 2. Enable TLS for NetBox or front it through the HAProxy TLS termination path.
 3. Add DNS names for remaining management devices where appropriate.
-4. Review `/tmp/hetzner-dns-plan-from-netbox.json`.
-5. Implement Hetzner DNS apply path with explicit apply/delete gates.
-6. Recover CRS309 admin access through serial/reset.
-7. Execute only the CRS309 management-only bootstrap first.
+4. Compare `/tmp/hetzner-dns-inventory-report.json` against NetBox managed
+   objects and identify unmanaged DNS hosts.
+5. Review `/tmp/hetzner-dns-plan-from-netbox.json`.
+6. Implement Hetzner DNS apply path with explicit apply/delete gates.
+7. Recover CRS309 admin access through serial/reset.
+8. Execute only the CRS309 management-only bootstrap first.

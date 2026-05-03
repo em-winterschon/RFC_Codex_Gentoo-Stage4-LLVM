@@ -64,6 +64,32 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
   gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-api-validate.yml
 ```
 
+Build a read-only live provider inventory report. This validates each configured
+zone can be read through the API, counts records by zone and type, and emits a
+deduplicated connectivity target map for hostname/IP healthchecks and future
+nmap service validation:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-inventory-report.yml
+```
+
+The generated provider inventory report is written to:
+
+```text
+/tmp/hetzner-dns-inventory-report.json
+```
+
+Current live provider inventory result:
+
+- zones_readable: `8/8`
+- records_total: `221`
+- records_by_type: `A=99`, `CNAME=23`, `MX=26`, `NS=15`, `SOA=5`,
+  `SRV=48`, `TXT=5`
+- connectivity_hosts: `99`
+- errors: `0`
+
 Generate a dry-run DNS plan from NetBox IP address `dns_name` fields:
 
 ```bash
@@ -97,6 +123,23 @@ operations from that source of truth. The first dry-run planner is:
 ```text
 scripts/plan-hetzner-dns-from-netbox.py
 ```
+
+The provider-side inventory reporter is:
+
+```text
+scripts/report-hetzner-dns-inventory.py
+```
+
+It never writes DNS records and never serializes API tokens. The reporter reads
+Hetzner's RRset-based record API and normalizes address-bearing RRsets into
+host validation targets. Its output includes:
+
+- per-zone readability status
+- per-zone `records_total`
+- per-zone and global `records_by_type`
+- `connectivity_targets.hosts_by_zone`
+- `connectivity_targets.flat_hosts`
+- skipped non-address or invalid address records
 
 Default safety posture:
 

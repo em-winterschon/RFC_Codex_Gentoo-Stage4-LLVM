@@ -18,9 +18,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added Hetzner Cloud DNS token import and validation scaffolding:
   - `scripts/import-hetzner-dns-vault.sh`
   - `scripts/plan-hetzner-dns-from-netbox.py`
+  - `scripts/report-hetzner-dns-inventory.py`
   - `group_vars/all/dns_hetzner_cloud.yml`
   - `playbooks/hetzner-dns-api-validate.yml`
   - `playbooks/hetzner-dns-plan-from-netbox.yml`
+  - `playbooks/hetzner-dns-inventory-report.yml`
   - `docs/HETZNER-DNS-AUTOMATION.md`
 
 ### Changed
@@ -50,6 +52,12 @@ infrastructure work. It is intentionally higher level than `git log`.
 - NetBox post-apply snapshot `nb-post-ms-20260503` was created.
 - Hetzner DNS dry-run plan from NetBox generated `7` RRsets and skipped `5`
   IPs missing DNS names; no DNS writes were performed.
+- Added a read-only Hetzner DNS provider inventory report which validates zone
+  readability, counts records by zone/type, and emits deduplicated hostname/IP
+  connectivity targets without serializing API tokens.
+- Live provider inventory validation read `8/8` configured zones, counted `221`
+  records across DNS types, and generated `99` address-bearing connectivity
+  hosts for follow-on healthchecks and nmap scans.
 
 ## 2026-05-02
 

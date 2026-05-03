@@ -152,7 +152,8 @@ Dependency:
 | --- | --- | --- | --- | --- |
 | `DNS-001` | completed | Vault Hetzner Cloud DNS API token groups | Ansible Vault workflow | Imported `rfc1918`, `vernetzen`, and `yukon` token groups into encrypted local-network vault and validated API access without printing token values. |
 | `DNS-002` | completed | Generate Hetzner DNS RRset plans from NetBox | `DNS-001`, NetBox IPAM/DCIM apply | Dry-run planner generated `7` RRsets from NetBox and skipped `5` unnamed management IPs; apply and delete remain disabled. |
-| `DNS-003` | pending | Apply controlled Hetzner DNS CRUD operations | `DNS-002` | Use reviewable RRset plans and require explicit apply/delete gates. |
+| `DNS-003` | completed | Validate live Hetzner zone inventory and build connectivity target maps | `DNS-001` | Read-only provider report validated `8/8` zones, counted `221` records, and emitted `99` hostname/IP connectivity targets for healthchecks and nmap scans. |
+| `DNS-004` | pending | Apply controlled Hetzner DNS CRUD operations | `DNS-002`, `DNS-003` | Use reviewable RRset plans and require explicit apply/delete gates. |
 
 ### LLM API And RAG Services
 
