@@ -20,6 +20,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added `scripts/export-netbox-provisioning-inventory.py` and
   `playbooks/netbox-provisioning-inventory-export.yml` to generate Ansible
   inventory, IPAM records, and service validation targets from NetBox.
+- Added `scripts/proxmox-create-stage4-service-vm.sh` for dry-run-first
+  Proxmox service VM creation from Stage4/Stage5 QCOW images.
 - Added Hetzner Cloud DNS token import and validation scaffolding:
   - `scripts/import-hetzner-dns-vault.sh`
   - `scripts/plan-hetzner-dns-from-netbox.py`

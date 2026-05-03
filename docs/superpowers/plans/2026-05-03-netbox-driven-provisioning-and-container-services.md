@@ -257,7 +257,7 @@ Expected before services are created: planned services may fail; existing manage
 
 Purpose: make VM creation repeatable and NetBox-backed.
 
-- [ ] **Step 1: Validate Proxmox API and SSH**
+- [x] **Step 1: Validate Proxmox API and SSH**
 
 ```bash
 scripts/with-ansible-vault-env.sh ansible-playbook \
@@ -269,7 +269,7 @@ ssh -o BatchMode=yes -o ConnectTimeout=5 root@hasslehoff 'pveversion; qm list; d
 
 Expected: Proxmox version reports `8.4.13`, SSH succeeds, and `/var/lib/vz` has sufficient free space.
 
-- [ ] **Step 2: Write failing shell test for generic Proxmox VM script**
+- [x] **Step 2: Write failing shell test for generic Proxmox VM script**
 
 Create `tests/shell/test_proxmox_create_stage4_service_vm.sh`.
 
@@ -285,7 +285,7 @@ qm set --serial0 socket
 qm set --boot order=scsi0
 ```
 
-- [ ] **Step 3: Implement generic Proxmox VM creation script**
+- [x] **Step 3: Implement generic Proxmox VM creation script**
 
 Create `scripts/proxmox-create-stage4-service-vm.sh`.
 
@@ -314,7 +314,7 @@ Existing VMID aborts unless PROXMOX_REPLACE=1.
 No destructive deletion without explicit PROXMOX_REPLACE=1.
 ```
 
-- [ ] **Step 4: Verify script**
+- [x] **Step 4: Verify script**
 
 ```bash
 bash tests/shell/test_proxmox_create_stage4_service_vm.sh
@@ -323,7 +323,7 @@ bash -n scripts/proxmox-create-stage4-service-vm.sh
 
 Expected: both commands exit `0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/proxmox-create-stage4-service-vm.sh tests/shell/test_proxmox_create_stage4_service_vm.sh tests/shell/run-tests.sh
