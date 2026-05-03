@@ -15,6 +15,11 @@ infrastructure work. It is intentionally higher level than `git log`.
   - `inventory-intake/sites/fmt2.yml`
 - Added a 2026-05-03 SITREP covering mixed-environment intake state, live
   management reachability, and CRS309 execution gates.
+- Added the NetBox-driven provisioning and container-services action plan:
+  `docs/superpowers/plans/2026-05-03-netbox-driven-provisioning-and-container-services.md`.
+- Added `scripts/export-netbox-provisioning-inventory.py` and
+  `playbooks/netbox-provisioning-inventory-export.yml` to generate Ansible
+  inventory, IPAM records, and service validation targets from NetBox.
 - Added Hetzner Cloud DNS token import and validation scaffolding:
   - `scripts/import-hetzner-dns-vault.sh`
   - `scripts/plan-hetzner-dns-from-netbox.py`
@@ -58,6 +63,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Live provider inventory validation read `8/8` configured zones, counted `221`
   records across DNS types, and generated `99` address-bearing connectivity
   hosts for follow-on healthchecks and nmap scans.
+- Live NetBox provisioning export currently yields `7` standalone IP bootstrap
+  hosts from `12` IP records when run without an ownership tag filter; the
+  default `codex-managed` filter correctly returns zero until tags are applied.
 
 ## 2026-05-02
 
