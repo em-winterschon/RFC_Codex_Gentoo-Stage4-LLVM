@@ -96,7 +96,8 @@ devices:
     manufacturer: Zyxel
     model: XGS1250-12
     status: active
-    management_ip: 192.168.1.250
+    management_ip: 172.16.99.250
+    fqdn: sw-xgs-1250-pri.rfc1918.io
     interfaces:
       - name: mgmt
         type: 1000base-t
