@@ -64,6 +64,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)
 - [Changelog](Changelog)
+- [SITREP Status 2026-05-03](SITREP-Status-2026-05-03)
 - [EOD Status 2026-05-02](EOD-Status-2026-05-02)
 - [EOD Status 2026-04-30](EOD-Status-2026-04-30)
 - [EOD Status 2026-04-29](EOD-Status-2026-04-29)

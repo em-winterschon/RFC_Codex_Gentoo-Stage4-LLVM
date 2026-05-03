@@ -3,6 +3,35 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-03
+
+### Added
+
+- Added sanitized NetBox intake files derived from
+  `/tmp/rfc99-sun99-host-networking.md`:
+  - `inventory-intake/sites/rfc99.yml`
+  - `inventory-intake/sites/sun99.yml`
+  - `inventory-intake/sites/yks99.yml`
+  - `inventory-intake/sites/fmt2.yml`
+- Added a 2026-05-03 SITREP covering mixed-environment intake state, live
+  management reachability, and CRS309 execution gates.
+
+### Changed
+
+- Updated NetBox IPAM/DCIM and CRS309 plans now that the host-networking source
+  file is present and archived outside the repo.
+- Marked `PNR-011` complete for local structured intake conversion while keeping
+  live NetBox writes gated by management reachability.
+
+### Operational Notes
+
+- Raw operator input was archived under
+  `/root/operator-private/network-intake/2026-05-03/`.
+- Local intake validation now covers `5` files, `5` sites, `25` prefixes, `11`
+  devices, `5` clusters, and `4` service VIPs.
+- Live NetBox writes are still blocked while `172.16.99.62` is unreachable from
+  this host.
+
 ## 2026-05-02
 
 ### Added

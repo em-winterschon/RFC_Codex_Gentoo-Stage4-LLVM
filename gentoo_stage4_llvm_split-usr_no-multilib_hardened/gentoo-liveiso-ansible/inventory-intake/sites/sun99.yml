@@ -1,0 +1,84 @@
+---
+inventory_intake_version: 1
+
+datacenters:
+  - name: SUN99
+    slug: sun99
+    timezone: America/Los_Angeles
+    facility: operator-confirmed
+    management_prefixes:
+      - 172.16.199.0/24
+      - 172.16.228.0/24
+    access_paths:
+      - rfc99-routed-lan
+      - future-vpn-overlay
+      - future-zerotier-overlay
+    owners:
+      - codex-ops
+
+prefixes:
+  - prefix: 10.232.232.0/24
+    site: sun99
+    status: planned
+    role: nanonet-ceph-net
+  - prefix: 172.16.228.0/24
+    site: sun99
+    status: planned
+    role: nanonet-management-1ge
+  - prefix: 172.16.229.0/24
+    site: sun99
+    status: planned
+    role: nanonet-front-end-2p5ge
+  - prefix: 172.16.230.0/24
+    site: sun99
+    status: planned
+    role: nanonet-back-end-2p5ge
+  - prefix: 172.16.254.0/24
+    site: sun99
+    status: planned
+    role: nanonet-iscsi-net
+  - prefix: 172.16.17.0/24
+    site: sun99
+    status: planned
+    role: nanonet-vmm-bridge-net
+  - prefix: 172.16.66.0/24
+    site: sun99
+    status: planned
+    role: sun99-iot-sensors
+  - prefix: 172.16.199.0/24
+    site: sun99
+    status: planned
+    role: sun99-management-1ge
+
+devices: []
+
+clusters:
+  - name: nanonet-private-cloud
+    site: sun99
+    role: private-cloud
+    members: []
+    node_pools:
+      - make: NanoPi
+        model: R5S
+        quantity: 4
+      - make: NanoPi
+        model: R56
+        quantity: 4
+      - make: AAEON
+        model: FWS-2363
+        quantity: 6
+      - make: RaspberryPi
+        model: CM4-8GB
+        quantity: 4
+      - make: Nvidia
+        model: Jetson XavierNX-16GB
+        quantity: 1
+      - make: Nvidia
+        model: Jetson OrinNX-16GB
+        quantity: 3
+  - name: sun99-general-admin
+    site: sun99
+    role: general-admin
+    members: []
+
+service_vips: []

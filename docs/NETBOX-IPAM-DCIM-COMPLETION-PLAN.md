@@ -28,17 +28,33 @@ Live NetBox state:
 - recovery snapshot after structured local intake:
   `codex-netbox-after-intake-apply`
 
-## Missing Input
+Current mixed-environment intake state:
 
-The requested source file was not present at review time:
+- `/tmp/rfc99-sun99-host-networking.md` is now present and archived outside the
+  repo under `/root/operator-private/network-intake/2026-05-03/`.
+- Sanitized NetBox intake files now exist for:
+  - `rfc99`
+  - `sun99`
+  - `yks99`
+  - `fmt2`
+- Local validation currently covers `5` files, `5` sites, `25` prefixes, `11`
+  devices, `5` clusters, and `4` service VIPs.
+- Live NetBox apply is still gated by management reachability to
+  `172.16.99.62` and the usual pre-write snapshot requirement.
+
+## Raw Input Handling
+
+The requested source file is intentionally treated as operator-private raw
+input:
 
 ```text
 /tmp/rfc99-sun99-host-networking.md
 ```
 
-That file is required before claiming IPAM/DCIM completion for the mixed
-environment set because it reportedly contains the host, IP, MAC, and NetBox
-completion instructions.
+It contains credentials and incomplete or malformed inline records, so it must
+not be committed as-is. Repo-safe intake files must exclude plaintext
+credentials, normalize ambiguous prefixes, and leave destructive router changes
+in `planned` state until validated.
 
 ## Data Model
 
@@ -47,9 +63,10 @@ logical locations, not as ad hoc prefixes:
 
 | Environment | Initial NetBox Model | Notes |
 | --- | --- | --- |
-| `RFC99` | existing `local-rfc1918-lab` site unless the source file defines a cleaner split | Current management and Proxmox/Stage4 services live here. |
-| `SUN99` | new site or tenant-backed logical site | CRS309 draft uses `gw-sun99-mkcrs309.rfc1918.host`. |
-| `FMT2` | new site or tenant-backed logical site | Wait for host/networking source file. |
+| `RFC99` | `rfc99` site plus existing `local-rfc1918-lab` for current Proxmox services | Provider LAN, CRS309 replacement router, and administrative switches. |
+| `SUN99` | `sun99` site | NanoNet and SUN99 general-admin prefixes. |
+| `YKS99` | `yks99` site | Yukon Systems cluster prefixes; raw `/16` functional entries are staged as `/24` subnets under `172.28.0.0/16`. |
+| `FMT2` | `fmt2` site | Public VPN endpoint and RFC99 OpenVPN tunnel address. |
 | additional remote DCs | one site per physical or routed administrative boundary | Do not overload one site with unrelated DCIM. |
 
 Required NetBox object classes:
@@ -99,27 +116,23 @@ Required NetBox object classes:
 11. Snapshot NetBox again.
 12. Only then execute RouterOS or switch mutations.
 
-## Overnight Execution Plan
+## Execution Plan
 
-Safe overnight work that does not require the missing host file:
+Safe work that is complete locally:
 
-1. Validate and commit documentation and plans.
-2. Keep live network unchanged.
-3. Prepare a sanitized CRS309 execution plan.
-4. Prepare NetBox object model and import order.
-5. Confirm existing local structured intake still validates.
-6. Confirm NetBox API token-file validation still passes.
+1. Raw host/networking and CRS309 files archived under operator-private storage.
+2. Sanitized per-environment intake files created.
+3. Local schema/reference validation passed.
+4. Offline dry-run apply plan generated.
 
-Work blocked until `/tmp/rfc99-sun99-host-networking.md` exists:
+Work still blocked until management reachability is restored:
 
-1. Generate per-environment intake files for RFC99, SUN99, FMT2, and other
-   listed environments.
-2. Normalize host/IP/MAC records into NetBox devices, interfaces, MAC
-   addresses, and IP address assignments.
-3. Reconcile overlapping or duplicate prefixes.
-4. Dry-run the full mixed-environment NetBox import.
-5. Apply the import.
-6. Snapshot NetBox after apply.
+1. Live NetBox API validation against `http://172.16.99.62`.
+2. Proxmox snapshot of VM `1062` before write.
+3. Live NetBox apply with token-file authentication.
+4. Idempotence apply.
+5. Proxmox snapshot of VM `1062` after write.
+6. CRS309 management-only bootstrap and router migration.
 
 ## Acceptance Criteria
 
@@ -144,5 +157,7 @@ NetBox IPAM/DCIM is considered complete for this phase when:
 - The CRS309 draft contains overlapping `172.16.228.0/22` declarations.
 - Broad SNMP v2c and enabled cleartext management services should be temporary
   migration aids only.
-- The missing source file likely contains the only complete host/IP/MAC truth
-  for SUN99/FMT2 and cannot be inferred safely from the CRS309 RouterOS script.
+- The raw host/networking source contains credentials and malformed inline data;
+  only sanitized intake files should enter the repo.
+- Live apply is blocked while `172.16.99.0/24` management reachability from the
+  Codex host remains degraded.

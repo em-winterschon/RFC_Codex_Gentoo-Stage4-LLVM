@@ -10,6 +10,19 @@
 
 ---
 
+## Execution Status 2026-05-03
+
+- Raw `/tmp/rfc99-sun99-host-networking.md` and
+  `/tmp/crs309-router-mode-idc.wip.rsc` were archived under
+  `/root/operator-private/network-intake/2026-05-03/`.
+- Sanitized intake files now exist for `rfc99`, `sun99`, `yks99`, and `fmt2`.
+- Local validation passes across all structured intake files.
+- Offline dry-run apply plan is generated.
+- Live NetBox apply remains blocked until `172.16.99.0/24` management
+  reachability to `172.16.99.62` and Hasslehoff SSH is restored.
+- CRS309 RouterOS mutation remains blocked until admin access/reset, serial
+  fallback, backup/export, and management-only bootstrap are confirmed.
+
 ## File Structure
 
 - `docs/NETBOX-IPAM-DCIM-COMPLETION-PLAN.md`

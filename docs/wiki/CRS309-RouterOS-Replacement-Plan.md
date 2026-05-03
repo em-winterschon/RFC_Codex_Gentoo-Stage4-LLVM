@@ -2,21 +2,16 @@
 
 ## Source Inputs
 
-Reviewed available operator file:
+Reviewed operator files:
 
 ```text
 /tmp/crs309-router-mode-idc.wip.rsc
-```
-
-The referenced host/networking inventory file was not present at:
-
-```text
 /tmp/rfc99-sun99-host-networking.md
 ```
 
-No live RouterOS changes should be made from the WIP script until the missing
-host/networking file is available or the intended device, ports, prefixes, and
-rollback path are confirmed another way.
+No live RouterOS changes should be made from the WIP script until admin access,
+serial fallback, backups, management-only bootstrap, and NetBox staging are all
+confirmed.
 
 ## Immediate Assessment
 
@@ -102,29 +97,27 @@ resolve before NetBox import or RouterOS execution.
 
 ## NetBox Staging Sequence
 
-1. Create a `sun99` or equivalent site record only after the missing
-   `/tmp/rfc99-sun99-host-networking.md` source is available.
-2. Add `gw-sun99-mkcrs309` as a planned RouterOS device with manufacturer
+1. Keep `gw_rfc99_mkcrs309` staged as a planned RouterOS device with manufacturer
    `MikroTik` and device type `CRS309-1G-8S+IN`.
-3. Model physical interfaces:
+2. Model physical interfaces:
    - `ether1`
    - `sfp-sfpplus1`
    - `sfp-sfpplus2` through `sfp-sfpplus8`
    - `br-lan`
    - `wg-srv`
    - optional `zt-idc`
-4. Import prefixes in planned state first.
-5. Attach gateway IPs to `gw-sun99-mkcrs309`.
-6. Record overlapping or duplicate prefix conditions as blockers.
-7. Record firewall zones:
+3. Import prefixes in planned state first.
+4. Attach gateway IPs to `gw_rfc99_mkcrs309`.
+5. Record overlapping or duplicate prefix conditions as blockers.
+6. Record firewall zones:
    - `WAN`
    - `LAN`
    - `MGMT`
    - `VPN`
-8. Add service records for HTTPS/API management, SNMP, WireGuard, and optional
+7. Add service records for HTTPS/API management, SNMP, WireGuard, and optional
    ZeroTier.
-9. Run NetBox dry-run apply.
-10. Apply only after the dry-run has no duplicate-prefix or missing-site
+8. Run NetBox dry-run apply.
+9. Apply only after the dry-run has no duplicate-prefix or missing-site
     findings.
 
 ## RouterOS Execution Sequence
@@ -181,7 +174,9 @@ The rollback path is:
 
 ## Blockers
 
-- `/tmp/rfc99-sun99-host-networking.md` is missing on-host at review time.
+- CRS309 admin login is not currently usable; reset or serial recovery is
+  required before any import.
+- CRS309 `WAN_NET_MAC` and `LAN_NET_MAC` values are unset in the source plan.
 - Overlapping `172.16.228.0/22` gateway declarations must be normalized.
 - The CRS309 draft enables broad SNMP v2c access with community `public`; this
   should be replaced with vaulted SNMPv3 or limited tightly before permanent

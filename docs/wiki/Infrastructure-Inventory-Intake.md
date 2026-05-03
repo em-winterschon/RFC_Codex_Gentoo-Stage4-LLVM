@@ -137,3 +137,16 @@ The structured baseline equivalent is:
 ```text
 gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/local-rfc1918-lab.yml
 ```
+
+The 2026-05-03 mixed-environment intake wave adds:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/rfc99.yml
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/sun99.yml
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/yks99.yml
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/fmt2.yml
+```
+
+Those files are sanitized from `/tmp/rfc99-sun99-host-networking.md`; raw
+credentials and destructive RouterOS import content are intentionally excluded
+from the repo.

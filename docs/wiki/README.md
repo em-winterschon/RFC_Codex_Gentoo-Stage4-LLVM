@@ -37,6 +37,7 @@ Current mirrored pages:
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
 - `Changelog.md`
+- `SITREP-Status-2026-05-03.md`
 - `EOD-Status-2026-05-02.md`
 - `EOD-Status-2026-04-30.md`
 - `EOD-Status-2026-04-29.md`
