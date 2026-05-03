@@ -81,6 +81,7 @@ devices:
     model: BGW320-500
     status: active
     management_ip: 192.168.1.254
+    fqdn: gw-xgs-pon-att5ge.rfc1918.io
     interfaces:
       - name: lan
         type: 10gbase-t
@@ -112,6 +113,7 @@ devices:
     model: XGS1250-12
     status: active
     management_ip: 192.168.1.251
+    fqdn: sw-xgs-1250-sec.rfc1918.io
     interfaces:
       - name: mgmt
         type: 1000base-t
