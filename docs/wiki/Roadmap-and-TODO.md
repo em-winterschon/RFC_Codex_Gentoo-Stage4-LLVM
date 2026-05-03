@@ -100,6 +100,8 @@ Dependency:
 | `PNR-008` | completed | Install essential NetBox operational integrations before writes | `PNR-007` | `pynetbox`, `netbox-agent`, `netbox-sync`, `netbox-tools`, `devicetype-library`, and `Device-Type-Library-Import` are isolated under `/opt/netbox-essentials`; the initial device-type import loaded `1924` device types. |
 | `PNR-009` | active | Inventory additional clusters and datacenters into NetBox | `PNR-010` | Local structured intake is live; next work should add one site/cluster at a time and validate with NetBox dry-run/apply playbooks before writing. |
 | `PNR-010` | completed | Add structured NetBox inventory intake and apply workflow | `PNR-003` | Validator, dry-run/apply script, Ansible wrappers, local baseline file, live apply, idempotence pass, and post-apply snapshot are complete. |
+| `PNR-011` | blocked | Convert RFC99/SUN99/FMT2 host/IP/MAC source file into structured NetBox intake | `PNR-010` | Blocked because `/tmp/rfc99-sun99-host-networking.md` was not present at review time. |
+| `PNR-012` | planned | Replace failed OPNsense path with CRS309 RouterOS after NetBox staging | `PNR-011` | `/tmp/crs309-router-mode-idc.wip.rsc` is destructive; execute only after backup, serial fallback, management-only bootstrap, NetBox dry-run/apply, and validation gates. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |

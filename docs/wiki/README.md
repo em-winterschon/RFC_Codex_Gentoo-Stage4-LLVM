@@ -21,6 +21,12 @@ Current mirrored pages:
 - `Home.md`
 - `Architecture-and-Design.md`
 - `Workflows.md`
+- `Proxmox-NetBox-RouterOS-Action-Plan.md`
+- `Hasslehoff-Inventory.md`
+- `NetBox-Essentials.md`
+- `Infrastructure-Inventory-Intake.md`
+- `NetBox-IPAM-DCIM-Completion-Plan.md`
+- `CRS309-RouterOS-Replacement-Plan.md`
 - `Configurations-and-Examples.md`
 - `CI-Builder-Farm.md`
 - `Binpkg-Repository.md`
@@ -31,6 +37,9 @@ Current mirrored pages:
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
 - `Changelog.md`
+- `EOD-Status-2026-05-02.md`
+- `EOD-Status-2026-04-30.md`
+- `EOD-Status-2026-04-29.md`
 - `EOD-Status-2026-04-28.md`
 - `Repository-Layout.md`
 - `Roadmap-and-TODO.md`

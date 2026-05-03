@@ -33,6 +33,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   - `scripts/netbox_apply_inventory_intake.py`
   - `playbooks/netbox-inventory-intake-validate.yml`
   - `playbooks/netbox-inventory-intake-apply.yml`
+- Added EOD and next-step planning for NetBox IPAM/DCIM completion and the
+  CRS309 RouterOS replacement path:
+  - `docs/NETBOX-IPAM-DCIM-COMPLETION-PLAN.md`
+  - `docs/CRS309-ROUTEROS-REPLACEMENT-PLAN.md`
+  - `docs/EOD-STATUS-2026-05-02.md`
+  - `docs/superpowers/plans/2026-05-02-netbox-dcim-ipam-and-crs309-router-replacement.md`
 
 ### Changed
 
@@ -71,6 +77,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 - NetBox recovery snapshot `codex-netbox-after-intake-apply` was created after
   the structured intake apply. Proxmox reported the QEMU guest agent was not
   running, but storage snapshots for the root disk and EFI disk completed.
+- Reviewed `/tmp/crs309-router-mode-idc.wip.rsc`; it is a destructive
+  replacement-router import and should not be executed unattended.
+- `/tmp/rfc99-sun99-host-networking.md` was not present at review time, so full
+  RFC99/SUN99/FMT2 NetBox IPAM/DCIM import remains blocked on the corrected
+  source file path or regenerated content.
 
 ## 2026-05-01
 
