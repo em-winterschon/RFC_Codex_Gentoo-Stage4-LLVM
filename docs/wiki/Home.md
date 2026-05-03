@@ -61,6 +61,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Container Building](Container-Building)
 - [Container Publishing](Container-Publishing)
 - [Identity AAA](Identity-AAA)
+- [Hetzner DNS Automation](Hetzner-DNS-Automation)
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)
 - [Changelog](Changelog)

@@ -71,6 +71,31 @@ Examples:
 - `ansible_password: "{{ vault_crs354_admin_password }}"`
 - `swos_password: "{{ vault_css326_admin_password }}"`
 - `proxmox_api_token_secret: "{{ vault_hasslehoff_proxmox_api_token_secret }}"`
+- `api_token: "{{ vault_hetzner_dns_rfc1918_api_token }}"`
+
+## Hetzner DNS Tokens
+
+Import Hetzner Cloud DNS token groups from an operator-private token file:
+
+```bash
+scripts/import-hetzner-dns-vault.sh /tmp/rfc-vernetzen-yukon.dns-api-info.cfg
+```
+
+The importer preserves existing vault content, writes only encrypted
+`vault_hetzner_dns_*` variables, and never prints token values. DNS policy and
+token-group references live in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml
+```
+
+Validate token access with:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-api-validate.yml
+```
 
 ## Safety Rules
 

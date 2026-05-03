@@ -146,6 +146,14 @@ Dependency:
 | `LOG-004` | pending | Validate Kibana VM profile | `LOG-003` | Connect to Elasticsearch VIP. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |
 
+### DNS Automation
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `DNS-001` | completed | Vault Hetzner Cloud DNS API token groups | Ansible Vault workflow | Imported `rfc1918`, `vernetzen`, and `yukon` token groups into encrypted local-network vault and validated API access without printing token values. |
+| `DNS-002` | scaffolded | Generate Hetzner DNS RRset plans from NetBox | `DNS-001`, NetBox IPAM/DCIM apply | Keep apply disabled and deletion-disabled until NetBox ownership tags and stale-record behavior are explicit. |
+| `DNS-003` | pending | Apply controlled Hetzner DNS CRUD operations | `DNS-002` | Use reviewable RRset plans and require explicit apply/delete gates. |
+
 ### LLM API And RAG Services
 
 | ID | Status | Task | Depends On | Notes |

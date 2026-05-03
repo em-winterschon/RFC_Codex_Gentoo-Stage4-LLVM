@@ -34,6 +34,7 @@ Current mirrored pages:
 - `Container-Building.md`
 - `Container-Publishing.md`
 - `Identity-AAA.md`
+- `Hetzner-DNS-Automation.md`
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
 - `Changelog.md`

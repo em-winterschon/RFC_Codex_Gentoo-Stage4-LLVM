@@ -15,6 +15,11 @@ infrastructure work. It is intentionally higher level than `git log`.
   - `inventory-intake/sites/fmt2.yml`
 - Added a 2026-05-03 SITREP covering mixed-environment intake state, live
   management reachability, and CRS309 execution gates.
+- Added Hetzner Cloud DNS token import and validation scaffolding:
+  - `scripts/import-hetzner-dns-vault.sh`
+  - `group_vars/all/dns_hetzner_cloud.yml`
+  - `playbooks/hetzner-dns-api-validate.yml`
+  - `docs/HETZNER-DNS-AUTOMATION.md`
 
 ### Changed
 
@@ -22,6 +27,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   file is present and archived outside the repo.
 - Marked `PNR-011` complete for local structured intake conversion while keeping
   live NetBox writes gated by management reachability.
+- Added `hetzner.hcloud` to Ansible collection requirements for future Hetzner
+  Cloud DNS CRUD automation.
 
 ### Operational Notes
 
@@ -31,6 +38,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   devices, `5` clusters, and `4` service VIPs.
 - Live NetBox writes are still blocked while `172.16.99.62` is unreachable from
   this host.
+- Hetzner Cloud DNS API token validation passed for the `rfc1918`, `vernetzen`,
+  and `yukon` token groups without printing token values.
 
 ## 2026-05-02
 
