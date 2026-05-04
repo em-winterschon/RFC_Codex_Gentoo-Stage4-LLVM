@@ -1,4 +1,31 @@
-# CRS309 RouterOS Replacement Plan
+# CRS309 RouterOS Replacement And Spine Aggregation Plan
+
+## 2026-05-04 Current State
+
+The `CCR2004-16G-2S+PC` has replaced the CRS309 as the active RFC99 gateway.
+It is running RouterOS package and RouterBOARD firmware `7.22.2`; WAN DHCP,
+LAN routing, DNS, NAT, HTTPS, API-SSL, and remote syslog have passed
+post-upgrade validation.
+
+The CRS309 should no longer be treated as the primary gateway target. Its next
+role is a RouterOS 10GbE L2/L3 aggregation spine between:
+
+- CCR2004 `sfp-sfpplus2` and CRS309 `sfp-sfpplus1`
+- CRS354 LACP uplink and CRS309 `sfp-sfpplus2` plus `sfp-sfpplus3`
+- CSS326 `sfp1` and CRS309 `sfp-sfpplus8`
+- Hasslehoff CCR2004-1G-2XS-PCIe DAC links and CRS309 high-speed ports
+
+There is one requested port-map conflict: CRS309 `sfp-sfpplus3` was assigned to
+both the CRS354 LACP bundle and the Hasslehoff CCR2004-1G-2XS-PCIe DAC pair.
+The normalized plan keeps CRS354 on `sfp-sfpplus2` plus `sfp-sfpplus3`, moves
+Hasslehoff to `sfp-sfpplus4` plus `sfp-sfpplus5`, and leaves `sfp-sfpplus6`
+plus `sfp-sfpplus7` reserved.
+
+Detailed implementation plan:
+
+```text
+docs/superpowers/plans/2026-05-04-crs309-spine-aggregation.md
+```
 
 ## Source Inputs
 
@@ -13,12 +40,9 @@ No live RouterOS changes should be made from the WIP script until admin access,
 serial fallback, backups, management-only bootstrap, and NetBox staging are all
 confirmed.
 
-Update: a rackable MikroTik `CCR2004-16G-2S+PC` is now staged as the preferred
-replacement-router target. Keep the CRS309 plan as the source configuration
-reference, but do not assume CRS309 interface names or port counts when
-rendering the CCR2004 deployment. The CCR2004 bootstrap credential is stored in
-Ansible Vault, and its management IP remains unassigned until serial discovery
-confirms baseline state and cabling.
+Update: a rackable MikroTik `CCR2004-16G-2S+PC` is now the active
+replacement-router target. Keep the old CRS309 router script only as historical
+source material; future CRS309 work should target the spine aggregation plan.
 
 ## Immediate Assessment
 
@@ -106,7 +130,7 @@ ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
   -e routeros_rfc99_gateway_render_root=/tmp/routeros-rfc99-gateway
 ```
 
-The intended high-level design is:
+The original CRS309 gateway draft intended:
 
 - `sfp-sfpplus1` as WAN uplink
 - `ether1` as dedicated management
@@ -120,6 +144,10 @@ The intended high-level design is:
 - optional ZeroTier controller/interface scaffold when package and device-mode
   support exist
 - RIP instance redistributing connected/static routes on `br-lan`
+
+Do not apply this original gateway draft to the CRS309. The active routed edge
+is now the CCR2004; CRS309 should be rebuilt as a spine/aggregation switch with
+only management IP and optional future L3 offload after L2 validation.
 
 ## Prefixes Declared By The CRS309 Draft
 

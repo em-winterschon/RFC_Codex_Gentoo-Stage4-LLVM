@@ -3,6 +3,34 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-04
+
+### Changed
+
+- Upgraded the active CCR2004 gateway from RouterOS `7.19.6` to RouterOS
+  package and RouterBOARD firmware `7.22.2`.
+- Disabled RouterOS bandwidth-server and the RouterOS `7.22.2`
+  `reverse-proxy` service on the CCR2004 gateway and encoded those controls in
+  the RFC99 gateway role.
+- Confirmed CRS354 is already running RouterOS package and RouterBOARD firmware
+  `7.22.2`; disabled bandwidth-server and the `reverse-proxy` service there
+  without changing existing SSH/HTTP/HTTPS/WinBox management posture.
+- Reframed CRS309 from failed replacement gateway to planned RouterOS
+  10GbE spine/aggregation switch.
+
+### Operational Notes
+
+- CCR2004 post-upgrade validation passed for WAN DHCP, dynamic default route,
+  DNS resolution, internet egress, LAN reachability, HTTPS management,
+  API-SSL, NAT, hardened service surface, and remote syslog to `172.16.99.89`.
+- CCR2004 on-device exports/backups were created before and after the upgrade
+  under names matching `pre-upgrade-ccr2004-*` and `post-upgrade-ccr2004-*`.
+- CRS354 on-device exports/backups were created under
+  `precheck-crs354-*` and `post-hardening-crs354-*`.
+- CRS309 spine planning found a physical map conflict on `sfp-sfpplus3`; the
+  normalized map uses `sfp-sfpplus4` plus `sfp-sfpplus5` for the Hasslehoff
+  CCR2004-1G-2XS-PCIe DAC pair.
+
 ## 2026-05-03
 
 ### Added

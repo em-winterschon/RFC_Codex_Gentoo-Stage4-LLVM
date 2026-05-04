@@ -112,6 +112,7 @@
 /ip service set api disabled={{ (not routeros_rfc99_gateway_api_enabled) | ternary("yes", "no") }}
 /ip service set winbox disabled={{ (not routeros_rfc99_gateway_winbox_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_winbox_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }}
 /ip service set ssh disabled={{ (not routeros_rfc99_gateway_ssh_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_ssh_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }}
+:if ([:len [/ip service find where name="reverse-proxy"]] > 0) do={ /ip service set reverse-proxy disabled=yes }
 /ip ssh set strong-crypto={{ routeros_rfc99_gateway_ssh_strong_crypto | ternary("yes", "no") }} forwarding-enabled={{ routeros_rfc99_gateway_ssh_forwarding | ternary("yes", "no") }}
 /tool bandwidth-server set enabled=no
 
