@@ -51,6 +51,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Architecture and Design](Architecture-and-Design)
 - [Workflows](Workflows)
 - [Proxmox NetBox RouterOS Action Plan](Proxmox-NetBox-RouterOS-Action-Plan)
+- [ITIL Change Control: Container Services Safe Move](ITIL-Change-Control-Container-Services-Safe-Move)
 - [NetBox Essentials](NetBox-Essentials)
 - [Infrastructure Inventory Intake](Infrastructure-Inventory-Intake)
 - [NetBox IPAM DCIM Completion Plan](NetBox-IPAM-DCIM-Completion-Plan)

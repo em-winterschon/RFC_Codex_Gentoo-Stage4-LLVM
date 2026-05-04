@@ -133,6 +133,19 @@ devices:
     fqdn: ipa01.rfc1918.host
     hypervisor: hasslehoff
     vmid: 1063
+  - name: svc_container_services_safe_move_01
+    site: local-rfc1918-lab
+    role: container-services-staging
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.89
+    fqdn: svc-container-services-safe-move-01.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1089
+    notes:
+      - Temporary Hasslehoff staging VM for safe container-services migration.
+      - Do not assign the production Path B service IP until cutover validation passes.
 
 clusters:
   - name: hasslehoff-proxmox
@@ -153,6 +166,7 @@ clusters:
     members:
       - svc_netbox_stage4
       - svc_identity_ipa01
+      - svc_container_services_safe_move_01
 
 service_vips:
   - name: netbox-http

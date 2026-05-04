@@ -58,6 +58,32 @@ test_dry_run_emits_safe_proxmox_commands() {
   assert_not_contains "${output}" "rm -rf"
 }
 
+test_ovmf_mode_adds_efi_disk() {
+  local output
+
+  output="$(
+    PVE_HOST=hasslehoff \
+    VMID=1092 \
+    VM_NAME=svc-test-ovmf \
+    VM_MEMORY_MIB=4096 \
+    VM_CORES=4 \
+    VM_BRIDGE=vmbr0 \
+    VM_MAC=52:54:00:12:34:92 \
+    VM_IP_CIDR=172.16.99.92/24 \
+    VM_GATEWAY=172.16.99.1 \
+    VM_STORAGE=local-zfs \
+    SOURCE_QCOW=/var/lib/vz/template/cache/test.qcow2 \
+    NETBOX_ROLE=test \
+    VM_BIOS=ovmf \
+    SSH_PUBKEY_FILE=/tmp/missing-test-key.pub \
+    bash "${CREATE_SCRIPT}" --dry-run
+  )"
+
+  assert_contains "${output}" "qm create 1092"
+  assert_contains "${output}" "--bios ovmf"
+  assert_contains "${output}" "qm set 1092 --efidisk0 local-zfs:1,efitype=4m,pre-enrolled-keys=0"
+}
+
 test_default_mode_is_dry_run() {
   local output
 
@@ -108,6 +134,7 @@ test_live_mode_requires_apply_gate() {
 }
 
 test_dry_run_emits_safe_proxmox_commands
+test_ovmf_mode_adds_efi_disk
 test_default_mode_is_dry_run
 test_live_mode_requires_apply_gate
 

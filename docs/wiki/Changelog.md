@@ -22,6 +22,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   inventory, IPAM records, and service validation targets from NetBox.
 - Added `scripts/proxmox-create-stage4-service-vm.sh` for dry-run-first
   Proxmox service VM creation from Stage4/Stage5 QCOW images.
+- Added the container-services safe-move change plan, SLO validator, SLO
+  manifest, and runtime migration helper:
+  - `docs/CHANGE-CONTROL-CONTAINER-SERVICES-SAFE-MOVE.md`
+  - `scripts/slo_service_validator.py`
+  - `scripts/migrate-container-services-runtime.sh`
+  - `service-slo-definitions/container-services-safe-move.yml`
 - Added Hetzner Cloud DNS token import and validation scaffolding:
   - `scripts/import-hetzner-dns-vault.sh`
   - `scripts/plan-hetzner-dns-from-netbox.py`
@@ -42,6 +48,10 @@ infrastructure work. It is intentionally higher level than `git log`.
   Cloud DNS CRUD automation.
 - Fixed NetBox intake device-type lookup to use manufacturer plus model during
   live applies, avoiding collisions with existing Device-Type-Library imports.
+- Extended the Proxmox service VM creator with explicit OVMF/EFI disk support
+  after the Stage4 ZFS base image proved unsuitable for SeaBIOS boot.
+- Registered `svc_container_services_safe_move_01` in local NetBox intake as a
+  planned Hasslehoff staging VM at `172.16.99.89`.
 
 ### Operational Notes
 
@@ -68,6 +78,30 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Live NetBox provisioning export currently yields `7` standalone IP bootstrap
   hosts from `12` IP records when run without an ownership tag filter; the
   default `codex-managed` filter correctly returns zero until tags are applied.
+- NetBox snapshot `nb-pre-safe-move-20260503` was created before adding the
+  container-services staging IPAM entry.
+- `svc-container-services-safe-move-01` was created as Proxmox VM `1089` on
+  Hasslehoff, using the bootable populated Stage4 image, OVMF, `8` vCPU,
+  `32 GiB` RAM, and an `80 GiB` disk.
+- The first create attempt exposed two useful constraints: Hasslehoff allows a
+  maximum of `8` vCPU per VM, and the ZFS Stage4 base QCOW has an empty EFI
+  partition, so the populated ext4 Stage4 image is required for this staging
+  path until the generic base image is rebuilt.
+- Source pre-move SLO validation passed `4/4` checks for HAProxy, nginx,
+  rsyslog TCP, and the Elasticsearch test VIP. Target boot SLO validation
+  passed `1/1` for SSH on `172.16.99.89`.
+- The staging root filesystem was expanded from the populated image's `23.5 GiB`
+  partition to the full `79 GiB` guest root.
+- Container runtime bootstrap completed on the staging VM with buildpkg
+  enabled; Podman `5.7.1`, Buildah `1.41.0`, and Skopeo `1.21.0` are
+  installed, and iptables is selected through `xtables-nft-multi`.
+- Applied the container-services runtime migration helper to
+  `svc-container-services-safe-move-01`; rsyslog, nginx, and HAProxy are
+  running under OpenRC/Podman with netavark networks.
+- Post-move core SLO validation passed `8/8` checks while keeping the source VM
+  online. The separate Elasticsearch dependency SLO currently fails with
+  HAProxy `503` because the Hasslehoff management subnet cannot reach the
+  existing `10.9.8.91` / `10.9.8.92` Elasticsearch path.
 
 ## 2026-05-02
 

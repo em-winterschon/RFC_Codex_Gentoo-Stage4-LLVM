@@ -20,6 +20,12 @@ VM_CPU="${VM_CPU:-host}"
 VM_OSTYPE="${VM_OSTYPE:-l26}"
 VM_SCSIHW="${VM_SCSIHW:-virtio-scsi-single}"
 VM_MACHINE="${VM_MACHINE:-q35}"
+VM_BIOS="${VM_BIOS:-}"
+VM_EFI_STORAGE="${VM_EFI_STORAGE:-${VM_STORAGE}}"
+VM_EFI_SIZE="${VM_EFI_SIZE:-1}"
+VM_EFI_TYPE="${VM_EFI_TYPE:-4m}"
+VM_EFI_PRE_ENROLLED_KEYS="${VM_EFI_PRE_ENROLLED_KEYS:-0}"
+VM_ENABLE_EFIDISK="${VM_ENABLE_EFIDISK:-auto}"
 VM_DISK_SIZE="${VM_DISK_SIZE:-}"
 VM_CIUSER="${VM_CIUSER:-root}"
 VM_ENABLE_CLOUDINIT="${VM_ENABLE_CLOUDINIT:-1}"
@@ -48,6 +54,14 @@ Required environment:
   VM_STORAGE
   SOURCE_QCOW
   NETBOX_ROLE
+
+Optional firmware:
+  VM_BIOS=ovmf
+  VM_ENABLE_EFIDISK=auto|1|0
+  VM_EFI_STORAGE
+  VM_EFI_SIZE
+  VM_EFI_TYPE
+  VM_EFI_PRE_ENROLLED_KEYS
 
 Safety:
   Existing VMID aborts unless PROXMOX_REPLACE=1.
@@ -136,10 +150,14 @@ remote_line() {
 build_remote_script() {
   local create_cmd import_cmd set_scsihw_cmd set_scsi_cmd set_net_cmd set_agent_cmd
   local set_serial_cmd set_vga_cmd set_boot_cmd set_desc_cmd set_ip_cmd set_dns_cmd
-  local set_search_cmd set_ciuser_cmd set_ide2_cmd set_citype_cmd resize_cmd start_cmd
+  local set_search_cmd set_ciuser_cmd set_ide2_cmd set_citype_cmd set_efidisk_cmd resize_cmd start_cmd
   local destroy_cmd stop_cmd
+  local should_create_efidisk=0
 
   create_cmd=(qm create "${VMID}" --name "${VM_NAME}" --ostype "${VM_OSTYPE}" --memory "${VM_MEMORY_MIB}" --cores "${VM_CORES}" --cpu "${VM_CPU}" --machine "${VM_MACHINE}")
+  if [[ -n "${VM_BIOS}" ]]; then
+    create_cmd+=(--bios "${VM_BIOS}")
+  fi
   import_cmd=(qm importdisk "${VMID}" "${SOURCE_QCOW}" "${VM_STORAGE}" --format qcow2)
   set_scsihw_cmd=(qm set "${VMID}" --scsihw "${VM_SCSIHW}")
   set_scsi_cmd=(qm set "${VMID}" --scsi0 "${VM_STORAGE}:vm-${VMID}-disk-0,discard=on,ssd=1")
@@ -155,10 +173,15 @@ build_remote_script() {
   set_ciuser_cmd=(qm set "${VMID}" --ciuser "${VM_CIUSER}")
   set_ide2_cmd=(qm set "${VMID}" --ide2 "${VM_STORAGE}:cloudinit")
   set_citype_cmd=(qm set "${VMID}" --citype nocloud)
+  set_efidisk_cmd=(qm set "${VMID}" --efidisk0 "${VM_EFI_STORAGE}:${VM_EFI_SIZE},efitype=${VM_EFI_TYPE},pre-enrolled-keys=${VM_EFI_PRE_ENROLLED_KEYS}")
   resize_cmd=(qm resize "${VMID}" scsi0 "${VM_DISK_SIZE}")
   start_cmd=(qm start "${VMID}")
   stop_cmd=(qm stop "${VMID}")
   destroy_cmd=(qm destroy "${VMID}" --purge 1)
+
+  if [[ "${VM_ENABLE_EFIDISK}" == '1' || ( "${VM_ENABLE_EFIDISK}" == 'auto' && "${VM_BIOS}" == 'ovmf' ) ]]; then
+    should_create_efidisk=1
+  fi
 
   cat <<EOF
 set -euo pipefail
@@ -193,6 +216,10 @@ $(remote_line set_vga_cmd)
 $(remote_line set_boot_cmd)
 $(remote_line set_desc_cmd)
 EOF
+
+  if [[ "${should_create_efidisk}" == '1' ]]; then
+    remote_line set_efidisk_cmd
+  fi
 
   if [[ -n "${VM_DISK_SIZE}" ]]; then
     remote_line resize_cmd

@@ -88,6 +88,7 @@ Dependency:
 | `ST-013` | completed | Validate post-outage installed-disk container-services redeploy | `ST-012` | Host-side checks passed for `10.9.8.89:8080`, `10.9.8.89:80`, `10.9.8.89:514/tcp`, and `10.9.8.92:9200`. |
 | `ST-014` | pending | Replace `ntfy` upstream-image dependency | `ST-013` | Build a package-backed Stage5 image or add a controlled archive preload path so redeploys do not depend on Docker Hub availability. |
 | `ST-015` | completed | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Generated Podman wrappers emit `--pull`; package-backed GHCR profiles default to `missing`, and the live Path B `ntfy` override uses `never` while the upstream-image path is blocked. |
+| `ST-016` | active | Safe-move container-services workload to Hasslehoff Stage4 VM | `PNR-014`, `ST-013` | Staging VM `svc-container-services-safe-move-01` is live at `172.16.99.89`; Podman/Buildah/Skopeo bootstrap completed; rsyslog, nginx, and HAProxy are running; core post-move SLO passed `8/8`. Elasticsearch backend dependency remains blocked by missing routing from `172.16.99.89` to the `10.9.8.91` / `10.9.8.92` path. |
 
 ## Proxmox, NetBox, And RouterOS
 
@@ -103,6 +104,7 @@ Dependency:
 | `PNR-011` | completed | Convert RFC99/SUN99/FMT2 host/IP/MAC source file into structured NetBox intake | `PNR-010` | `/tmp/rfc99-sun99-host-networking.md` is archived under operator-private storage; sanitized `rfc99`, `sun99`, `yks99`, and `fmt2` intake files validate locally and were applied live on 2026-05-03. |
 | `PNR-013` | active | Use NetBox to drive provisioning inventory and IPAM maps | `PNR-011`, `DNS-003` | Action plan and exporter are in place. Current live unfiltered export produces `7` standalone IP bootstrap hosts from `12` NetBox IP records; VM/device primary-IP ownership tags remain next. |
 | `PNR-014` | active | Prepare generic Proxmox Stage4 service VM creation path | `PNR-013` | Dry-run-first VM creator is added for Hasslehoff service VMs; live apply requires `PROXMOX_APPLY=1` and existing VM replacement requires `PROXMOX_REPLACE=1`. |
+| `PNR-015` | active | Track temporary Hasslehoff staging VMs in NetBox before live cutover | `PNR-014` | `svc_container_services_safe_move_01` is in NetBox/IPAM as planned with DNS name `svc-container-services-safe-move-01.rfc1918.host` and IP `172.16.99.89/24`; DNS plan is dry-run only. |
 | `PNR-012` | planned | Replace failed OPNsense path with CRS309 RouterOS after NetBox staging | `PNR-011` | `/tmp/crs309-router-mode-idc.wip.rsc` is destructive; execute only after backup, serial fallback, CRS309 admin recovery, management-only bootstrap, NetBox dry-run/apply, and validation gates. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
