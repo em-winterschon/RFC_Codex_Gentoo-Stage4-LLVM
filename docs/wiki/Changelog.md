@@ -3,6 +3,35 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-04
+
+### Changed
+
+- Upgraded the active CCR2004 gateway from RouterOS `7.19.6` to RouterOS
+  package and RouterBOARD firmware `7.22.2`.
+- Reframed CRS309 from failed replacement gateway to planned RouterOS
+  10GbE spine/aggregation switch.
+- Added CRS354 distribution-switch standardization docs and NetBox intake
+  coverage for `ether49` management, planned CRS309 LACP on `sfp-sfpplus1/2`,
+  existing QNAP TS435XEU DAC LACP on `sfp-sfpplus3/4`, and disconnected QSFP
+  RoCE-v2 reservations.
+- Recorded the default optical inventory rule: 10G SFP+ optics are `10G-SR`
+  over MMF unless explicitly noted otherwise; no SMF optics are currently in
+  use. Reference 10G-SR SKUs are FS.com `SFP-10GSR-85` and 10Gtek
+  `AXS85-192-M3`.
+
+### Operational Notes
+
+- CCR2004-to-CRS309 `10G-SR` link came up at `10Gbps` after replacing the
+  suspect Intel SR optic pair with FS.com `SFP-10GSR-85` optics.
+- CRS309-to-CRS354 `802.3ad` LACP is live using CRS309
+  `sfp-sfpplus2/3` and CRS354 `sfp-sfpplus1/2`; both members are active at
+  `10Gbps` with FS.com `SFP-10GSR-85` optics.
+- CRS354 serial snapshot was archived under
+  `/root/operator-private/routeros/crs354/20260504T194533Z`.
+- CRS309/CRS354 LACP post-change evidence was archived under
+  `/root/operator-private/routeros/lacp-cutover/20260504T210857Z`.
+
 ## 2026-05-03
 
 ### Added

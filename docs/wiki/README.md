@@ -28,6 +28,7 @@ Current mirrored pages:
 - `Infrastructure-Inventory-Intake.md`
 - `NetBox-IPAM-DCIM-Completion-Plan.md`
 - `CRS309-RouterOS-Replacement-Plan.md`
+- `CRS354-Distribution-Switch-Standardization.md`
 - `RouterOS-RFC99-Gateway.md`
 - `Configurations-and-Examples.md`
 - `CI-Builder-Farm.md`

@@ -4,6 +4,25 @@ network_fabric_site: local-rfc1918-lab
 network_fabric_management_prefix: 172.16.99.0/24
 network_fabric_management_gateway: 172.16.99.1
 
+network_fabric_media_defaults:
+  sfp_plus_10g_default:
+    media: 10G-SR
+    fiber: MMF
+    single_mode_fiber_in_use: false
+    optic_vendors:
+      - FS.com
+      - 10Gtek
+    reference_skus:
+      fs_com_10g_sr: SFP-10GSR-85
+      ten_gtek_10g_sr: AXS85-192-M3
+  sfp_plus_10g_dac:
+    media: 10G-DAC
+    vendors:
+      - generic-compatible
+      - arista-compatible
+      - intel-compatible
+      - juniper-compatible
+
 network_fabric_devices:
   hasslehoff:
     role: proxmox-hypervisor
@@ -21,10 +40,49 @@ network_fabric_devices:
   sw_mgmt_mkcrs354:
     role: distribution-switch
     management_ip: 172.16.99.7
+    management_interface: ether49
     serial_console: /dev/ttyUSB1
     serial_baud: 115200
     model: CRS354-48G-4S+2Q+
+    serial_number: HJV0AWTYBCD
+    observed_routeros_version: 7.22.2
+    observed_routerboard_firmware: 7.22.2
+    observed_architecture: mipsbe
+    observed_memory: 128MiB
+    observed_cpu_count: 1
     routeros_version_target: 7.22.2
+    notes:
+      - Live serial snapshot archived under /root/operator-private/routeros/crs354/20260504T194533Z.
+      - Management currently rides ether49 at 172.16.99.7/24.
+      - Stale sfp-sfpplus1 OPNsense address 172.16.254.7/24 was disabled during CRS309 spine cutover.
+      - sfp-sfpplus1 and sfp-sfpplus2 are active LACP members toward CRS309 using 10G-SR over MMF.
+      - sfp-sfpplus3 and sfp-sfpplus4 are already bond-qnap members for the QNAP TS435XEU archive server over 10G DAC.
+      - QSFP 40G ports are disconnected and reserved for future RoCE-v2 RDMA fabric.
+  sw_spine_crs309_rfc99:
+    role: spine-aggregation-switch
+    management_ip: 172.16.99.8
+    management_interface: br-spine
+    serial_console: /dev/ttyUSB0
+    serial_baud: 115200
+    model: CRS309-1G-8S+
+    observed_routeros_version: 7.22.1
+    observed_routerboard_firmware: 7.22.1
+    routeros_version_target: 7.22.2
+    status: active-bootstrap
+    notes:
+      - Rebuilt from factory reset as sw-spine-crs309-rfc99.
+      - CCR2004 gateway uplink is active on CRS309 sfp-sfpplus1 using FS.com SFP-10GSR-85 10G-SR optics over MMF.
+      - CRS354 LACP is active on CRS309 sfp-sfpplus2 plus sfp-sfpplus3.
+      - Hasslehoff CCR-PCI 10G DAC target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.
+      - CSS326 10G aggregation target is CRS309 sfp-sfpplus8.
+  qnap_archive_ts435xeu:
+    role: archive-storage
+    model: TS435XEU
+    manufacturer: QNAP
+    status: active
+    notes:
+      - 1U QNAP archive server.
+      - Connected to CRS354 sfp-sfpplus3 plus sfp-sfpplus4 as bond-qnap over 10G DAC.
   rtr_mgmt_ccr2004:
     role: routeros-gateway-candidate
     management_ip: 172.16.99.120
@@ -117,8 +175,10 @@ network_fabric_links:
       interface: ge24
     endpoint_b:
       device: sw_mgmt_mkcrs354
-      interface: ether1
+      interface: ether49
     purpose: crs354-management
+    notes:
+      - Live CRS354 management IP is assigned to ether49, not ether1.
   - endpoint_a:
       device: sw_mgmt_css326
       interface: sfp1
@@ -126,6 +186,7 @@ network_fabric_links:
       device: opnsense
       interface: management-lan
     purpose: current-management-gateway
+    status: legacy
   - endpoint_a:
       device: sw_mgmt_css326
       interface: sfp2
@@ -133,6 +194,89 @@ network_fabric_links:
       device: sw_mgmt_mkcrs354
       interface: sfp-sfpplus2
     purpose: crs354-uplink
+    status: superseded-by-crs309-spine-plan
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: sfp-sfpplus2
+    endpoint_b:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus1
+    purpose: gateway-to-spine-trunk
+    media: 10G-SR
+    fiber: MMF
+    optics:
+      endpoint_a:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+      endpoint_b:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+    validation:
+      status: link-ok
+      rate: 10Gbps
+      observed_at: 2026-05-04
+  - endpoint_a:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus2
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus1
+    purpose: crs309-crs354-lacp-member
+    lag: crs309-crs354-lag
+    media: 10G-SR
+    fiber: MMF
+    optics:
+      endpoint_a:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+      endpoint_b:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+    status: active
+    validation:
+      status: link-ok
+      rate: 10Gbps
+      observed_at: 2026-05-04
+  - endpoint_a:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus3
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus2
+    purpose: crs309-crs354-lacp-member
+    lag: crs309-crs354-lag
+    media: 10G-SR
+    fiber: MMF
+    optics:
+      endpoint_a:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+      endpoint_b:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+    status: active
+    validation:
+      status: link-ok
+      rate: 10Gbps
+      observed_at: 2026-05-04
+  - endpoint_a:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus3
+    endpoint_b:
+      device: qnap_archive_ts435xeu
+      interface: sfpplus1
+    purpose: qnap-archive-lacp-member
+    lag: qnap-ts435xeu-bond0
+    media: 10G-DAC
+  - endpoint_a:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus4
+    endpoint_b:
+      device: qnap_archive_ts435xeu
+      interface: sfpplus2
+    purpose: qnap-archive-lacp-member
+    lag: qnap-ts435xeu-bond0
+    media: 10G-DAC
 
 network_fabric_lags:
   hasslehoff-bond0:
@@ -146,6 +290,43 @@ network_fabric_lags:
       - eno1
       - eno2
     validated: true
+  crs309-crs354-lag:
+    mode: 802.3ad
+    switch_a: sw_spine_crs309_rfc99
+    switch_a_ports:
+      - sfp-sfpplus2
+      - sfp-sfpplus3
+    switch_b: sw_mgmt_mkcrs354
+    switch_b_ports:
+      - sfp-sfpplus1
+      - sfp-sfpplus2
+    media: 10G-SR
+    fiber: MMF
+    status: active
+    validation:
+      crs309_bond: bond-crs354
+      crs354_bond: bond-crs309
+      active_ports:
+        crs309:
+          - sfp-sfpplus2
+          - sfp-sfpplus3
+        crs354:
+          - sfp-sfpplus1
+          - sfp-sfpplus2
+      observed_at: 2026-05-04
+  qnap-ts435xeu-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_mkcrs354
+    switch_ports:
+      - sfp-sfpplus3
+      - sfp-sfpplus4
+    host: qnap_archive_ts435xeu
+    host_ports:
+      - sfpplus1
+      - sfpplus2
+    media: 10G-DAC
+    observed_routeros_bond: bond-qnap
+    status: observed
 
 network_fabric_vlan_plan:
   - vlan_id: 1

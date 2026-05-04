@@ -56,6 +56,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Infrastructure Inventory Intake](Infrastructure-Inventory-Intake)
 - [NetBox IPAM DCIM Completion Plan](NetBox-IPAM-DCIM-Completion-Plan)
 - [CRS309 RouterOS Replacement Plan](CRS309-RouterOS-Replacement-Plan)
+- [CRS354 Distribution Switch Standardization](CRS354-Distribution-Switch-Standardization)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)

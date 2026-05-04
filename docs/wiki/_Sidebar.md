@@ -13,6 +13,7 @@
 - [Infrastructure Inventory Intake](Infrastructure-Inventory-Intake)
 - [NetBox IPAM DCIM Completion Plan](NetBox-IPAM-DCIM-Completion-Plan)
 - [CRS309 RouterOS Replacement Plan](CRS309-RouterOS-Replacement-Plan)
+- [CRS354 Distribution Switch Standardization](CRS354-Distribution-Switch-Standardization)
 - [RouterOS RFC99 Gateway](RouterOS-RFC99-Gateway)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
