@@ -243,6 +243,14 @@
             recursive=True
           )
       }}
+    resolved_profile_nexus_repo: >-
+      {{
+        resolved_profile_nexus_repo
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.nexus_repo | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_haproxy_service_types: >-
       {{
         resolved_profile_haproxy_service_types

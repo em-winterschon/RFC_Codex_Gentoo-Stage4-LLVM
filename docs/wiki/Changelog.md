@@ -111,6 +111,47 @@ infrastructure work. It is intentionally higher level than `git log`.
   observed board `CCR2004-16G-2S+`, default IP `192.168.88.1/24` on `ether15`,
   and physical ports `ether1` through `ether16` plus `sfp-sfpplus1` and
   `sfp-sfpplus2`.
+- Added a render-only physical RouterOS gateway role for the CCR2004:
+  `routeros_rfc99_gateway`. It translates the CRS309 replacement intent to the
+  CCR2004 port map, renames `ether1` through `ether16` to `ge1` through `ge16`,
+  assigns `sfp-sfpplus1` as WAN, assigns `sfp-sfpplus2` as the LAN trunk,
+  enables SSH/HTTPS/API-SSL only, and renders a JSON manifest for review.
+- Added `docs/ROUTEROS-RFC99-GATEWAY.md` and
+  `docs/workflows/stage4-routeros-rfc99-gateway-deployment.json` for the
+  CCR2004 render/review workflow.
+- Added `scripts/backup-hasslehoff-config.sh` and
+  `docs/HASSLEHOFF-BACKUP.md` to capture Proxmox/Hasslehoff host configuration
+  into on-host operator-private storage before gateway and VM changes.
+- Added the `vm-nexus-repository` Stage5 profile and `nexus_repo` role for
+  Sonatype Nexus Repository OSS `3.90.1-01`, pinned to the local installer
+  checksum under `/tmp/Nexus-Repo-OSS`.
+- Added Stage5 service app version tracking in
+  `app-version-locks/stage5-service-apps.yml` plus
+  `docs/PACKAGE-VERSION-PINNING.md`.
+- Added `docs/EOD-STATUS-2026-05-03.md` and the CCR2004 gateway swap plan
+  `docs/superpowers/plans/2026-05-04-ccr2004-gateway-swap.md`.
+
+### Changed
+
+- Normalized the CRS309 WIP's overlapping `172.16.228.0/22` gateway entries in
+  the CCR2004 render by keeping `172.16.228.1/22` and omitting
+  `172.16.229.1/22` plus `172.16.230.1/22`.
+- Added `package_pins` metadata coverage to Stage4 base metadata and
+  observability VM metadata so profile definitions expose tracked atoms and
+  known version-lock gaps.
+
+### Operational Notes
+
+- The CCR2004 role is intentionally render-only. No live RouterOS import has
+  been implemented or executed yet; serial console and pre-change export remain
+  mandatory gates before any live mutation.
+- The CCR2004 swap plan now requires an Emergency Gateway Ethernet WAN Link from
+  the Codex host to the AT&T gateway L2 before physical cutover.
+- Nexus repository proxy API automation is intentionally deferred until Nexus
+  admin credentials and TLS are vaulted.
+- Hasslehoff backup completed successfully to
+  `/root/operator-private/hasslehoff/backups/20260504T040948Z/` with SHA256
+  verification.
 
 ## 2026-05-02
 

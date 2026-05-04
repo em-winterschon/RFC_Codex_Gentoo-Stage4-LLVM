@@ -23,6 +23,7 @@ Current mirrored pages:
 - `Workflows.md`
 - `Proxmox-NetBox-RouterOS-Action-Plan.md`
 - `Hasslehoff-Inventory.md`
+- `Hasslehoff-Backup.md`
 - `NetBox-Essentials.md`
 - `Infrastructure-Inventory-Intake.md`
 - `NetBox-IPAM-DCIM-Completion-Plan.md`
@@ -31,6 +32,8 @@ Current mirrored pages:
 - `Configurations-and-Examples.md`
 - `CI-Builder-Farm.md`
 - `Binpkg-Repository.md`
+- `Nexus-Repository.md`
+- `Package-Version-Pinning.md`
 - `Container-Services-Validation.md`
 - `Container-Building.md`
 - `Container-Publishing.md`
@@ -41,6 +44,7 @@ Current mirrored pages:
 - `ITIL-Change-Control-Container-Services-Safe-Move.md`
 - `Changelog.md`
 - `SITREP-Status-2026-05-03.md`
+- `EOD-Status-2026-05-03.md`
 - `EOD-Status-2026-05-02.md`
 - `EOD-Status-2026-04-30.md`
 - `EOD-Status-2026-04-29.md`

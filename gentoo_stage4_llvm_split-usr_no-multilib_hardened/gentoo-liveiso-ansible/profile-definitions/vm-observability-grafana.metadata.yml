@@ -7,3 +7,8 @@ gentoo_system_profile_metadata:
     stage5:
       - virtual-host
       - observability-grafana
+  package_pins:
+    tracked_atoms:
+      - www-apps/grafana-bin
+    app_version_lock_id: grafana
+    upstream_app_version: portage-resolved-www-apps-grafana-bin

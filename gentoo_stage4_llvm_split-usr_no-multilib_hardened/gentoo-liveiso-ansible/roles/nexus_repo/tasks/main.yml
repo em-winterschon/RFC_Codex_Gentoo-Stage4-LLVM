@@ -1,0 +1,137 @@
+---
+- name: Resolve Nexus Repository settings
+  ansible.builtin.set_fact:
+    nexus_repo_enabled: "{{ resolved_profile_nexus_repo.enabled | default(nexus_repo_default_enabled) | bool }}"
+    resolved_nexus_repo:
+      version: "{{ resolved_profile_nexus_repo.version | default(nexus_repo_default_version) }}"
+      architecture: "{{ resolved_profile_nexus_repo.architecture | default(nexus_repo_default_architecture) }}"
+      installer_path: "{{ resolved_profile_nexus_repo.installer_path | default(nexus_repo_default_installer_path) }}"
+      installer_sha256: "{{ resolved_profile_nexus_repo.installer_sha256 | default(nexus_repo_default_installer_sha256) }}"
+      install_root: "{{ resolved_profile_nexus_repo.install_root | default(nexus_repo_default_install_root) }}"
+      extracted_dir_name: "{{ resolved_profile_nexus_repo.extracted_dir_name | default(nexus_repo_default_extracted_dir_name) }}"
+      symlink_path: "{{ resolved_profile_nexus_repo.symlink_path | default(nexus_repo_default_symlink_path) }}"
+      work_root: "{{ resolved_profile_nexus_repo.work_root | default(nexus_repo_default_work_root) }}"
+      data_root: "{{ resolved_profile_nexus_repo.data_root | default(nexus_repo_default_data_root) }}"
+      log_root: "{{ resolved_profile_nexus_repo.log_root | default(nexus_repo_default_log_root) }}"
+      service_user: "{{ resolved_profile_nexus_repo.service_user | default(nexus_repo_default_service_user) }}"
+      service_group: "{{ resolved_profile_nexus_repo.service_group | default(nexus_repo_default_service_group) }}"
+      listen_host: "{{ resolved_profile_nexus_repo.listen_host | default(nexus_repo_default_listen_host) }}"
+      listen_port: "{{ resolved_profile_nexus_repo.listen_port | default(nexus_repo_default_listen_port) }}"
+      context_path: "{{ resolved_profile_nexus_repo.context_path | default(nexus_repo_default_context_path) }}"
+      runlevel: "{{ resolved_profile_nexus_repo.runlevel | default(nexus_repo_default_runlevel) }}"
+      heap_min: "{{ resolved_profile_nexus_repo.heap_min | default(nexus_repo_default_heap_min) }}"
+      heap_max: "{{ resolved_profile_nexus_repo.heap_max | default(nexus_repo_default_heap_max) }}"
+      direct_memory: "{{ resolved_profile_nexus_repo.direct_memory | default(nexus_repo_default_direct_memory) }}"
+      proxy_intent_path: "{{ resolved_profile_nexus_repo.proxy_intent_path | default(nexus_repo_default_proxy_intent_path) }}"
+      transparent_proxy_repositories: "{{ resolved_profile_nexus_repo.transparent_proxy_repositories | default(nexus_repo_default_transparent_proxy_repositories) }}"
+
+- name: Check local Nexus Repository installer
+  ansible.builtin.stat:
+    path: "{{ resolved_nexus_repo.installer_path }}"
+    checksum_algorithm: sha256
+  register: nexus_repo_installer
+  delegate_to: localhost
+  become: false
+  when: nexus_repo_enabled
+
+- name: Assert Nexus Repository installer exists and matches the pinned checksum
+  ansible.builtin.assert:
+    that:
+      - nexus_repo_installer.stat.exists
+      - nexus_repo_installer.stat.checksum == resolved_nexus_repo.installer_sha256
+    fail_msg: >-
+      Nexus Repository installer {{ resolved_nexus_repo.installer_path }} is
+      missing or does not match the pinned checksum.
+  when: nexus_repo_enabled
+
+- name: Ensure Nexus Repository service group exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('getent group ' ~ resolved_nexus_repo.service_group ~ ' >/dev/null || groupadd --system ' ~ resolved_nexus_repo.service_group) | quote }}
+  changed_when: true
+  when: nexus_repo_enabled
+
+- name: Ensure Nexus Repository service user exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('id -u ' ~ resolved_nexus_repo.service_user ~ ' >/dev/null 2>&1 || useradd --system --home-dir ' ~ resolved_nexus_repo.data_root ~ ' --shell /sbin/nologin --gid ' ~ resolved_nexus_repo.service_group ~ ' ' ~ resolved_nexus_repo.service_user) | quote }}
+  changed_when: true
+  when: nexus_repo_enabled
+
+- name: Ensure Nexus Repository directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nexus_repo_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_nexus_repo.install_root }}"
+    - "{{ resolved_nexus_repo.work_root }}"
+    - "{{ resolved_nexus_repo.data_root }}"
+    - "{{ resolved_nexus_repo.log_root }}"
+    - /etc/nexus
+    - /etc/init.d
+    - /etc/conf.d
+  loop_control:
+    loop_var: nexus_repo_dir
+  when: nexus_repo_enabled
+
+- name: Extract pinned Nexus Repository installer
+  ansible.builtin.unarchive:
+    src: "{{ resolved_nexus_repo.installer_path }}"
+    dest: "{{ install_target_root }}{{ resolved_nexus_repo.install_root }}"
+    creates: "{{ install_target_root }}{{ resolved_nexus_repo.install_root }}/{{ resolved_nexus_repo.extracted_dir_name }}/bin/nexus"
+  when: nexus_repo_enabled
+
+- name: Link current Nexus Repository install
+  ansible.builtin.file:
+    src: "{{ resolved_nexus_repo.install_root }}/{{ resolved_nexus_repo.extracted_dir_name }}"
+    dest: "{{ install_target_root }}{{ resolved_nexus_repo.symlink_path }}"
+    state: link
+    force: true
+  when: nexus_repo_enabled
+
+- name: Render Nexus Repository vmoptions
+  ansible.builtin.template:
+    src: nexus.vmoptions.j2
+    dest: "{{ install_target_root }}{{ resolved_nexus_repo.symlink_path }}/bin/nexus.vmoptions"
+    mode: '0644'
+  when: nexus_repo_enabled
+
+- name: Render Nexus Repository runtime properties
+  ansible.builtin.template:
+    src: nexus-repository.properties.j2
+    dest: "{{ install_target_root }}{{ resolved_nexus_repo.symlink_path }}/etc/nexus.properties"
+    mode: '0644'
+  when: nexus_repo_enabled
+
+- name: Render Nexus Repository OpenRC service
+  ansible.builtin.template:
+    src: nexus.openrc.j2
+    dest: "{{ install_target_root }}/etc/init.d/nexus"
+    mode: '0755'
+  when: nexus_repo_enabled
+
+- name: Render Nexus Repository declarative proxy intent
+  ansible.builtin.template:
+    src: nexus-proxy-intent.yml.j2
+    dest: "{{ install_target_root }}{{ resolved_nexus_repo.proxy_intent_path }}"
+    mode: '0644'
+  when: nexus_repo_enabled
+
+- name: Assign Nexus Repository runtime ownership in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('chown -R ' ~ resolved_nexus_repo.service_user ~ ':' ~ resolved_nexus_repo.service_group ~ ' ' ~ resolved_nexus_repo.symlink_path ~ ' ' ~ resolved_nexus_repo.install_root ~ '/' ~ resolved_nexus_repo.extracted_dir_name ~ ' ' ~ resolved_nexus_repo.work_root ~ ' ' ~ resolved_nexus_repo.data_root ~ ' ' ~ resolved_nexus_repo.log_root) | quote }}
+  changed_when: true
+  when: nexus_repo_enabled
+
+- name: Enable Nexus Repository OpenRC service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + ['nexus']
+        ) | unique
+      }}
+  when: nexus_repo_enabled

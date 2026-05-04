@@ -29,6 +29,7 @@
       - telemetry_alertmanager
       - telemetry_grafana
       - binpkg_repo
+      - nexus_repo
       - freeipa_controller
       - ipa_client
       - freeradius_bridge

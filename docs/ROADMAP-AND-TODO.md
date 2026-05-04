@@ -106,9 +106,17 @@ Dependency:
 | `PNR-014` | active | Prepare generic Proxmox Stage4 service VM creation path | `PNR-013` | Dry-run-first VM creator is added for Hasslehoff service VMs; live apply requires `PROXMOX_APPLY=1` and existing VM replacement requires `PROXMOX_REPLACE=1`. |
 | `PNR-015` | active | Track temporary Hasslehoff staging VMs in NetBox before live cutover | `PNR-014` | `svc_container_services_safe_move_01` is in NetBox/IPAM as planned with DNS name `svc-container-services-safe-move-01.rfc1918.host` and IP `172.16.99.89/24`; DNS plan is dry-run only. |
 | `PNR-012` | active | Replace failed OPNsense path with RouterOS after NetBox staging | `PNR-011` | CRS309 WIP remains the source config reference, but preferred target `gw_rfc99_mkccr2004_16g` is serial-discovered on `/dev/ttyUSB2` as RouterOS `7.19.6` / board `CCR2004-16G-2S+`. A render-only CCR2004 role now emits reviewed RSC/JSON intent with `sfp-sfpplus1` WAN, `sfp-sfpplus2` LAN trunk, `ge1`-`ge16` naming, SSH/HTTPS/API-SSL only, and normalized overlapping prefixes. Next gate is pre-change backup/export plus reviewed serial import. |
+| `PNR-016` | active | Capture Hasslehoff host backups before gateway and VM changes | `PNR-001` | `scripts/backup-hasslehoff-config.sh` now captures `/etc/pve`, network/sysctl state, Proxmox JSON, and host summaries to `/root/operator-private/hasslehoff/backups`. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |
+
+## Repository Proxy And Version Locks
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `REPO-001` | active | Add Sonatype Nexus Repository OSS as an infrastructure proxy VM | Stage5 VM profile base | `vm-nexus-repository` and `nexus_repo` are scaffolded with installer checksum pinning and declarative proxy intent. Live API repo creation waits for vaulted credentials and TLS. |
+| `REPO-002` | active | Track app/service version locks in repo data | profile metadata | `app-version-locks/stage5-service-apps.yml` tracks explicit locks and pin gaps for Portage-resolved services. |
 
 ## Stage5 Service Tracks
 

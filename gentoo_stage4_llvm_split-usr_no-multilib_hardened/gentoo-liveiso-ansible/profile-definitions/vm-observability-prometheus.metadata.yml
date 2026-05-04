@@ -7,3 +7,11 @@ gentoo_system_profile_metadata:
     stage5:
       - virtual-host
       - observability-prometheus
+  package_pins:
+    tracked_atoms:
+      - app-metrics/prometheus
+      - app-metrics/alertmanager
+      - app-metrics/blackbox_exporter
+      - app-metrics/snmp_exporter
+    app_version_lock_id: prometheus-stack
+    upstream_app_version: portage-resolved-app-metrics

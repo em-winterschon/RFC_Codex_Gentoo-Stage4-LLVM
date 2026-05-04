@@ -43,6 +43,7 @@ for profile in \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
   vm-kibana-interface.yml \
+  vm-nexus-repository.yml \
   zerotier-managed-access.yml
 do
   test -f "${PROFILE_DIR}/${profile}"
@@ -67,7 +68,8 @@ for metadata in \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
-  vm-kibana-interface.metadata.yml
+  vm-kibana-interface.metadata.yml \
+  vm-nexus-repository.metadata.yml
 do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
@@ -92,7 +94,8 @@ for host_var in \
   vm-guest-simple.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
-  vm-kibana-interface.yml
+  vm-kibana-interface.yml \
+  vm-nexus-repository.yml
 do
   test -f "${HOST_VARS_DIR}/${host_var}"
   assert_file_contains "${HOST_VARS_DIR}/${host_var}" '^profile_definition_files:'
@@ -116,6 +119,7 @@ for package_list in \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-kibana-interface.packages \
+  stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
   stage5-virtual-host-container-services.packages
