@@ -80,12 +80,86 @@ devices:
     manufacturer: MikroTik
     model: CCR2004-16G-2S+PC
     status: planned
-    interfaces: []
+    serial_console: /dev/ttyUSB2
+    interfaces:
+      - name: ether1
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:59
+      - name: ether2
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5a
+      - name: ether3
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5b
+      - name: ether4
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5c
+      - name: ether5
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5d
+      - name: ether6
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5e
+      - name: ether7
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5f
+      - name: ether8
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:60
+      - name: ether9
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:61
+      - name: ether10
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:62
+      - name: ether11
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:63
+      - name: ether12
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:64
+      - name: ether13
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:65
+      - name: ether14
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:66
+      - name: ether15
+        type: 1000base-t
+        purpose: factory-default-management
+        mac_address: d0:ea:11:4e:bd:67
+      - name: ether16
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:68
+      - name: sfp-sfpplus1
+        type: 10gbase-x-sfpp
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:69
+      - name: sfp-sfpplus2
+        type: 10gbase-x-sfpp
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:6a
     notes:
       - Planned rackable RouterOS replacement for gw_rfc99_mkcrs309.
-      - Management IP is intentionally unassigned until serial console discovery confirms baseline state and cabling.
+      - Observed board-name is CCR2004-16G-2S+ on RouterOS 7.19.6, arm64, 4 cores, 4096 MiB RAM.
+      - Factory default IP is 192.168.88.1/24 on ether15; management IP is intentionally unassigned until management-only bootstrap is applied.
       - Admin bootstrap credential is stored in Ansible Vault as vault_rfc99_ccr2004_16g_admin_password.
-      - Port inventory will be populated after serial console discovery.
+      - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
   - name: gw_rfc99_att_bgw320
     site: rfc99
     role: provider-wan-router

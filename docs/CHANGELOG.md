@@ -106,6 +106,11 @@ infrastructure work. It is intentionally higher level than `git log`.
   rackable MikroTik `CCR2004-16G-2S+PC` replacement-router target. It is staged
   as `gw_rfc99_mkccr2004_16g` without a management IP until serial discovery
   confirms baseline state and cabling.
+- Completed first serial discovery for `gw_rfc99_mkccr2004_16g` on
+  `/dev/ttyUSB2`: RouterOS `7.19.6`, arm64, `4` cores, `4096 MiB` RAM,
+  observed board `CCR2004-16G-2S+`, default IP `192.168.88.1/24` on `ether15`,
+  and physical ports `ether1` through `ether16` plus `sfp-sfpplus1` and
+  `sfp-sfpplus2`.
 
 ## 2026-05-02
 

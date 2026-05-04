@@ -43,6 +43,31 @@ inventory. The initial expected hardware identity is:
   `vault_rfc99_ccr2004_16g_admin_user` and
   `vault_rfc99_ccr2004_16g_admin_password`
 
+## CCR2004 Serial Discovery
+
+Serial console is available at `/dev/ttyUSB2` with `115200` baud. The first
+serial discovery snapshot is archived outside the repository under:
+
+```text
+/root/operator-private/routeros/ccr2004-16g/20260504T013200Z/
+```
+
+Observed facts:
+
+- RouterOS version: `7.19.6`
+- architecture: `arm64`
+- board-name/model reported by RouterOS: `CCR2004-16G-2S+`
+- CPU count: `4`
+- memory: `4096 MiB`
+- factory default IP: `192.168.88.1/24` on `ether15`
+- physical ports: `ether1` through `ether16`, `sfp-sfpplus1`, `sfp-sfpplus2`
+- default services currently enabled broadly: SSH, telnet, FTP, HTTP, WinBox,
+  API, and API-SSL; HTTPS is disabled
+
+Do not attach this router to production L2 until a management-only bootstrap
+restricts services, sets the intended identity, moves management onto the
+confirmed management interface/IP, and exports a fresh post-bootstrap config.
+
 The intended high-level design is:
 
 - `sfp-sfpplus1` as WAN uplink

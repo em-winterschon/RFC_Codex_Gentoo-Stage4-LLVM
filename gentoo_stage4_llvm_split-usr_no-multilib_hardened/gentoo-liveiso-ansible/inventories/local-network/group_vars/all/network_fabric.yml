@@ -35,11 +35,20 @@ network_fabric_devices:
     manufacturer: MikroTik
     status: planned
     replaces: gw_rfc99_mkcrs309
+    serial_console: /dev/ttyUSB2
+    observed_board_name: CCR2004-16G-2S+
+    observed_routeros_version: 7.19.6
+    observed_architecture: arm64
+    observed_cpu_count: 4
+    observed_memory: 4096MiB
+    factory_default_ip: 192.168.88.1/24
+    factory_default_interface: ether15
     notes:
       - Rackable replacement target for the CRS309 RouterOS gateway plan.
-      - Management IP is intentionally unassigned until serial discovery confirms baseline state.
+      - Management IP is intentionally unassigned until management-only bootstrap is rendered and applied.
       - Admin bootstrap credential is stored only in Ansible Vault.
-      - Port inventory will be populated after serial console discovery.
+      - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
+      - Factory default config has 192.168.88.1/24 on ether15 and broad management services enabled; do not expose it to production L2 before hardening.
   ctbsd_rfc99_jailerprime_099099:
     role: retired-freebsd-jail-host
     hypervisor: hasslehoff
