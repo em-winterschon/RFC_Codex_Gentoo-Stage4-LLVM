@@ -113,6 +113,7 @@
 /ip service set winbox disabled={{ (not routeros_rfc99_gateway_winbox_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_winbox_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }}
 /ip service set ssh disabled={{ (not routeros_rfc99_gateway_ssh_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_ssh_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }}
 /ip ssh set strong-crypto={{ routeros_rfc99_gateway_ssh_strong_crypto | ternary("yes", "no") }} forwarding-enabled={{ routeros_rfc99_gateway_ssh_forwarding | ternary("yes", "no") }}
+/tool bandwidth-server set enabled=no
 
 # Self-signed certificate until the internal CA service is wired into RouterOS imports.
 /ip service set www-ssl disabled=yes address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate=none
@@ -135,7 +136,8 @@
 {% endfor %}
 {% endif %}
 
-# SNMP baseline. Public community is removed by default.
+# SNMP baseline. Keep the service off until vaulted SNMPv3 or tightly scoped
+# collector credentials are configured.
 /snmp set enabled={{ routeros_rfc99_gateway_snmp_enabled | ternary("yes", "no") }} contact="{{ routeros_rfc99_gateway_snmp_contact }}" location="{{ routeros_rfc99_gateway_snmp_location }}"
 {% if routeros_rfc99_gateway_snmp_disable_public | bool %}
 :if ([:len [/snmp community find where name="public"]] > 0) do={ /snmp community set [find name="public"] disabled=yes addresses={{ routeros_rfc99_gateway_management_cidrs | join(',') }} }

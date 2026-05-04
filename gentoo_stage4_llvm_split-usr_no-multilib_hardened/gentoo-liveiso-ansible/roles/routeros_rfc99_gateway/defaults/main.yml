@@ -216,7 +216,7 @@ routeros_rfc99_gateway_syslog_topics:
   - error
   - critical
 
-routeros_rfc99_gateway_snmp_enabled: true
+routeros_rfc99_gateway_snmp_enabled: false
 routeros_rfc99_gateway_snmp_contact: RFC99
 routeros_rfc99_gateway_snmp_location: CCR2004-16G-2S+PC
 routeros_rfc99_gateway_snmp_disable_public: true

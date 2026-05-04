@@ -89,6 +89,8 @@ test_routeros_rfc99_gateway_rendered_config() {
   assert_file_contains "${rsc}" '/ip service set ftp disabled=yes'
   assert_file_contains "${rsc}" '/ip service set www disabled=yes'
   assert_file_contains "${rsc}" '/ip service set api disabled=yes'
+  assert_file_contains "${rsc}" '/tool bandwidth-server set enabled=no'
+  assert_file_contains "${rsc}" '/snmp set enabled=no contact="RFC99" location="CCR2004-16G-2S+PC"'
   assert_file_contains "${rsc}" '/ip firewall nat add chain=srcnat action=masquerade out-interface-list=WAN comment="RFC99 WAN SNAT"'
   assert_file_not_contains "${rsc}" '172.16.229.1/22'
   assert_file_not_contains "${rsc}" '172.16.230.1/22'
