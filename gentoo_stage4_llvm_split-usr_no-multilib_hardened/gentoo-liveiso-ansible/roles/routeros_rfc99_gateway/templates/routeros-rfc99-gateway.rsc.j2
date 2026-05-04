@@ -87,6 +87,10 @@
 /ip dhcp-client remove [find interface="{{ routeros_rfc99_gateway_wan_interface }}"]
 /ip route remove [find comment="RFC99 WAN default"]
 {% if routeros_rfc99_gateway_wan_mode == 'dhcp' %}
+/ip address remove [find where interface="{{ routeros_rfc99_gateway_wan_interface }}" and dynamic=no]
+{% if routeros_rfc99_gateway_wan_gateway | length > 0 %}
+/ip route remove [find where dst-address="0.0.0.0/0" and dynamic=no and gateway="{{ routeros_rfc99_gateway_wan_gateway }}"]
+{% endif %}
 /ip dhcp-client add interface={{ routeros_rfc99_gateway_wan_interface }} add-default-route=yes default-route-distance={{ routeros_rfc99_gateway_wan_route_distance }} use-peer-dns={{ routeros_rfc99_gateway_wan_use_peer_dns | ternary("yes", "no") }} use-peer-ntp=no comment="RFC99 WAN DHCP"
 {% elif routeros_rfc99_gateway_wan_mode == 'static' %}
 /ip address add address={{ routeros_rfc99_gateway_wan_cidr }} interface={{ routeros_rfc99_gateway_wan_interface }} comment="RFC99 WAN static"
@@ -95,6 +99,11 @@
 :error ("[" . $cfgTag . "] invalid WAN mode {{ routeros_rfc99_gateway_wan_mode }}")
 {% endif %}
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
+
+# DHCP service is managed by future NetBox/IPAM-specific roles, not the gateway
+# baseline. Disable inherited defconf state so it cannot leak leases during
+# gateway cutover.
+/ip dhcp-server disable [find]
 
 # Management services: SSH, HTTPS, and API-SSL only.
 /ip service set telnet disabled=yes
