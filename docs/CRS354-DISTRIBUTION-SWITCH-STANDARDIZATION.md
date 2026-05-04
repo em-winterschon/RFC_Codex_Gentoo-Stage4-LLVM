@@ -24,6 +24,10 @@ Observed state:
 - stale inactive main-table default route: `172.16.254.1`, disabled during
   the 2026-05-04 LACP cutover
 
+Follow-up serial verification on 2026-05-04 found those stale OPNsense objects
+were still present after the initial cutover notes. They were disabled over
+serial and revalidated with `bond-crs309` active on both LACP members.
+
 ## Media Policy
 
 Unless a link record explicitly says otherwise:
@@ -70,6 +74,9 @@ Validated state:
   `sfp-sfpplus2` and `sfp-sfpplus3`.
 - CRS354 `bond-crs309` is RouterOS `802.3ad` with active ports
   `sfp-sfpplus1` and `sfp-sfpplus2`.
+- CRS309 was upgraded after the LACP cutover to RouterOS package and
+  RouterBOARD firmware `7.22.2`; unused optional `container` and `zerotier`
+  packages were removed first to recover CRS309 flash space.
 - CRS309 bridge membership moved from individual `sfp-sfpplus2/3` ports to
   `bond-crs354` on `br-spine`.
 - CRS354 bridge membership moved from individual `sfp-sfpplus2` to

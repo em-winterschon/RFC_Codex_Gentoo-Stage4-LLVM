@@ -37,6 +37,26 @@ network_fabric_devices:
     management_ip: 172.16.99.6
     management_protocol: swos-http
     model: CSS326-24G-2S+
+    manufacturer: MikroTik
+    serial_number: HHD0AERY8JN
+    observed_swos_version: 2.18.1751448030
+    swos_version_target: 2.18.1751448030
+    observed_mac: f4:1e:57:89:af:be
+    snmp:
+      enabled: true
+      community: rfc1918.read
+      contact: toor@rfc1918.host
+      location: RFC99-25U-WHT
+    syslog:
+      supported: false
+      reason: SwOS CSS326 exposes SNMP and HTTP backup/state endpoints but no syslog destination controls in the observed 2.18 UI/API.
+    notes:
+      - Live SwOS snapshot archived under /root/operator-private/swos/css326.
+      - Identity is sw-mgmt-mkcss326.
+      - Static management IP is 172.16.99.6.
+      - Address acquisition mode is static.
+      - ge5 and ge6 are active LACP members for Hasslehoff bond0.
+      - sfp1 and sfp2 currently contain Intel FTLX8571D3BCV-IT 10G-SR MMF optics.
   sw_mgmt_mkcrs354:
     role: distribution-switch
     management_ip: 172.16.99.7
@@ -65,12 +85,14 @@ network_fabric_devices:
     serial_console: /dev/ttyUSB0
     serial_baud: 115200
     model: CRS309-1G-8S+
-    observed_routeros_version: 7.22.1
-    observed_routerboard_firmware: 7.22.1
+    observed_routeros_version: 7.22.2
+    observed_routerboard_firmware: 7.22.2
     routeros_version_target: 7.22.2
-    status: active-bootstrap
+    status: active
     notes:
       - Rebuilt from factory reset as sw-spine-crs309-rfc99.
+      - Upgraded to RouterOS package and RouterBOARD firmware 7.22.2 on 2026-05-04.
+      - Optional RouterOS container and zerotier packages were removed before upgrade to recover flash space.
       - CCR2004 gateway uplink is active on CRS309 sfp-sfpplus1 using FS.com SFP-10GSR-85 10G-SR optics over MMF.
       - CRS354 LACP is active on CRS309 sfp-sfpplus2 plus sfp-sfpplus3.
       - Hasslehoff CCR-PCI 10G DAC target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.

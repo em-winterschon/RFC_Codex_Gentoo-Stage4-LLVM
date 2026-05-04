@@ -85,19 +85,37 @@ devices:
     status: active
     management_ip: 172.16.99.6
     management_protocol: swos-http
+    serial_number: HHD0AERY8JN
+    software_target: SwOS 2.18.1751448030
     interfaces:
       - name: ge4
         purpose: ccr2004-management
       - name: ge5
         lag: hasslehoff-bond0
+        status: active
       - name: ge6
         lag: hasslehoff-bond0
+        status: active
       - name: ge24
         purpose: crs354-management
+        status: active
       - name: sfp1
-        purpose: opnsense-management-gateway
+        purpose: crs309-spine-target
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: Intel
+        optic_sku: FTLX8571D3BCV-IT
       - name: sfp2
-        purpose: crs354-uplink
+        purpose: legacy-crs354-uplink
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: Intel
+        optic_sku: FTLX8571D3BCV-IT
+    notes:
+      - Live SwOS snapshot archived outside the repo under /root/operator-private/swos/css326.
+      - SwOS 2.18 has no observed syslog destination support; use SNMP polling and HTTP backup snapshots.
+      - SNMP is enabled with the vaulted/read-only community tracked in operator-private state.
+      - ge5 and ge6 are active LACP members for Hasslehoff bond0.
   - name: sw_mgmt_mkcrs354
     site: local-rfc1918-lab
     role: distribution-switch
@@ -211,6 +229,8 @@ devices:
         fiber: MMF
     notes:
       - Factory reset and bootstrapped as RouterOS spine on 2026-05-04.
+      - Upgraded to RouterOS package and RouterBOARD firmware 7.22.2 on 2026-05-04.
+      - Optional container and zerotier packages were removed before upgrade to free CRS309 flash space.
       - CCR2004 link validated at 10Gbps after replacing marginal Intel SR optics with FS.com SFP-10GSR-85 optics.
       - CRS354 LACP validated active on 2026-05-04 with both members at 10Gbps.
   - name: qnap_archive_ts435xeu

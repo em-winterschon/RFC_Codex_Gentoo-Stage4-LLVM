@@ -29,6 +29,7 @@ Current mirrored pages:
 - `NetBox-IPAM-DCIM-Completion-Plan.md`
 - `CRS309-RouterOS-Replacement-Plan.md`
 - `CRS354-Distribution-Switch-Standardization.md`
+- `CSS326-SwOS-Access-Switch.md`
 - `RouterOS-RFC99-Gateway.md`
 - `Configurations-and-Examples.md`
 - `CI-Builder-Farm.md`

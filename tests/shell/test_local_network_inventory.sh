@@ -25,6 +25,8 @@ vault_file="${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/vault.yml"
 playbook="${ANSIBLE_ROOT}/playbooks/local-network-inventory.yml"
 proxmox_api_playbook="${ANSIBLE_ROOT}/playbooks/proxmox-api-validate.yml"
 netbox_api_playbook="${ANSIBLE_ROOT}/playbooks/netbox-api-validate.yml"
+swos_snapshot_playbook="${ANSIBLE_ROOT}/playbooks/swos-state-snapshot.yml"
+swos_snapshot_script="${REPO_ROOT}/scripts/collect-mikrotik-swos-state.py"
 
 assert_file_contains "${inventory}" "hasslehoff:"
 assert_file_contains "${inventory}" "svc_netbox_stage4:"
@@ -43,6 +45,9 @@ assert_file_contains "${inventory}" "rtr_mgmt_ccr2004:"
 assert_file_contains "${inventory}" "gw_rfc99_mkccr2004_16g:"
 assert_file_contains "${inventory}" "vault_rfc99_ccr2004_16g_admin_password"
 assert_file_contains "${inventory}" "sw_mgmt_css326:"
+assert_file_contains "${inventory}" "swos_identity: sw-mgmt-mkcss326"
+assert_file_contains "${inventory}" "swos_observed_version: 2.18.1751448030"
+assert_file_contains "${inventory}" "swos_syslog_supported: false"
 
 assert_file_contains "${hasslehoff_vars}" "local_inventory_observed:"
 assert_file_contains "${hasslehoff_vars}" "proxmox_observed_vms:"
@@ -67,9 +72,19 @@ assert_file_contains "${network_fabric}" "network_fabric_media_defaults:"
 assert_file_contains "${network_fabric}" "SFP-10GSR-85"
 assert_file_contains "${network_fabric}" "AXS85-192-M3"
 assert_file_contains "${network_fabric}" "sw_spine_crs309_rfc99"
+assert_file_contains "${network_fabric}" "observed_routeros_version: 7.22.2"
+assert_file_contains "${network_fabric}" "sw_mgmt_css326"
+assert_file_contains "${network_fabric}" "observed_swos_version: 2.18.1751448030"
+assert_file_contains "${network_fabric}" "syslog:"
+assert_file_contains "${network_fabric}" "supported: false"
 assert_file_contains "${network_fabric}" "qnap_archive_ts435xeu"
 assert_file_contains "${network_fabric}" "crs309-crs354-lag"
 assert_file_contains "${network_fabric}" "qnap-ts435xeu-bond0"
+assert_file_contains "${swos_snapshot_script}" "HTTPDigestAuthHandler"
+python3 -m py_compile "${swos_snapshot_script}"
+assert_file_contains "${swos_snapshot_playbook}" "Capture MikroTik SwOS state snapshots"
+assert_file_contains "${swos_snapshot_playbook}" "SWOS_PASSWORD"
+assert_file_contains "${swos_snapshot_playbook}" "no_log: true"
 
 head -n 1 "${vault_file}" | grep -q '^\$ANSIBLE_VAULT;' ||
   fail "local-network vault is not encrypted"
@@ -103,10 +118,18 @@ all:
       hosts:
         syntax_netbox:
           ansible_connection: local
+    mikrotik_swos:
+      hosts:
+        syntax_swos:
+          ansible_connection: local
+          ansible_host: 127.0.0.1
+          swos_username: admin
+          swos_password: syntax-only
 EOF
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${proxmox_api_playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_api_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${swos_snapshot_playbook}" >/dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

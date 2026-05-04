@@ -43,10 +43,25 @@ infrastructure work. It is intentionally higher level than `git log`.
 - CRS309-to-CRS354 `802.3ad` LACP is live using CRS309
   `sfp-sfpplus2/3` and CRS354 `sfp-sfpplus1/2`; both members are active at
   `10Gbps` with FS.com `SFP-10GSR-85` optics.
+- Upgraded CRS309 from RouterOS package and RouterBOARD firmware `7.22.1` to
+  `7.22.2`; removed unused optional `container` and `zerotier` packages first
+  to recover flash space before upgrade.
+- Added the SwOS snapshot helper for CSS326, captured current CSS326 state, and
+  documented the SwOS automation boundary: HTTP Digest backup/state collection
+  plus SNMP polling, not RouterOS-style CLI automation.
+- Confirmed CSS326 is already on the latest SwOS release reported by MikroTik
+  (`2.18.1751448030`), with identity `sw-mgmt-mkcss326`, static management IP
+  `172.16.99.6`, SNMP enabled, and Hasslehoff LACP on `ge5/ge6`.
+- Corrected CRS354 stale OPNsense state for real after serial verification:
+  `172.16.254.7/24` on `sfp-sfpplus1` and the `172.16.254.1` default route
+  are now disabled while `bond-crs309` remains active.
 - CRS354 serial snapshot was archived under
   `/root/operator-private/routeros/crs354/20260504T194533Z`.
 - CRS309/CRS354 LACP post-change evidence was archived under
   `/root/operator-private/routeros/lacp-cutover/20260504T210857Z`.
+- CRS309 upgrade evidence was archived under
+  `/root/operator-private/routeros/crs309/upgrade-*`; CSS326 SwOS snapshots
+  are archived under `/root/operator-private/swos/css326/`.
 
 ## 2026-05-03
 
