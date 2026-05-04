@@ -106,26 +106,30 @@
 /ip ssh set strong-crypto={{ routeros_rfc99_gateway_ssh_strong_crypto | ternary("yes", "no") }} forwarding-enabled={{ routeros_rfc99_gateway_ssh_forwarding | ternary("yes", "no") }}
 
 # Self-signed certificate until the internal CA service is wired into RouterOS imports.
-/certificate remove [find name="{{ routeros_rfc99_gateway_certificate_name }}"]
-/certificate add name="{{ routeros_rfc99_gateway_certificate_name }}" common-name="{{ routeros_rfc99_gateway_certificate_common_name }}" subject-alt-name="{{ routeros_rfc99_gateway_certificate_subject_alt_names | join(',') }}" key-size={{ routeros_rfc99_gateway_certificate_key_size }} days-valid={{ routeros_rfc99_gateway_certificate_days_valid }} key-usage=digital-signature,key-encipherment,tls-server trusted=yes
-/certificate sign "{{ routeros_rfc99_gateway_certificate_name }}"
+/ip service set www-ssl disabled=yes address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate=none
+/ip service set api-ssl disabled=yes address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate=none
+/certificate remove [find name~"{{ routeros_rfc99_gateway_certificate_name }}"]
+/certificate add name="{{ routeros_rfc99_gateway_certificate_name }}-template" common-name="{{ routeros_rfc99_gateway_certificate_common_name }}" subject-alt-name="{{ routeros_rfc99_gateway_certificate_subject_alt_names | join(',') }}" key-size={{ routeros_rfc99_gateway_certificate_key_size }} days-valid={{ routeros_rfc99_gateway_certificate_days_valid }} key-usage=digital-signature,key-encipherment,tls-server,key-cert-sign,crl-sign trusted=yes
+/certificate sign "{{ routeros_rfc99_gateway_certificate_name }}-template" name="{{ routeros_rfc99_gateway_certificate_name }}"
+:delay 2s
 /ip service set www-ssl disabled={{ (not routeros_rfc99_gateway_https_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_https_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate={{ routeros_rfc99_gateway_certificate_name }} tls-version=only-1.2
 /ip service set api-ssl disabled={{ (not routeros_rfc99_gateway_api_ssl_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_api_ssl_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate={{ routeros_rfc99_gateway_certificate_name }} tls-version=only-1.2
 
 # Remote syslog client.
 {% if routeros_rfc99_gateway_syslog_enabled | bool %}
-/system logging action remove [find name="rfc99-remote-udp"]
-/system logging action add name="rfc99-remote-udp" target=remote remote={{ routeros_rfc99_gateway_syslog_remote_host }} remote-port={{ routeros_rfc99_gateway_syslog_remote_port_udp }} remote-protocol=udp bsd-syslog=yes syslog-time-format=bsd-syslog
+/system logging remove [find where action="remote"]
 /system logging remove [find where action="rfc99-remote-udp"]
+/system logging action remove [find name="rfc99-remote-udp"]
+/system logging action set remote remote={{ routeros_rfc99_gateway_syslog_remote_host }} remote-port={{ routeros_rfc99_gateway_syslog_remote_port_udp }} remote-protocol=udp syslog-time-format=bsd-syslog
 {% for routeros_log_topic in routeros_rfc99_gateway_syslog_topics %}
-/system logging add action=rfc99-remote-udp topics={{ routeros_log_topic }}
+/system logging add action=remote topics={{ routeros_log_topic }}
 {% endfor %}
 {% endif %}
 
 # SNMP baseline. Public community is removed by default.
 /snmp set enabled={{ routeros_rfc99_gateway_snmp_enabled | ternary("yes", "no") }} contact="{{ routeros_rfc99_gateway_snmp_contact }}" location="{{ routeros_rfc99_gateway_snmp_location }}"
 {% if routeros_rfc99_gateway_snmp_disable_public | bool %}
-/snmp community remove [find name="public"]
+:if ([:len [/snmp community find where name="public"]] > 0) do={ /snmp community set [find name="public"] disabled=yes addresses={{ routeros_rfc99_gateway_management_cidrs | join(',') }} }
 {% endif %}
 {% if routeros_rfc99_gateway_snmp_v2c_enabled | bool %}
 /snmp community remove [find name="{{ routeros_rfc99_gateway_snmp_v2c_community }}"]

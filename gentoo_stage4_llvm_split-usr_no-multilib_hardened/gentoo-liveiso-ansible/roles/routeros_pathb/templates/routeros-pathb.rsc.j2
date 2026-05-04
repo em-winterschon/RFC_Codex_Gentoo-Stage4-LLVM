@@ -71,9 +71,11 @@
 {% endif %}
 
 # Self-signed certificate for HTTPS management.
-/certificate remove [find name="{{ routeros_pathb_certificate_name }}"]
-/certificate add name="{{ routeros_pathb_certificate_name }}" common-name="{{ routeros_pathb_certificate_common_name }}" key-size=4096 days-valid=3650 key-usage=digital-signature,key-encipherment,tls-server trusted=yes
-/certificate sign "{{ routeros_pathb_certificate_name }}"
+/ip service set www-ssl disabled=yes certificate=none
+/certificate remove [find name~"{{ routeros_pathb_certificate_name }}"]
+/certificate add name="{{ routeros_pathb_certificate_name }}-template" common-name="{{ routeros_pathb_certificate_common_name }}" key-size=4096 days-valid=3650 key-usage=digital-signature,key-encipherment,tls-server,key-cert-sign,crl-sign trusted=yes
+/certificate sign "{{ routeros_pathb_certificate_name }}-template" name="{{ routeros_pathb_certificate_name }}"
+:delay 2s
 /ip service set www-ssl certificate={{ routeros_pathb_certificate_name }}
 
 # Time service.
@@ -81,11 +83,12 @@
 /system ntp server set enabled={{ routeros_pathb_ntp_server_enabled | ternary("yes", "no") }} broadcast={{ routeros_pathb_ntp_server_broadcast | ternary("yes", "no") }} multicast={{ routeros_pathb_ntp_server_multicast | ternary("yes", "no") }} broadcast-addresses={{ routeros_pathb_ntp_server_broadcast_addresses | join(',') }}
 
 # Remote syslog client.
-/system logging action remove [find name="pathb-remote-udp"]
-/system logging action add name="pathb-remote-udp" target=remote remote={{ routeros_pathb_syslog_remote_host }} remote-port={{ routeros_pathb_syslog_remote_port_udp }} remote-protocol=udp bsd-syslog=yes syslog-time-format=bsd-syslog
+/system logging remove [find where action="remote"]
 /system logging remove [find where action="pathb-remote-udp"]
+/system logging action remove [find name="pathb-remote-udp"]
+/system logging action set remote remote={{ routeros_pathb_syslog_remote_host }} remote-port={{ routeros_pathb_syslog_remote_port_udp }} remote-protocol=udp syslog-time-format=bsd-syslog
 {% for routeros_log_topic in routeros_pathb_syslog_topics %}
-/system logging add action=pathb-remote-udp topics={{ routeros_log_topic }}
+/system logging add action=remote topics={{ routeros_log_topic }}
 {% endfor %}
 :log warning "RouterOS BSD-syslog remote logging uses UDP. TCP/TLS remote logging only applies to CEF format, not native syslog."
 
@@ -95,7 +98,7 @@
 # SNMP exposure.
 /snmp set enabled={{ routeros_pathb_snmp_enabled | ternary("yes", "no") }} contact="{{ routeros_pathb_snmp_contact }}" location="{{ routeros_pathb_snmp_location }}"
 {% if routeros_pathb_snmp_disable_public %}
-/snmp community remove [find name="public"]
+:if ([:len [/snmp community find where name="public"]] > 0) do={ /snmp community set [find name="public"] disabled=yes addresses={{ routeros_pathb_management_cidrs | join(',') }} }
 {% endif %}
 {% if routeros_pathb_snmp_v2c_enabled %}
 /snmp community remove [find name="{{ routeros_pathb_snmp_v2c_community }}"]
