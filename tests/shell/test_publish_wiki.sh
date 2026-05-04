@@ -25,8 +25,7 @@ printf '# Home\n' > "${source_dir}/Home.md"
 git init -q "${seed_repo}"
 git -C "${seed_repo}" config user.email test@example.invalid
 git -C "${seed_repo}" config user.name 'Test User'
-printf '# Old source policy\n' > "${seed_repo}/README.md"
-printf '# Old home\n' > "${seed_repo}/Home.md"
+printf '# Home\n' > "${seed_repo}/Home.md"
 git -C "${seed_repo}" add .
 git -C "${seed_repo}" commit -q -m 'Seed wiki'
 git -C "${seed_repo}" branch -M master
@@ -41,5 +40,9 @@ COMMIT_MESSAGE='Sync test wiki' \
 test -f "${wiki_worktree}/README.md" || fail 'README.md was not preserved in wiki sync'
 grep -q 'Source policy' "${wiki_worktree}/README.md" || fail 'README.md was not copied from source'
 grep -q 'Home' "${wiki_worktree}/Home.md" || fail 'Home.md was not copied from source'
+git -C "${wiki_worktree}" ls-tree --name-only HEAD | grep -q '^README.md$' ||
+  fail 'README.md was copied but not committed'
+[[ -z "$(git -C "${wiki_worktree}" status --porcelain)" ]] ||
+  fail 'wiki worktree has uncommitted changes after sync'
 
 printf 'PASS: %s\n' "$(basename "$0")"
