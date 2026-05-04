@@ -68,6 +68,32 @@ Do not attach this router to production L2 until a management-only bootstrap
 restricts services, sets the intended identity, moves management onto the
 confirmed management interface/IP, and exports a fresh post-bootstrap config.
 
+## CCR2004 Rendered Configuration Role
+
+The physical replacement path now has a render-only Ansible role:
+
+```text
+roles/routeros_rfc99_gateway
+playbooks/routeros-rfc99-gateway.yml
+docs/workflows/stage4-routeros-rfc99-gateway-deployment.json
+```
+
+The role translates the CRS309 WIP intent to the CCR2004 hardware map:
+
+- `sfp-sfpplus1` is WAN uplink.
+- `sfp-sfpplus2` is the LAN switch uplink and VLAN trunk.
+- `ether1` through `ether16` are renamed to `ge1` through `ge16`.
+- SSH, HTTPS, and API-SSL are enabled and restricted to management CIDRs.
+- telnet, FTP, HTTP, plaintext API, and WinBox are disabled by default.
+- The self-signed RouterOS certificate is used until internal-CA automation is
+  wired into RouterOS imports.
+- The overlapping CRS309 `172.16.228.0/22` declarations are normalized to only
+  `172.16.228.1/22`.
+
+The role does not apply live changes. Review the generated `.rsc` and JSON
+manifest first, then add a separately gated serial or SSH import only after
+backup/export and rollback paths are confirmed.
+
 The intended high-level design is:
 
 - `sfp-sfpplus1` as WAN uplink

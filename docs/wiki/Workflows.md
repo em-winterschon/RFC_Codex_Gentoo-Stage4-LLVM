@@ -168,7 +168,35 @@ Machine-readable version:
 
 - `docs/workflows/stage4-routeros-pathb-deployment.json`
 
-## 9. Persistent Codex Approval Visibility
+## 9. RouterOS RFC99 Physical Gateway Role
+
+Render the CCR2004 RFC99 gateway intent locally:
+
+```bash
+cd gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
+  ../../scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i inventories/local-network/hosts.yml \
+  playbooks/routeros-rfc99-gateway.yml \
+  -l gw_rfc99_mkccr2004_16g \
+  -e routeros_rfc99_gateway_render_root=/tmp/routeros-rfc99-gateway
+```
+
+Important current constraints:
+
+- render-only; no live RouterOS mutation exists in the role
+- CCR2004 `sfp-sfpplus1` is WAN and `sfp-sfpplus2` is LAN trunk
+- `ether1` through `ether16` are renamed to `ge1` through `ge16`
+- SSH, HTTPS, and API-SSL are enabled; telnet, FTP, HTTP, plaintext API, and
+  WinBox are disabled
+- self-signed RouterOS certificate is used until internal-CA automation is wired
+  into the import
+
+Machine-readable version:
+
+- `docs/workflows/stage4-routeros-rfc99-gateway-deployment.json`
+
+## 10. Persistent Codex Approval Visibility
 
 Install:
 
@@ -188,7 +216,7 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 10. Release and Merge Discipline
+## 11. Release and Merge Discipline
 
 Operational rule:
 
@@ -203,7 +231,7 @@ Recommended GitHub protection:
 - require up-to-date branches before merge
 - restrict direct pushes to `main`
 
-## 11. Expected Return Codes
+## 12. Expected Return Codes
 
 Normal success:
 
@@ -217,7 +245,7 @@ Failure conditions should be surfaced at one of these layers:
 - SSH readiness checks
 - workflow JSONL final stats
 
-## 12. Artifacts Worth Watching
+## 13. Artifacts Worth Watching
 
 - `/tmp/ansible-control-flow/*.jsonl`
 - `/opt/gentoo-virt-qemu/stage3/state/*.serial.log`
