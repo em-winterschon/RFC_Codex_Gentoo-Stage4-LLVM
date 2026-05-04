@@ -65,6 +65,15 @@ infrastructure work. It is intentionally higher level than `git log`.
 - CRS309 upgrade evidence was archived under
   `/root/operator-private/routeros/crs309/upgrade-*`; CSS326 SwOS snapshots
   are archived under `/root/operator-private/swos/css326/`.
+- Live NetBox fabric refresh was applied after snapshot
+  `nb-pre-fabric-refresh-20260504`, creating the missing CRS309 spine, QNAP
+  archive server, and CCR2004 gateway records. A follow-up apply produced `0`
+  creates and `0` updates, then snapshot `nb-post-fabric-refresh-20260504` was
+  created.
+- Added `scripts/collect-mikrotik-routeros-state.py` and
+  `playbooks/routeros-state-snapshot.yml` for read-only RouterOS state
+  snapshots. CRS309 SSH snapshot capture is validated; CRS354 remains on
+  serial snapshot capture until its SSH command behavior is normalized.
 
 ## 2026-05-03
 

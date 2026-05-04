@@ -64,9 +64,38 @@ As of 2026-05-04:
 
 Next steps:
 
-- add RouterOS read-only state collectors for package, firmware, bond, bridge,
-  service, and route state
+- use `scripts/collect-mikrotik-routeros-state.py` through
+  `playbooks/routeros-state-snapshot.yml` for read-only package, firmware,
+  bond, bridge, service, route, neighbor, and hide-sensitive export snapshots
 - add fixture-backed tests for RouterOS RSC rendering
 - add explicit `ROUTEROS_APPLY=1`-style gated imports only after serial-backed
   failure handling is scripted
 - push rendered desired state into NetBox interface and cable records
+
+## State Snapshot Workflow
+
+The live snapshot workflow intentionally separates read-only state collection
+from config mutation:
+
+```bash
+cd gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ANSIBLE_CONFIG=/tmp/stage4-ansible.cfg ansible-playbook \
+  -i inventories/local-network/hosts.yml \
+  playbooks/routeros-state-snapshot.yml \
+  --vault-id RFC99@/root/.ssh/vault/cdex-vault-ops.ansiblevault.key
+```
+
+Snapshots are written outside the repository under:
+
+```text
+/root/operator-private/routeros/state-snapshots/<inventory-host>/<timestamp>/
+```
+
+Current live behavior:
+
+- CRS309 SSH snapshot is enabled and validated.
+- CRS354 SSH snapshot is explicitly disabled for now; serial snapshots remain
+  the authoritative capture path until CRS354 SSH command execution is
+  normalized.
+- CCR2004-16G serial-discovered state is skipped until management SSH is
+  intentionally assigned.

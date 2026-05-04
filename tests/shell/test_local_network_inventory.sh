@@ -26,9 +26,11 @@ playbook="${ANSIBLE_ROOT}/playbooks/local-network-inventory.yml"
 proxmox_api_playbook="${ANSIBLE_ROOT}/playbooks/proxmox-api-validate.yml"
 netbox_api_playbook="${ANSIBLE_ROOT}/playbooks/netbox-api-validate.yml"
 swos_snapshot_playbook="${ANSIBLE_ROOT}/playbooks/swos-state-snapshot.yml"
+routeros_snapshot_playbook="${ANSIBLE_ROOT}/playbooks/routeros-state-snapshot.yml"
 routeros_spine_playbook="${ANSIBLE_ROOT}/playbooks/routeros-spine-distribution.yml"
 routeros_spine_role="${ANSIBLE_ROOT}/roles/routeros_spine_distribution"
 swos_snapshot_script="${REPO_ROOT}/scripts/collect-mikrotik-swos-state.py"
+routeros_snapshot_script="${REPO_ROOT}/scripts/collect-mikrotik-routeros-state.py"
 
 assert_file_contains "${inventory}" "hasslehoff:"
 assert_file_contains "${inventory}" "svc_netbox_stage4:"
@@ -43,6 +45,8 @@ assert_file_contains "${inventory}" "sw_mgmt_mkcrs354:"
 assert_file_contains "${inventory}" "routeros_serial_console: /dev/ttyUSB1"
 assert_file_contains "${inventory}" "sw_spine_crs309_rfc99:"
 assert_file_contains "${inventory}" "routeros_serial_console: /dev/ttyUSB0"
+assert_file_contains "${inventory}" "routeros_state_snapshot_enabled: true"
+assert_file_contains "${inventory}" "routeros_state_snapshot_enabled: false"
 assert_file_contains "${inventory}" "rtr_mgmt_ccr2004:"
 assert_file_contains "${inventory}" "gw_rfc99_mkccr2004_16g:"
 assert_file_contains "${inventory}" "vault_rfc99_ccr2004_16g_admin_password"
@@ -84,9 +88,17 @@ assert_file_contains "${network_fabric}" "crs309-crs354-lag"
 assert_file_contains "${network_fabric}" "qnap-ts435xeu-bond0"
 assert_file_contains "${swos_snapshot_script}" "HTTPDigestAuthHandler"
 python3 -m py_compile "${swos_snapshot_script}"
+assert_file_contains "${routeros_snapshot_script}" "sshpass"
+assert_file_contains "${routeros_snapshot_script}" "timeout"
+assert_file_contains "${routeros_snapshot_script}" "export hide-sensitive"
+python3 -m py_compile "${routeros_snapshot_script}"
 assert_file_contains "${swos_snapshot_playbook}" "Capture MikroTik SwOS state snapshots"
 assert_file_contains "${swos_snapshot_playbook}" "SWOS_PASSWORD"
 assert_file_contains "${swos_snapshot_playbook}" "no_log: true"
+assert_file_contains "${routeros_snapshot_playbook}" "Capture MikroTik RouterOS state snapshots"
+assert_file_contains "${routeros_snapshot_playbook}" "ROUTEROS_PASSWORD"
+assert_file_contains "${routeros_snapshot_playbook}" "routeros_snapshot_enabled_effective"
+assert_file_contains "${routeros_snapshot_playbook}" "allow-failures"
 assert_file_contains "${routeros_spine_playbook}" "routeros_spine_distribution"
 assert_file_contains "${routeros_spine_role}/defaults/main.yml" "routeros_spine_distribution_target_version: 7.22.2"
 assert_file_contains "${routeros_spine_role}/defaults/main.yml" "bond-crs354"
@@ -132,11 +144,19 @@ all:
           ansible_host: 127.0.0.1
           swos_username: admin
           swos_password: syntax-only
+    mikrotik_routeros:
+      hosts:
+        syntax_routeros:
+          ansible_connection: local
+          ansible_host: 127.0.0.1
+          ansible_user: admin
+          ansible_password: syntax-only
 EOF
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${proxmox_api_playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_api_playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${swos_snapshot_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_snapshot_playbook}" >/dev/null
   ANSIBLE_ROLES_PATH="${ANSIBLE_ROOT}/roles" ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_spine_playbook}" >/dev/null
 fi
 

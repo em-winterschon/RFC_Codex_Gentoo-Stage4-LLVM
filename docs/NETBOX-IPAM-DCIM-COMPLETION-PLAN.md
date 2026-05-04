@@ -27,6 +27,9 @@ Live NetBox state:
 - URL: `http://172.16.99.62`
 - recovery snapshot after structured local intake:
   `codex-netbox-after-intake-apply`
+- recovery snapshots around the 2026-05-04 fabric refresh:
+  - `nb-pre-fabric-refresh-20260504`
+  - `nb-post-fabric-refresh-20260504`
 
 Current mixed-environment intake state:
 
@@ -43,6 +46,10 @@ Current mixed-environment intake state:
   `nb-pre-ms-20260503`.
 - Idempotence pass completed with `0` creates and `0` updates.
 - Post-apply snapshot `nb-post-ms-20260503` was created after validation.
+- Local fabric refresh completed on 2026-05-04 after the CRS309 spine cutover,
+  CSS326 SwOS normalization, and CRS354 stale-route cleanup. The apply created
+  the missing CRS309 spine, QNAP archive server, and CCR2004 gateway objects,
+  then a follow-up idempotence pass completed with `0` creates and `0` updates.
 
 ## Raw Input Handling
 
