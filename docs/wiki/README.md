@@ -37,6 +37,7 @@ Current mirrored pages:
 - `Hetzner-DNS-Automation.md`
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
+- `ITIL-Change-Control-Container-Services-Safe-Move.md`
 - `Changelog.md`
 - `SITREP-Status-2026-05-03.md`
 - `EOD-Status-2026-05-02.md`
