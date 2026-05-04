@@ -102,6 +102,10 @@ infrastructure work. It is intentionally higher level than `git log`.
   online. The separate Elasticsearch dependency SLO currently fails with
   HAProxy `503` because the Hasslehoff management subnet cannot reach the
   existing `10.9.8.91` / `10.9.8.92` Elasticsearch path.
+- Added vaulted bootstrap credentials and planned inventory metadata for the
+  rackable MikroTik `CCR2004-16G-2S+PC` replacement-router target. It is staged
+  as `gw_rfc99_mkccr2004_16g` without a management IP until serial discovery
+  confirms baseline state and cabling.
 
 ## 2026-05-02
 

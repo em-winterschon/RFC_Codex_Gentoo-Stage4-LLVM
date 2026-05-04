@@ -52,6 +52,8 @@ assert_file_contains "${example}" "clusters:"
 assert_file_contains "${example}" "devices:"
 assert_file_contains "${example}" "service_vips:"
 assert_file_contains "${rfc99}" "gw_rfc99_mkcrs309"
+assert_file_contains "${rfc99}" "gw_rfc99_mkccr2004_16g"
+assert_file_contains "${rfc99}" "CCR2004-16G-2S+PC"
 assert_file_contains "${sun99}" "nanonet-private-cloud"
 assert_file_contains "${yks99}" "172.28.0.0/16"
 assert_file_contains "${fmt2}" "66.160.146.148/32"
@@ -71,7 +73,7 @@ python3 -m py_compile "${validator}"
 python3 -m py_compile "${apply_script}"
 python3 "${validator}" "${example}" --format json >/dev/null
 python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json >/tmp/netbox-intake-all-sites-validation.json
-grep -Fq '"devices": 12' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
+grep -Fq '"devices": 13' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
 python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json >/tmp/netbox-intake-apply-plan.json
 grep -Fq '"dry_run": true' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not default to dry-run"
 grep -Fq 'dcim/sites:local-rfc1918-lab' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include site"

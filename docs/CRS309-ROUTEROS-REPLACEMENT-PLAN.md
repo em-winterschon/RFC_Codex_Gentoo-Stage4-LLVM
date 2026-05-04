@@ -13,6 +13,13 @@ No live RouterOS changes should be made from the WIP script until admin access,
 serial fallback, backups, management-only bootstrap, and NetBox staging are all
 confirmed.
 
+Update: a rackable MikroTik `CCR2004-16G-2S+PC` is now staged as the preferred
+replacement-router target. Keep the CRS309 plan as the source configuration
+reference, but do not assume CRS309 interface names or port counts when
+rendering the CCR2004 deployment. The CCR2004 bootstrap credential is stored in
+Ansible Vault, and its management IP remains unassigned until serial discovery
+confirms baseline state and cabling.
+
 ## Immediate Assessment
 
 The CRS309 script is a destructive replacement-router import. It starts by
@@ -26,6 +33,15 @@ The target hardware check expects:
 - required ports:
   - `ether1`
   - `sfp-sfpplus1` through `sfp-sfpplus8`
+
+For the CCR2004 replacement path, translate the CRS309 assumptions after serial
+inventory. The initial expected hardware identity is:
+
+- manufacturer: `MikroTik`
+- model class: `CCR2004-16G-2S+PC`
+- credential source: Ansible Vault variables
+  `vault_rfc99_ccr2004_16g_admin_user` and
+  `vault_rfc99_ccr2004_16g_admin_password`
 
 The intended high-level design is:
 
@@ -99,25 +115,30 @@ resolve before NetBox import or RouterOS execution.
 
 1. Keep `gw_rfc99_mkcrs309` staged as a planned RouterOS device with manufacturer
    `MikroTik` and device type `CRS309-1G-8S+IN`.
-2. Model physical interfaces:
+2. Keep `gw_rfc99_mkccr2004_16g` staged as the preferred replacement RouterOS
+   device with manufacturer `MikroTik` and device type `CCR2004-16G-2S+PC`.
+3. Model physical interfaces:
    - `ether1`
    - `sfp-sfpplus1`
    - `sfp-sfpplus2` through `sfp-sfpplus8`
    - `br-lan`
    - `wg-srv`
    - optional `zt-idc`
-3. Import prefixes in planned state first.
-4. Attach gateway IPs to `gw_rfc99_mkcrs309`.
-5. Record overlapping or duplicate prefix conditions as blockers.
-6. Record firewall zones:
+4. For the CCR2004 path, replace the CRS309 physical interface list with the
+   serial-discovered CCR2004 interface list before live NetBox apply.
+5. Import prefixes in planned state first.
+6. Attach gateway IPs to the selected replacement device only after the serial
+   bootstrap and management-only phase are validated.
+7. Record overlapping or duplicate prefix conditions as blockers.
+8. Record firewall zones:
    - `WAN`
    - `LAN`
    - `MGMT`
    - `VPN`
-7. Add service records for HTTPS/API management, SNMP, WireGuard, and optional
+9. Add service records for HTTPS/API management, SNMP, WireGuard, and optional
    ZeroTier.
-8. Run NetBox dry-run apply.
-9. Apply only after the dry-run has no duplicate-prefix or missing-site
+10. Run NetBox dry-run apply.
+11. Apply only after the dry-run has no duplicate-prefix or missing-site
     findings.
 
 ## RouterOS Execution Sequence
@@ -174,8 +195,10 @@ The rollback path is:
 
 ## Blockers
 
-- CRS309 admin login is not currently usable; reset or serial recovery is
-  required before any import.
+- CRS309 has been superseded by a planned CCR2004-16G-2S+PC replacement target;
+  serial discovery is required before rendering device-specific port mappings.
+- CRS309 admin login is not currently usable; reset or serial recovery is still
+  required if the CRS309 is used as a fallback target.
 - CRS309 `WAN_NET_MAC` and `LAN_NET_MAC` values are unset in the source plan.
 - Overlapping `172.16.228.0/22` gateway declarations must be normalized.
 - The CRS309 draft enables broad SNMP v2c access with community `public`; this

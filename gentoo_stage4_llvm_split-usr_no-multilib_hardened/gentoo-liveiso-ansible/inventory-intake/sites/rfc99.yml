@@ -74,6 +74,18 @@ devices:
       - Import script /tmp/crs309-router-mode-idc.wip.rsc is destructive and must be applied in gated phases only.
       - Replace IDC moniker with RFC99 before any RouterOS import.
       - Admin password and all device credentials are excluded from repo intake and must be stored in Ansible Vault.
+  - name: gw_rfc99_mkccr2004_16g
+    site: rfc99
+    role: routeros-gateway
+    manufacturer: MikroTik
+    model: CCR2004-16G-2S+PC
+    status: planned
+    interfaces: []
+    notes:
+      - Planned rackable RouterOS replacement for gw_rfc99_mkcrs309.
+      - Management IP is intentionally unassigned until serial console discovery confirms baseline state and cabling.
+      - Admin bootstrap credential is stored in Ansible Vault as vault_rfc99_ccr2004_16g_admin_password.
+      - Port inventory will be populated after serial console discovery.
   - name: gw_rfc99_att_bgw320
     site: rfc99
     role: provider-wan-router

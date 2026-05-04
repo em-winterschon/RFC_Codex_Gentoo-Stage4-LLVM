@@ -29,6 +29,17 @@ network_fabric_devices:
     role: routeros-gateway-candidate
     management_ip: 172.16.99.120
     model: CCR2004-1G-2XS-PCIe
+  gw_rfc99_mkccr2004_16g:
+    role: routeros-gateway-replacement
+    model: CCR2004-16G-2S+PC
+    manufacturer: MikroTik
+    status: planned
+    replaces: gw_rfc99_mkcrs309
+    notes:
+      - Rackable replacement target for the CRS309 RouterOS gateway plan.
+      - Management IP is intentionally unassigned until serial discovery confirms baseline state.
+      - Admin bootstrap credential is stored only in Ansible Vault.
+      - Port inventory will be populated after serial console discovery.
   ctbsd_rfc99_jailerprime_099099:
     role: retired-freebsd-jail-host
     hypervisor: hasslehoff

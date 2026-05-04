@@ -37,6 +37,8 @@ assert_file_contains "${inventory}" "freeipa_fqdn: ipa01.rfc1918.host"
 assert_file_contains "${inventory}" "proxmox_api_token_secret: \"{{ vault_hasslehoff_proxmox_api_token_secret }}\""
 assert_file_contains "${inventory}" "sw_mgmt_mkcrs354:"
 assert_file_contains "${inventory}" "rtr_mgmt_ccr2004:"
+assert_file_contains "${inventory}" "gw_rfc99_mkccr2004_16g:"
+assert_file_contains "${inventory}" "vault_rfc99_ccr2004_16g_admin_password"
 assert_file_contains "${inventory}" "sw_mgmt_css326:"
 
 assert_file_contains "${hasslehoff_vars}" "local_inventory_observed:"
@@ -56,6 +58,8 @@ assert_file_contains "${network_fabric}" "proxmox_vmid: 1063"
 assert_file_contains "${network_fabric}" "ipa01.rfc1918.host"
 assert_file_contains "${network_fabric}" "llm-rag-service-control"
 assert_file_contains "${network_fabric}" "llm-rag-inference-data"
+assert_file_contains "${network_fabric}" "gw_rfc99_mkccr2004_16g"
+assert_file_contains "${network_fabric}" "CCR2004-16G-2S+PC"
 
 head -n 1 "${vault_file}" | grep -q '^\$ANSIBLE_VAULT;' ||
   fail "local-network vault is not encrypted"
