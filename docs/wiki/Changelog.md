@@ -49,6 +49,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added the SwOS snapshot helper for CSS326, captured current CSS326 state, and
   documented the SwOS automation boundary: HTTP Digest backup/state collection
   plus SNMP polling, not RouterOS-style CLI automation.
+- Added render-only RouterOS spine/distribution automation for CRS309 and
+  CRS354, including RSC render output, JSON manifest, LACP desired state,
+  CRS354 stale-route cleanup, and validation command blocks.
 - Confirmed CSS326 is already on the latest SwOS release reported by MikroTik
   (`2.18.1751448030`), with identity `sw-mgmt-mkcss326`, static management IP
   `172.16.99.6`, SNMP enabled, and Hasslehoff LACP on `ge5/ge6`.

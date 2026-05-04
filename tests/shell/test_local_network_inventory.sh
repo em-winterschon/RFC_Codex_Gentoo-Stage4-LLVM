@@ -26,6 +26,8 @@ playbook="${ANSIBLE_ROOT}/playbooks/local-network-inventory.yml"
 proxmox_api_playbook="${ANSIBLE_ROOT}/playbooks/proxmox-api-validate.yml"
 netbox_api_playbook="${ANSIBLE_ROOT}/playbooks/netbox-api-validate.yml"
 swos_snapshot_playbook="${ANSIBLE_ROOT}/playbooks/swos-state-snapshot.yml"
+routeros_spine_playbook="${ANSIBLE_ROOT}/playbooks/routeros-spine-distribution.yml"
+routeros_spine_role="${ANSIBLE_ROOT}/roles/routeros_spine_distribution"
 swos_snapshot_script="${REPO_ROOT}/scripts/collect-mikrotik-swos-state.py"
 
 assert_file_contains "${inventory}" "hasslehoff:"
@@ -85,6 +87,11 @@ python3 -m py_compile "${swos_snapshot_script}"
 assert_file_contains "${swos_snapshot_playbook}" "Capture MikroTik SwOS state snapshots"
 assert_file_contains "${swos_snapshot_playbook}" "SWOS_PASSWORD"
 assert_file_contains "${swos_snapshot_playbook}" "no_log: true"
+assert_file_contains "${routeros_spine_playbook}" "routeros_spine_distribution"
+assert_file_contains "${routeros_spine_role}/defaults/main.yml" "routeros_spine_distribution_target_version: 7.22.2"
+assert_file_contains "${routeros_spine_role}/defaults/main.yml" "bond-crs354"
+assert_file_contains "${routeros_spine_role}/defaults/main.yml" "172.16.254.7/24"
+assert_file_contains "${routeros_spine_role}/templates/routeros-spine-distribution-manifest.json.j2" "RouterOSSpineDistributionManifest"
 
 head -n 1 "${vault_file}" | grep -q '^\$ANSIBLE_VAULT;' ||
   fail "local-network vault is not encrypted"
@@ -130,6 +137,7 @@ EOF
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${proxmox_api_playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_api_playbook}" >/dev/null
   ansible-playbook --syntax-check -i "${tmp_inventory}" "${swos_snapshot_playbook}" >/dev/null
+  ANSIBLE_ROLES_PATH="${ANSIBLE_ROOT}/roles" ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_spine_playbook}" >/dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

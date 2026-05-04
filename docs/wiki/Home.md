@@ -58,6 +58,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [CRS309 RouterOS Replacement Plan](CRS309-RouterOS-Replacement-Plan)
 - [CRS354 Distribution Switch Standardization](CRS354-Distribution-Switch-Standardization)
 - [CSS326 SwOS Access Switch](CSS326-SwOS-Access-Switch)
+- [RouterOS Spine Distribution](RouterOS-Spine-Distribution)
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)
