@@ -507,6 +507,9 @@ ${STAGE3_PACKAGE_USE_APPEND}
 PKGUSE_EXTRA
 fi
 
+mkdir -p /dev/shm/portage-tmpfs /var/cache/binpkgs /var/log/portage
+chmod 1777 /dev/shm/portage-tmpfs
+
 cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
 [DEFAULT]
 main-repo = gentoo

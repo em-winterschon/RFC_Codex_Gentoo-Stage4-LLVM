@@ -300,6 +300,8 @@ test_render_bootstrap_script_includes_extra_portage_fragments() {
   assert_contains "${bootstrap}" 'MAKEOPTS="-j48 -l64"'
   assert_contains "${bootstrap}" 'USE="${USE} X dbus spice -systemd"'
   assert_contains "${bootstrap}" 'VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting"'
+  assert_contains "${bootstrap}" 'mkdir -p /dev/shm/portage-tmpfs /var/cache/binpkgs /var/log/portage'
+  assert_contains "${bootstrap}" 'chmod 1777 /dev/shm/portage-tmpfs'
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/stage3-extra'
   assert_contains "${bootstrap}" 'app-emulation/spice-vdagent gtk -systemd'
   assert_contains "${bootstrap}" 'x11-base/xorg-server xorg elogind udev -systemd'
