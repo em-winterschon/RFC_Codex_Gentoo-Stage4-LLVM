@@ -72,6 +72,7 @@ Examples:
 - `swos_password: "{{ vault_css326_admin_password }}"`
 - `proxmox_api_token_secret: "{{ vault_hasslehoff_proxmox_api_token_secret }}"`
 - `api_token: "{{ vault_hetzner_dns_rfc1918_api_token }}"`
+- `github_forge_token: "{{ vault_github_forge_token }}"`
 
 ## Hetzner DNS Tokens
 
@@ -96,6 +97,28 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
   -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
   gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-api-validate.yml
 ```
+
+## GitHub Forge Token
+
+The operator-private Forge GitHub token is sourced from:
+
+```bash
+/root/.ssh/codex.d/tokens/FORGE_TOKEN
+```
+
+The encrypted local-network vault stores the token and repo-safe metadata under:
+
+```text
+vault_github_forge_token
+vault_github_forge_token_name
+vault_github_forge_token_owner
+vault_github_forge_token_required_scopes
+vault_github_forge_token_optional_scopes
+```
+
+Use `GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" gh ...` for
+operator-local GitHub CLI calls. Do not commit the token file or print token
+contents to logs.
 
 ## Safety Rules
 
