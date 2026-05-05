@@ -1,0 +1,25 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-elasticsearch-node
+  purpose: Hardened Gentoo VM profile for a clustered Elasticsearch node in the Stage5 observability plane.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: elasticsearch-node
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-observability-client.packages
+      - profile-package-lists/stage5-virtual-host-elasticsearch-node.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-admin/rsyslog
+      - app-misc/elasticsearch
+  source_references:
+    - https://packages.gentoo.org/packages/app-admin/rsyslog
+    - https://packages.gentoo.org/packages/app-misc/elasticsearch

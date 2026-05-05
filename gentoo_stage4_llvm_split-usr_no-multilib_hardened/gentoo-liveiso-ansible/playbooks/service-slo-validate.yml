@@ -1,0 +1,24 @@
+---
+- name: Run service SLO validation manifest
+  hosts: localhost
+  gather_facts: false
+  vars:
+    service_slo_manifest: "{{ playbook_dir }}/../service-slo-definitions/container-services-safe-move.yml"
+    service_slo_validator_path: "{{ playbook_dir }}/../../../scripts/slo_service_validator.py"
+    service_slo_phase: "{{ slo_phase | default('pre-move') }}"
+  tasks:
+    - name: Run SLO service validator
+      ansible.builtin.command:
+        argv:
+          - "{{ service_slo_validator_path }}"
+          - "--manifest"
+          - "{{ service_slo_manifest }}"
+          - "--phase"
+          - "{{ service_slo_phase }}"
+          - "--json"
+      register: service_slo_validation
+      changed_when: false
+
+    - name: Render SLO validation report
+      ansible.builtin.debug:
+        msg: "{{ service_slo_validation.stdout | from_json }}"

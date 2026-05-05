@@ -1,0 +1,136 @@
+---
+- name: Ensure cloud-init config directories exist when requested
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/{{ identity_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - etc/cloud/cloud.cfg.d
+    - var/lib/cloud/seed/nocloud-net
+  loop_control:
+    loop_var: identity_dir
+  when: resolved_profile_cloud_init.enabled | default(false) | bool
+
+- name: Render cloud-init datasource configuration
+  ansible.builtin.template:
+    src: cloud-datasource.cfg.j2
+    dest: "{{ install_target_root }}/etc/cloud/cloud.cfg.d/90-stage4-datasource.cfg"
+    mode: '0644'
+  when: resolved_profile_cloud_init.enabled | default(false) | bool
+
+- name: Render cloud-init user-data seed
+  ansible.builtin.template:
+    src: cloud-user-data.yml.j2
+    dest: "{{ install_target_root }}/var/lib/cloud/seed/nocloud-net/user-data"
+    mode: '0600'
+  when: resolved_profile_cloud_init.enabled | default(false) | bool
+
+- name: Render cloud-init meta-data seed
+  ansible.builtin.template:
+    src: cloud-meta-data.yml.j2
+    dest: "{{ install_target_root }}/var/lib/cloud/seed/nocloud-net/meta-data"
+    mode: '0644'
+  when: resolved_profile_cloud_init.enabled | default(false) | bool
+
+- name: Ensure local user primary groups exist
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ identity_primary_group_command | quote }}
+  vars:
+    identity_user_primary_group: "{{ identity_user.primary_group | default(identity_user.name) }}"
+    identity_user_primary_group_gid: "{{ identity_user.primary_group_gid | default('') }}"
+    identity_primary_group_command: >-
+      {{
+        "if ! getent group "
+        + (identity_user_primary_group | quote)
+        + " >/dev/null; then groupadd "
+        + ((identity_user_primary_group_gid | length > 0) | ternary('-g ' + identity_user_primary_group_gid + ' ', ''))
+        + (identity_user_primary_group | quote)
+        + "; fi"
+      }}
+  loop: "{{ resolved_profile_local_user_accounts | default([]) }}"
+  loop_control:
+    loop_var: identity_user
+
+- name: Ensure local user accounts exist with requested properties
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ identity_user_command | quote }}
+  vars:
+    identity_user_home: "{{ identity_user.home | default('/home/' + identity_user.name) }}"
+    identity_user_shell: "{{ identity_user.shell | default('/bin/bash') }}"
+    identity_user_comment: "{{ identity_user.comment | default('') }}"
+    identity_user_primary_group: "{{ identity_user.primary_group | default(identity_user.name) }}"
+    identity_user_uid: "{{ identity_user.uid | default('') }}"
+    identity_user_group_list: "{{ identity_user.groups | default([]) | join(',') }}"
+    identity_user_password_hash: "{{ identity_user.password_hash | default('') }}"
+    identity_user_command: >-
+      {{
+        "if id -u " + (identity_user.name | quote) + " >/dev/null 2>&1; then "
+        + "usermod "
+        + ((identity_user_uid | length > 0) | ternary('-u ' + identity_user_uid + ' ', ''))
+        + "-d " + (identity_user_home | quote) + " "
+        + "-s " + (identity_user_shell | quote) + " "
+        + "-g " + (identity_user_primary_group | quote) + " "
+        + ((identity_user_group_list | length > 0) | ternary('-G ' + (identity_user_group_list | quote) + ' ', ''))
+        + ((identity_user_password_hash | length > 0) | ternary('-p ' + (identity_user_password_hash | quote) + ' ', ''))
+        + (identity_user.name | quote)
+        + "; else useradd "
+        + ((identity_user_uid | length > 0) | ternary('-u ' + identity_user_uid + ' ', ''))
+        + "-m -d " + (identity_user_home | quote) + " "
+        + "-s " + (identity_user_shell | quote) + " "
+        + "-g " + (identity_user_primary_group | quote) + " "
+        + ((identity_user_group_list | length > 0) | ternary('-G ' + (identity_user_group_list | quote) + ' ', ''))
+        + ((identity_user_password_hash | length > 0) | ternary('-p ' + (identity_user_password_hash | quote) + ' ', ''))
+        + ((identity_user_comment | length > 0) | ternary('-c ' + (identity_user_comment | quote) + ' ', ''))
+        + (identity_user.name | quote)
+        + "; fi"
+      }}
+  loop: "{{ resolved_profile_local_user_accounts | default([]) }}"
+  loop_control:
+    loop_var: identity_user
+
+- name: Install local user authorized_keys
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ identity_authorized_keys_command | quote }}
+  vars:
+    identity_user_home: "{{ identity_user.home | default('/home/' + identity_user.name) }}"
+    identity_authorized_keys_path: "{{ identity_user_home }}/.ssh/authorized_keys"
+    identity_authorized_keys_content: "{{ identity_user.ssh_authorized_keys | default([]) | join('\n') }}"
+    identity_authorized_keys_command: >-
+      {{
+        "install -d -m 700 -o " + (identity_user.name | quote) + " -g "
+        + ((identity_user.primary_group | default(identity_user.name)) | quote) + " "
+        + ((identity_user_home + '/.ssh') | quote)
+        + " && cat > " + (identity_authorized_keys_path | quote) + " <<'EOF'\n"
+        + identity_authorized_keys_content + "\nEOF\n"
+        + "chmod 600 " + (identity_authorized_keys_path | quote)
+        + " && chown " + (identity_user.name | quote) + ":"
+        + ((identity_user.primary_group | default(identity_user.name)) | quote) + " "
+        + (identity_authorized_keys_path | quote)
+      }}
+  loop: "{{ resolved_profile_local_user_accounts | default([]) }}"
+  loop_control:
+    loop_var: identity_user
+  when: (identity_user.ssh_authorized_keys | default([])) | length > 0
+
+- name: Ensure sudoers.d exists when needed
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/sudoers.d"
+    state: directory
+    mode: '0750'
+  when: >-
+    {{
+      (resolved_profile_local_user_accounts | default([]) | selectattr('sudo_nopasswd', 'defined') | list | length) > 0
+    }}
+
+- name: Install sudoers drop-ins for local users
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/sudoers.d/90-{{ identity_user.name }}"
+    mode: '0440'
+    content: "{{ identity_user.name }} ALL=(ALL) NOPASSWD: ALL\n"
+  loop: "{{ resolved_profile_local_user_accounts | default([]) }}"
+  loop_control:
+    loop_var: identity_user
+  when: identity_user.sudo_nopasswd | default(false) | bool

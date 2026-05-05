@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+description="Sonatype Nexus Repository OSS"
+command="{{ resolved_nexus_repo.symlink_path }}/bin/nexus"
+command_args="run"
+command_user="{{ resolved_nexus_repo.service_user }}:{{ resolved_nexus_repo.service_group }}"
+pidfile="{{ resolved_nexus_repo.data_root }}/nexus.pid"
+directory="{{ resolved_nexus_repo.symlink_path }}"
+output_log="{{ resolved_nexus_repo.log_root }}/nexus.out"
+error_log="{{ resolved_nexus_repo.log_root }}/nexus.err"
+start_stop_daemon_args="--background --make-pidfile"
+
+depend() {
+  need net
+  after firewall
+}
+
+start_pre() {
+  checkpath -d -o "${command_user}" -m 0755 "{{ resolved_nexus_repo.data_root }}"
+  checkpath -d -o "${command_user}" -m 0755 "{{ resolved_nexus_repo.log_root }}"
+  checkpath -d -o "${command_user}" -m 0755 "{{ resolved_nexus_repo.work_root }}"
+}

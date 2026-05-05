@@ -1,0 +1,11 @@
+sys-devel/distcc
+dev-util/ccache
+sys-devel/gcc
+llvm-core/clang
+llvm-core/lld
+sys-devel/binutils
+dev-build/cmake
+dev-build/ninja
+net-misc/curl
+net-misc/rsync
+sys-apps/lm-sensors

@@ -1,0 +1,34 @@
+---
+netbox_server_default_enabled: false
+netbox_server_default_version: v4.5.9
+netbox_server_default_deployment_method: native-source
+netbox_server_default_service_host: 127.0.0.1
+netbox_server_default_service_port: 8000
+netbox_server_default_base_url: http://127.0.0.1
+netbox_server_default_install_root: /opt/netbox
+netbox_server_default_venv_path: /opt/netbox/venv
+netbox_server_default_data_root: /var/lib/netbox
+netbox_server_default_packages:
+  - dev-db/postgresql
+  - dev-db/redis
+  - dev-python/pip
+  - dev-python/virtualenv
+  - dev-vcs/git
+  - net-misc/curl
+  - www-servers/nginx
+netbox_server_default_package_use:
+  - app-misc/mime-types nginx
+  - dev-libs/jemalloc stats
+netbox_server_default_openrc_services:
+  - postgresql-18
+  - redis
+  - nginx
+netbox_server_default_database:
+  name: netbox
+  user: netbox
+  host: 127.0.0.1
+  port: 5432
+netbox_server_default_redis:
+  host: 127.0.0.1
+  port: 6379
+  database: 0

@@ -1,0 +1,18 @@
+---
+telemetry_alertmanager_default_enabled: false
+telemetry_alertmanager_default_listen_address: "0.0.0.0"
+telemetry_alertmanager_default_listen_port: 9093
+telemetry_alertmanager_default_external_url: ""
+telemetry_alertmanager_default_resolve_timeout: 5m
+telemetry_alertmanager_default_route:
+  receiver: default-null
+  group_by:
+    - alertname
+    - job
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+telemetry_alertmanager_default_receivers:
+  - name: default-null
+telemetry_alertmanager_default_inhibit_rules: []
+telemetry_alertmanager_default_extra_args: []

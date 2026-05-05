@@ -1,0 +1,253 @@
+---
+- name: Resolve Prometheus telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_prometheus_enabled: >-
+      {{
+        resolved_profile_telemetry.prometheus.enabled
+        | default(telemetry_prometheus_default_enabled)
+        | bool
+      }}
+    resolved_prometheus_telemetry: >-
+      {{
+        {
+          'listen_address': resolved_profile_telemetry.prometheus.listen_address | default(telemetry_prometheus_default_listen_address),
+          'listen_port': resolved_profile_telemetry.prometheus.listen_port | default(telemetry_prometheus_default_listen_port),
+          'external_url': resolved_profile_telemetry.prometheus.external_url | default(telemetry_prometheus_default_external_url),
+          'storage_path': resolved_profile_telemetry.prometheus.storage_path | default(telemetry_prometheus_default_storage_path),
+          'retention_time': resolved_profile_telemetry.prometheus.retention_time | default(telemetry_prometheus_default_retention_time),
+          'scrape_interval': resolved_profile_telemetry.prometheus.scrape_interval | default(telemetry_prometheus_default_scrape_interval),
+          'evaluation_interval': resolved_profile_telemetry.prometheus.evaluation_interval | default(telemetry_prometheus_default_evaluation_interval),
+          'external_labels': resolved_profile_telemetry.prometheus.external_labels | default(telemetry_prometheus_default_external_labels),
+          'scrape_configs': resolved_profile_telemetry.prometheus.scrape_configs | default(telemetry_prometheus_default_scrape_configs),
+          'alert_rules': resolved_profile_telemetry.prometheus.alert_rules | default(telemetry_prometheus_default_alert_rules),
+          'alertmanager_targets': resolved_profile_telemetry.prometheus.alertmanager_targets | default(telemetry_prometheus_default_alertmanager_targets),
+          'extra_args': resolved_profile_telemetry.prometheus.extra_args | default(telemetry_prometheus_default_extra_args)
+        }
+      }}
+
+- name: Resolve Alertmanager targets for Prometheus
+  ansible.builtin.set_fact:
+    resolved_prometheus_alertmanager_targets: >-
+      {{
+        resolved_prometheus_telemetry.alertmanager_targets
+        if (resolved_prometheus_telemetry.alertmanager_targets | length) > 0
+        else (
+          ['127.0.0.1:' ~ ((resolved_profile_telemetry.alertmanager.listen_port | default(9093)) | string)]
+          if (resolved_profile_telemetry.alertmanager.enabled | default(false) | bool)
+          else []
+        )
+      }}
+  when: telemetry_prometheus_enabled
+
+- name: Initialize Prometheus scrape configuration list
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets:
+              - "127.0.0.1:{{ resolved_prometheus_telemetry.listen_port }}"
+  when: telemetry_prometheus_enabled
+
+- name: Add local node_exporter scrape job
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs: >-
+      {{
+        resolved_prometheus_all_scrape_configs
+        + [
+            {
+              'job_name': 'stage5-node-local',
+              'static_configs': [
+                {
+                  'targets': [
+                    '127.0.0.1:' ~ ((resolved_profile_telemetry.node_exporter.listen_port | default(9100)) | string)
+                  ]
+                }
+              ]
+            }
+          ]
+      }}
+  when:
+    - telemetry_prometheus_enabled
+    - resolved_profile_telemetry.node_exporter.enabled | default(false) | bool
+
+- name: Add local podman_exporter scrape job
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs: >-
+      {{
+        resolved_prometheus_all_scrape_configs
+        + [
+            {
+              'job_name': 'stage5-podman-local',
+              'static_configs': [
+                {
+                  'targets': [
+                    '127.0.0.1:' ~ ((resolved_profile_telemetry.podman_exporter.listen_port | default(9882)) | string)
+                  ]
+                }
+              ]
+            }
+          ]
+      }}
+  when:
+    - telemetry_prometheus_enabled
+    - resolved_profile_telemetry.podman_exporter.enabled | default(false) | bool
+
+- name: Add local elasticsearch_exporter scrape job
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs: >-
+      {{
+        resolved_prometheus_all_scrape_configs
+        + [
+            {
+              'job_name': 'stage5-elasticsearch-local',
+              'static_configs': [
+                {
+                  'targets': [
+                    '127.0.0.1:' ~ ((resolved_profile_telemetry.elasticsearch_exporter.listen_port | default(9114)) | string)
+                  ]
+                }
+              ]
+            }
+          ]
+      }}
+  when:
+    - telemetry_prometheus_enabled
+    - resolved_profile_telemetry.elasticsearch_exporter.enabled | default(false) | bool
+
+- name: Add local blackbox_exporter scrape job
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs: >-
+      {{
+        resolved_prometheus_all_scrape_configs
+        + [
+            {
+              'job_name': 'stage5-blackbox-exporter-local',
+              'static_configs': [
+                {
+                  'targets': [
+                    '127.0.0.1:' ~ ((resolved_profile_telemetry.blackbox_exporter.listen_port | default(9115)) | string)
+                  ]
+                }
+              ]
+            }
+          ]
+      }}
+  when:
+    - telemetry_prometheus_enabled
+    - resolved_profile_telemetry.blackbox_exporter.enabled | default(false) | bool
+
+- name: Add local snmp_exporter scrape job
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs: >-
+      {{
+        resolved_prometheus_all_scrape_configs
+        + [
+            {
+              'job_name': 'stage5-snmp-exporter-local',
+              'static_configs': [
+                {
+                  'targets': [
+                    '127.0.0.1:' ~ ((resolved_profile_telemetry.snmp_exporter.listen_port | default(9116)) | string)
+                  ]
+                }
+              ]
+            }
+          ]
+      }}
+  when:
+    - telemetry_prometheus_enabled
+    - resolved_profile_telemetry.snmp_exporter.enabled | default(false) | bool
+
+- name: Add raw Prometheus scrape configs from telemetry policy
+  ansible.builtin.set_fact:
+    resolved_prometheus_all_scrape_configs: >-
+      {{
+        resolved_prometheus_all_scrape_configs
+        + resolved_prometheus_telemetry.scrape_configs
+      }}
+  when: telemetry_prometheus_enabled
+
+- name: Ensure Prometheus directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ prometheus_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/prometheus
+    - /etc/prometheus/rules
+    - /var/lib/prometheus
+    - "{{ resolved_prometheus_telemetry.storage_path }}"
+    - /etc/conf.d
+  loop_control:
+    loop_var: prometheus_dir
+  when: telemetry_prometheus_enabled
+
+- name: Render Prometheus configuration
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/prometheus/prometheus.yml"
+    mode: '0644'
+    content: >-
+      {{
+        (
+          {
+            'global': {
+              'scrape_interval': resolved_prometheus_telemetry.scrape_interval,
+              'evaluation_interval': resolved_prometheus_telemetry.evaluation_interval,
+              'external_labels': resolved_prometheus_telemetry.external_labels
+            },
+            'rule_files': ['/etc/prometheus/rules/*.yml'],
+            'scrape_configs': resolved_prometheus_all_scrape_configs
+          }
+          | combine(
+              (
+                {
+                  'alerting': {
+                    'alertmanagers': [
+                      {
+                        'static_configs': [
+                          {'targets': resolved_prometheus_alertmanager_targets}
+                        ]
+                      }
+                    ]
+                  }
+                }
+              )
+              if (resolved_prometheus_alertmanager_targets | length) > 0
+              else {},
+              recursive=True
+            )
+        ) | to_nice_yaml(indent=2, sort_keys=False)
+      }}
+  when: telemetry_prometheus_enabled
+
+- name: Render Prometheus alert rules
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/prometheus/rules/stage5-generated.yml"
+    mode: '0644'
+    content: >-
+      {{
+        {
+          'groups': [
+            {
+              'name': 'stage5-generated',
+              'rules': resolved_prometheus_telemetry.alert_rules
+            }
+          ]
+        } | to_nice_yaml(indent=2, sort_keys=False)
+      }}
+  when: telemetry_prometheus_enabled
+
+- name: Render Prometheus OpenRC configuration
+  ansible.builtin.template:
+    src: prometheus.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/prometheus"
+    mode: '0644'
+  when: telemetry_prometheus_enabled
+
+- name: Enable Prometheus service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['prometheus']) | unique
+      }}
+  when: telemetry_prometheus_enabled

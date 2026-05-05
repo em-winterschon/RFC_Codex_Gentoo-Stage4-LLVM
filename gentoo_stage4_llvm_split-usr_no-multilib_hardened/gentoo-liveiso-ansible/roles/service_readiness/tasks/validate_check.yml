@@ -1,0 +1,35 @@
+---
+# Default validator path resolves to the repo-level scripts/service_validator.py.
+- name: Build service readiness command
+  ansible.builtin.set_fact:
+    service_readiness_check_command:
+      - "{{ resolved_service_readiness_validator_path }}"
+      - "--nmap-bin"
+      - "{{ service_readiness_check.nmap_bin | default(resolved_service_readiness_nmap_bin) }}"
+      - "--target"
+      - "{{ service_readiness_check.target }}"
+      - "--port"
+      - "{{ service_readiness_check.port | string }}"
+      - "--protocol"
+      - "{{ service_readiness_check.protocol | default('tcp') }}"
+      - "--service-name"
+      - "{{ service_readiness_check.name }}"
+      - "--timeout"
+      - "{{ service_readiness_check.timeout | default(30) | string }}"
+      - "--json"
+
+- name: Allow open-filtered UDP readiness state when explicitly requested
+  ansible.builtin.set_fact:
+    service_readiness_check_command: "{{ service_readiness_check_command + ['--allow-open-filtered'] }}"
+  when: service_readiness_check.allow_open_filtered | default(false) | bool
+
+- name: Execute nmap service validator
+  ansible.builtin.command:
+    argv: "{{ service_readiness_check_command }}"
+  register: service_readiness_check_result
+  changed_when: false
+  retries: "{{ service_readiness_check.retries | default(service_readiness_default_retries) }}"
+  delay: "{{ service_readiness_check.delay | default(service_readiness_default_delay) }}"
+  until: service_readiness_check_result.rc == 0
+  delegate_to: "{{ service_readiness_check.delegate_to | default(service_readiness_default_delegate_to) }}"
+  become: false

@@ -1,0 +1,46 @@
+---
+gentoo_profile_definition:
+  package_use_files:
+    60-rsyslog-elasticsearch: |
+      app-admin/rsyslog elasticsearch
+  container_app_profiles:
+    rsyslog_collector:
+      enabled: true
+      image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
+      pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-396998a
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
+      digest: sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
+      network: mgmt
+      ip_address: 10.77.0.40
+      command:
+        - /usr/sbin/rsyslogd
+        - "-n"
+        - "-f"
+        - /etc/rsyslog.conf
+      spool_dir: /var/spool/rsyslog
+      tmpfs:
+        - /tmp:rw,noexec,nosuid,size=64m
+        - /run:rw,noexec,nosuid,size=16m
+      cap_add:
+        - NET_BIND_SERVICE
+      published_ports:
+        - 514:514/udp
+        - 514:514/tcp
+      elasticsearch_enabled: true
+      elasticsearch_hosts:
+        - 10.9.8.92
+      elasticsearch_port: 9200
+      elasticsearch_index: stage5-syslog
+      elasticsearch_es_version_major: 9
+      elasticsearch_health_check_timeout: "1000"
+      elasticsearch_retry_failures: "on"
+  haproxy_service_types:
+    - name: syslog-tcp
+      bind: "*:6514"
+      mode: tcp
+      backend_name: be_syslog_tcp
+      servers:
+        - name: rsyslog-collector
+          address: 10.77.0.40
+          port: 514

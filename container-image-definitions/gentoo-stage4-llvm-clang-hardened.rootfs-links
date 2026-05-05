@@ -1,0 +1,3 @@
+# Merged-usr compatibility links for container rootfs builds.
+/bin usr/bin
+/sbin usr/sbin

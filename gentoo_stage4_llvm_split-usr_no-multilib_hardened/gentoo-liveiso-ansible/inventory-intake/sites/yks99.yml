@@ -1,0 +1,58 @@
+---
+inventory_intake_version: 1
+
+datacenters:
+  - name: YKS99
+    slug: yks99
+    timezone: America/Los_Angeles
+    facility: operator-confirmed
+    management_prefixes:
+      - 172.28.10.0/24
+    access_paths:
+      - future-rfc99-routed-lan
+      - future-vpn-overlay
+      - future-zerotier-overlay
+    owners:
+      - codex-ops
+
+prefixes:
+  - prefix: 172.28.0.0/16
+    site: yks99
+    status: planned
+    role: l2-network-core-aggregate
+  - prefix: 172.28.10.0/24
+    site: yks99
+    status: planned
+    role: metal-hosts
+  - prefix: 172.28.20.0/24
+    site: yks99
+    status: planned
+    role: front-end-vms
+  - prefix: 172.28.25.0/24
+    site: yks99
+    status: planned
+    role: front-end-containers
+  - prefix: 172.28.30.0/24
+    site: yks99
+    status: planned
+    role: back-end-vms
+  - prefix: 172.28.35.0/24
+    site: yks99
+    status: planned
+    role: back-end-containers
+  - prefix: 172.28.40.0/24
+    site: yks99
+    status: planned
+    role: gpu-enabled-vms
+
+devices: []
+
+clusters:
+  - name: yukon-systems
+    site: yks99
+    role: compute-cluster
+    members: []
+    notes:
+      - Raw source listed each functional network as /16; staged subnets are /24 beneath 172.28.0.0/16 to avoid exact duplicate prefixes.
+
+service_vips: []

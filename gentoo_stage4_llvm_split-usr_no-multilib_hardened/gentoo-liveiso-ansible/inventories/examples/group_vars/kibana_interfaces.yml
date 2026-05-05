@@ -1,0 +1,11 @@
+---
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-vip.example.internal
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_kibana:
+  elasticsearch_hosts:
+    - http://elastic-vip.example.internal:9200
+  public_base_url: https://kibana.example.internal/

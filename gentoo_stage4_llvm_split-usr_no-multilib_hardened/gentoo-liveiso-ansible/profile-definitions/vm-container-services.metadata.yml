@@ -1,0 +1,62 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-container-services
+  purpose: Hardened Gentoo VM profile for hosting Podman-based application services with netavark plus nftables policy control.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: container-services
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-container-services.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - vm-guest-simple-ipxe
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-containers/conmon
+      - app-containers/crun
+      - app-containers/podman
+      - app-containers/slirp4netns
+      - app-containers/aardvark-dns
+      - app-containers/netavark
+      - net-firewall/nftables
+      - sys-fs/fuse-overlayfs
+    app_runtime_packages:
+      - net-proxy/haproxy
+      - www-servers/nginx
+      - app-admin/rsyslog
+      - net-misc/curl
+      - app-misc/jq
+  systemd_exception_scope:
+    masked_globally: true
+    locally_unmasked_atoms:
+      - sys-apps/systemd-utils
+    notes: The Podman container-host profile permits only the minimal tmpfiles and udev-capable systemd-utils footprint required by the current container stack.
+  kernel_modules:
+    - br_netfilter
+    - nf_tables
+    - overlay
+    - tun
+    - veth
+  service_segments:
+    - mgmt
+    - apps
+  app_profiles:
+    - ntfy
+    - nginx
+    - haproxy
+    - rsyslog_collector
+  ipam:
+    supported_sources:
+      - flat-file-json
+      - netbox-api
+    notes: NetBox mode expects an operator-supplied API endpoint that returns pre-normalized JSON for the local site-security role.
+  source_references:
+    - https://packages.gentoo.org/packages/app-containers/podman
+    - https://packages.gentoo.org/packages/app-containers/netavark
+    - https://packages.gentoo.org/packages/app-containers/aardvark-dns
+    - https://packages.gentoo.org/packages/net-firewall/nftables

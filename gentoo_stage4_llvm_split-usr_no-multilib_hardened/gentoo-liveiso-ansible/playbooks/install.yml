@@ -19,7 +19,43 @@
       - system_packages
       - boot
       - network
+      - rsyslog_base
+      - telemetry_node_exporter
+      - telemetry_podman_exporter
+      - telemetry_blackbox_exporter
+      - telemetry_snmp_exporter
+      - telemetry_elasticsearch_exporter
+      - telemetry_prometheus
+      - telemetry_alertmanager
+      - telemetry_grafana
+      - binpkg_repo
+      - nexus_repo
+      - freeipa_controller
+      - ipa_client
+      - freeradius_bridge
+      - elasticsearch_cluster
+      - kibana_interface
+      - netbox_server
+      - netbox_essentials
+      - netbox_connector
+      - zerotier_access
+      - platform_profile
+      - identity
+      - memory_storage
+      - jenkins_controller
+      - distcc_farm
+      - container_host
+      - container_app_rsyslog_collector
+      - container_app_elastic_apm
+      - container_app_ipmi_exporter
+      - container_app_redfish_exporter
+      - container_app_ntfy
+      - container_app_nginx
+      - container_app_haproxy
+      - container_net_policy
+      - container_service_segments
       - services
+      - service_readiness
 
   tasks:
     - name: Validate requested install sequence

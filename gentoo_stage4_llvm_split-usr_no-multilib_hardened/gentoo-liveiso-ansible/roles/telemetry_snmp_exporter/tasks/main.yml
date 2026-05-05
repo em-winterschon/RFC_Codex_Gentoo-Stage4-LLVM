@@ -1,0 +1,55 @@
+---
+- name: Resolve SNMP exporter telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_snmp_exporter_enabled: >-
+      {{
+        resolved_profile_telemetry.snmp_exporter.enabled
+        | default(telemetry_snmp_exporter_default_enabled)
+        | bool
+      }}
+    resolved_snmp_exporter_telemetry: >-
+      {{
+        {
+          'listen_address': resolved_profile_telemetry.snmp_exporter.listen_address | default(telemetry_snmp_exporter_default_listen_address),
+          'listen_port': resolved_profile_telemetry.snmp_exporter.listen_port | default(telemetry_snmp_exporter_default_listen_port),
+          'include_default_config': resolved_profile_telemetry.snmp_exporter.include_default_config | default(telemetry_snmp_exporter_default_include_default_config),
+          'auths': resolved_profile_telemetry.snmp_exporter.auths | default(telemetry_snmp_exporter_default_auths),
+          'modules': resolved_profile_telemetry.snmp_exporter.modules | default(telemetry_snmp_exporter_default_modules),
+          'extra_args': resolved_profile_telemetry.snmp_exporter.extra_args | default(telemetry_snmp_exporter_default_extra_args)
+        }
+      }}
+
+- name: Ensure SNMP exporter configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/snmp_exporter"
+    state: directory
+    mode: '0755'
+  when: telemetry_snmp_exporter_enabled
+
+- name: Render stage5 SNMP exporter configuration
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/snmp_exporter/snmp-stage5.yml"
+    mode: '0644'
+    content: >-
+      {{
+        {
+          'auths': resolved_snmp_exporter_telemetry.auths,
+          'modules': resolved_snmp_exporter_telemetry.modules
+        } | to_nice_yaml(indent=2, sort_keys=False)
+      }}
+  when: telemetry_snmp_exporter_enabled
+
+- name: Render SNMP exporter OpenRC configuration
+  ansible.builtin.template:
+    src: snmp_exporter.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/snmp_exporter"
+    mode: '0644'
+  when: telemetry_snmp_exporter_enabled
+
+- name: Enable SNMP exporter service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['snmp_exporter']) | unique
+      }}
+  when: telemetry_snmp_exporter_enabled

@@ -1,0 +1,42 @@
+---
+jenkins_controller_default_enabled: false
+jenkins_controller_default_home: /var/lib/jenkins
+jenkins_controller_default_webroot: /var/cache/jenkins/war
+jenkins_controller_default_http_port: 8080
+jenkins_controller_default_http_listen_address: 0.0.0.0
+jenkins_controller_default_prefix: /
+jenkins_controller_default_agent_port: 50000
+jenkins_controller_default_service_user: jenkins
+jenkins_controller_default_service_group: jenkins
+jenkins_controller_default_java_bin: /usr/bin/java
+jenkins_controller_default_java_opts:
+  - -Djava.awt.headless=true
+  - -Djenkins.install.runSetupWizard=false
+  - -Dcasc.jenkins.config=/var/lib/jenkins/casc_configs/jenkins.yaml
+jenkins_controller_default_url: http://jenkins.example.invalid:8080/
+jenkins_controller_default_admin_email: root@localhost
+jenkins_controller_default_executors: 0
+jenkins_controller_default_plugin_catalog:
+  - configuration-as-code
+  - git
+  - github
+  - credentials
+  - ssh-slaves
+  - workflow-aggregator
+  - job-dsl
+  - matrix-auth
+  - ws-cleanup
+  - antisamy-markup-formatter
+jenkins_controller_default_folders:
+  - name: stage4
+    description: Stage4 and Stage5 build pipelines.
+  - name: containers
+    description: Container image and GHCR publication pipelines.
+  - name: binpkgs
+    description: Binpkg rebuild and package-host publication pipelines.
+jenkins_controller_default_builder_farm_uplink_interfaces: []
+jenkins_controller_default_builder_farm_switch_name: ""
+jenkins_controller_default_builder_farm_switch_port_profile: ""
+jenkins_controller_default_agent_labels:
+  - ci-controller
+jenkins_controller_default_env: {}

@@ -1,0 +1,14 @@
+modules:
+{% for module_name, module_config in (container_ipmi_exporter_profile.modules | default({})).items() %}
+  {{ module_name }}:
+{% for field_name, field_value in module_config.items() %}
+{% if field_value is sequence and field_value is not string %}
+    {{ field_name }}:
+{% for sequence_item in field_value %}
+      - {{ sequence_item | to_json }}
+{% endfor %}
+{% else %}
+    {{ field_name }}: {{ field_value | to_json }}
+{% endif %}
+{% endfor %}
+{% endfor %}

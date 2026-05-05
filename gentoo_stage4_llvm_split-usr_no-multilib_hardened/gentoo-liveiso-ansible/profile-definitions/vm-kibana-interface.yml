@@ -1,0 +1,25 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-kibana-interface.packages
+  kibana:
+    enabled: true
+    server_host: 0.0.0.0
+    server_port: 5601
+    elasticsearch_hosts:
+      - http://elastic-vip.example.internal:9200
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+    forward_hostname: log-vip.example.internal
+    forward_protocol: tcp
+    forward_port: 514
+  haproxy_service_types:
+    - name: kibana-http
+      bind: "*:5601"
+      mode: http
+      backend_name: be_kibana_http
+      servers:
+        - name: kibana
+          address: 127.0.0.1
+          port: 5601

@@ -1,0 +1,82 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-netbox-service
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-netbox-service.packages
+  package_use_files:
+    40-netbox-service: |
+      app-misc/mime-types nginx
+      dev-libs/jemalloc stats
+  netbox_server:
+    enabled: true
+    version: v4.5.9
+    deployment_method: native-source
+    service_host: 172.16.99.62
+    service_port: 8000
+    base_url: http://172.16.99.62
+    install_root: /opt/netbox
+    venv_path: /opt/netbox/venv
+    data_root: /var/lib/netbox
+    database:
+      name: netbox
+      user: netbox
+      host: 127.0.0.1
+      port: 5432
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+  netbox_essentials:
+    enabled: true
+    install_root: /opt/netbox-essentials
+    venv_path: /opt/netbox-essentials/venv
+    source_root: /opt/netbox-essentials/src
+    data_root: /var/lib/netbox-essentials
+    python_packages:
+      - pynetbox
+      - requests
+      - pyyaml
+    repositories:
+      - name: netbox-agent
+        url: https://github.com/Solvik/netbox-agent.git
+        purpose: on-host inventory automation
+      - name: netbox-sync
+        url: https://github.com/bb-Ricardo/netbox-sync.git
+        purpose: Redfish and host inventory synchronization
+      - name: netbox-tools
+        url: https://github.com/allenrobel/netbox-tools.git
+        purpose: operational NetBox tools and Ansible Vault integration helpers
+      - name: devicetype-library
+        url: https://github.com/netbox-community/devicetype-library.git
+        purpose: community device type, module type, and manufacturer definitions
+      - name: Device-Type-Library-Import
+        url: https://github.com/netbox-community/Device-Type-Library-Import.git
+        purpose: automated import tooling for devicetype-library
+    device_type_import:
+      enabled: true
+      vendors:
+        - APC
+        - Arista
+        - Cisco
+        - CyberPower
+        - Eaton
+        - Juniper
+        - MikroTik
+        - Opengear
+      log_path: /var/log/netbox-essentials/device-type-import-essential.log
+  openrc_services_enable:
+    - postgresql-18
+    - redis
+    - nginx
+  rsyslog:
+    enabled: true
+    forward_enabled: false
+  haproxy_service_types:
+    - name: netbox-http
+      bind: "*:8000"
+      mode: http
+      backend_name: be_netbox_http
+      servers:
+        - name: netbox-local
+          address: 127.0.0.1
+          port: 8000

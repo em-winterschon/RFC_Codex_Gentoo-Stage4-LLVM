@@ -1,0 +1,2 @@
+# arguments for prometheus
+prometheus_args="--web.listen-address={{ resolved_prometheus_telemetry.listen_address }}:{{ resolved_prometheus_telemetry.listen_port }} --storage.tsdb.retention.time={{ resolved_prometheus_telemetry.retention_time }}{% if resolved_prometheus_telemetry.external_url | length > 0 %} --web.external-url={{ resolved_prometheus_telemetry.external_url }}{% endif %}{% for extra_arg in resolved_prometheus_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

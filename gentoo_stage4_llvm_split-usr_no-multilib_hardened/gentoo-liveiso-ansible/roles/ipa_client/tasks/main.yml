@@ -1,0 +1,105 @@
+---
+- name: Resolve IPA client settings
+  ansible.builtin.set_fact:
+    ipa_client_enabled: >-
+      {{
+        resolved_profile_ipa_client.enabled
+        | default(ipa_client_default_enabled)
+        | bool
+      }}
+    resolved_ipa_client: >-
+      {{
+        {
+          'domain': resolved_profile_ipa_client.domain
+            | default(ipa_client_default_domain),
+          'realm': resolved_profile_ipa_client.realm
+            | default(ipa_client_default_realm),
+          'servers': resolved_profile_ipa_client.servers
+            | default(ipa_client_default_servers),
+          'dns_discovery_domain': resolved_profile_ipa_client.dns_discovery_domain
+            | default(ipa_client_default_dns_discovery_domain),
+          'hostname': resolved_profile_ipa_client.hostname
+            | default(ipa_client_default_hostname),
+          'domain_join_mode': resolved_profile_ipa_client.domain_join_mode
+            | default(ipa_client_default_domain_join_mode),
+          'configure_krb5': resolved_profile_ipa_client.configure_krb5
+            | default(ipa_client_default_configure_krb5),
+          'configure_sssd': resolved_profile_ipa_client.configure_sssd
+            | default(ipa_client_default_configure_sssd),
+          'mkhomedir': resolved_profile_ipa_client.mkhomedir
+            | default(ipa_client_default_mkhomedir),
+          'cache_credentials': resolved_profile_ipa_client.cache_credentials
+            | default(ipa_client_default_cache_credentials),
+          'enumerate': resolved_profile_ipa_client.enumerate
+            | default(ipa_client_default_enumerate),
+          'ssh_trust_ipa_keys': resolved_profile_ipa_client.ssh_trust_ipa_keys
+            | default(ipa_client_default_ssh_trust_ipa_keys),
+          'hbac_provider': resolved_profile_ipa_client.hbac_provider
+            | default(ipa_client_default_hbac_provider),
+          'sudo_provider': resolved_profile_ipa_client.sudo_provider
+            | default(ipa_client_default_sudo_provider),
+          'access_provider': resolved_profile_ipa_client.access_provider
+            | default(ipa_client_default_access_provider),
+          'home_dir_template': resolved_profile_ipa_client.home_dir_template
+            | default(ipa_client_default_home_dir_template),
+          'default_shell': resolved_profile_ipa_client.default_shell
+            | default(ipa_client_default_default_shell),
+          'ca_cert_path': resolved_profile_ipa_client.ca_cert_path
+            | default(ipa_client_default_ca_cert_path)
+        }
+      }}
+
+- name: Ensure IPA client support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ ipa_client_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/ipa
+    - /etc/sssd
+    - /etc/sssd/conf.d
+    - /etc/stage5-aaa
+    - /etc/stage5-aaa/manifests
+    - /usr/local/libexec/ipa-client
+  loop_control:
+    loop_var: ipa_client_dir
+  when: ipa_client_enabled
+
+- name: Render IPA client manifest
+  ansible.builtin.template:
+    src: ipa-client.yml.j2
+    dest: "{{ install_target_root }}/etc/stage5-aaa/manifests/ipa-client.yml"
+    mode: '0644'
+  when: ipa_client_enabled
+
+- name: Render IPA client default.conf
+  ansible.builtin.template:
+    src: ipa-default.conf.j2
+    dest: "{{ install_target_root }}/etc/ipa/default.conf"
+    mode: '0644'
+  when: ipa_client_enabled
+
+- name: Render IPA client Kerberos configuration
+  ansible.builtin.template:
+    src: krb5.conf.j2
+    dest: "{{ install_target_root }}/etc/krb5.conf"
+    mode: '0644'
+  when:
+    - ipa_client_enabled
+    - resolved_ipa_client.configure_krb5 | bool
+
+- name: Render IPA client SSSD configuration
+  ansible.builtin.template:
+    src: sssd.conf.j2
+    dest: "{{ install_target_root }}/etc/sssd/sssd.conf"
+    mode: '0600'
+  when:
+    - ipa_client_enabled
+    - resolved_ipa_client.configure_sssd | bool
+
+- name: Render IPA client enrollment helper
+  ansible.builtin.template:
+    src: join-domain.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/ipa-client/join-domain.sh"
+    mode: '0755'
+  when: ipa_client_enabled

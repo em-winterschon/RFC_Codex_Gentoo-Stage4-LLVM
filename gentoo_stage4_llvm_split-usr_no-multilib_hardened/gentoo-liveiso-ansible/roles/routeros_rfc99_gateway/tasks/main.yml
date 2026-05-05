@@ -1,0 +1,40 @@
+---
+- name: Assert RFC99 RouterOS gateway render inputs are safe
+  ansible.builtin.assert:
+    that:
+      - not (routeros_rfc99_gateway_apply | bool)
+      - routeros_rfc99_gateway_expected_model == 'CCR2004-16G-2S+PC'
+      - routeros_rfc99_gateway_expected_board_name == 'CCR2004-16G-2S+'
+      - routeros_rfc99_gateway_routeros_arch == 'arm64'
+      - routeros_rfc99_gateway_wan_interface == 'sfp-sfpplus1'
+      - routeros_rfc99_gateway_lan_uplink_interface == 'sfp-sfpplus2'
+      - routeros_rfc99_gateway_interface_renames | length == 16
+      - routeros_rfc99_gateway_management_cidrs | length > 0
+      - routeros_rfc99_gateway_vlan_plan | length > 0
+    fail_msg: >-
+      RFC99 CCR2004 gateway automation is currently render-only. Keep live
+      serial or SSH import gated until the rendered RSC is reviewed.
+
+- name: Ensure local RFC99 RouterOS render directory exists
+  ansible.builtin.file:
+    path: "{{ routeros_rfc99_gateway_render_root }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  become: false
+
+- name: Render RFC99 RouterOS gateway RSC configuration
+  ansible.builtin.template:
+    src: routeros-rfc99-gateway.rsc.j2
+    dest: "{{ routeros_rfc99_gateway_render_root }}/{{ inventory_hostname }}-rfc99-gateway.rsc"
+    mode: '0644'
+  delegate_to: localhost
+  become: false
+
+- name: Render RFC99 RouterOS gateway manifest
+  ansible.builtin.template:
+    src: routeros-rfc99-gateway-manifest.json.j2
+    dest: "{{ routeros_rfc99_gateway_render_root }}/{{ routeros_rfc99_gateway_render_manifest_name }}"
+    mode: '0644'
+  delegate_to: localhost
+  become: false

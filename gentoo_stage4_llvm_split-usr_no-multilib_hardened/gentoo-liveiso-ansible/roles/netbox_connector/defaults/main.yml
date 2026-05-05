@@ -1,0 +1,14 @@
+---
+netbox_connector_default_enabled: false
+netbox_connector_default_api_url: ""
+netbox_connector_default_token: ""
+netbox_connector_default_validate_certs: true
+netbox_connector_default_snapshot_enabled: false
+netbox_connector_default_snapshot_endpoints:
+  - dcim/devices/
+  - virtualization/virtual-machines/
+  - ipam/prefixes/
+  - ipam/ip-addresses/
+netbox_connector_default_planned_prefixes: []
+netbox_connector_default_planned_ip_addresses: []
+netbox_connector_default_planned_devices: []

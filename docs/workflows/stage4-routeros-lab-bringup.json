@@ -1,0 +1,138 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage4-routeros-lab-bringup",
+    "description": "Planned command sequence for bringing up the isolated Path B RouterOS CHR lab on 10.9.8.0/24.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "repo_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM",
+      "description": "Repository root."
+    },
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible subtree."
+    },
+    {
+      "name": "publish_root",
+      "required": true,
+      "default": "/var/lib/netboot/path-b",
+      "description": "Published Path B asset root."
+    },
+    {
+      "name": "host_lab_ip",
+      "required": true,
+      "default": "10.9.8.108/24",
+      "description": "Host address on the isolated Path B lab network."
+    },
+    {
+      "name": "routeros_disk",
+      "required": true,
+      "default": "/opt/routeros/routeros-lab.qcow2",
+      "description": "RouterOS CHR VM disk image path."
+    }
+  ],
+  "stages": [
+    {
+      "id": "publish-path-b-assets",
+      "summary": "Render the Path B iPXE asset tree before the lab network is exercised.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "inventories/examples/hosts.yml",
+        "playbooks/netboot-path-b.yml",
+        "-l",
+        "netboot_control_local"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "prepare-host-lab-network",
+      "summary": "Create the isolated bridge and assign the host-side lab address.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "ip addr add ${host_lab_ip} dev lo && ip link add br-pathb type bridge && ip addr add ${host_lab_ip} dev br-pathb && ip link set br-pathb up"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "create-routeros-disk",
+      "summary": "Create the RouterOS CHR qcow2 disk image.",
+      "cwd": "${repo_root}",
+      "command": [
+        "qemu-img",
+        "create",
+        "-f",
+        "qcow2",
+        "${routeros_disk}",
+        "2G"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "launch-routeros-vm",
+      "summary": "Boot the RouterOS CHR VM on the isolated Path B bridge.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "qemu-system-x86_64 -enable-kvm -machine q35,accel=kvm -cpu host -m 2048 -smp 2 -drive if=virtio,file=${routeros_disk},format=qcow2 -nic bridge,br=br-pathb,model=virtio-net-pci -serial mon:stdio"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "launch-client-vm",
+      "summary": "Boot a client VM from network on the isolated Path B segment.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "qemu-system-x86_64 -enable-kvm -machine q35,accel=kvm -cpu host -m 4096 -smp 2 -boot order=n -nic bridge,br=br-pathb,model=virtio-net-pci -serial mon:stdio"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "handoff-to-stage4-installer",
+      "summary": "Once the provisioning environment is up, hand off to the standard Stage4 installer sequence.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "inventories/examples/hosts.yml",
+        "--limit",
+        "target_system_remote",
+        "--sequence",
+        "storage-foundation",
+        "--checkpoint",
+        "--control-flow-path",
+        "/tmp/ansible-control-flow/path-b-client.storage.jsonl"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

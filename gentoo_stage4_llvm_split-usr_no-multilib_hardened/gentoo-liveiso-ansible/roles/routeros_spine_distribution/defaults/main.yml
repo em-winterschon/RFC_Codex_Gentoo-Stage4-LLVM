@@ -1,0 +1,66 @@
+---
+routeros_spine_distribution_apply: false
+routeros_spine_distribution_render_root: /tmp/routeros-spine-distribution
+routeros_spine_distribution_manifest_name: routeros-spine-distribution.json
+routeros_spine_distribution_timezone: America/Los_Angeles
+routeros_spine_distribution_target_version: 7.22.2
+
+routeros_spine_distribution_spine:
+  name: sw_spine_crs309_rfc99
+  identity: sw-spine-crs309-rfc99
+  model: CRS309-1G-8S+
+  bridge: br-spine
+  management_ip: 172.16.99.8
+  management_interface: br-spine
+  gateway: 172.16.99.1
+  crs354_bond:
+    name: bond-crs354
+    slaves:
+      - sfp-sfpplus2
+      - sfp-sfpplus3
+    peer_system_id: 04:F4:1C:4B:9F:7A
+  uplinks:
+    - interface: sfp-sfpplus1
+      comment: CCR2004 gateway uplink, 10G-SR MMF
+    - interface: sfp-sfpplus2
+      comment: CRS354 LACP member 1, 10G-SR MMF
+    - interface: sfp-sfpplus3
+      comment: CRS354 LACP member 2, 10G-SR MMF
+    - interface: sfp-sfpplus4
+      comment: Future Hasslehoff CCR-PCI DAC member 1
+    - interface: sfp-sfpplus5
+      comment: Future Hasslehoff CCR-PCI DAC member 2
+    - interface: sfp-sfpplus8
+      comment: Future CSS326 aggregation uplink, 10G-SR MMF
+
+routeros_spine_distribution_distribution:
+  name: sw_mgmt_mkcrs354
+  identity: sw-mgmt-mkcrs354
+  model: CRS354-48G-4S+2Q+
+  bridge: bridge0
+  management_ip: 172.16.99.7
+  management_interface: ether49
+  crs309_bond:
+    name: bond-crs309
+    slaves:
+      - sfp-sfpplus1
+      - sfp-sfpplus2
+    peer_system_id: 48:A9:8A:5E:AD:24
+  stale_opnsense:
+    address: 172.16.254.7/24
+    interface: sfp-sfpplus1
+    gateway: 172.16.254.1
+  qnap_bond:
+    name: bond-qnap
+    slaves:
+      - sfp-sfpplus3
+      - sfp-sfpplus4
+  uplinks:
+    - interface: sfp-sfpplus1
+      comment: CRS309 LACP member 1, 10G-SR MMF
+    - interface: sfp-sfpplus2
+      comment: CRS309 LACP member 2, 10G-SR MMF
+    - interface: sfp-sfpplus3
+      comment: QNAP TS435XEU LACP member 1, 10G DAC
+    - interface: sfp-sfpplus4
+      comment: QNAP TS435XEU LACP member 2, 10G DAC

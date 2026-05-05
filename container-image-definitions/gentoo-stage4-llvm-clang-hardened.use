@@ -1,0 +1,3 @@
+# Container rootfs builds are merged-usr, so disable split-usr specific
+# symlink packaging that would collide under /bin -> /usr/bin.
+-split-usr

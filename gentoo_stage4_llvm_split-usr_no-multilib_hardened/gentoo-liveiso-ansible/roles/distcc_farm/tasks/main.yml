@@ -1,0 +1,120 @@
+---
+- name: Resolve distcc farm settings
+  ansible.builtin.set_fact:
+    distcc_farm_enabled: >-
+      {{
+        resolved_profile_distcc_farm.enabled
+        | default(distcc_farm_default_enabled)
+        | bool
+      }}
+    resolved_distcc_farm: >-
+      {{
+        {
+          'client_enabled': resolved_profile_distcc_farm.client_enabled
+            | default(distcc_farm_default_client_enabled),
+          'worker_enabled': resolved_profile_distcc_farm.worker_enabled
+            | default(distcc_farm_default_worker_enabled),
+          'port': resolved_profile_distcc_farm.port
+            | default(distcc_farm_default_port),
+          'jobs': resolved_profile_distcc_farm.jobs
+            | default(distcc_farm_default_jobs),
+          'nice': resolved_profile_distcc_farm.nice
+            | default(distcc_farm_default_nice),
+          'listen_address': resolved_profile_distcc_farm.listen_address
+            | default(distcc_farm_default_listen_address),
+          'allowed_client_cidrs': resolved_profile_distcc_farm.allowed_client_cidrs
+            | default(distcc_farm_default_allowed_client_cidrs),
+          'makeopts_jobs': resolved_profile_distcc_farm.makeopts_jobs
+            | default(distcc_farm_default_makeopts_jobs),
+          'hosts': resolved_profile_distcc_farm.hosts
+            | default(distcc_farm_default_hosts),
+          'service_user': resolved_profile_distcc_farm.service_user
+            | default(distcc_farm_default_service_user),
+          'service_group': resolved_profile_distcc_farm.service_group
+            | default(distcc_farm_default_service_group),
+          'runlevel': resolved_profile_distcc_farm.runlevel
+            | default(distcc_farm_default_runlevel),
+          'compression': resolved_profile_distcc_farm.compression
+            | default(distcc_farm_default_compression),
+          'cpp_mode': resolved_profile_distcc_farm.cpp_mode
+            | default(distcc_farm_default_cpp_mode),
+          'builder_fabric_name': resolved_profile_distcc_farm.builder_fabric_name
+            | default(distcc_farm_default_builder_fabric_name),
+          'builder_fabric_cidr': resolved_profile_distcc_farm.builder_fabric_cidr
+            | default(distcc_farm_default_builder_fabric_cidr),
+          'worker_metadata': resolved_profile_distcc_farm.worker_metadata
+            | default(distcc_farm_default_worker_metadata)
+        }
+      }}
+
+- name: Ensure distcc farm directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ distcc_farm_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/distcc
+    - /usr/local/libexec/distcc-farm
+  loop_control:
+    loop_var: distcc_farm_dir
+  when: distcc_farm_enabled
+
+- name: Render distcc host list for build clients
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: "{{ install_target_root }}/etc/distcc/hosts"
+    mode: '0644'
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.client_enabled | bool
+    - resolved_distcc_farm.hosts | length > 0
+
+- name: Render distcc farm manifest
+  ansible.builtin.template:
+    src: distcc-farm.json.j2
+    dest: "{{ install_target_root }}/etc/distcc/builder-farm.json"
+    mode: '0644'
+  when: distcc_farm_enabled
+
+- name: Append distcc client policy into make.conf
+  ansible.builtin.blockinfile:
+    path: "{{ install_target_root }}/etc/portage/make.conf"
+    marker: "# {mark} ANSIBLE MANAGED DISTCC FARM"
+    insertafter: EOF
+    append_newline: true
+    block: "{{ lookup('template', 'make.conf.distcc.j2') | trim }}"
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.client_enabled | bool
+    - resolved_distcc_farm.hosts | length > 0
+
+- name: Render distcc worker launch helper
+  ansible.builtin.template:
+    src: launch-distccd.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/distcc-farm/launch-distccd.sh"
+    mode: '0755'
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.worker_enabled | bool
+
+- name: Register distcc worker OpenRC action service
+  ansible.builtin.set_fact:
+    openrc_action_services: >-
+      {{
+        (openrc_action_services | default([]))
+        + [
+            {
+              'name': 'distccd-farm',
+              'description': 'Distcc worker daemon for the Stage5 builder farm',
+              'command': '/usr/local/libexec/distcc-farm/launch-distccd.sh',
+              'runlevel': resolved_distcc_farm.runlevel,
+              'enabled': true,
+              'dependencies_need': ['net'],
+              'output_log': '/var/log/distcc-farm.log',
+              'error_log': '/var/log/distcc-farm.err.log'
+            }
+          ]
+      }}
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.worker_enabled | bool

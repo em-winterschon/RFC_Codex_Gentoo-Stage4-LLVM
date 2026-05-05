@@ -1,0 +1,57 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-identity-controller.packages
+  aaa_policy_files:
+    - aaa-policy-definitions/site-baseline.yml
+  openrc_services_enable:
+    - 389-ds
+    - radiusd
+    - sssd
+  freeipa_controller:
+    enabled: true
+    vendor_package_strategy: overlay-managed
+    realm: EXAMPLE.INTERNAL
+    domain: example.internal
+    server_hostname: ipa01.example.internal
+    ds_instance_name: example-internal
+    enable_dns: false
+    enable_ca: true
+    enable_pkinit: true
+    smartcard_enabled: true
+  ipa_client:
+    enabled: true
+    domain_join_mode: manual
+    mkhomedir: true
+  freeradius_bridge:
+    enabled: true
+    backend: freeipa-ldap
+    ldap_uri: ldaps://127.0.0.1
+    base_dn: dc=example,dc=internal
+    bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=example,dc=internal
+    clients: []
+  haproxy_service_types:
+    - name: freeipa-https
+      bind: "*:443"
+      mode: tcp
+      backend_name: be_freeipa_https
+      servers:
+        - name: ipa-controller
+          address: 127.0.0.1
+          port: 443
+    - name: freeipa-ldaps
+      bind: "*:636"
+      mode: tcp
+      backend_name: be_freeipa_ldaps
+      servers:
+        - name: ipa-controller
+          address: 127.0.0.1
+          port: 636
+    - name: freeradius-auth
+      bind: "*:1812"
+      mode: tcp
+      backend_name: be_freeradius_auth
+      servers:
+        - name: radius-controller
+          address: 127.0.0.1
+          port: 1812

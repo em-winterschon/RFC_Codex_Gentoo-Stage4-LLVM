@@ -109,6 +109,7 @@ The builder writes an OpenRC-oriented bootstrap plan that:
 What it does:
 - boots the explicit QCOW boot disk as `virtio-blk-pci`
 - attaches the four target disks for `bpool` and `rpool`
+- can attach additional tmpfs-backed ephemeral development disks from a JSON manifest
 - can boot directly from the target `bpool`/`rpool` disks after the installer has populated the ESP and ZFS datasets
 - runs QEMU with `-boot strict=on` by default so OVMF does not wander into SATADOM, PXE, or HTTP boot
 - forwards guest SSH to `127.0.0.1:2222` by default
@@ -126,6 +127,7 @@ Important launcher defaults:
 - `WAIT_FOR_SSH=1`
 - `SSH_READY_PROBE=banner`
 - `LAUNCHER_LOG_ENABLE=1`
+- `QEMU_MEMORY_DRIVES_FILE=''`
 
 Preferred launch sequence:
 1. Build the QCOW image:
@@ -179,6 +181,42 @@ WAIT_FOR_SSH=0 \
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
 
+Tmpfs-backed ephemeral memory-drive example:
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/qemu-memory-drives.yml \
+  -l qemu_control_local \
+  -e qemu_memory_drives_enabled=true \
+  -e qemu_memory_drives_instance_name=stage4-devvm
+
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json \
+bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Path B iPXE client launch example:
+```bash
+INSTANCE_NAME=container-services \
+QEMU_VM_DIR=/opt/gentoo-netboot/path-b/vms/container-services-profile \
+QEMU_ROOTDISK=/opt/gentoo-netboot/path-b/vms/container-services-profile/container-services-root.qcow2 \
+QEMU_IPXE_EFI_DIR=/opt/gentoo-netboot/path-b/vms/container-services-profile/ipxe-efi \
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/pathb-container-services/memory-drives.json \
+QEMU_TAP_IFNAME=tap-container \
+QEMU_SERIAL_PORT=5003 \
+QEMU_RESET_EFI_VARS=1 \
+bash gentoo-virt-qemu/qemu-launch-pathb-vm.sh
+```
+
+This launcher is Path B specific and differs from the stage3 launcher in two important ways:
+- it always uses UEFI `pflash0+pflash1`, which avoids the broken `-bios + pflash1` mix
+- it always uses an explicit TAP interface on the requested bridge, which avoids QEMU bridge-helper ACL failures
+
+The manifest-driven disks are meant for:
+- Portage caches
+- build scratch space
+- ephemeral container/image storage
+- other development-time data that should not be written to the persistent validation disks
+
 Boot-source modes:
 - `QEMU_BOOT_SOURCE=qcow`
   boots the disposable stage3 QCOW image and attaches the four target disks for installation work
@@ -211,6 +249,18 @@ Serial transport options:
   asks QEMU to allocate a local PTY for the guest serial port, which is the path intended for `minicom`-style local attachment
 - `QEMU_SERIAL_MODE=stdio`
   keeps the guest serial console on the invoking terminal and requires `QEMU_DAEMONIZE=0`
+
+Operator helper for TCP serial consoles:
+```bash
+bash scripts/watch-vm-serial.sh --vm container-services
+```
+
+Other examples:
+```bash
+bash scripts/watch-vm-serial.sh --vm routeros
+bash scripts/watch-vm-serial.sh --vm simple-guest
+bash scripts/watch-vm-serial.sh --host 127.0.0.1 --port 5003 --mode socat
+```
 
 Minicom-style local serial example:
 ```bash

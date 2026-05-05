@@ -1,0 +1,34 @@
+---
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-vip.example.internal
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_telemetry:
+  grafana:
+    domain: grafana.example.internal
+    root_url: https://grafana.example.internal/
+    admin_user: admin
+    admin_password: changeme
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://10.66.30.40:9090
+        isDefault: true
+      - name: Elasticsearch-Logs
+        type: elasticsearch
+        access: proxy
+        url: http://elastic-vip.example.internal:9200
+        jsonData:
+          index: "[logs-stage5-]YYYY.MM.DD"
+          timeField: "@timestamp"
+          interval: Daily
+      - name: Elasticsearch-APM
+        type: elasticsearch
+        access: proxy
+        url: http://elastic-vip.example.internal:9200
+        jsonData:
+          index: "apm-*"
+          timeField: "@timestamp"

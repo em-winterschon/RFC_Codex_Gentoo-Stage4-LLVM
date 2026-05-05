@@ -32,7 +32,41 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - rsyslog_base
+          - telemetry_node_exporter
+          - telemetry_podman_exporter
+          - telemetry_blackbox_exporter
+          - telemetry_snmp_exporter
+          - telemetry_elasticsearch_exporter
+          - telemetry_prometheus
+          - telemetry_alertmanager
+          - telemetry_grafana
+          - binpkg_repo
+          - nexus_repo
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
+          - platform_profile
+          - identity
+          - memory_storage
+          - jenkins_controller
+          - distcc_farm
+          - container_host
+          - container_app_rsyslog_collector
+          - container_app_elastic_apm
+          - container_app_ipmi_exporter
+          - container_app_redfish_exporter
+          - container_app_ntfy
+          - container_app_nginx
+          - container_app_haproxy
+          - container_net_policy
+          - container_service_segments
           - services
+          - service_readiness
 
   full-modular-zfs:
     description: Modular installer sequence that keeps native ZFS, kernel, bootloader, and finalize roles explicit.
@@ -62,7 +96,27 @@ install_role_sequences:
         roles:
           - kernel
           - bootloader
+          - rsyslog_base
+          - telemetry_node_exporter
+          - telemetry_blackbox_exporter
+          - telemetry_snmp_exporter
+          - telemetry_elasticsearch_exporter
+          - telemetry_prometheus
+          - telemetry_alertmanager
+          - telemetry_grafana
+          - binpkg_repo
+          - nexus_repo
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
+          - platform_profile
+          - identity
           - finalize
+          - service_readiness
 
   storage-foundation:
     description: Destructive storage-only foundation pass for device wiping, partitioning, and ZFS provisioning.
@@ -109,7 +163,41 @@ install_role_sequences:
           - system_packages
           - boot
           - network
+          - rsyslog_base
+          - telemetry_node_exporter
+          - telemetry_podman_exporter
+          - telemetry_blackbox_exporter
+          - telemetry_snmp_exporter
+          - telemetry_elasticsearch_exporter
+          - telemetry_prometheus
+          - telemetry_alertmanager
+          - telemetry_grafana
+          - binpkg_repo
+          - nexus_repo
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
+          - platform_profile
+          - identity
+          - memory_storage
+          - jenkins_controller
+          - distcc_farm
+          - container_host
+          - container_app_rsyslog_collector
+          - container_app_elastic_apm
+          - container_app_ipmi_exporter
+          - container_app_redfish_exporter
+          - container_app_ntfy
+          - container_app_nginx
+          - container_app_haproxy
+          - container_net_policy
+          - container_service_segments
           - services
+          - service_readiness
 
   repair-boot:
     description: Targeted rerun for ZFSBootMenu, kernel/initramfs materialization, and boot-time networking.
@@ -123,6 +211,8 @@ install_role_sequences:
         roles:
           - boot
           - network
+          - platform_profile
+          - identity
 
   repair-services:
     description: Targeted rerun for network and managed OpenRC service state.
@@ -135,4 +225,38 @@ install_role_sequences:
         summary: Reapply network and managed OpenRC services.
         roles:
           - network
+          - rsyslog_base
+          - telemetry_node_exporter
+          - telemetry_podman_exporter
+          - telemetry_blackbox_exporter
+          - telemetry_snmp_exporter
+          - telemetry_elasticsearch_exporter
+          - telemetry_prometheus
+          - telemetry_alertmanager
+          - telemetry_grafana
+          - binpkg_repo
+          - nexus_repo
+          - freeipa_controller
+          - ipa_client
+          - freeradius_bridge
+          - elasticsearch_cluster
+          - kibana_interface
+          - netbox_connector
+          - zerotier_access
+          - platform_profile
+          - identity
+          - memory_storage
+          - jenkins_controller
+          - distcc_farm
+          - container_host
+          - container_app_rsyslog_collector
+          - container_app_elastic_apm
+          - container_app_ipmi_exporter
+          - container_app_redfish_exporter
+          - container_app_ntfy
+          - container_app_nginx
+          - container_app_haproxy
+          - container_net_policy
+          - container_service_segments
           - services
+          - service_readiness

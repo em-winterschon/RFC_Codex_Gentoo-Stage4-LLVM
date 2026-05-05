@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+cat <<'EOF'
+FreeIPA controller scaffold
+===========================
+
+This repo currently treats the FreeIPA server package path as vendor or overlay managed.
+The local Gentoo tree used by this installer does not yet ship a native FreeIPA server ebuild.
+
+Realm: {{ resolved_freeipa_controller.realm }}
+Domain: {{ resolved_freeipa_controller.domain }}
+Hostname: {{ resolved_freeipa_controller.server_hostname }}
+Vendor package strategy: {{ resolved_freeipa_controller.vendor_package_strategy }}
+Overlay repo hint: {{ resolved_freeipa_controller.overlay_repo_name }}
+
+Seed manifest:
+  /etc/stage5-aaa/manifests/freeipa-controller.yml
+
+Recommended next actions:
+  1. Install the selected FreeIPA server package source or containerized controller payload.
+  2. Use the manifest above to drive ipa-server-install flags and post-install policy seeding.
+  3. Enroll Linux clients through the ipa_client role and bridge device AAA through freeradius_bridge.
+EOF

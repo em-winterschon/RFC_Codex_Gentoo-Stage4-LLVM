@@ -1,0 +1,2 @@
+# arguments for prometheus elasticsearch exporter
+command_args="--es.uri={{ resolved_elasticsearch_exporter_telemetry.es_uri }} --web.listen-address={{ resolved_elasticsearch_exporter_telemetry.listen_address }}:{{ resolved_elasticsearch_exporter_telemetry.listen_port }}{% for extra_arg in resolved_elasticsearch_exporter_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

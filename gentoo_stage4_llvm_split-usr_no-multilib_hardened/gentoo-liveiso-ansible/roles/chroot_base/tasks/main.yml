@@ -6,6 +6,17 @@
     remote_src: true
     mode: '0644'
 
+- name: Ensure target ZFS child datasets are mounted before chroot writes
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if command -v zfs >/dev/null 2>&1 && zpool list -H {{ zpool_name | quote }} >/dev/null 2>&1; then
+      zfs mount -a
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: zpool_name is defined
+
 - name: Ensure chroot pseudo-filesystems are mounted
   ansible.builtin.shell: |
     set -euo pipefail
@@ -30,6 +41,39 @@
     src: chroot-runner.sh.j2
     dest: "{{ liveiso_work_dir }}/chroot-runner.sh"
     mode: '0755'
+
+- name: Initialize Portage binary package trust in target
+  ansible.builtin.command: "{{ liveiso_work_dir }}/chroot-runner.sh getuto"
+  when: >-
+    portage_initialize_binpkg_trust
+    | default(portage_getbinpkg_enabled | default(false))
+    | bool
+
+- name: Check LiveISO Gentoo repository seed when requested
+  ansible.builtin.stat:
+    path: /var/db/repos/gentoo/profiles
+  register: liveiso_gentoo_repo_profiles
+  when: portage_seed_gentoo_repo_from_liveiso | default(false) | bool
+
+- name: Fail when requested LiveISO Gentoo repository seed is unavailable
+  ansible.builtin.fail:
+    msg: "portage_seed_gentoo_repo_from_liveiso=true, but /var/db/repos/gentoo/profiles is unavailable on the LiveISO."
+  when:
+    - portage_seed_gentoo_repo_from_liveiso | default(false) | bool
+    - not liveiso_gentoo_repo_profiles.stat.exists
+
+- name: Ensure target repository parent exists for LiveISO seed
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/var/db/repos"
+    state: directory
+    mode: '0755'
+  when: portage_seed_gentoo_repo_from_liveiso | default(false) | bool
+
+- name: Seed Gentoo repository from LiveISO when requested
+  ansible.builtin.command: >-
+    rsync -a --delete /var/db/repos/gentoo/
+    {{ install_target_root }}/var/db/repos/gentoo/
+  when: portage_seed_gentoo_repo_from_liveiso | default(false) | bool
 
 - name: Sync Portage in target
   ansible.builtin.command: "{{ liveiso_work_dir }}/chroot-runner.sh {{ portage_sync_command | quote }}"

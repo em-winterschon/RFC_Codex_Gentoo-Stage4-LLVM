@@ -1,0 +1,8 @@
+---
+- name: Build and publish Path B iPXE netboot assets
+  hosts: netboot_publishers
+  gather_facts: true
+  become: true
+
+  roles:
+    - netboot_assets

@@ -1,0 +1,155 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-container-services.packages
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    20-container-services: |
+      net-proxy/haproxy -slz zlib
+      >=app-misc/mime-types-2.1.54 nginx
+      >=net-firewall/iptables-1.8.13 nftables
+      sys-apps/systemd-utils acl kmod tmpfiles udev -boot -kernel-install -sysusers -ukify
+  package_unmask_files:
+    21-container-services-systemd-utils: |
+      sys-apps/systemd-utils
+  env_files:
+    gcc-compat.conf: |
+      CC=gcc
+      CXX=g++
+      CPP="cpp"
+      AR=gcc-ar
+      NM=gcc-nm
+      RANLIB=gcc-ranlib
+      COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+      FCFLAGS="${COMMON_FLAGS}"
+      FFLAGS="${COMMON_FLAGS}"
+      LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
+  package_env_files:
+    20-container-services-gcc-compat: |
+      net-proxy/haproxy gcc-compat.conf
+  openrc_services_enable:
+    - cgroups
+    - nftables
+  modules_load_files:
+    vm-container-services.conf: |
+      br_netfilter
+      nf_tables
+      overlay
+      tun
+      veth
+  container_services:
+    enabled: true
+    runtime: podman
+    service_user: root
+    service_group: root
+    runtime_root: /var/lib/container-services
+    network_backend: netavark
+    firewall_backend: nftables
+    ssh_console_only: true
+    serial_console_only: true
+  container_service_segments:
+    - name: mgmt
+      driver: bridge
+      subnet: 10.77.0.0/24
+      gateway: 10.77.0.1
+      interface_name: podman-mgmt0
+    - name: apps
+      driver: bridge
+      subnet: 10.77.1.0/24
+      gateway: 10.77.1.1
+      interface_name: podman-apps0
+  container_app_profiles:
+    ntfy:
+      enabled: false
+      image: docker.io/binwiederhier/ntfy:v2.14.0
+      pull_policy: missing
+      network: apps
+      ip_address: 10.77.1.20
+      published_ports: []
+      env:
+        NTFY_BASE_URL: http://127.0.0.1
+    nginx:
+      enabled: false
+      image: ghcr.io/em-winterschon/gentoo-stage5-nginx:latest
+      pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-nginx@sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
+      digest: sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
+      network: apps
+      ip_address: 10.77.1.30
+      command:
+        - /usr/sbin/nginx
+        - "-e"
+        - /dev/stderr
+        - "-g"
+        - "daemon off;"
+        - "-c"
+        - /etc/nginx/nginx.conf
+      tmpfs:
+        - /tmp:rw,noexec,nosuid,size=64m
+        - /run:rw,noexec,nosuid,size=16m
+      cap_add:
+        - CHOWN
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETUID
+      published_ports:
+        - 8080:80/tcp
+    haproxy:
+      enabled: false
+      image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest
+      pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy@sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      digest: sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      network: apps
+      ip_address: 10.77.1.10
+      config_path: /etc/haproxy/haproxy.cfg
+      command:
+        - /usr/sbin/haproxy
+        - "-f"
+        - /etc/haproxy/haproxy.cfg
+        - "-db"
+      tmpfs:
+        - /tmp:rw,noexec,nosuid,size=64m
+        - /run:rw,noexec,nosuid,size=16m
+      cap_add:
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETUID
+      published_ports:
+        - 80:80/tcp
+        - 443:443/tcp
+  site_security_profile:
+    compliance_mode: standard
+    rbac:
+      admin_users:
+        - root
+      deploy_groups:
+        - wheel
+    aaa_policy:
+      ssh_authorized_keys_only: true
+      sudo_nopasswd_groups:
+        - wheel
+    firewall:
+      default_policy_input: drop
+      default_policy_forward: drop
+      default_policy_output: accept
+      allowed_management_cidrs:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+      enable_container_nat: true
+    qos:
+      enabled: false
+      default_egress_mbit: 0
+    isolation:
+      userns: host
+      read_only_rootfs: true
+      drop_capabilities: true
+    ipam:
+      source: flat-file-json
+      flat_file_path: /etc/container-services/ipam/site-ipam.json

@@ -1,0 +1,75 @@
+---
+netboot_publish_root: /var/lib/netboot/path-b
+netboot_public_base_url: http://boot.example.net/path-b
+netboot_menu_timeout_ms: 5000
+netboot_default_role: installer
+netboot_default_next_server: ""
+netboot_iso_fallback_enabled: false
+netboot_enable_serial_console: true
+netboot_serial_console: console=ttyS0,115200
+netboot_local_console: console=tty0
+netboot_artifact_base_url: "{{ netboot_public_base_url }}/artifacts"
+netboot_installer_short_path: g
+netboot_rescue_short_path: r
+netboot_initramfs_short_name: initramfs-gz.img
+netboot_operator_notes_url: "{{ netboot_public_base_url }}/README.txt"
+netboot_host_map_extra: []
+netboot_boot_type_enum:
+  - static
+  - dhcp
+  - bootp
+netboot_os_type_enum:
+  - linux
+  - bsd
+  - router-os
+  - solaris
+  - other
+netboot_os_name_enum:
+  - gentoo
+  - centos
+  - rocky
+  - debian
+  - devuan
+  - solaris
+  - tribblix
+  - dietpi
+  - fedora
+  - freebsd
+  - netbsd
+  - other
+netboot_machine_type_enum:
+  - metal
+  - qemu
+  - xen
+  - embedded
+netboot_platform_enum:
+  - bios
+  - uefi
+  - other
+netboot_arch_enum:
+  - amd64
+  - arm64
+  - ppc64le
+  - other
+netboot_roles:
+  installer:
+    description: Boot the Gentoo provisioning environment for Stage4 imaging.
+    kernel_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/vmlinuz"
+    initrd_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/{{ netboot_initramfs_short_name }}"
+    rootfs_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img"
+    extra_cmdline: >-
+      ip=dhcp rd.neednet=1 rd.live.image
+      root=live:{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img
+  rescue:
+    description: Boot a rescue environment without invoking the imaging workflow.
+    kernel_url: "{{ netboot_public_base_url }}/{{ netboot_rescue_short_path }}/vmlinuz"
+    initrd_url: "{{ netboot_public_base_url }}/{{ netboot_rescue_short_path }}/{{ netboot_initramfs_short_name }}"
+    rootfs_url: "{{ netboot_public_base_url }}/{{ netboot_rescue_short_path }}/rootfs.img"
+    extra_cmdline: >-
+      ip=dhcp rd.neednet=1 rd.live.image
+      root=live:{{ netboot_public_base_url }}/{{ netboot_rescue_short_path }}/rootfs.img
+      rescue_mode=1
+  localdisk:
+    description: Exit provisioning and boot from the local installed disk.
+    sanboot_url: local
+    extra_cmdline: ""

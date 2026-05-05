@@ -54,6 +54,7 @@ mark_stage3_launch_globals_used() {
     "${IP_BIN-}" \
     "${HOST_DISK_CACHE-}" \
     "${HOST_DISK_AIO-}" \
+    "${QEMU_MEMORY_DRIVES_FILE-}" \
     "${WAIT_FOR_SSH-}" \
     "${SSH_READY_PROBE-}" \
     "${SSH_READY_HOST-}" \
@@ -113,6 +114,7 @@ reset_launcher_state() {
   IP_BIN='/usr/sbin/ip'
   HOST_DISK_CACHE='none'
   HOST_DISK_AIO='native'
+  QEMU_MEMORY_DRIVES_FILE=''
   WAIT_FOR_SSH='0'
   SSH_READY_PROBE='banner'
   SSH_READY_HOST='127.0.0.1'
@@ -257,6 +259,39 @@ test_build_qemu_cmd_supports_alias_network_mode() {
   rm -rf "${temp_dir}"
 }
 
+test_build_qemu_cmd_supports_memory_drive_manifest() {
+  local temp_dir manifest rendered
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/vm.qcow2"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  manifest="${temp_dir}/memory-drives.json"
+  cat > "${manifest}" <<EOF
+{"drives":[{"path":"${temp_dir}/mem0.qcow2","format":"qcow2","serial":"mem-portage-cache","device_model":"virtio-blk-pci"}]}
+EOF
+  QEMU_MEMORY_DRIVES_FILE="${manifest}"
+  : > "${QCOW_IMAGE}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
+  : > "${temp_dir}/mem0.qcow2"
+
+  build_qemu_cmd
+  rendered="${QEMU_CMD[*]}"
+
+  assert_contains "${rendered}" "if=none,id=memdrv0,file=${temp_dir}/mem0.qcow2,format=qcow2"
+  assert_contains "${rendered}" "virtio-blk-pci,drive=memdrv0,serial=mem-portage-cache"
+  rm -rf "${temp_dir}"
+}
+
 test_validate_boot_source_rejects_invalid_value() {
   local output status
 
@@ -341,6 +376,7 @@ test_build_qemu_cmd_uses_boot_disk_and_tcp_serial
 test_build_qemu_cmd_supports_pty_serial
 test_build_qemu_cmd_supports_target_disk_boot
 test_build_qemu_cmd_supports_alias_network_mode
+test_build_qemu_cmd_supports_memory_drive_manifest
 test_validate_boot_source_rejects_invalid_value
 test_main_dry_run_prints_stage3_vm_command
 test_main_dry_run_prints_target_disk_boot_plan

@@ -1,0 +1,4 @@
+# Managed by gentoo-liveiso-ansible
+{% for guest_memory_mount in guest_memory_storage_mounts %}
+tmpfs {{ guest_memory_mount.path }} tmpfs defaults,nosuid,nodev,mode={{ guest_memory_mount.mode | default('0755') }},size={{ guest_memory_mount.size }}{% if guest_memory_mount.options | default([]) | length > 0 %},{{ guest_memory_mount.options | join(',') }}{% endif %} 0 0
+{% endfor %}

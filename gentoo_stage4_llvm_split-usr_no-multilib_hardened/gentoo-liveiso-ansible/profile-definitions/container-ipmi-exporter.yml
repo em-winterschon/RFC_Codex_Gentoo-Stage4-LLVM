@@ -1,0 +1,32 @@
+---
+gentoo_profile_definition:
+  container_app_profiles:
+    ipmi_exporter:
+      enabled: false
+      image: docker.io/prometheuscommunity/ipmi-exporter:v1.10.1
+      network: mgmt
+      ip_address: 10.77.0.50
+      published_ports:
+        - 9290:9290/tcp
+      modules:
+        default:
+          user: ADMIN
+          pass: change-me
+          driver: LAN_2_0
+          privilege: user
+          timeout: 10000
+          collectors:
+            - bmc
+            - ipmi
+            - chassis
+            - dcmi
+            - sel
+  haproxy_service_types:
+    - name: ipmi-exporter-http
+      bind: "*:9290"
+      mode: http
+      backend_name: be_ipmi_exporter_http
+      servers:
+        - name: ipmi-exporter
+          address: 10.77.0.50
+          port: 9290

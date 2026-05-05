@@ -1,0 +1,7 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-client.packages
+  rsyslog:
+    enabled: true
+    forward_enabled: false

@@ -1,0 +1,92 @@
+---
+- name: Resolve FreeRADIUS bridge settings
+  ansible.builtin.set_fact:
+    freeradius_bridge_enabled: >-
+      {{
+        resolved_profile_freeradius_bridge.enabled
+        | default(freeradius_bridge_default_enabled)
+        | bool
+      }}
+    resolved_freeradius_bridge: >-
+      {{
+        {
+          'backend': resolved_profile_freeradius_bridge.backend
+            | default(freeradius_bridge_default_backend),
+          'ldap_uri': resolved_profile_freeradius_bridge.ldap_uri
+            | default(freeradius_bridge_default_ldap_uri),
+          'base_dn': resolved_profile_freeradius_bridge.base_dn
+            | default(freeradius_bridge_default_base_dn),
+          'bind_dn': resolved_profile_freeradius_bridge.bind_dn
+            | default(freeradius_bridge_default_bind_dn),
+          'bind_password_file': resolved_profile_freeradius_bridge.bind_password_file
+            | default(freeradius_bridge_default_bind_password_file),
+          'bind_password': resolved_profile_freeradius_bridge.bind_password
+            | default(freeradius_bridge_default_bind_password),
+          'auth_port': resolved_profile_freeradius_bridge.auth_port
+            | default(freeradius_bridge_default_auth_port),
+          'acct_port': resolved_profile_freeradius_bridge.acct_port
+            | default(freeradius_bridge_default_acct_port),
+          'listen_addresses': resolved_profile_freeradius_bridge.listen_addresses
+            | default(freeradius_bridge_default_listen_addresses),
+          'tls_require_cert': resolved_profile_freeradius_bridge.tls_require_cert
+            | default(freeradius_bridge_default_tls_require_cert),
+          'clients': resolved_profile_freeradius_bridge.clients
+            | default(freeradius_bridge_default_clients),
+          'group_mappings': resolved_profile_freeradius_bridge.group_mappings
+            | default(resolved_profile_aaa_policy.network_roles | default(freeradius_bridge_default_group_mappings)),
+          'default_reply_items': resolved_profile_freeradius_bridge.default_reply_items
+            | default(freeradius_bridge_default_default_reply_items)
+        }
+      }}
+
+- name: Ensure FreeRADIUS bridge support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ freeradius_bridge_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/raddb
+    - /etc/raddb/mods-available
+    - /etc/raddb/mods-config
+    - /etc/raddb/mods-config/files
+    - /etc/stage5-aaa
+    - /etc/stage5-aaa/manifests
+    - /usr/local/libexec/freeradius-bridge
+  loop_control:
+    loop_var: freeradius_bridge_dir
+  when: freeradius_bridge_enabled
+
+- name: Render FreeRADIUS bridge manifest
+  ansible.builtin.template:
+    src: freeradius-bridge.yml.j2
+    dest: "{{ install_target_root }}/etc/stage5-aaa/manifests/freeradius-bridge.yml"
+    mode: '0644'
+  when: freeradius_bridge_enabled
+
+- name: Render FreeRADIUS client definitions
+  ansible.builtin.template:
+    src: clients.stage5.conf.j2
+    dest: "{{ install_target_root }}/etc/raddb/clients.stage5.conf"
+    mode: '0600'
+  when: freeradius_bridge_enabled
+
+- name: Render FreeRADIUS LDAP module example
+  ansible.builtin.template:
+    src: ldap-stage5-freeipa.conf.j2
+    dest: "{{ install_target_root }}/etc/raddb/mods-available/ldap-stage5-freeipa.conf"
+    mode: '0644'
+  when: freeradius_bridge_enabled
+
+- name: Render FreeRADIUS group mapping example
+  ansible.builtin.template:
+    src: authorize.stage5.j2
+    dest: "{{ install_target_root }}/etc/raddb/mods-config/files/authorize.stage5"
+    mode: '0644'
+  when: freeradius_bridge_enabled
+
+- name: Render FreeRADIUS validation helper
+  ansible.builtin.template:
+    src: validate-radius-config.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/freeradius-bridge/validate-radius-config.sh"
+    mode: '0755'
+  when: freeradius_bridge_enabled

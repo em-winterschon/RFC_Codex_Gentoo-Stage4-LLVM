@@ -15,9 +15,11 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 ## Functional Areas
 
 - `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible`
-  staged Ansible installer for LiveISO-driven imaging
+  staged Ansible installer for Path A LiveISO-driven imaging plus Path B iPXE asset publishing
 - `gentoo-virt-qemu`
   host-side VM builder and launcher helpers for pre-bare-metal validation
+- `container-image-definitions`
+  Stage4/Stage5 container rootfs package lists, USE policy, and overlay fixes
 - `scripts`, `.github/workflows`, `openrc`
   notification, approval-watcher, CI, and host integration tooling
 - `docs/workflows`
@@ -42,13 +44,36 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - Control-flow JSONL
   callback plugin emits machine-readable events for long-running installs
 - dual-path validation
-  build and install in a disposable QCOW first, then validate target-disk boot
+  keep Path A LiveISO-driven imaging available while adding Path B iPXE fleet booting
 
 ## Wiki Contents
 
 - [Architecture and Design](Architecture-and-Design)
 - [Workflows](Workflows)
+- [Proxmox NetBox RouterOS Action Plan](Proxmox-NetBox-RouterOS-Action-Plan)
+- [ITIL Change Control: Container Services Safe Move](ITIL-Change-Control-Container-Services-Safe-Move)
+- [NetBox Essentials](NetBox-Essentials)
+- [Infrastructure Inventory Intake](Infrastructure-Inventory-Intake)
+- [NetBox IPAM DCIM Completion Plan](NetBox-IPAM-DCIM-Completion-Plan)
+- [CRS309 RouterOS Replacement Plan](CRS309-RouterOS-Replacement-Plan)
+- [CRS354 Distribution Switch Standardization](CRS354-Distribution-Switch-Standardization)
+- [CSS326 SwOS Access Switch](CSS326-SwOS-Access-Switch)
+- [RouterOS Spine Distribution](RouterOS-Spine-Distribution)
 - [Configurations and Examples](Configurations-and-Examples)
+- [CI Builder Farm](CI-Builder-Farm)
+- [Binpkg Repository](Binpkg-Repository)
+- [Container Building](Container-Building)
+- [Container Publishing](Container-Publishing)
+- [Identity AAA](Identity-AAA)
+- [Hetzner DNS Automation](Hetzner-DNS-Automation)
+- [Telemetry Observability](Telemetry-Observability)
+- [Observability Access](Observability-Access)
+- [Changelog](Changelog)
+- [SITREP Status 2026-05-03](SITREP-Status-2026-05-03)
+- [EOD Status 2026-05-02](EOD-Status-2026-05-02)
+- [EOD Status 2026-04-30](EOD-Status-2026-04-30)
+- [EOD Status 2026-04-29](EOD-Status-2026-04-29)
+- [EOD Status 2026-04-28](EOD-Status-2026-04-28)
 - [Repository Layout](Repository-Layout)
 - [Roadmap and TODO](Roadmap-and-TODO)
 
@@ -75,10 +100,15 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 ## Current Validation Model
 
 1. Run shell and manifest tests locally and in CI.
-2. Build a Stage3 QCOW from an LLVM/OpenRC Gentoo stage3.
-3. Launch the installer VM with attached target disks.
-4. Execute staged Ansible sequences against the installer VM.
-5. Boot directly from target disks and verify `bpool`/`rpool`, SSH, and boot flow.
+2. Follow Path A for LiveISO/QEMU validation:
+   - build a Stage3 QCOW from an LLVM/OpenRC Gentoo stage3
+   - launch the installer VM with attached target disks
+   - execute staged Ansible sequences against the installer VM
+   - boot directly from target disks and verify `bpool`/`rpool`, SSH, and boot flow
+3. Follow Path B for fleet netboot preparation:
+   - render iPXE bootstrap, menu, role, host, and manifest assets
+   - publish them through DHCP/TFTP plus iPXE HTTP or UEFI HTTP + iPXE
+   - boot into the Gentoo provisioning environment and then invoke the same installer workflow
 
 ## Reference Documents
 

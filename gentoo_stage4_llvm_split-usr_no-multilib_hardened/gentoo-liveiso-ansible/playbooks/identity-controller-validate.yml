@@ -1,0 +1,87 @@
+---
+- name: Validate identity controller services
+  hosts: identity_controllers
+  gather_facts: false
+  become: true
+  vars:
+    identity_controller_dirsrv_service: "dirsrv@{{ identity_realm | default('RFC1918.HOST') | replace('.', '-') }}.service"
+    identity_controller_required_services:
+      - ipa.service
+      - krb5kdc.service
+      - httpd.service
+      - sssd.service
+      - radiusd.service
+    identity_controller_required_tcp_ports:
+      - 80
+      - 443
+      - 389
+      - 636
+      - 88
+      - 464
+    identity_controller_required_udp_ports:
+      - 88
+      - 464
+      - "{{ radius_auth_port | default(1812) }}"
+      - "{{ radius_acct_port | default(1813) }}"
+    radius_validation_enabled: false
+    radius_validation_server: 127.0.0.1
+    radius_validation_user: ""
+    radius_validation_password: ""
+    radius_validation_secret: ""
+
+  tasks:
+    - name: Build full identity service validation list
+      ansible.builtin.set_fact:
+        identity_controller_services_to_check: "{{ identity_controller_required_services + [identity_controller_dirsrv_service] }}"
+
+    - name: Assert identity controller services are active
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - is-active
+          - "{{ item }}"
+      loop: "{{ identity_controller_services_to_check }}"
+      register: identity_controller_service_checks
+      changed_when: false
+
+    - name: Assert required TCP listeners are present
+      ansible.builtin.shell: |
+        set -euo pipefail
+        ss -H -ltn | awk '{print $4}' | grep -Eq '(^|[.:]){{ item }}$'
+      args:
+        executable: /bin/bash
+      loop: "{{ identity_controller_required_tcp_ports }}"
+      changed_when: false
+
+    - name: Assert required UDP listeners are present
+      ansible.builtin.shell: |
+        set -euo pipefail
+        ss -H -lun | awk '{print $4}' | grep -Eq '(^|[.:]){{ item }}$'
+      args:
+        executable: /bin/bash
+      loop: "{{ identity_controller_required_udp_ports }}"
+      changed_when: false
+
+    - name: Run optional RADIUS credential validation
+      ansible.builtin.command:
+        argv:
+          - radtest
+          - "{{ radius_validation_user }}"
+          - "{{ radius_validation_password }}"
+          - "{{ radius_validation_server }}"
+          - "0"
+          - "{{ radius_validation_secret }}"
+      register: radius_validation_result
+      changed_when: false
+      failed_when: "'Access-Accept' not in (radius_validation_result.stdout + radius_validation_result.stderr)"
+      no_log: true
+      when: radius_validation_enabled | bool
+
+    - name: Report sanitized identity validation summary
+      ansible.builtin.debug:
+        msg: >-
+          Identity controller {{ inventory_hostname }} validated:
+          services={{ identity_controller_services_to_check | length }},
+          tcp_ports={{ identity_controller_required_tcp_ports | length }},
+          udp_ports={{ identity_controller_required_udp_ports | length }},
+          radius_validation={{ radius_validation_enabled | bool }}.
