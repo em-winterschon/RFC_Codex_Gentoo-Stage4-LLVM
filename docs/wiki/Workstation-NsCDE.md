@@ -96,10 +96,12 @@ STAGE3_PACKAGE_USE_APPEND='
 app-text/xmlto text
 app-emulation/spice-vdagent gtk -systemd
 media-libs/freetype harfbuzz png
+dev-python/pillow -truetype
 x11-base/xorg-server xorg elogind udev -systemd
 '
 STAGE3_PACKAGE_UNMASK_APPEND='
 >=dev-python/pyqt5-5.15.11
+>=dev-python/pyqt5-sip-12.18.0
 '
 ```
 
@@ -111,6 +113,10 @@ The PyQt5 unmask is explicit because Gentoo masked `dev-python/pyqt5` pending
 tree removal while the current NsCDE upstream install path still expects PyQt5.
 If NsCDE moves to PyQt6 or a local overlay ebuild replaces that dependency, this
 profile should drop the unmask.
+
+`dev-python/pillow -truetype` is scoped to the workstation bootstrap to break
+the initial `docutils -> pillow -> harfbuzz -> glib -> docutils` build-time
+cycle reported by Portage. Revisit after the first image has binpkgs available.
 
 Current live-build convention:
 

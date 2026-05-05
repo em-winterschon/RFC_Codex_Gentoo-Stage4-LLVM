@@ -12,10 +12,12 @@ gentoo_profile_definition:
       app-text/xmlto text
       app-emulation/spice-vdagent gtk -systemd
       media-libs/freetype harfbuzz png
+      dev-python/pillow -truetype
       x11-base/xorg-server xorg elogind udev -systemd
   package_unmask_files:
     40-workstation-nscde: |
       >=dev-python/pyqt5-5.15.11
+      >=dev-python/pyqt5-sip-12.18.0
   modules_load_files:
     vm-workstation-nscde.conf: |
       uinput

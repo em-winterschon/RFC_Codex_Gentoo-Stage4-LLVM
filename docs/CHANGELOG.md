@@ -94,6 +94,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   explicitly unmasked until NsCDE can be moved to a non-masked dependency path.
 - Added `app-text/xmlto[text]` to the workstation Portage policy for the
   `dunst[xdg] -> xdg-utils` documentation helper dependency chain.
+- Added `dev-python/pillow -truetype` as a scoped workstation bootstrap cycle
+  break and unmasked `dev-python/pyqt5-sip` alongside PyQt5 for the current
+  NsCDE PyQt5 dependency path.
 
 ## 2026-05-03
 
