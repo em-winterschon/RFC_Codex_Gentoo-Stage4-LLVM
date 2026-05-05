@@ -216,8 +216,7 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
   assert_contains "${dry_output}" 'Codex approval needed'
 
   reply_output="$(
-    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
-      CODEX_NTFY_REPLY_TOPIC=codex-replies \
+    CODEX_NTFY_REPLY_TOPIC=codex-replies \
       CODEX_NTFY_TEST_REQUEST_ID='12345678' \
       CODEX_NTFY_TEST_REPLIES='allow 12345678' \
       python3 "${CODEX_NTFY_HOOK}" <<< '{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
@@ -262,9 +261,8 @@ EOF
 
   output="$(
     CODEX_NTFY_POLICY_FILE="${policy_file}" \
+      PYTHONPATH="${REPO_ROOT}/scripts" \
       python3 - <<'PY'
-import sys
-sys.path.insert(0, "/root/RFC_Codex_Gentoo-Stage4-LLVM/scripts")
 import codex_ntfy_policy as p
 print(p.mode_for_kind("permission_reply"))
 print(p.mode_for_kind("question_reply"))
@@ -303,8 +301,7 @@ test_codex_ntfy_hook_consumes_reply_queue_entries() {
     python3 "${CODEX_REPLY_LISTENER}" --once --from-start --state-file "${state_file}"
 
   output="$(
-    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
-      CODEX_NTFY_REPLY_TOPIC=codex-replies \
+    CODEX_NTFY_REPLY_TOPIC=codex-replies \
       CODEX_NTFY_REPLY_QUEUE_DIR="${temp_dir}/queue" \
       CODEX_NTFY_TEST_REQUEST_ID='12345678' \
       python3 "${CODEX_NTFY_HOOK}" <<< '{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'

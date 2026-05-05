@@ -71,10 +71,24 @@ profile_parents:
 profile_definition_files: []
 # Example:
 # profile_definition_files:
-#   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+#   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+#   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+#
+# Optional host-specific local users and matching NoCloud seed data for VM images:
+# profile_local_user_accounts:
+#   - name: deploy
+#     groups:
+#       - wheel
+#     sudo_nopasswd: true
+#     ssh_authorized_keys: []
+#
+# profile_cloud_init:
+#   enabled: true
+#   instance_id: vm-guest-simple
+#   local_hostname: ipxe-test
 
 # Toolchain and tuning
-portage_cpu_profile: amd_ryzen_z1_extreme
+portage_cpu_profile: x86_64_v2_generic
 # GPU stack values:
 #   amdgpu
 #   nvidia
@@ -129,6 +143,16 @@ portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
 portage_features:
   - parallel-install
   - merge-sync
+portage_buildpkg_enabled: false
+portage_usepkg_enabled: false
+portage_getbinpkg_enabled: false
+portage_pkgdir: ""
+portage_binpkg_format: tar
+portage_binpkg_compress: zstd
+portage_binpkg_compress_flags: "-2"
+portage_binhost: ""
+portage_binrepos: []
+portage_emerge_default_opts_extra: []
 portage_global_use:
   - bindist
   - bzip2

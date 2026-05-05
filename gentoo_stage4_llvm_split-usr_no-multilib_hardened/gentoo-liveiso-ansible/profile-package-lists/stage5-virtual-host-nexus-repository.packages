@@ -1,0 +1,5 @@
+app-arch/tar
+app-arch/gzip
+net-misc/curl
+www-servers/nginx
+app-admin/rsyslog

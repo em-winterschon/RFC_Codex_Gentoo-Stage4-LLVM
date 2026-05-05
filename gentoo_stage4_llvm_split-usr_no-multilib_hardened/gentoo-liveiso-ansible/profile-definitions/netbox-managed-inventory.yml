@@ -1,0 +1,5 @@
+---
+gentoo_profile_definition:
+  netbox_connector:
+    enabled: true
+    snapshot_enabled: false

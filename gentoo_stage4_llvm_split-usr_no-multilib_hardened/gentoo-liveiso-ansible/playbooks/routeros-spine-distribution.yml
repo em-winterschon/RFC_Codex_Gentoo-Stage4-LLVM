@@ -1,0 +1,6 @@
+---
+- name: Render RouterOS spine/distribution switch intent
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - routeros_spine_distribution

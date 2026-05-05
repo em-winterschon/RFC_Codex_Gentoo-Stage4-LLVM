@@ -29,7 +29,7 @@
           loaded_profile_definition_file.gentoo_profile_definition.make_conf_append | default('')
         ]
         | reject('equalto', '')
-        | join('\n\n')
+        | join("\n\n")
       }}
     resolved_portage_package_use_files: >-
       {{
@@ -47,8 +47,289 @@
             recursive=True
           )
       }}
+    resolved_portage_package_unmask_files: >-
+      {{
+        resolved_portage_package_unmask_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_unmask_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_accept_keywords_files: >-
+      {{
+        resolved_portage_package_accept_keywords_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_accept_keywords_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_license_files: >-
+      {{
+        resolved_portage_package_license_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_license_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_env_files: >-
+      {{
+        resolved_portage_env_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.env_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_portage_package_env_files: >-
+      {{
+        resolved_portage_package_env_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.package_env_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_mask_symlinks: >-
       {{
         resolved_portage_package_mask_symlinks
         + (loaded_profile_definition_file.gentoo_profile_definition.package_mask_symlinks | default([]))
+      }}
+    resolved_profile_parents: >-
+      {{
+        loaded_profile_definition_file.gentoo_profile_definition.profile_parents
+        if loaded_profile_definition_file.gentoo_profile_definition.profile_parents is defined
+        else resolved_profile_parents
+      }}
+    resolved_profile_package_atoms: >-
+      {{
+        (
+          resolved_profile_package_atoms
+          + (loaded_profile_definition_file.gentoo_profile_definition.package_atoms | default([]))
+        ) | unique
+      }}
+    resolved_profile_package_list_files: >-
+      {{
+        (
+          resolved_profile_package_list_files
+          + (loaded_profile_definition_file.gentoo_profile_definition.package_list_files | default([]))
+        ) | unique
+      }}
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable
+          + (loaded_profile_definition_file.gentoo_profile_definition.openrc_services_enable | default([]))
+        ) | unique
+      }}
+    resolved_profile_modules_load_files: >-
+      {{
+        resolved_profile_modules_load_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.modules_load_files | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_local_user_accounts: >-
+      {{
+        resolved_profile_local_user_accounts
+        + (loaded_profile_definition_file.gentoo_profile_definition.local_user_accounts | default([]))
+      }}
+    resolved_profile_cloud_init: >-
+      {{
+        resolved_profile_cloud_init
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.cloud_init | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_aaa_policy_files: >-
+      {{
+        (
+          resolved_profile_aaa_policy_files
+          + (loaded_profile_definition_file.gentoo_profile_definition.aaa_policy_files | default([]))
+        ) | unique
+      }}
+    resolved_profile_aaa_policy: >-
+      {{
+        resolved_profile_aaa_policy
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.aaa_policy | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_freeipa_controller: >-
+      {{
+        resolved_profile_freeipa_controller
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.freeipa_controller | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_ipa_client: >-
+      {{
+        resolved_profile_ipa_client
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.ipa_client | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_freeradius_bridge: >-
+      {{
+        resolved_profile_freeradius_bridge
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.freeradius_bridge | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_rsyslog: >-
+      {{
+        resolved_profile_rsyslog
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.rsyslog | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_elasticsearch_cluster: >-
+      {{
+        resolved_profile_elasticsearch_cluster
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.elasticsearch_cluster | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_kibana: >-
+      {{
+        resolved_profile_kibana
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.kibana | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_netbox_connector: >-
+      {{
+        resolved_profile_netbox_connector
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.netbox_connector | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_netbox_essentials: >-
+      {{
+        resolved_profile_netbox_essentials
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.netbox_essentials | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_zerotier: >-
+      {{
+        resolved_profile_zerotier
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.zerotier | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_telemetry: >-
+      {{
+        resolved_profile_telemetry
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.telemetry | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_binpkg_repo: >-
+      {{
+        resolved_profile_binpkg_repo
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.binpkg_repo | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_nexus_repo: >-
+      {{
+        resolved_profile_nexus_repo
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.nexus_repo | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_haproxy_service_types: >-
+      {{
+        resolved_profile_haproxy_service_types
+        + (loaded_profile_definition_file.gentoo_profile_definition.haproxy_service_types | default([]))
+      }}
+    resolved_profile_service_readiness: >-
+      {{
+        resolved_profile_service_readiness
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.service_readiness | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_base_image: >-
+      {{
+        resolved_profile_container_base_image
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.container_base_image | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_app_build_defaults: >-
+      {{
+        resolved_profile_container_app_build_defaults
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.container_app_build_defaults | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_services: >-
+      {{
+        resolved_profile_container_services
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.container_services | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_app_profiles: >-
+      {{
+        resolved_profile_container_app_profiles
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.container_app_profiles | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_container_service_segments: >-
+      {{
+        resolved_profile_container_service_segments
+        + (loaded_profile_definition_file.gentoo_profile_definition.container_service_segments | default([]))
+      }}
+    resolved_profile_site_security_profile: >-
+      {{
+        resolved_profile_site_security_profile
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.site_security_profile | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_memory_storage: >-
+      {{
+        resolved_profile_memory_storage
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.memory_storage | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_jenkins_controller: >-
+      {{
+        resolved_profile_jenkins_controller
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.jenkins_controller | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_distcc_farm: >-
+      {{
+        resolved_profile_distcc_farm
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.distcc_farm | default({}),
+            recursive=True
+          )
       }}

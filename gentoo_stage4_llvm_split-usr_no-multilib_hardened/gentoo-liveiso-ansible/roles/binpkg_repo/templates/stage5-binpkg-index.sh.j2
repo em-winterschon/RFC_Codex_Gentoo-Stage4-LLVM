@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir="${1:-{{ resolved_binpkg_repo.repository_root }}/{{ resolved_binpkg_repo.repo_id }}}"
+
+if [[ ! -d "${repo_dir}" ]]; then
+  printf 'stage5-binpkg-index: repository directory not found: %s\n' "${repo_dir}" >&2
+  exit 1
+fi
+
+if command -v emaint >/dev/null 2>&1; then
+  PKGDIR="${repo_dir}" emaint binhost --fix
+fi

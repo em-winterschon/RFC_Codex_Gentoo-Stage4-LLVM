@@ -1,0 +1,19 @@
+---
+telemetry_blackbox_exporter_default_enabled: false
+telemetry_blackbox_exporter_default_listen_address: "0.0.0.0"
+telemetry_blackbox_exporter_default_listen_port: 9115
+telemetry_blackbox_exporter_default_modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      preferred_ip_protocol: ip4
+  tcp_connect:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      preferred_ip_protocol: ip4
+  icmp:
+    prober: icmp
+    timeout: 5s
+telemetry_blackbox_exporter_default_extra_args: []

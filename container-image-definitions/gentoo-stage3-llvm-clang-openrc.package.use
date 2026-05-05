@@ -1,0 +1,2 @@
+# Keep the standard llvm-clang OpenRC stage3 profile intact.
+# Add only package-scoped exceptions needed for service-container layering.

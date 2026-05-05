@@ -1,0 +1,71 @@
+---
+gentoo_profile_definition:
+  repository_enable:
+    - guru
+    - xira
+    - without-systemd
+  make_conf_append: |
+    COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+    CFLAGS="${COMMON_FLAGS} -flto=thin"
+    CXXFLAGS="${COMMON_FLAGS} -flto=thin"
+    FCFLAGS="${COMMON_FLAGS}"
+    FFLAGS="${COMMON_FLAGS}"
+    LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld"
+    USE="${USE} -systemd"
+    FEATURES="${FEATURES} ccache distcc fail-clean parallel-install merge-sync"
+    QA_STRICT_EXECSTACK="set"
+    QA_STRICT_TEXTRELS="set"
+    QA_STRICT_FLAGS_IGNORED="set"
+    PORTAGE_TMPDIR="/var/tmp/portage-tmpfs"
+    PORTAGE_LOGDIR="/var/log/portage"
+    CCACHE_DIR="/var/cache/ccache"
+    CCACHE_SIZE="20G"
+    CCACHE_TEMPDIR="/var/tmp/portage-tmpfs/ccache-tmp"
+    CCACHE_PREFIX="distcc"
+    LLVM_TARGETS="AMDGPU X86"
+    PYTHON_SINGLE_TARGET="python3_13"
+    PYTHON_TARGETS="python3_13"
+  package_use_files:
+    00-llvm-clang-base: |
+      llvm-core/clang-toolchain-symlinks native-symlinks -gcc-symlinks
+      llvm-core/lld-toolchain-symlinks native-symlinks
+      llvm-core/clang-linker-config default-lld
+      llvm-runtimes/clang-runtime compiler-rt default-compiler-rt default-lld sanitize
+      dev-util/ccache static-c++
+      sys-libs/glibc -clang
+    10-no-systemd: |
+      sys-auth/pambase elogind
+      net-misc/networkmanager elogind
+      sys-apps/accountsservice elogind
+      x11-base/xorg-server elogind
+      media-video/pipewire elogind
+      media-video/wireplumber elogind
+      sys-fs/udisks elogind
+      sys-process/procps elogind
+  package_mask_files:
+    00-no-systemd: |
+      sys-apps/systemd
+    20-gcc-required: |
+      # Add package atoms here only after LLVM/Clang and xira were attempted
+      # or were already known to be unsupported.
+  package_mask_symlinks:
+    - name: without-systemd
+      src: /var/db/repos/without-systemd/profiles/package.mask
+  env_files:
+    gcc-compat.conf: |
+      CC=gcc
+      CXX=g++
+      CPP="cpp"
+      AR=gcc-ar
+      NM=gcc-nm
+      RANLIB=gcc-ranlib
+      COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+      FCFLAGS="${COMMON_FLAGS}"
+      FFLAGS="${COMMON_FLAGS}"
+      LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
+  package_env_files:
+    00-gcc-compat: |
+      sys-devel/gcc gcc-compat.conf
+      sys-libs/glibc gcc-compat.conf

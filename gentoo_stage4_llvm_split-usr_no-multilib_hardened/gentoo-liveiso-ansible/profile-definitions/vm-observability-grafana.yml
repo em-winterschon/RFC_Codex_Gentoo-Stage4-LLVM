@@ -1,0 +1,16 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-observability-grafana.packages
+  telemetry:
+    grafana:
+      enabled: true
+  haproxy_service_types:
+    - name: grafana-http
+      bind: "*:3000"
+      mode: http
+      backend_name: be_grafana_http
+      servers:
+        - name: grafana
+          address: 127.0.0.1
+          port: 3000

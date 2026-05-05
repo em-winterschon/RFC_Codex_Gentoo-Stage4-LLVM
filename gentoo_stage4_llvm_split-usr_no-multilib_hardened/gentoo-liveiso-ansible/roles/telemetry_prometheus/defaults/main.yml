@@ -1,0 +1,14 @@
+---
+telemetry_prometheus_default_enabled: false
+telemetry_prometheus_default_listen_address: "0.0.0.0"
+telemetry_prometheus_default_listen_port: 9090
+telemetry_prometheus_default_external_url: ""
+telemetry_prometheus_default_storage_path: /var/lib/prometheus/data
+telemetry_prometheus_default_retention_time: 30d
+telemetry_prometheus_default_scrape_interval: 30s
+telemetry_prometheus_default_evaluation_interval: 30s
+telemetry_prometheus_default_external_labels: {}
+telemetry_prometheus_default_scrape_configs: []
+telemetry_prometheus_default_alert_rules: []
+telemetry_prometheus_default_alertmanager_targets: []
+telemetry_prometheus_default_extra_args: []

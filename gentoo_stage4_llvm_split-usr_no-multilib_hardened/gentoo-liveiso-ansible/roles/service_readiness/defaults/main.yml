@@ -1,0 +1,8 @@
+---
+service_readiness_default_enabled: false
+service_readiness_default_validator_path: "{{ playbook_dir }}/../../../scripts/service_validator.py"
+service_readiness_default_nmap_bin: nmap
+service_readiness_default_retries: 12
+service_readiness_default_delay: 5
+service_readiness_default_delegate_to: localhost
+service_readiness_default_phase: install

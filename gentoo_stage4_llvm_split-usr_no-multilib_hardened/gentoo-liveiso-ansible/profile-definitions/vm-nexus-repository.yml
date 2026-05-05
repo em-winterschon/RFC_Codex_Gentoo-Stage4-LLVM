@@ -1,0 +1,70 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-nexus-repository
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-nexus-repository.packages
+  package_use_files:
+    40-nexus-repository: |
+      app-misc/mime-types nginx
+  nexus_repo:
+    enabled: true
+    version: 3.90.1-01
+    architecture: x86_64
+    installer_path: /tmp/Nexus-Repo-OSS/sonatype-nexus-repo-oss_-3.90.1-01-linux-x86_64.tar.gz
+    installer_sha256: 6f3240f34bb46b99d93b2c512333651ea227b4c65248c8154ae275933c320556
+    install_root: /opt
+    extracted_dir_name: nexus-3.90.1-01
+    symlink_path: /opt/nexus
+    work_root: /var/lib/sonatype-work
+    data_root: /var/lib/nexus
+    log_root: /var/log/nexus
+    service_user: nexus
+    service_group: nexus
+    listen_host: 0.0.0.0
+    listen_port: 8081
+    context_path: /
+    heap_min: 4096m
+    heap_max: 4096m
+    direct_memory: 4096m
+    proxy_intent_path: /etc/nexus/proxy-intent.yml
+    transparent_proxy_repositories:
+      - name: maven-central
+        format: maven2
+        type: proxy
+        remote_url: https://repo1.maven.org/maven2/
+      - name: npmjs
+        format: npm
+        type: proxy
+        remote_url: https://registry.npmjs.org/
+      - name: pypi
+        format: pypi
+        type: proxy
+        remote_url: https://pypi.org/
+      - name: docker-hub
+        format: docker
+        type: proxy
+        remote_url: https://registry-1.docker.io/
+      - name: ghcr
+        format: docker
+        type: proxy
+        remote_url: https://ghcr.io/
+      - name: gentoo-distfiles
+        format: raw
+        type: proxy
+        remote_url: https://distfiles.gentoo.org/
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+  openrc_services_enable:
+    - nexus
+    - nginx
+    - rsyslog
+  haproxy_service_types:
+    - name: nexus-http
+      bind: "*:8081"
+      mode: http
+      backend_name: be_nexus_http
+      servers:
+        - name: nexus-local
+          address: 127.0.0.1
+          port: 8081

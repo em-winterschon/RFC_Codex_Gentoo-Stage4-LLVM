@@ -1,0 +1,31 @@
+---
+gentoo_profile_definition:
+  container_app_profiles:
+    haproxy:
+      published_ports:
+        - 80:80/tcp
+        - 443:443/tcp
+        - 10.9.8.92:9200:9200/tcp
+      pre_commands:
+        - >-
+          vip_dev="$(ip -o route get 10.9.8.1 | awk '{for (i = 1; i <= NF; i++) if ($i == "dev") {print $(i + 1); exit}}')";
+          test -n "${vip_dev}";
+          ip address replace 10.9.8.92/32 dev "${vip_dev}"
+  haproxy_service_types:
+    - name: elasticsearch-test-http
+      bind: "*:9200"
+      mode: http
+      backend_name: be_elasticsearch_test_http
+      servers:
+        - name: elasticsearch-test
+          address: 10.9.8.91
+          port: 9200
+  service_readiness:
+    enabled: true
+    checks:
+      - name: elasticsearch-test-vip-http
+        target: 10.9.8.92
+        port: 9200
+        protocol: tcp
+        retries: 24
+        delay: 5

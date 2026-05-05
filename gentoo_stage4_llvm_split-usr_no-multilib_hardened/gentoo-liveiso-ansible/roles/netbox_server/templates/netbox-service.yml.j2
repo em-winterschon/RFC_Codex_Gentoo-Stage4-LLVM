@@ -1,0 +1,29 @@
+---
+service: netbox
+version: "{{ resolved_netbox_server.version }}"
+deployment_method: "{{ resolved_netbox_server.deployment_method }}"
+listen:
+  host: "{{ resolved_netbox_server.service_host }}"
+  port: {{ resolved_netbox_server.service_port }}
+base_url: "{{ resolved_netbox_server.base_url }}"
+paths:
+  install_root: "{{ resolved_netbox_server.install_root }}"
+  venv_path: "{{ resolved_netbox_server.venv_path }}"
+  data_root: "{{ resolved_netbox_server.data_root }}"
+database:
+  name: "{{ resolved_netbox_server.database.name }}"
+  user: "{{ resolved_netbox_server.database.user }}"
+  host: "{{ resolved_netbox_server.database.host }}"
+  port: {{ resolved_netbox_server.database.port }}
+redis:
+  host: "{{ resolved_netbox_server.redis.host }}"
+  port: {{ resolved_netbox_server.redis.port }}
+  database: {{ resolved_netbox_server.redis.database }}
+packages:
+{% for netbox_package in resolved_netbox_server.packages %}
+  - "{{ netbox_package }}"
+{% endfor %}
+openrc_services:
+{% for netbox_service in resolved_netbox_server.openrc_services %}
+  - "{{ netbox_service }}"
+{% endfor %}

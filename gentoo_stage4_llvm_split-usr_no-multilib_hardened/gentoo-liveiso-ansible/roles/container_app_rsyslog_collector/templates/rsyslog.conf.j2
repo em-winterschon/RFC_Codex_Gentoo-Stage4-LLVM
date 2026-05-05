@@ -1,0 +1,36 @@
+global(workDirectory="/var/spool/rsyslog")
+module(load="imudp")
+module(load="imtcp")
+{% set rsyslog_elasticsearch_enabled = container_rsyslog_collector_profile.elasticsearch_enabled | default(container_rsyslog_collector_profile.elasticsearch_hosts is defined and container_rsyslog_collector_profile.elasticsearch_hosts | length > 0) %}
+{% if rsyslog_elasticsearch_enabled | bool %}
+module(load="omelasticsearch")
+{% endif %}
+
+input(type="imudp" port="514")
+input(type="imtcp" port="514")
+
+template(name="stage5-json" type="list") {
+  constant(value="{")
+  constant(value="\"@timestamp\":\"") property(name="timereported" dateFormat="rfc3339")
+  constant(value="\",\"host\":\"") property(name="hostname")
+  constant(value="\",\"program\":\"") property(name="programname")
+  constant(value="\",\"message\":") property(name="msg" format="json")
+  constant(value="}")
+}
+
+{% if rsyslog_elasticsearch_enabled | bool %}
+action(
+  type="omelasticsearch"
+  server="{{ container_rsyslog_collector_profile.elasticsearch_hosts[0] }}"
+  serverport="{{ container_rsyslog_collector_profile.elasticsearch_port | default(9200) }}"
+  usehttps="{{ container_rsyslog_collector_profile.elasticsearch_usehttps | default('off') }}"
+  searchIndex="{{ container_rsyslog_collector_profile.elasticsearch_index | default('stage5-syslog') }}"
+{% if container_rsyslog_collector_profile.elasticsearch_es_version_major is defined %}
+  esVersion.major="{{ container_rsyslog_collector_profile.elasticsearch_es_version_major }}"
+{% endif %}
+  bulkmode="on"
+  healthCheckTimeout="{{ container_rsyslog_collector_profile.elasticsearch_health_check_timeout | default('1000') }}"
+  retryfailures="{{ container_rsyslog_collector_profile.elasticsearch_retry_failures | default('on') }}"
+  template="stage5-json"
+)
+{% endif %}

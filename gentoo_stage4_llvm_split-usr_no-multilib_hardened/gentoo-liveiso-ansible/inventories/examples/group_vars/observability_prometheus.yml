@@ -1,0 +1,342 @@
+---
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-vip.example.internal
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_telemetry:
+  prometheus:
+    external_url: https://prometheus.example.internal/
+    retention_time: 30d
+    scrape_interval: 30s
+    evaluation_interval: 30s
+    external_labels:
+      site: example-lab
+      environment: stage5
+    scrape_configs:
+      - job_name: stage5-node
+        static_configs:
+          - targets:
+              - 10.66.20.10:9100
+              - 10.66.30.10:9100
+              - 10.66.30.21:9100
+              - 10.66.30.22:9100
+              - 10.66.30.23:9100
+              - 10.66.30.30:9100
+              - 10.66.30.41:9100
+              - 10.66.40.10:9100
+              - 10.66.40.11:9100
+              - 10.66.40.12:9100
+              - 10.66.40.13:9100
+              - 10.66.40.14:9100
+              - 10.66.40.15:9100
+              - 10.66.40.16:9100
+      - job_name: stage5-podman
+        static_configs:
+          - targets:
+              - 10.66.20.10:9882
+            labels:
+              node_role: container-services
+      - job_name: stage5-elasticsearch
+        static_configs:
+          - targets:
+              - 10.66.30.21:9114
+              - 10.66.30.22:9114
+              - 10.66.30.23:9114
+      - job_name: stage5-http-probes
+        metrics_path: /probe
+        params:
+          module:
+            - http_2xx
+        static_configs:
+          - targets:
+              - http://10.66.20.10:80/
+              - http://10.66.20.10:8080/
+              - http://10.66.20.10:8200/
+              - http://10.66.30.30:5601/
+              - http://10.66.40.10:8080/
+              - https://10.66.30.10/
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 127.0.0.1:9115
+      - job_name: stage5-tcp-probes
+        metrics_path: /probe
+        params:
+          module:
+            - tcp_connect
+        static_configs:
+          - targets:
+              - 10.66.20.10:514
+              - 10.66.20.10:6514
+              - 10.66.20.10:9290
+              - 10.66.20.10:9220
+              - 10.66.40.11:3632
+              - 10.66.40.12:3632
+              - 10.66.40.13:3632
+              - 10.66.40.14:3632
+              - 10.66.40.15:3632
+              - 10.66.40.16:3632
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 127.0.0.1:9115
+      - job_name: stage5-snmp-ups
+        metrics_path: /snmp
+        params:
+          auth:
+            - public_v2
+          module:
+            - stage5_rfc1628_ups
+        static_configs:
+          - targets:
+              - apc-ups-srt1500-01.example.internal
+              - cyberpower-ups-01.example.internal
+              - eaton-ups-01.example.internal
+            labels:
+              telemetry_domain: power
+              device_class: ups
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 127.0.0.1:9116
+      - job_name: stage5-snmp-apc-powernet
+        metrics_path: /snmp
+        params:
+          auth:
+            - public_v2
+          module:
+            - stage5_apc_powernet
+        static_configs:
+          - targets:
+              - apc-ats-ap4450-01.example.internal
+              - apc-pdu-ap7901-01.example.internal
+              - apc-pdu-ap7902-01.example.internal
+            labels:
+              telemetry_domain: power
+              device_class: apc-powernet
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 127.0.0.1:9116
+      - job_name: stage5-snmp-blackbox-oob
+        metrics_path: /snmp
+        params:
+          auth:
+            - public_v2
+          module:
+            - stage5_blackbox_oob
+        static_configs:
+          - targets:
+              - blackbox-oob-les1248a-r2-01.example.internal
+            labels:
+              telemetry_domain: oob
+              device_class: console-server
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 127.0.0.1:9116
+      - job_name: stage5-ipmi
+        metrics_path: /ipmi
+        params:
+          module:
+            - default
+        static_configs:
+          - targets:
+              - hypervisor-host-bmc.example.internal
+              - builder-farm-node01-bmc.example.internal
+              - builder-farm-node02-bmc.example.internal
+              - builder-farm-node03-bmc.example.internal
+              - builder-farm-node04-bmc.example.internal
+              - builder-farm-node05-bmc.example.internal
+              - builder-farm-node06-bmc.example.internal
+            labels:
+              telemetry_domain: bmc
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 10.66.20.10:9290
+      - job_name: stage5-redfish-health
+        metrics_path: /health
+        params:
+          job:
+            - redfish-stage5
+        static_configs:
+          - targets:
+              - builder-farm-node01-redfish.example.internal
+              - builder-farm-node02-redfish.example.internal
+              - builder-farm-node03-redfish.example.internal
+              - builder-farm-node04-redfish.example.internal
+              - builder-farm-node05-redfish.example.internal
+              - builder-farm-node06-redfish.example.internal
+            labels:
+              telemetry_domain: redfish
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 10.66.20.10:9220
+      - job_name: stage5-redfish-performance
+        metrics_path: /performance
+        params:
+          job:
+            - redfish-stage5
+        static_configs:
+          - targets:
+              - builder-farm-node01-redfish.example.internal
+              - builder-farm-node02-redfish.example.internal
+              - builder-farm-node03-redfish.example.internal
+              - builder-farm-node04-redfish.example.internal
+              - builder-farm-node05-redfish.example.internal
+              - builder-farm-node06-redfish.example.internal
+            labels:
+              telemetry_domain: redfish
+        relabel_configs:
+          - source_labels:
+              - __address__
+            target_label: __param_target
+          - source_labels:
+              - __param_target
+            target_label: instance
+          - target_label: __address__
+            replacement: 10.66.20.10:9220
+    alert_rules:
+      - alert: Stage5ExporterDown
+        expr: up{job=~"stage5-node|stage5-podman|stage5-elasticsearch|stage5-snmp-ups|stage5-snmp-apc-powernet|stage5-snmp-blackbox-oob|stage5-ipmi|stage5-redfish-health|stage5-redfish-performance"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: Exporter or target scrape is down
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been failing Prometheus scrapes for more than 5 minutes."
+      - alert: Stage5HTTPProbeFailed
+        expr: probe_success{job="stage5-http-probes"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: HTTP service probe failed
+          description: "HTTP probe failed for {{ $labels.instance }}."
+      - alert: Stage5TCPProbeFailed
+        expr: probe_success{job="stage5-tcp-probes"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: TCP service probe failed
+          description: "TCP probe failed for {{ $labels.instance }}."
+      - alert: Stage5NodeFilesystemLow
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} < 0.10
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: Node filesystem running low
+          description: "{{ $labels.instance }} has less than 10% free space on {{ $labels.mountpoint }}."
+      - alert: Stage5NodeMemoryPressure
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: Node memory pressure
+          description: "{{ $labels.instance }} has less than 10% available memory remaining."
+  alertmanager:
+    external_url: https://alertmanager.example.internal/
+    route:
+      receiver: default-null
+      group_by:
+        - alertname
+        - job
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+      - name: default-null
+  blackbox_exporter:
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 5s
+        http:
+          preferred_ip_protocol: ip4
+      tcp_connect:
+        prober: tcp
+        timeout: 5s
+        tcp:
+          preferred_ip_protocol: ip4
+      icmp:
+        prober: icmp
+        timeout: 5s
+  snmp_exporter:
+    include_default_config: true
+    auths:
+      public_v2:
+        version: 2
+        community: public
+        security_level: noAuthNoPriv
+    modules:
+      stage5_if_mib:
+        walk:
+          - 1.3.6.1.2.1.1
+          - 1.3.6.1.2.1.2
+          - 1.3.6.1.2.1.31.1.1
+      stage5_rfc1628_ups:
+        walk:
+          - 1.3.6.1.2.1.33
+      stage5_apc_powernet:
+        walk:
+          - 1.3.6.1.4.1.318
+      stage5_blackbox_oob:
+        walk:
+          - 1.3.6.1.2.1.1
+          - 1.3.6.1.2.1.2
+          - 1.3.6.1.2.1.31.1.1
+
+profile_local_user_accounts:
+  - name: metrics
+    comment: Observability operator
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []

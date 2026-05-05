@@ -82,6 +82,33 @@ serial_mode_name() {
   printf '%s' "${QEMU_SERIAL_MODE}"
 }
 
+resolve_nonempty_file() {
+  local candidate
+
+  for candidate in "$@"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && -f "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+    if [[ -f "${candidate}" && -s "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+resolve_ovmf_path() {
+  EFI_FIRM="$(
+    resolve_nonempty_file \
+      "${EFI_FIRM}" \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.fd \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.secboot.fd
+  )" || fail "No usable OVMF code image found; checked ${EFI_FIRM} and standard edk2 paths"
+}
+
 ensure_dirs() {
   mkdir -p "${IMAGE_CACHE_DIR}" "${STATE_DIR}" "${SEED_DIR}"
 }
@@ -145,6 +172,11 @@ validate_display_backend() {
     fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
     ;;
   esac
+}
+
+validate_efi_firmware() {
+  resolve_ovmf_path
+  [[ -f "${EFI_FIRM}" ]] || fail "EFI_FIRM is missing: ${EFI_FIRM}"
 }
 
 validate_vsock_backend() {
@@ -490,6 +522,7 @@ run_qemu_cmd() {
 main() {
   ensure_dirs
   validate_host_disks
+  validate_efi_firmware
   validate_net_backend
   validate_display_backend
   validate_vsock_backend

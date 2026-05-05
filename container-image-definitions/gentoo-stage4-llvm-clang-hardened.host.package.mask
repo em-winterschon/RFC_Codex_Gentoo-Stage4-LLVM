@@ -1,0 +1,2 @@
+=app-alternatives/awk-4::gentoo
+=sys-apps/coreutils-9.10::gentoo

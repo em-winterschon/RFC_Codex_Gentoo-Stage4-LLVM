@@ -1,0 +1,23 @@
+---
+- name: Ensure modules-load.d directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/modules-load.d"
+    state: directory
+    mode: '0755'
+
+- name: Install profile modules-load fragments
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/modules-load.d/{{ profile_modules_load_file.key }}"
+    mode: '0644'
+    content: "{{ profile_modules_load_file.value | trim }}\n"
+  loop: "{{ (resolved_profile_modules_load_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: profile_modules_load_file
+
+- name: Enable profile OpenRC services
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('rc-update add ' + openrc_service_name + ' default') | quote }}
+  loop: "{{ resolved_profile_openrc_services_enable | default([]) }}"
+  loop_control:
+    loop_var: openrc_service_name

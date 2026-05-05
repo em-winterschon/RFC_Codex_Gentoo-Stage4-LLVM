@@ -1,0 +1,142 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage5-ci-builder-farm-bringup",
+    "description": "Bring up the first Jenkins controller and validate the first distcc builder-farm node before rolling the Stage5 CI fabric to the remaining Atom nodes.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible subtree containing the installer profiles, roles, and example inventory."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/examples/hosts.yml",
+      "description": "Inventory containing ci_controllers and builder_farm_nodes groups."
+    },
+    {
+      "name": "controller_target",
+      "required": true,
+      "default": "vm_jenkins_controller",
+      "description": "Controller host entry for the first CI VM."
+    },
+    {
+      "name": "builder_target",
+      "required": true,
+      "default": "builder_farm_node01",
+      "description": "First builder-farm node to validate before rolling to the remaining five nodes."
+    },
+    {
+      "name": "control_flow_root",
+      "required": false,
+      "default": "/tmp/ansible-control-flow",
+      "description": "Directory used for checkpoint JSONL control-flow output."
+    }
+  ],
+  "stages": [
+    {
+      "id": "review-fabric-inputs",
+      "summary": "Review and replace example builder-fabric CIDR, SSH keys, and BlueField2 uplink intent before live deployment.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf 'Review: inventories/examples/group_vars/ci_controllers.yml, inventories/examples/group_vars/builder_farm_nodes.yml, host_vars/vm-jenkins-controller.yml, and the six builder-farm-node*.yml files before live rollout.\\n'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "syntax-check",
+      "summary": "Validate install playbook syntax and new Stage5 CI profile wiring before any node work begins.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/install.yml",
+        "--syntax-check"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "controller-profile-validate",
+      "summary": "Run the Jenkins controller through the target-integration stage once the underlying VM has been installed or mounted.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${controller_target}",
+        "--sequence",
+        "target-integration",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_root}/${controller_target}.target-integration.jsonl"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "builder-node-first-pass",
+      "summary": "Run the first Atom builder node through target-integration and validate the distccd-farm service before scaling out.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${builder_target}",
+        "--sequence",
+        "target-integration",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_root}/${builder_target}.target-integration.jsonl"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "service-verification",
+      "summary": "Verify Jenkins controller and distcc worker runtime state after the first controller and first worker complete installation.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf 'Validate: rc-service jenkins-controller status, rc-service distccd-farm status, /etc/distcc/hosts, /var/lib/jenkins/builder-farm/builder-farm.json, and builder-fabric reachability on 10.66.40.0/24.\\n'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "rollout-remaining-workers",
+      "summary": "After node01 is validated, repeat the same profile on node02 through node06 with the corresponding host_vars overlays.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf 'Roll remaining workers after node01 passes: builder_farm_node02..builder_farm_node06.\\n'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

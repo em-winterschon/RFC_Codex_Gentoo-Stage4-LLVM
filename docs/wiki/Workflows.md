@@ -2,11 +2,13 @@
 
 ## Operator Workflow Families
 
-This repository currently has four main workflow families:
+This repository currently has six main workflow families:
 
 - host validation and CI
-- VM build and launch
-- staged installer execution
+- Path A VM build and launch
+- Path A staged installer execution
+- Path B iPXE asset publication and fleet bootstrapping
+- Path B RouterOS CHR lab configuration
 - notification and approval visibility
 
 ## 1. Validate the Repository
@@ -89,7 +91,36 @@ Machine-readable version:
 
 - `docs/workflows/stage4-vm-install-and-boot.json`
 
-## 6. Destination Host Staged Install Flow
+## 6. Path B iPXE Asset Publication
+
+Render the Path B asset tree:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/netboot-path-b.yml \
+  -l netboot_control_local
+```
+
+This produces:
+
+- `bootstrap.ipxe`
+- `menu.ipxe`
+- `roles/*.ipxe`
+- `hosts/*.ipxe`
+- `manifests/path-b-netboot.json`
+
+Operational intent:
+
+- use DHCP/TFTP or UEFI HTTP only to reach iPXE
+- use iPXE plus HTTP/HTTPS to fetch the provisioning kernel/initramfs/rootfs
+- keep Path A available for hosts that cannot join the iPXE network
+
+Machine-readable version:
+
+- `docs/workflows/stage4-netboot-path-b.json`
+
+## 7. Destination Host Staged Install Flow
 
 Recommended order:
 
@@ -103,7 +134,69 @@ Machine-readable version:
 
 - `docs/workflows/stage4-destination-install-sequences.json`
 
-## 7. Persistent Codex Approval Visibility
+## 8. Path B RouterOS CHR Role
+
+Render the RouterOS Path B intent locally:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/routeros-path-b.yml \
+  -l routeros_pathb_primary
+```
+
+Optional live apply:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/routeros-path-b.yml \
+  -l routeros_pathb_primary \
+  -e routeros_pathb_apply=true
+```
+
+Important current constraints:
+
+- UEFI only
+- CHR lab architecture treated as RouterOS `x86`
+- `container` support is valid on `x86`
+- `zerotier` is not documented by MikroTik for `x86`
+- HTTP is disabled rather than redirected
+- RouterOS does not provide the full desired local UDP+TCP syslog-server role natively
+
+Machine-readable version:
+
+- `docs/workflows/stage4-routeros-pathb-deployment.json`
+
+## 9. RouterOS RFC99 Physical Gateway Role
+
+Render the CCR2004 RFC99 gateway intent locally:
+
+```bash
+cd gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
+  ../../scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i inventories/local-network/hosts.yml \
+  playbooks/routeros-rfc99-gateway.yml \
+  -l gw_rfc99_mkccr2004_16g \
+  -e routeros_rfc99_gateway_render_root=/tmp/routeros-rfc99-gateway
+```
+
+Important current constraints:
+
+- render-only; no live RouterOS mutation exists in the role
+- CCR2004 `sfp-sfpplus1` is WAN and `sfp-sfpplus2` is LAN trunk
+- `ether1` through `ether16` are renamed to `ge1` through `ge16`
+- SSH, HTTPS, and API-SSL are enabled; telnet, FTP, HTTP, plaintext API, and
+  WinBox are disabled
+- self-signed RouterOS certificate is used until internal-CA automation is wired
+  into the import
+
+Machine-readable version:
+
+- `docs/workflows/stage4-routeros-rfc99-gateway-deployment.json`
+
+## 10. Persistent Codex Approval Visibility
 
 Install:
 
@@ -123,7 +216,7 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 8. Release and Merge Discipline
+## 11. Release and Merge Discipline
 
 Operational rule:
 
@@ -138,7 +231,7 @@ Recommended GitHub protection:
 - require up-to-date branches before merge
 - restrict direct pushes to `main`
 
-## Expected Return Codes
+## 12. Expected Return Codes
 
 Normal success:
 
@@ -152,7 +245,7 @@ Failure conditions should be surfaced at one of these layers:
 - SSH readiness checks
 - workflow JSONL final stats
 
-## Artifacts Worth Watching
+## 13. Artifacts Worth Watching
 
 - `/tmp/ansible-control-flow/*.jsonl`
 - `/opt/gentoo-virt-qemu/stage3/state/*.serial.log`

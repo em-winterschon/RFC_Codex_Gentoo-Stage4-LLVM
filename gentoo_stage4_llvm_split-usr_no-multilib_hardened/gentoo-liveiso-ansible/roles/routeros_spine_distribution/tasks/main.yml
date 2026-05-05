@@ -1,0 +1,46 @@
+---
+- name: Assert RouterOS spine/distribution automation is render-only
+  ansible.builtin.assert:
+    that:
+      - not (routeros_spine_distribution_apply | bool)
+      - routeros_spine_distribution_target_version | length > 0
+      - routeros_spine_distribution_spine.crs354_bond.slaves | length == 2
+      - routeros_spine_distribution_distribution.crs309_bond.slaves | length == 2
+      - routeros_spine_distribution_distribution.stale_opnsense.address | length > 0
+      - routeros_spine_distribution_distribution.stale_opnsense.gateway | length > 0
+    fail_msg: >-
+      RouterOS spine/distribution automation is currently render-only. Live
+      import must remain serial-gated until fixture-backed apply handling is
+      added.
+
+- name: Ensure RouterOS spine/distribution render directory exists
+  ansible.builtin.file:
+    path: "{{ routeros_spine_distribution_render_root }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  become: false
+
+- name: Render CRS309 spine RSC
+  ansible.builtin.template:
+    src: crs309-spine.rsc.j2
+    dest: "{{ routeros_spine_distribution_render_root }}/{{ routeros_spine_distribution_spine.name }}.rsc"
+    mode: "0644"
+  delegate_to: localhost
+  become: false
+
+- name: Render CRS354 distribution RSC
+  ansible.builtin.template:
+    src: crs354-distribution.rsc.j2
+    dest: "{{ routeros_spine_distribution_render_root }}/{{ routeros_spine_distribution_distribution.name }}.rsc"
+    mode: "0644"
+  delegate_to: localhost
+  become: false
+
+- name: Render RouterOS spine/distribution manifest
+  ansible.builtin.template:
+    src: routeros-spine-distribution-manifest.json.j2
+    dest: "{{ routeros_spine_distribution_render_root }}/{{ routeros_spine_distribution_manifest_name }}"
+    mode: "0644"
+  delegate_to: localhost
+  become: false

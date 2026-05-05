@@ -1,0 +1,48 @@
+---
+- name: Validate Proxmox API access
+  hosts: proxmox_hypervisors
+  gather_facts: false
+
+  tasks:
+    - name: Query Proxmox API version
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host }}:{{ proxmox_api_port }}/api2/json/version"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+        validate_certs: "{{ proxmox_api_validate_certs | default(true) }}"
+        return_content: true
+        status_code: 200
+      delegate_to: localhost
+      register: proxmox_api_version_response
+      no_log: true
+
+    - name: Query Proxmox QEMU VM list
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host }}:{{ proxmox_api_port }}/api2/json/nodes/{{ inventory_hostname }}/qemu"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ proxmox_api_token_id }}={{ proxmox_api_token_secret }}"
+        validate_certs: "{{ proxmox_api_validate_certs | default(true) }}"
+        return_content: true
+        status_code: 200
+      delegate_to: localhost
+      register: proxmox_api_qemu_response
+      no_log: true
+
+    - name: Build sanitized Proxmox API validation summary
+      ansible.builtin.set_fact:
+        proxmox_api_validation_summary:
+          api_host: "{{ proxmox_api_host }}"
+          version: "{{ proxmox_api_version_response.json.data.version | default('unknown') }}"
+          release: "{{ proxmox_api_version_response.json.data.release | default('unknown') }}"
+          vm_count: "{{ proxmox_api_qemu_response.json.data | default([]) | length }}"
+
+    - name: Report sanitized Proxmox API validation summary
+      ansible.builtin.debug:
+        msg: >-
+          Proxmox API validated for {{ inventory_hostname }}
+          at {{ proxmox_api_validation_summary.api_host }};
+          version={{ proxmox_api_validation_summary.version }},
+          release={{ proxmox_api_validation_summary.release }},
+          vm_count={{ proxmox_api_validation_summary.vm_count }}.

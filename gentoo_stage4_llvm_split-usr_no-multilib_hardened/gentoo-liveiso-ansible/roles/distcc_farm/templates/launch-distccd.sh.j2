@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+args=(
+  --daemon
+  --no-detach
+  --listen
+  {{ resolved_distcc_farm.listen_address | quote }}
+  --port
+  {{ resolved_distcc_farm.port | quote }}
+  --jobs
+  {{ resolved_distcc_farm.jobs | quote }}
+  --nice
+  {{ resolved_distcc_farm.nice | quote }}
+  --user
+  {{ resolved_distcc_farm.service_user | quote }}
+  --log-stderr
+)
+
+{% for cidr in resolved_distcc_farm.allowed_client_cidrs %}
+args+=(--allow {{ cidr | quote }})
+{% endfor %}
+
+exec /usr/bin/distccd "${args[@]}"

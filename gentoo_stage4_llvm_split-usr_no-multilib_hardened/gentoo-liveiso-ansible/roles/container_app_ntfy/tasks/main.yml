@@ -1,0 +1,69 @@
+---
+- name: Resolve ntfy container application profile
+  ansible.builtin.set_fact:
+    container_ntfy_profile: "{{ resolved_profile_container_app_profiles.ntfy | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure ntfy configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_ntfy_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_ntfy_profile.enabled | default(false) | bool
+
+- name: Ensure ntfy runtime data directory exists
+  ansible.builtin.file:
+    path: >-
+      {{
+        install_target_root
+        + (
+            resolved_profile_container_services.runtime_root
+            | default('/var/lib/container-services')
+          )
+        + '/data/ntfy'
+      }}
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_ntfy_profile.enabled | default(false) | bool
+
+- name: Render ntfy container configuration
+  ansible.builtin.template:
+    src: server.yml.j2
+    dest: "{{ install_target_root }}{{ container_ntfy_config_dir }}/server.yml"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_ntfy_profile.enabled | default(false) | bool
+
+- name: Register ntfy runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'ntfy',
+              'description': 'ntfy push notification service',
+              'image': container_ntfy_profile.image,
+              'pull_policy': container_ntfy_profile.pull_policy | default('missing'),
+              'network': container_ntfy_profile.network | default('apps'),
+              'ip_address': container_ntfy_profile.ip_address | default(''),
+              'published_ports': container_ntfy_profile.published_ports | default(['80:80/tcp']),
+              'cap_add': container_ntfy_profile.cap_add | default([]),
+              'environment': container_ntfy_profile.env | default({}),
+              'volumes': [
+                container_ntfy_config_dir + '/server.yml:/etc/ntfy/server.yml:ro',
+                (resolved_profile_container_services.runtime_root | default('/var/lib/container-services')) + '/data/ntfy:/var/cache/ntfy'
+              ],
+              'command': ['serve'],
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_ntfy_profile.enabled | default(false) | bool

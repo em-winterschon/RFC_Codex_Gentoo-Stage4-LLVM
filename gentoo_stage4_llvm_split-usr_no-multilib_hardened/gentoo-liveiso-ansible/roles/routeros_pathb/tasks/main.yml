@@ -1,0 +1,183 @@
+---
+- name: Assert Path B RouterOS role is UEFI-only
+  ansible.builtin.assert:
+    that:
+      - routeros_pathb_boot_mode == 'uefi-http-ipxe'
+      - routeros_pathb_http_redirect_strategy in ['disable-http', 'document-only']
+      - routeros_pathb_routeros_arch in routeros_pathb_routeros_arch_enum
+      - (not routeros_pathb_snmp_v3_enabled | bool) or (routeros_pathb_snmp_v3_auth_password | length >= 8)
+      - (not routeros_pathb_snmp_v3_enabled | bool) or (routeros_pathb_snmp_v3_priv_password | length >= 8)
+    fail_msg: >-
+      RouterOS Path B is currently implemented only for UEFI HTTP/iPXE style
+      boot. Legacy BIOS is intentionally unsupported.
+
+- name: Initialize RouterOS Path B target host list
+  ansible.builtin.set_fact:
+    routeros_pathb_target_hosts: []
+    routeros_pathb_supported_required_packages: []
+    routeros_pathb_unsupported_required_packages: []
+
+- name: Assert inventory-backed Path B target metadata is valid for RouterOS policy
+  ansible.builtin.assert:
+    that:
+      - hostvars[routeros_target_host].netboot_enabled | default(false) | bool
+      - hostvars[routeros_target_host].netboot_interface_name is defined
+      - hostvars[routeros_target_host].netboot_mac_address is defined
+      - (hostvars[routeros_target_host].netboot_type | lower) in routeros_pathb_netboot_type_enum
+      - (hostvars[routeros_target_host].netboot_os_type | lower) in routeros_pathb_os_type_enum
+      - (hostvars[routeros_target_host].netboot_os_name | lower) in routeros_pathb_os_name_enum
+      - hostvars[routeros_target_host].netboot_os_version is defined
+      - (hostvars[routeros_target_host].netboot_machine_type | lower) in routeros_pathb_machine_type_enum
+      - (hostvars[routeros_target_host].netboot_platform | lower) in routeros_pathb_platform_enum
+    fail_msg: >-
+      install_targets host {{ routeros_target_host }} has invalid or incomplete
+      Path B metadata for RouterOS automation.
+  loop: "{{ groups['install_targets'] | default([]) }}"
+  loop_control:
+    loop_var: routeros_target_host
+  when: hostvars[routeros_target_host].netboot_enabled | default(false) | bool
+
+- name: Build RouterOS Path B managed target host list
+  ansible.builtin.set_fact:
+    routeros_pathb_target_hosts: "{{ routeros_pathb_target_hosts + [routeros_target_entry] }}"
+  vars:
+    routeros_target_entry:
+      inventory_name: "{{ routeros_target_host }}"
+      name: "{{ hostvars[routeros_target_host].netboot_host_alias | default(routeros_target_host | replace('_', '-')) }}"
+      interface_name: "{{ hostvars[routeros_target_host].netboot_interface_name }}"
+      mac_address: "{{ hostvars[routeros_target_host].netboot_mac_address | lower }}"
+      boot_type: "{{ hostvars[routeros_target_host].netboot_type | lower }}"
+      dhcp_client_options: "{{ hostvars[routeros_target_host].netboot_dhcp_client_options | default([]) }}"
+      os_type: "{{ hostvars[routeros_target_host].netboot_os_type | lower }}"
+      os_name: "{{ hostvars[routeros_target_host].netboot_os_name | lower }}"
+      os_version: "{{ hostvars[routeros_target_host].netboot_os_version }}"
+      machine_type: "{{ hostvars[routeros_target_host].netboot_machine_type | lower }}"
+      platform: "{{ hostvars[routeros_target_host].netboot_platform | lower }}"
+      arch: "{{ hostvars[routeros_target_host].netboot_arch | default('amd64') | lower }}"
+      role: "{{ hostvars[routeros_target_host].netboot_role | default('installer') }}"
+      static_address: "{{ hostvars[routeros_target_host].netboot_static_address | default('') }}"
+      gateway: "{{ hostvars[routeros_target_host].netboot_gateway | default('') }}"
+  loop: "{{ groups['install_targets'] | default([]) }}"
+  loop_control:
+    loop_var: routeros_target_host
+  when: hostvars[routeros_target_host].netboot_enabled | default(false) | bool
+
+- name: Classify RouterOS Path B required packages by architecture support
+  ansible.builtin.set_fact:
+    routeros_pathb_supported_required_packages: >-
+      {{
+        routeros_pathb_supported_required_packages
+        + (
+            routeros_pathb_routeros_arch in (
+              routeros_pathb_package_support[routeros_required_package]
+              | default([])
+            )
+          ) | ternary([routeros_required_package], [])
+      }}
+    routeros_pathb_unsupported_required_packages: >-
+      {{
+        routeros_pathb_unsupported_required_packages
+        + (
+            routeros_pathb_routeros_arch in (
+              routeros_pathb_package_support[routeros_required_package]
+              | default([])
+            )
+          ) | ternary([], [routeros_required_package])
+      }}
+  loop: "{{ routeros_pathb_required_packages }}"
+  loop_control:
+    loop_var: routeros_required_package
+
+- name: Ensure local RouterOS Path B render directory exists
+  ansible.builtin.file:
+    path: "{{ routeros_pathb_render_root }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  become: false
+
+- name: Render RouterOS Path B RSC configuration
+  ansible.builtin.template:
+    src: routeros-pathb.rsc.j2
+    dest: "{{ routeros_pathb_render_root }}/{{ inventory_hostname }}-pathb.rsc"
+    mode: '0644'
+  delegate_to: localhost
+  become: false
+
+- name: Render RouterOS Path B manifest
+  ansible.builtin.template:
+    src: routeros-pathb-manifest.json.j2
+    dest: "{{ routeros_pathb_render_root }}/{{ routeros_pathb_render_manifest_name }}"
+    mode: '0644'
+  delegate_to: localhost
+  become: false
+
+- name: Build RouterOS Path B SSH base arguments
+  ansible.builtin.set_fact:
+    routeros_pathb_ssh_base_argv: >-
+      {{
+        ['ssh']
+        + (routeros_pathb_ssh_strict_host_key_checking | bool
+            | ternary([], ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null']))
+        + ((routeros_pathb_ssh_identity_file | length > 0)
+            | ternary(['-i', routeros_pathb_ssh_identity_file], []))
+        + [ansible_user ~ '@' ~ ansible_host]
+      }}
+    routeros_pathb_scp_base_argv: >-
+      {{
+        ['scp']
+        + (routeros_pathb_ssh_strict_host_key_checking | bool
+            | ternary([], ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null']))
+        + ((routeros_pathb_ssh_identity_file | length > 0)
+            | ternary(['-i', routeros_pathb_ssh_identity_file], []))
+      }}
+  when: routeros_pathb_apply | bool
+
+- name: Export RouterOS configuration before apply
+  ansible.builtin.command:
+    argv: "{{ routeros_pathb_ssh_base_argv + ['/export file=' ~ inventory_hostname ~ '-pre-change'] }}"
+  delegate_to: localhost
+  become: false
+  when:
+    - routeros_pathb_apply | bool
+    - routeros_pathb_export_before_apply | bool
+  changed_when: true
+
+- name: Upload optional RouterOS package payloads
+  ansible.builtin.command:
+    argv: "{{ routeros_pathb_scp_base_argv + [routeros_package_file, ansible_user ~ '@' ~ ansible_host ~ ':'] }}"
+  delegate_to: localhost
+  become: false
+  loop: "{{ routeros_pathb_package_files }}"
+  loop_control:
+    loop_var: routeros_package_file
+  when:
+    - routeros_pathb_apply | bool
+    - routeros_pathb_package_files | length > 0
+  changed_when: true
+
+- name: Upload RouterOS Path B RSC configuration
+  ansible.builtin.command:
+    argv: "{{ routeros_pathb_scp_base_argv + [routeros_pathb_render_root ~ '/' ~ inventory_hostname ~ '-pathb.rsc', ansible_user ~ '@' ~ ansible_host ~ ':' ~ routeros_pathb_remote_script_name] }}"
+  delegate_to: localhost
+  become: false
+  when: routeros_pathb_apply | bool
+  changed_when: true
+
+- name: Import RouterOS Path B RSC configuration
+  ansible.builtin.command:
+    argv: "{{ routeros_pathb_ssh_base_argv + ['/import verbose=yes file-name=' ~ routeros_pathb_remote_script_name] }}"
+  delegate_to: localhost
+  become: false
+  when: routeros_pathb_apply | bool
+  changed_when: true
+
+- name: Export RouterOS configuration after apply
+  ansible.builtin.command:
+    argv: "{{ routeros_pathb_ssh_base_argv + ['/export file=' ~ inventory_hostname ~ '-post-change'] }}"
+  delegate_to: localhost
+  become: false
+  when:
+    - routeros_pathb_apply | bool
+    - routeros_pathb_export_after_apply | bool
+  changed_when: true

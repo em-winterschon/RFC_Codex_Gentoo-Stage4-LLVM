@@ -1,0 +1,6 @@
+net-nds/389-ds-base
+net-dialup/freeradius
+sys-auth/sssd
+app-crypt/mit-krb5
+net-nds/openldap
+net-dns/bind-tools

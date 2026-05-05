@@ -1,0 +1,91 @@
+---
+- name: Resolve FreeIPA controller settings
+  ansible.builtin.set_fact:
+    freeipa_controller_enabled: >-
+      {{
+        resolved_profile_freeipa_controller.enabled
+        | default(freeipa_controller_default_enabled)
+        | bool
+      }}
+    resolved_freeipa_controller: >-
+      {{
+        {
+          'vendor_package_strategy': resolved_profile_freeipa_controller.vendor_package_strategy
+            | default(freeipa_controller_default_vendor_package_strategy),
+          'realm': resolved_profile_freeipa_controller.realm
+            | default(freeipa_controller_default_realm),
+          'domain': resolved_profile_freeipa_controller.domain
+            | default(freeipa_controller_default_domain),
+          'server_hostname': resolved_profile_freeipa_controller.server_hostname
+            | default(freeipa_controller_default_server_hostname),
+          'server_ip_address': resolved_profile_freeipa_controller.server_ip_address
+            | default(freeipa_controller_default_server_ip_address),
+          'ds_instance_name': resolved_profile_freeipa_controller.ds_instance_name
+            | default(freeipa_controller_default_ds_instance_name),
+          'organization': resolved_profile_freeipa_controller.organization
+            | default(freeipa_controller_default_organization),
+          'subject_base': resolved_profile_freeipa_controller.subject_base
+            | default(freeipa_controller_default_subject_base),
+          'ca_subject_base': resolved_profile_freeipa_controller.ca_subject_base
+            | default(freeipa_controller_default_ca_subject_base),
+          'admin_user': resolved_profile_freeipa_controller.admin_user
+            | default(freeipa_controller_default_admin_user),
+          'directory_manager_user': resolved_profile_freeipa_controller.directory_manager_user
+            | default(freeipa_controller_default_directory_manager_user),
+          'enable_dns': resolved_profile_freeipa_controller.enable_dns
+            | default(freeipa_controller_default_enable_dns),
+          'enable_ca': resolved_profile_freeipa_controller.enable_ca
+            | default(freeipa_controller_default_enable_ca),
+          'enable_pkinit': resolved_profile_freeipa_controller.enable_pkinit
+            | default(freeipa_controller_default_enable_pkinit),
+          'enable_kra': resolved_profile_freeipa_controller.enable_kra
+            | default(freeipa_controller_default_enable_kra),
+          'smartcard_enabled': resolved_profile_freeipa_controller.smartcard_enabled
+            | default(freeipa_controller_default_smartcard_enabled),
+          'manage_hosts_file': resolved_profile_freeipa_controller.manage_hosts_file
+            | default(freeipa_controller_default_manage_hosts_file),
+          'idrange_start': resolved_profile_freeipa_controller.idrange_start
+            | default(freeipa_controller_default_idrange_start),
+          'idrange_size': resolved_profile_freeipa_controller.idrange_size
+            | default(freeipa_controller_default_idrange_size),
+          'overlay_repo_name': resolved_profile_freeipa_controller.overlay_repo_name
+            | default(freeipa_controller_default_overlay_repo_name),
+          'extra_packages': resolved_profile_freeipa_controller.extra_packages
+            | default(freeipa_controller_default_extra_packages)
+        }
+      }}
+
+- name: Ensure FreeIPA controller support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ freeipa_controller_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/ipa
+    - /etc/stage5-aaa
+    - /etc/stage5-aaa/manifests
+    - /usr/local/libexec/freeipa
+  loop_control:
+    loop_var: freeipa_controller_dir
+  when: freeipa_controller_enabled
+
+- name: Render FreeIPA controller manifest
+  ansible.builtin.template:
+    src: freeipa-controller.yml.j2
+    dest: "{{ install_target_root }}/etc/stage5-aaa/manifests/freeipa-controller.yml"
+    mode: '0644'
+  when: freeipa_controller_enabled
+
+- name: Render FreeIPA controller ipa-default.conf seed
+  ansible.builtin.template:
+    src: ipa-default.conf.j2
+    dest: "{{ install_target_root }}/etc/ipa/default.conf"
+    mode: '0644'
+  when: freeipa_controller_enabled
+
+- name: Render FreeIPA controller bootstrap helper
+  ansible.builtin.template:
+    src: bootstrap-freeipa-controller.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/freeipa/bootstrap-freeipa-controller.sh"
+    mode: '0755'
+  when: freeipa_controller_enabled

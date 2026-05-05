@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+cat <<'EOF'
+IPA client enrollment scaffold
+==============================
+
+Domain: {{ resolved_ipa_client.domain }}
+Realm: {{ resolved_ipa_client.realm }}
+Join mode: {{ resolved_ipa_client.domain_join_mode }}
+
+Rendered files:
+  /etc/ipa/default.conf
+{% if resolved_ipa_client.configure_krb5 | bool %}
+  /etc/krb5.conf
+{% endif %}
+{% if resolved_ipa_client.configure_sssd | bool %}
+  /etc/sssd/sssd.conf
+{% endif %}
+
+Recommended enrollment flow:
+  1. Ensure DNS and time sync reach the identity controller.
+  2. Obtain a host enrollment principal or one-time password from the FreeIPA controller.
+  3. Run ipa-client-install or the equivalent overlay-managed enrollment helper.
+  4. Start sssd and verify getent/ssh/sudo behavior against the domain.
+EOF

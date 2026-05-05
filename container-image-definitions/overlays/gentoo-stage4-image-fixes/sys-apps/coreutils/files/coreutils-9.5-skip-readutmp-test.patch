@@ -1,0 +1,7 @@
+https://bugs.gentoo.org/935367
+--- a/gnulib-tests/test-readutmp.c
++++ b/gnulib-tests/test-readutmp.c
+@@ -44,1 +44,3 @@ main (int argc, char *argv[])
+   idx_t num_entries;
++  fprintf (stderr, "Skipping test: Gentoo: examines host entries, so unreliable in ebuild\n");
++  return 77;

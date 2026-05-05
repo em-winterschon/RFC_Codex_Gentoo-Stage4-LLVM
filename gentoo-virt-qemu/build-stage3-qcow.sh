@@ -472,6 +472,8 @@ mkdir -p /boot/efi /root/.ssh /etc/portage
 mkdir -p /etc/default
 mkdir -p /etc/portage/package.use
 mkdir -p /etc/portage/package.mask
+mkdir -p /etc/portage/repos.conf
+mkdir -p /var/db/repos/gentoo
 
 if [[ -f /etc/resolv.conf ]]; then
   chmod 0644 /etc/resolv.conf || true
@@ -490,6 +492,18 @@ MAKECONF
 cat > /etc/portage/package.use/stage3-qcow-kernel <<'PKGUSE'
 sys-kernel/installkernel dracut
 PKGUSE
+
+cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
+[DEFAULT]
+main-repo = gentoo
+
+[gentoo]
+location = /var/db/repos/gentoo
+sync-type = rsync
+sync-uri = rsync://rsync.gentoo.org/gentoo-portage
+auto-sync = yes
+webrsync-gpg = yes
+REPOSCONF
 
 ${stage3_profile_fragment}
 
@@ -548,7 +562,20 @@ install_bootstrap_script() {
 }
 
 run_bootstrap() {
-  run_cmd "${MOUNT_BIN}" --bind /dev "${TARGET_ROOT_MNT}/dev"
+  mkdir -p "${TARGET_ROOT_MNT}/dev" "${TARGET_ROOT_MNT}/dev/pts" "${TARGET_ROOT_MNT}/dev/shm"
+  run_cmd "${MOUNT_BIN}" -t devtmpfs devtmpfs "${TARGET_ROOT_MNT}/dev"
+  run_cmd "${MOUNT_BIN}" -t devpts devpts "${TARGET_ROOT_MNT}/dev/pts"
+  run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs "${TARGET_ROOT_MNT}/dev/shm"
+  rm -f "${TARGET_ROOT_MNT}/dev/null" "${TARGET_ROOT_MNT}/dev/zero" "${TARGET_ROOT_MNT}/dev/random" "${TARGET_ROOT_MNT}/dev/urandom" "${TARGET_ROOT_MNT}/dev/tty"
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/null" c 1 3
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/zero" c 1 5
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/random" c 1 8
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/urandom" c 1 9
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/tty" c 5 0
+  ln -sfn /proc/self/fd "${TARGET_ROOT_MNT}/dev/fd"
+  ln -sfn fd/0 "${TARGET_ROOT_MNT}/dev/stdin"
+  ln -sfn fd/1 "${TARGET_ROOT_MNT}/dev/stdout"
+  ln -sfn fd/2 "${TARGET_ROOT_MNT}/dev/stderr"
   run_cmd "${MOUNT_BIN}" --bind /proc "${TARGET_ROOT_MNT}/proc"
   run_cmd "${MOUNT_BIN}" --bind /sys "${TARGET_ROOT_MNT}/sys"
   run_cmd "${CHROOT_BIN}" "${TARGET_ROOT_MNT}" /bin/bash /root/bootstrap-stage3-vm.sh

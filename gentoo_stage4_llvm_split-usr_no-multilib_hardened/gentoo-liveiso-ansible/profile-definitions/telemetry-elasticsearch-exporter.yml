@@ -1,0 +1,20 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-metrics-elasticsearch-exporter.packages
+  package_accept_keywords_files:
+    40-elasticsearch-exporter: |
+      app-metrics/elasticsearch_exporter ~amd64
+  telemetry:
+    elasticsearch_exporter:
+      enabled: true
+      es_uri: http://127.0.0.1:9200
+  haproxy_service_types:
+    - name: elasticsearch-exporter-http
+      bind: "*:9114"
+      mode: http
+      backend_name: be_elasticsearch_exporter_http
+      servers:
+        - name: elasticsearch-exporter
+          address: 127.0.0.1
+          port: 9114

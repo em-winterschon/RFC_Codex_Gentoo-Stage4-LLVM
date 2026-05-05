@@ -1,0 +1,25 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-domain-client.packages
+  package_use_files:
+    30-aaa-domain-client-sssd: |
+      dev-libs/cyrus-sasl kerberos
+      net-dns/bind gssapi
+      net-libs/ngtcp2 gnutls
+      net-nds/openldap experimental sasl
+  aaa_policy_files:
+    - aaa-policy-definitions/site-baseline.yml
+  openrc_services_enable:
+    - sssd
+  ipa_client:
+    enabled: true
+    domain_join_mode: manual
+    mkhomedir: true
+    cache_credentials: true
+    configure_krb5: true
+    configure_sssd: true
+    ssh_trust_ipa_keys: true
+    access_provider: ipa
+    hbac_provider: ipa
+    sudo_provider: ipa

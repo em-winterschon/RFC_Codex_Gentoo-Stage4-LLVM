@@ -1,0 +1,7 @@
+dev-db/postgresql
+dev-db/redis
+dev-python/pip
+dev-python/virtualenv
+dev-vcs/git
+net-misc/curl
+www-servers/nginx

@@ -1,0 +1,155 @@
+---
+- name: Resolve Elasticsearch cluster settings
+  ansible.builtin.set_fact:
+    elasticsearch_cluster_enabled: >-
+      {{
+        resolved_profile_elasticsearch_cluster.enabled
+        | default(elasticsearch_cluster_default_enabled)
+        | bool
+      }}
+    resolved_elasticsearch_cluster: >-
+      {{
+        {
+          'version': resolved_profile_elasticsearch_cluster.version | default(elasticsearch_cluster_default_version),
+          'package_atom': resolved_profile_elasticsearch_cluster.package_atom | default(elasticsearch_cluster_default_package_atom),
+          'cluster_name': resolved_profile_elasticsearch_cluster.cluster_name | default(elasticsearch_cluster_default_cluster_name),
+          'node_name': resolved_profile_elasticsearch_cluster.node_name | default(elasticsearch_cluster_default_node_name),
+          'network_host': resolved_profile_elasticsearch_cluster.network_host | default(elasticsearch_cluster_default_network_host),
+          'http_port': resolved_profile_elasticsearch_cluster.http_port | default(elasticsearch_cluster_default_http_port),
+          'transport_port': resolved_profile_elasticsearch_cluster.transport_port | default(elasticsearch_cluster_default_transport_port),
+          'seed_hosts': resolved_profile_elasticsearch_cluster.seed_hosts | default(elasticsearch_cluster_default_seed_hosts),
+          'initial_master_nodes': resolved_profile_elasticsearch_cluster.initial_master_nodes | default(elasticsearch_cluster_default_initial_master_nodes),
+          'roles': resolved_profile_elasticsearch_cluster.roles | default(elasticsearch_cluster_default_roles),
+          'heap': resolved_profile_elasticsearch_cluster.heap | default(elasticsearch_cluster_default_heap),
+          'path_data': resolved_profile_elasticsearch_cluster.path_data | default(elasticsearch_cluster_default_path_data),
+          'path_logs': resolved_profile_elasticsearch_cluster.path_logs | default(elasticsearch_cluster_default_path_logs),
+          'publish_host': resolved_profile_elasticsearch_cluster.publish_host | default(elasticsearch_cluster_default_publish_host),
+          'vip_hostname': resolved_profile_elasticsearch_cluster.vip_hostname | default(elasticsearch_cluster_default_vip_hostname),
+          'discovery_type': resolved_profile_elasticsearch_cluster.discovery_type | default(elasticsearch_cluster_default_discovery_type),
+          'security_enabled': resolved_profile_elasticsearch_cluster.security_enabled | default(elasticsearch_cluster_default_security_enabled),
+          'http_ssl_enabled': resolved_profile_elasticsearch_cluster.http_ssl_enabled | default(elasticsearch_cluster_default_http_ssl_enabled),
+          'transport_ssl_enabled': resolved_profile_elasticsearch_cluster.transport_ssl_enabled | default(elasticsearch_cluster_default_transport_ssl_enabled),
+          'auto_create_index': resolved_profile_elasticsearch_cluster.auto_create_index | default(elasticsearch_cluster_default_auto_create_index),
+          'java_home': resolved_profile_elasticsearch_cluster.java_home | default(elasticsearch_cluster_default_java_home),
+          'require_localmount': resolved_profile_elasticsearch_cluster.require_localmount | default(elasticsearch_cluster_default_require_localmount),
+          'index_templates': resolved_profile_elasticsearch_cluster.index_templates | default(elasticsearch_cluster_default_index_templates)
+        }
+      }}
+
+- name: Register pinned Elasticsearch package atom
+  ansible.builtin.set_fact:
+    resolved_profile_package_atoms: >-
+      {{
+        (
+          resolved_profile_package_atoms | default([])
+          + [resolved_elasticsearch_cluster.package_atom]
+        ) | unique
+      }}
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.package_atom | length > 0
+
+- name: Ensure Elasticsearch directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ elasticsearch_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/elasticsearch
+    - /etc/elasticsearch/jvm.options.d
+  loop_control:
+    loop_var: elasticsearch_dir
+  when: elasticsearch_cluster_enabled
+
+- name: Render Elasticsearch cluster configuration
+  ansible.builtin.template:
+    src: elasticsearch.yml.j2
+    dest: "{{ install_target_root }}/etc/elasticsearch/elasticsearch.yml"
+    mode: '0640'
+  when: elasticsearch_cluster_enabled
+
+- name: Render Elasticsearch heap override
+  ansible.builtin.template:
+    src: jvm-stage5.options.j2
+    dest: "{{ install_target_root }}/etc/elasticsearch/jvm.options.d/90-stage5.options"
+    mode: '0644'
+  when: elasticsearch_cluster_enabled
+
+- name: Ensure Elasticsearch index-template helper directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/elasticsearch/index-templates.d"
+    state: directory
+    mode: '0755'
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.index_templates | length > 0
+
+- name: Render Elasticsearch index templates
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/elasticsearch/index-templates.d/{{ elasticsearch_index_template.name | regex_replace('[^A-Za-z0-9_.-]', '_') }}.json"
+    content: "{{ elasticsearch_index_template.body | to_nice_json }}\n"
+    mode: '0644'
+  loop: "{{ resolved_elasticsearch_cluster.index_templates }}"
+  loop_control:
+    loop_var: elasticsearch_index_template
+    label: "{{ elasticsearch_index_template.name }}"
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.index_templates | length > 0
+
+- name: Ensure Elasticsearch local sbin directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/usr/local/sbin"
+    state: directory
+    mode: '0755'
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.index_templates | length > 0
+
+- name: Render Elasticsearch index-template apply helper
+  ansible.builtin.template:
+    src: stage5-elasticsearch-apply-index-templates.sh.j2
+    dest: "{{ install_target_root }}/usr/local/sbin/stage5-elasticsearch-apply-index-templates"
+    mode: '0755'
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.index_templates | length > 0
+
+- name: Configure Elasticsearch Java home override
+  ansible.builtin.lineinfile:
+    path: "{{ install_target_root }}/etc/conf.d/elasticsearch"
+    regexp: '^#?ES_JAVA_HOME='
+    line: "ES_JAVA_HOME={{ resolved_elasticsearch_cluster.java_home }}"
+    create: false
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.java_home | length > 0
+
+- name: Ensure Elasticsearch waits for local filesystems on OpenRC
+  ansible.builtin.lineinfile:
+    path: "{{ install_target_root }}/etc/init.d/elasticsearch"
+    insertafter: '^depend\(\) \{$'
+    line: "\tneed localmount"
+    firstmatch: true
+  when:
+    - elasticsearch_cluster_enabled
+    - resolved_elasticsearch_cluster.require_localmount | bool
+
+- name: Ensure Elasticsearch keystore exists with daemon-readable ownership
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ (
+      'export ES_JAVA_HOME=' + resolved_elasticsearch_cluster.java_home + '; '
+      + 'if [ ! -f /etc/elasticsearch/elasticsearch.keystore ]; then /usr/share/elasticsearch/bin/elasticsearch-keystore create; fi; '
+      + 'chown root:elasticsearch /etc/elasticsearch/elasticsearch.keystore; '
+      + 'chmod 0660 /etc/elasticsearch/elasticsearch.keystore'
+    ) | quote }}
+  when: elasticsearch_cluster_enabled
+
+- name: Enable Elasticsearch service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['elasticsearch']) | unique
+      }}
+  when: elasticsearch_cluster_enabled

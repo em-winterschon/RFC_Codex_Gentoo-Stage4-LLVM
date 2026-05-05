@@ -1,0 +1,37 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-netbox-service
+  purpose: Stage5 virtual-host profile for the NetBox IPAM/DCIM service on a Stage4 Gentoo OpenRC VM.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: netbox-service
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-netbox-service.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - dev-db/postgresql
+      - dev-db/redis
+      - www-servers/nginx
+      - dev-python/pip
+      - dev-python/virtualenv
+      - net-misc/curl
+    upstream_app_version: v4.5.9
+    essential_integrations:
+      - pynetbox
+      - netbox-agent
+      - netbox-sync
+      - netbox-tools
+      - devicetype-library
+      - Device-Type-Library-Import
+  deployment_notes:
+    - NetBox is not packaged in the current Gentoo tree, so the role uses a native-source application layer on top of Gentoo-managed PostgreSQL, Redis, nginx, pip, and virtualenv.
+    - Essential NetBox operational integrations are isolated under /opt/netbox-essentials so the NetBox application virtualenv remains service-focused.
+    - The former FreeBSD jail deployment on VM 1011 is retired in favor of Proxmox VM 1062 on Hasslehoff.

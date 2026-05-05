@@ -1,0 +1,16 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-metrics-client.packages
+  telemetry:
+    node_exporter:
+      enabled: true
+  haproxy_service_types:
+    - name: node-exporter-http
+      bind: "*:9100"
+      mode: http
+      backend_name: be_node_exporter_http
+      servers:
+        - name: node-exporter
+          address: 127.0.0.1
+          port: 9100

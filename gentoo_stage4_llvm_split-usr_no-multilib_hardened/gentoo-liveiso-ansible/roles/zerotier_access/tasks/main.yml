@@ -1,0 +1,55 @@
+---
+- name: Resolve ZeroTier settings
+  ansible.builtin.set_fact:
+    zerotier_enabled: >-
+      {{
+        resolved_profile_zerotier.enabled
+        | default(zerotier_default_enabled)
+        | bool
+      }}
+    resolved_zerotier: >-
+      {{
+        {
+          'network_id': resolved_profile_zerotier.network_id | default(zerotier_default_network_id),
+          'allow_managed': resolved_profile_zerotier.allow_managed | default(zerotier_default_allow_managed),
+          'allow_global': resolved_profile_zerotier.allow_global | default(zerotier_default_allow_global),
+          'allow_default': resolved_profile_zerotier.allow_default | default(zerotier_default_allow_default),
+          'allow_dns': resolved_profile_zerotier.allow_dns | default(zerotier_default_allow_dns),
+          'moon_nodes': resolved_profile_zerotier.moon_nodes | default(zerotier_default_moon_nodes)
+        }
+      }}
+
+- name: Ensure ZeroTier directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ zerotier_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /var/lib/zerotier-one
+    - /var/lib/zerotier-one/networks.d
+    - /etc/stage5-access
+  loop_control:
+    loop_var: zerotier_dir
+  when: zerotier_enabled
+
+- name: Render ZeroTier local configuration
+  ansible.builtin.template:
+    src: zerotier-local.conf.j2
+    dest: "{{ install_target_root }}/var/lib/zerotier-one/local.conf"
+    mode: '0644'
+  when: zerotier_enabled
+
+- name: Render ZeroTier network join manifest
+  ansible.builtin.template:
+    src: zerotier-network.json.j2
+    dest: "{{ install_target_root }}/etc/stage5-access/zerotier-network.json"
+    mode: '0644'
+  when: zerotier_enabled
+
+- name: Enable ZeroTier service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['zerotier']) | unique
+      }}
+  when: zerotier_enabled

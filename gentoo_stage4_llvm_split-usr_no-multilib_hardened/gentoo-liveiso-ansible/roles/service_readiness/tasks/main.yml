@@ -1,0 +1,37 @@
+---
+- name: Resolve service readiness settings
+  ansible.builtin.set_fact:
+    service_readiness_enabled: >-
+      {{
+        resolved_profile_service_readiness.enabled
+        | default(service_readiness_default_enabled)
+        | bool
+      }}
+    resolved_service_readiness_checks: "{{ resolved_profile_service_readiness.checks | default([]) }}"
+    resolved_service_readiness_validator_path: >-
+      {{
+        resolved_profile_service_readiness.validator_path
+        | default(service_readiness_default_validator_path)
+      }}
+    resolved_service_readiness_nmap_bin: >-
+      {{
+        resolved_profile_service_readiness.nmap_bin
+        | default(service_readiness_default_nmap_bin)
+      }}
+    resolved_service_readiness_phase: >-
+      {{
+        resolved_profile_service_readiness.phase
+        | default(service_readiness_phase | default(service_readiness_default_phase))
+      }}
+
+- name: Validate service readiness checks
+  block:
+    - name: Run configured readiness validator
+      ansible.builtin.include_tasks: validate_check.yml
+      loop: "{{ resolved_service_readiness_checks }}"
+      loop_control:
+        loop_var: service_readiness_check
+      when: >-
+        service_readiness_check.phases is not defined
+        or resolved_service_readiness_phase in service_readiness_check.phases
+  when: service_readiness_enabled

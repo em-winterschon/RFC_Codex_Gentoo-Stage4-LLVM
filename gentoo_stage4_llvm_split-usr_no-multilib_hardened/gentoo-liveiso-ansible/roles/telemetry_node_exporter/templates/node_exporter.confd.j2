@@ -1,0 +1,2 @@
+# arguments for prometheus node exporter
+command_args="--web.listen-address={{ resolved_node_exporter_telemetry.listen_address }}:{{ resolved_node_exporter_telemetry.listen_port }} --collector.textfile.directory={{ resolved_node_exporter_telemetry.textfile_directory }}{% for extra_arg in resolved_node_exporter_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

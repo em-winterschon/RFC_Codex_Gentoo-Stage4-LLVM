@@ -1,0 +1,127 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage4-netboot-path-b",
+    "description": "Publish and operate the Path B iPXE asset tree for Gentoo provisioning on bare-metal and VM fleets.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible subtree used for netboot asset publishing."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/examples/hosts.yml",
+      "description": "Inventory containing the netboot_publishers host group."
+    },
+    {
+      "name": "limit_target",
+      "required": true,
+      "default": "netboot_control_local",
+      "description": "Publisher host limit."
+    },
+    {
+      "name": "publish_root",
+      "required": false,
+      "default": "/var/lib/netboot/path-b",
+      "description": "Filesystem path where iPXE assets are rendered."
+    },
+    {
+      "name": "public_base_url",
+      "required": false,
+      "default": "http://boot.example.net/path-b",
+      "description": "Base URL from which iPXE clients fetch rendered assets."
+    }
+  ],
+  "stages": [
+    {
+      "id": "build-provisioning-artifacts",
+      "summary": "Build the Gentoo provisioning kernel, initramfs, and SquashFS roots for the Path B installer and rescue roles.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/build-path-b-netboot-artifacts.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/vmlinuz",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/initramfs.img",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-installer/rootfs.img",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/vmlinuz",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/initramfs.img",
+        "/opt/gentoo-netboot/path-b/artifacts/gentoo-rescue/rootfs.img"
+      ]
+    },
+    {
+      "id": "render-path-b-assets",
+      "summary": "Render the iPXE bootstrap, menu, role, host, and manifest files for Path B.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/netboot-path-b.yml",
+        "-l",
+        "${limit_target}",
+        "-e",
+        "netboot_publish_root=${publish_root}",
+        "-e",
+        "netboot_public_base_url=${public_base_url}"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "${publish_root}/bootstrap.ipxe",
+        "${publish_root}/menu.ipxe",
+        "${publish_root}/roles/installer.ipxe",
+        "${publish_root}/roles/rescue.ipxe",
+        "${publish_root}/roles/localdisk.ipxe",
+        "${publish_root}/manifests/path-b-netboot.json"
+      ]
+    },
+    {
+      "id": "review-host-mappings",
+      "summary": "Inspect rendered per-host iPXE entry points before handing the asset tree to DHCP or HTTP boot infrastructure.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "find",
+        "${publish_root}/hosts",
+        "-maxdepth",
+        "1",
+        "-type",
+        "f"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "handoff-to-boot-infra",
+      "summary": "Expose the published Path B tree through DHCP/TFTP plus iPXE HTTP, or UEFI HTTP boot plus iPXE chainload.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf 'Publish %s to your DHCP/iPXE/HTTP boot infrastructure.\\n' \"${publish_root}\""
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "notes": [
+        "Path B is intended to boot a provisioning environment that then runs the same Stage4 Ansible workflow used by Path A.",
+        "Keep Path A available for hosts that cannot join the iPXE network."
+      ]
+    }
+  ]
+}

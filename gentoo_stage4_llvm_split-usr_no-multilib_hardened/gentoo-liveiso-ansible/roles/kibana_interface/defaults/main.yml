@@ -1,0 +1,9 @@
+---
+kibana_default_enabled: false
+kibana_default_server_name: kibana.example.invalid
+kibana_default_server_host: 0.0.0.0
+kibana_default_server_port: 5601
+kibana_default_base_path: ""
+kibana_default_public_base_url: ""
+kibana_default_elasticsearch_hosts:
+  - http://127.0.0.1:9200

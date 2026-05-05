@@ -1,0 +1,8 @@
+-Xms{{ resolved_nexus_repo.heap_min }}
+-Xmx{{ resolved_nexus_repo.heap_max }}
+-XX:MaxDirectMemorySize={{ resolved_nexus_repo.direct_memory }}
+-Djava.io.tmpdir={{ resolved_nexus_repo.data_root }}/tmp
+-Dkaraf.data={{ resolved_nexus_repo.data_root }}
+-Dkaraf.log={{ resolved_nexus_repo.log_root }}
+-Djava.util.prefs.userRoot={{ resolved_nexus_repo.data_root }}/javaprefs
+-Djava.net.preferIPv4Stack=true

@@ -1,0 +1,60 @@
+---
+app_version_lock_version: 1
+scope: stage5-service-apps
+policy:
+  source_of_truth: repo-profile-definitions
+  package_manager: portage
+  binary_package_policy: buildpkg-enabled
+  notes:
+    - Gentoo package atoms remain authoritative for OS packages.
+    - Upstream service applications not packaged in Gentoo must have explicit version and checksum locks.
+
+locked_apps:
+  - id: sonatype-nexus-repository-oss
+    version: 3.90.1-01
+    profile: profile-definitions/vm-nexus-repository.yml
+    installer:
+      linux_x86_64:
+        path: /tmp/Nexus-Repo-OSS/sonatype-nexus-repo-oss_-3.90.1-01-linux-x86_64.tar.gz
+        sha256: 6f3240f34bb46b99d93b2c512333651ea227b4c65248c8154ae275933c320556
+      linux_aarch64:
+        path: /tmp/Nexus-Repo-OSS/sonatype-nexus-repo-oss_-3.90.1-01-linux-aarch_64.tar.gz
+        sha256: e8aa707821fdf09838b1db5826b21753d926c1f9c692012fe061fba544241ae6
+    enforcement:
+      - roles/nexus_repo/tasks/main.yml checksum assertion
+      - profile metadata package_pins.app_version_lock_id
+  - id: netbox
+    version: v4.5.9
+    profile: profile-definitions/vm-netbox-service.yml
+    enforcement:
+      - profile netbox_server.version
+      - profile metadata package_pins.upstream_app_version
+  - id: elasticsearch
+    version: 9.3.1
+    profile: profile-definitions/vm-elasticsearch-node.yml
+    enforcement:
+      - roles/elasticsearch_cluster/defaults/main.yml
+      - roles/elasticsearch_cluster/tasks/main.yml pinned atom registration
+  - id: jenkins
+    version: portage-resolved-dev-util-jenkins-bin
+    profile: profile-definitions/vm-jenkins-controller.yml
+    enforcement:
+      - Gentoo atom tracking in profile metadata
+  - id: grafana
+    version: portage-resolved-www-apps-grafana-bin
+    profile: profile-definitions/vm-observability-grafana.yml
+    enforcement:
+      - Gentoo atom tracking in profile metadata
+  - id: prometheus-stack
+    version: portage-resolved-app-metrics
+    profile: profile-definitions/vm-observability-prometheus.yml
+    enforcement:
+      - Gentoo atom tracking in profile metadata
+
+pin_gaps:
+  - id: jenkins
+    gap: Exact upstream version follows Gentoo dev-util/jenkins-bin resolution until a binpkg lockfile is generated from the built VM.
+  - id: grafana
+    gap: Exact upstream version follows Gentoo www-apps/grafana-bin resolution until a binpkg lockfile is generated from the built VM.
+  - id: prometheus-stack
+    gap: Exact Prometheus component versions follow Gentoo app-metrics atoms until a binpkg lockfile is generated from the built VM.

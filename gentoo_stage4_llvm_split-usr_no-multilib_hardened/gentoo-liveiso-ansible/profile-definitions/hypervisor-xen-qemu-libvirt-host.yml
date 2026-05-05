@@ -1,0 +1,41 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-metal-host-hypervisor.packages
+  make_conf_append: |
+    QEMU_SOFTMMU_TARGETS="x86_64 aarch64"
+    QEMU_USER_TARGETS="x86_64 aarch64"
+    USE="${USE} aio curl gnutls infiniband iscsi numa python sasl seccomp ssl vhost-net virtfs xen zfs"
+  package_use_files:
+    20-hypervisor-virt: |
+      app-emulation/qemu aio curl gnutls iscsi ncurses numa pin-upstream-blobs ssh vhost-net virtfs xen
+      app-emulation/libvirt libvirtd lvm numa parted qemu virt-network xen zfs
+      app-emulation/xen uefi
+      app-emulation/xen-tools hvm ipxe ovmf qemu system-ipxe system-qemu
+      net-misc/openvswitch modules ssl
+      media-libs/amdgpu-pro-vulkan video_cards_amdgpu
+    30-storage-rdma: |
+      sys-fs/zfs rootfs
+      sys-apps/nvme-cli json
+  package_accept_keywords_files:
+    20-hypervisor-testing: |
+      =net-misc/openvswitch-3.3.8 ~amd64
+      =sys-fs/zfs-2.4.1 ~amd64
+      =sys-fs/zfs-kmod-2.4.0_rc2-r1 ~amd64
+  modules_load_files:
+    hypervisor-host.conf: |
+      amdgpu
+      ib_uverbs
+      libnvdimm
+      mlx5_core
+      mlx5_ib
+      nd_pmem
+      nvme
+      nvme-fabrics
+      nvme-rdma
+      openvswitch
+      qede
+      zfs
+  openrc_services_enable:
+    - libvirtd
+    - openvswitch

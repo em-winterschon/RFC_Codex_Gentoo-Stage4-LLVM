@@ -1,0 +1,32 @@
+---
+profile_aaa_policy_files:
+  - "{{ playbook_dir }}/../aaa-policy-definitions/site-baseline.yml"
+
+profile_freeipa_controller:
+  realm: EXAMPLE.INTERNAL
+  domain: example.internal
+  server_hostname: ipa01.example.internal
+  server_ip_address: 10.66.30.10
+  vendor_package_strategy: overlay-managed
+
+profile_ipa_client:
+  servers:
+    - ipa01.example.internal
+
+profile_freeradius_bridge:
+  ldap_uri: ldaps://ipa01.example.internal
+  base_dn: dc=example,dc=internal
+  bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=example,dc=internal
+  clients:
+    - name: arista-leaf01
+      ipaddr: 10.66.50.11
+      secret: change-me-radius-secret
+      nastype: other
+    - name: juniper-core01
+      ipaddr: 10.66.50.21
+      secret: change-me-radius-secret
+      nastype: other
+    - name: vyos-edge01
+      ipaddr: 10.66.50.31
+      secret: change-me-radius-secret
+      nastype: other

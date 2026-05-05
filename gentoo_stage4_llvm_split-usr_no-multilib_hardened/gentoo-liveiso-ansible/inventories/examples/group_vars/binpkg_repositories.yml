@@ -1,0 +1,14 @@
+---
+profile_rsyslog:
+  forward_enabled: true
+  forward_protocol: tcp
+  forward_hostname: rsyslog-vip.example.internal
+  forward_port: 6514
+
+profile_binpkg_repo:
+  repository_root: /srv/stage5-binpkgs
+  repo_id: stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+  listen_address: 0.0.0.0
+  listen_port: 8088
+  server_name: binpkgs.example.internal
+  autoindex: true

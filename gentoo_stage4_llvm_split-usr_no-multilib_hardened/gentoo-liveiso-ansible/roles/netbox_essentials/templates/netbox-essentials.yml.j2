@@ -1,0 +1,25 @@
+---
+service: netbox-essentials
+enabled: {{ netbox_essentials_enabled | bool | lower }}
+paths:
+  install_root: "{{ resolved_netbox_essentials.install_root }}"
+  venv_path: "{{ resolved_netbox_essentials.venv_path }}"
+  source_root: "{{ resolved_netbox_essentials.source_root }}"
+  data_root: "{{ resolved_netbox_essentials.data_root }}"
+python_packages:
+{% for netbox_python_package in resolved_netbox_essentials.python_packages %}
+  - "{{ netbox_python_package }}"
+{% endfor %}
+repositories:
+{% for netbox_repo in resolved_netbox_essentials.repositories %}
+  - name: "{{ netbox_repo.name }}"
+    url: "{{ netbox_repo.url }}"
+    purpose: "{{ netbox_repo.purpose | default('') }}"
+{% endfor %}
+device_type_import:
+  enabled: {{ resolved_netbox_essentials.device_type_import.enabled | default(false) | bool | lower }}
+  vendors:
+{% for vendor in resolved_netbox_essentials.device_type_import.vendors | default([]) %}
+    - "{{ vendor }}"
+{% endfor %}
+  log_path: "{{ resolved_netbox_essentials.device_type_import.log_path | default('/var/log/netbox-essentials/device-type-import-essential.log') }}"

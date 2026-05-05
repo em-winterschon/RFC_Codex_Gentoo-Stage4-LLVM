@@ -1,0 +1,14 @@
+---
+nexus_proxy_intent_version: 1
+nexus_version: "{{ resolved_nexus_repo.version }}"
+listen:
+  host: "{{ resolved_nexus_repo.listen_host }}"
+  port: {{ resolved_nexus_repo.listen_port }}
+storage:
+  data_root: "{{ resolved_nexus_repo.data_root }}"
+  work_root: "{{ resolved_nexus_repo.work_root }}"
+repositories:
+{{ resolved_nexus_repo.transparent_proxy_repositories | to_nice_yaml(indent=2) | indent(2, true) }}
+notes:
+  - This file captures intended infrastructure proxy repositories.
+  - Repository creation through the Nexus API is intentionally deferred until credentials and TLS are vaulted.

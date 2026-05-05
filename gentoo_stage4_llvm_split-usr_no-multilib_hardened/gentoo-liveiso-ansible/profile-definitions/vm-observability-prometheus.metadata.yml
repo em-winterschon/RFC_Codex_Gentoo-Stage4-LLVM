@@ -1,0 +1,17 @@
+---
+gentoo_system_profile_metadata:
+  name: vm-observability-prometheus
+  summary: Stage 5 virtual-host profile for Prometheus, Alertmanager, and central telemetry collection.
+  stage_taxonomy:
+    stage4: hardened-llvm-stage4-merged-usr
+    stage5:
+      - virtual-host
+      - observability-prometheus
+  package_pins:
+    tracked_atoms:
+      - app-metrics/prometheus
+      - app-metrics/alertmanager
+      - app-metrics/blackbox_exporter
+      - app-metrics/snmp_exporter
+    app_version_lock_id: prometheus-stack
+    upstream_app_version: portage-resolved-app-metrics

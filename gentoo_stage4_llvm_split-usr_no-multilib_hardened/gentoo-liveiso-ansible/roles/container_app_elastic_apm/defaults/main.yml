@@ -1,0 +1,2 @@
+---
+container_elastic_apm_config_dir: /etc/container-services/apps/elastic-apm

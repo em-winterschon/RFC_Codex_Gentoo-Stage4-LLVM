@@ -1,0 +1,33 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-guest-application-server
+  purpose: Hardened OpenRC VM guest with serial plus SSH management, QEMU and Xen guest utilities, and optional cloud-init user seeding.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: application-server
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/stage5-virtual-host-appserver.packages
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/qemu-guest-agent-9.2.0
+      - =app-emulation/xe-guest-utilities-6.2.0_p1120-r1
+    keyworded_atoms:
+      - =app-emulation/xe-guest-utilities-6.2.0_p1120-r1
+    support_packages:
+      - sys-apps/ethtool
+  kernel_modules:
+    - bonding
+    - virtio_blk
+    - virtio_net
+    - virtio_pci
+    - xen_blkfront
+    - xen_netfront
+  cloud_init:
+    datasource: delegated
+    enabled_by_profile: false
+    notes: Pair this profile with the modular cloud-init-vm overlay when seed-driven first boot configuration is desired.
+  source_references:
+    - https://packages.gentoo.org/packages/app-emulation/qemu-guest-agent
+    - https://packages.gentoo.org/packages/app-emulation/xe-guest-utilities

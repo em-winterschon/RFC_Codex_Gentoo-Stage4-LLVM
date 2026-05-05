@@ -1,0 +1,240 @@
+---
+routeros_rfc99_gateway_apply: false
+routeros_rfc99_gateway_render_root: /tmp/routeros-rfc99-gateway
+routeros_rfc99_gateway_remote_script_name: "{{ inventory_hostname }}-rfc99-gateway.rsc"
+routeros_rfc99_gateway_render_manifest_name: "{{ inventory_hostname }}-rfc99-gateway.json"
+
+routeros_rfc99_gateway_cfg_tag: RFC99-CCR2004-16G.001
+routeros_rfc99_gateway_expected_model: CCR2004-16G-2S+PC
+routeros_rfc99_gateway_expected_board_name: CCR2004-16G-2S+
+routeros_rfc99_gateway_routeros_arch: arm64
+routeros_rfc99_gateway_identity: "{{ routeros_identity | default(inventory_hostname | replace('_', '-')) }}"
+routeros_rfc99_gateway_timezone: America/Los_Angeles
+routeros_rfc99_gateway_note: >-
+  Managed by RFC Codex RouterOS RFC99 gateway role. Rendered config is staged
+  for operator-reviewed serial or SSH import.
+
+routeros_rfc99_gateway_wan_interface: sfp-sfpplus1
+routeros_rfc99_gateway_wan_mode: dhcp
+routeros_rfc99_gateway_wan_cidr: ""
+routeros_rfc99_gateway_wan_gateway: ""
+routeros_rfc99_gateway_wan_route_distance: 1
+routeros_rfc99_gateway_wan_use_peer_dns: false
+routeros_rfc99_gateway_lan_bridge: br-lan
+routeros_rfc99_gateway_lan_uplink_interface: sfp-sfpplus2
+routeros_rfc99_gateway_management_interface: ge1
+routeros_rfc99_gateway_native_vlan_id: 1
+
+routeros_rfc99_gateway_dns_servers:
+  - 9.9.9.9
+  - 8.8.8.8
+routeros_rfc99_gateway_dns_allow_remote_requests: true
+
+routeros_rfc99_gateway_management_cidrs:
+  - 172.16.99.0/24
+  - 10.9.8.0/24
+  - 10.128.128.0/24
+
+routeros_rfc99_gateway_interface_renames:
+  - default_name: ether1
+    name: ge1
+  - default_name: ether2
+    name: ge2
+  - default_name: ether3
+    name: ge3
+  - default_name: ether4
+    name: ge4
+  - default_name: ether5
+    name: ge5
+  - default_name: ether6
+    name: ge6
+  - default_name: ether7
+    name: ge7
+  - default_name: ether8
+    name: ge8
+  - default_name: ether9
+    name: ge9
+  - default_name: ether10
+    name: ge10
+  - default_name: ether11
+    name: ge11
+  - default_name: ether12
+    name: ge12
+  - default_name: ether13
+    name: ge13
+  - default_name: ether14
+    name: ge14
+  - default_name: ether15
+    name: ge15
+  - default_name: ether16
+    name: ge16
+
+routeros_rfc99_gateway_interface_lists:
+  - WAN
+  - LAN
+  - MGMT
+  - VPN
+
+routeros_rfc99_gateway_vlan_plan:
+  - vlan_id: 1
+    name: management-compat
+    gateway_cidr: 172.16.99.1/24
+    native: true
+    status: active-transition
+  - vlan_id: 98
+    name: proxmox-sdn-lab
+    gateway_cidr: 172.16.98.1/24
+    status: active-local
+  - vlan_id: 1098
+    name: pathb-lab-services
+    gateway_cidr: 10.9.8.1/24
+    status: active-chr-backed
+  - vlan_id: 1077
+    name: container-management
+    gateway_cidr: 10.77.0.1/24
+    status: planned
+  - vlan_id: 1078
+    name: container-applications
+    gateway_cidr: 10.77.1.1/24
+    status: planned
+  - vlan_id: 1200
+    name: oob-power-management
+    gateway_cidr: ""
+    status: planned
+  - vlan_id: 1300
+    name: builder-farm
+    gateway_cidr: ""
+    status: planned
+  - vlan_id: 1400
+    name: roce-v2-control
+    gateway_cidr: ""
+    status: planned
+  - vlan_id: 1500
+    name: llm-rag-service-control
+    gateway_cidr: ""
+    status: planned
+  - vlan_id: 1501
+    name: llm-rag-inference-data
+    gateway_cidr: ""
+    status: planned
+
+routeros_rfc99_gateway_legacy_bridge_addresses:
+  - address: 10.128.128.1/24
+    interface: ge1
+    comment: Management primary
+  - address: 10.192.254.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: REDNET-WAN
+  - address: 10.232.232.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: NPi-Cluster CephNet
+  - address: 172.16.0.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: TestNet
+  - address: 172.16.17.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: VMM route
+  - address: 172.16.20.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: DHCP traffic
+  - address: 172.16.22.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: DHCP Admin traffic
+  - address: 172.16.40.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: SFO200 legacy remote admin
+  - address: 172.16.66.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Sensor network route
+  - address: 172.16.88.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: LAN gateway primary
+  - address: 172.16.199.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: IPMI traffic
+  - address: 172.16.228.1/22
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: NPi-Cluster traffic normalized
+  - address: 172.16.254.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: iSCSI traffic
+  - address: 172.28.0.1/16
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon L2 network core
+  - address: 172.28.10.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon L3 metal hosts
+  - address: 172.28.20.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon app front-end
+  - address: 172.28.25.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon app front-end pods
+  - address: 172.28.30.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon app back-end
+  - address: 172.28.35.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon app back-end pods
+  - address: 172.28.40.1/24
+    interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+    comment: Yukon GPU nodes
+
+routeros_rfc99_gateway_nat_enabled: true
+routeros_rfc99_gateway_firewall_enabled: true
+routeros_rfc99_gateway_firewall_comment_prefix: RFC99
+
+routeros_rfc99_gateway_ssh_enabled: true
+routeros_rfc99_gateway_ssh_port: 22
+routeros_rfc99_gateway_ssh_strong_crypto: true
+routeros_rfc99_gateway_ssh_forwarding: false
+routeros_rfc99_gateway_https_enabled: true
+routeros_rfc99_gateway_https_port: 443
+routeros_rfc99_gateway_http_enabled: false
+routeros_rfc99_gateway_api_enabled: false
+routeros_rfc99_gateway_api_ssl_enabled: true
+routeros_rfc99_gateway_api_ssl_port: 8729
+routeros_rfc99_gateway_winbox_enabled: false
+routeros_rfc99_gateway_winbox_port: 8291
+
+routeros_rfc99_gateway_certificate_name: rfc99-gw-selfsigned
+routeros_rfc99_gateway_certificate_common_name: "{{ routeros_rfc99_gateway_identity }}.rfc1918.host"
+routeros_rfc99_gateway_certificate_days_valid: 3650
+routeros_rfc99_gateway_certificate_key_size: 4096
+routeros_rfc99_gateway_certificate_subject_alt_names:
+  - "DNS:{{ routeros_rfc99_gateway_identity }}.rfc1918.host"
+  - "IP:172.16.99.1"
+  - "IP:10.9.8.1"
+  - "IP:10.128.128.1"
+
+routeros_rfc99_gateway_syslog_enabled: true
+routeros_rfc99_gateway_syslog_remote_host: 172.16.99.80
+routeros_rfc99_gateway_syslog_remote_port_udp: 514
+routeros_rfc99_gateway_syslog_topics:
+  - info
+  - warning
+  - error
+  - critical
+
+routeros_rfc99_gateway_snmp_enabled: false
+routeros_rfc99_gateway_snmp_contact: RFC99
+routeros_rfc99_gateway_snmp_location: CCR2004-16G-2S+PC
+routeros_rfc99_gateway_snmp_disable_public: true
+routeros_rfc99_gateway_snmp_v2c_enabled: false
+routeros_rfc99_gateway_snmp_v2c_community: rfc99-ro
+routeros_rfc99_gateway_snmp_v2c_addresses: "{{ routeros_rfc99_gateway_management_cidrs }}"
+routeros_rfc99_gateway_snmp_v2c_write_access: false
+
+routeros_rfc99_gateway_wireguard_enabled: true
+routeros_rfc99_gateway_wireguard_interface: wg-srv
+routeros_rfc99_gateway_wireguard_listen_port: 13231
+routeros_rfc99_gateway_wireguard_cidr: 172.31.255.1/24
+
+routeros_rfc99_gateway_zerotier_scaffold_enabled: true
+routeros_rfc99_gateway_zerotier_instance: zt1
+routeros_rfc99_gateway_zerotier_interface: zt-idc
+
+routeros_rfc99_gateway_rip_enabled: false
+routeros_rfc99_gateway_rip_note: >-
+  CRS309 draft included RIP redistribution. This role leaves RIP disabled until
+  the route redistribution scope is explicitly approved for the CCR2004 cutover.

@@ -1,0 +1,34 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-jenkins-controller
+  purpose: Hardened Gentoo VM profile for a Jenkins controller that orchestrates Stage4 and Stage5 builds, container publication, and distcc-aware package pipelines.
+  profile_taxonomy:
+    stage: stage5
+    role_class: ci-controller
+    role_name: jenkins-controller
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-appserver.packages
+      - profile-package-lists/stage5-virtual-host-jenkins-controller.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - dev-util/jenkins-bin
+      - sys-devel/distcc
+      - dev-util/ccache
+    app_runtime_packages:
+      - dev-vcs/git
+      - net-misc/rsync
+      - net-misc/curl
+      - app-misc/jq
+  service_segments:
+    - ci-control
+    - builder-fabric
+  source_references:
+    - https://packages.gentoo.org/packages/dev-util/jenkins-bin
+    - https://packages.gentoo.org/packages/sys-devel/distcc

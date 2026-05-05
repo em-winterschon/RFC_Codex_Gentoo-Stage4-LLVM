@@ -26,6 +26,7 @@ QEMU_BOOT_STRICT="${QEMU_BOOT_STRICT:-1}"
 QEMU_BOOTDISK_ID="${QEMU_BOOTDISK_ID:-bootdisk}"
 QEMU_BOOTDISK_MODEL="${QEMU_BOOTDISK_MODEL:-virtio-blk-pci}"
 QEMU_BOOTDISK_BOOTINDEX="${QEMU_BOOTDISK_BOOTINDEX:-1}"
+QEMU_MEMORY_DRIVES_FILE="${QEMU_MEMORY_DRIVES_FILE:-}"
 QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
 QEMU_DAEMONIZE="${QEMU_DAEMONIZE:-1}"
 QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-none}"
@@ -76,6 +77,40 @@ fail() {
 print_cmd() {
   printf '%q ' "$@"
   printf '\n'
+}
+
+resolve_nonempty_file() {
+  local candidate
+
+  for candidate in "$@"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && -f "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+    if [[ -f "${candidate}" && -s "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+resolve_ovmf_paths() {
+  EFI_FIRM="$(
+    resolve_nonempty_file \
+      "${EFI_FIRM}" \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.fd \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.secboot.fd
+  )" || fail "No usable OVMF code image found; checked ${EFI_FIRM} and standard edk2 paths"
+
+  EFI_VARS_TEMPLATE="$(
+    resolve_nonempty_file \
+      "${EFI_VARS_TEMPLATE}" \
+      /usr/share/edk2/OvmfX64/OVMF_VARS.fd \
+      /usr/share/edk2/OvmfX64/OVMF_VARS.secboot.fd
+  )" || fail "No usable OVMF vars template found; checked ${EFI_VARS_TEMPLATE} and standard edk2 paths"
 }
 
 network_backend_name() {
@@ -225,6 +260,11 @@ validate_host_disks() {
   require_host_disk_ready "${RPOOL_DISK1}" 'RPOOL_DISK1'
 }
 
+validate_memory_drives_file() {
+  [[ -n "${QEMU_MEMORY_DRIVES_FILE}" ]] || return 0
+  [[ -f "${QEMU_MEMORY_DRIVES_FILE}" ]] || fail "QEMU_MEMORY_DRIVES_FILE is missing: ${QEMU_MEMORY_DRIVES_FILE}"
+}
+
 validate_boot_source() {
   case "$(boot_source_name)" in
   qcow | target-disks) ;;
@@ -243,6 +283,7 @@ validate_qcow_image() {
 }
 
 validate_efi_firmware() {
+  resolve_ovmf_paths
   [[ -f "${EFI_FIRM}" ]] || fail "EFI_FIRM is missing: ${EFI_FIRM}"
   [[ -f "${EFI_VARS_TEMPLATE}" ]] || fail "EFI_VARS_TEMPLATE is missing: ${EFI_VARS_TEMPLATE}"
 }
@@ -324,6 +365,48 @@ append_host_disk() {
   )
 }
 
+append_memory_drives() {
+  local index=0
+  local drive_id drive_path drive_format drive_serial drive_model drive_bootindex
+
+  [[ -n "${QEMU_MEMORY_DRIVES_FILE}" ]] || return 0
+
+  while IFS=$'\t' read -r drive_path drive_format drive_serial drive_model drive_bootindex; do
+    [[ -n "${drive_path}" ]] || continue
+    require_host_disk_ready "${drive_path}" "QEMU memory drive ${drive_serial:-memory-${index}}"
+    drive_id="memdrv${index}"
+    QEMU_CMD+=(-drive "if=none,id=${drive_id},file=${drive_path},format=${drive_format}")
+    if [[ -n "${drive_bootindex}" ]]; then
+      QEMU_CMD+=(-device "${drive_model},drive=${drive_id},serial=${drive_serial},bootindex=${drive_bootindex}")
+    else
+      QEMU_CMD+=(-device "${drive_model},drive=${drive_id},serial=${drive_serial}")
+    fi
+    index=$((index + 1))
+  done < <(
+    python3 - "${QEMU_MEMORY_DRIVES_FILE}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    payload = json.load(fh)
+
+drives = payload.get("drives", payload if isinstance(payload, list) else [])
+for drive in drives:
+    print(
+        "\t".join(
+            [
+                str(drive.get("path", "")),
+                str(drive.get("format", "qcow2")),
+                str(drive.get("serial", "")),
+                str(drive.get("device_model", "virtio-blk-pci")),
+                str(drive.get("bootindex", "")),
+            ]
+        )
+    )
+PY
+  )
+}
+
 append_boot_args() {
   if [[ "${QEMU_BOOT_STRICT}" == '1' ]]; then
     QEMU_CMD+=(-boot strict=on)
@@ -400,6 +483,7 @@ build_qemu_cmd() {
   append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
   append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
   append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
+  append_memory_drives
 
   QEMU_CMD+=(
     -netdev "${RESOLVED_QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
@@ -510,6 +594,7 @@ main() {
   validate_qcow_image
   validate_efi_firmware
   validate_host_disks
+  validate_memory_drives_file
   validate_net_backend
   validate_display_backend
   validate_serial_mode

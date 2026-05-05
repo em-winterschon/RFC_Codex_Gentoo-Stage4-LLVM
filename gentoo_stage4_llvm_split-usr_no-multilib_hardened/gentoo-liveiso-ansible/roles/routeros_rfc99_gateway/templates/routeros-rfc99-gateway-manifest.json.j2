@@ -1,0 +1,50 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "RouterOSRFC99GatewayManifest",
+  "metadata": {
+    "name": "{{ inventory_hostname }}",
+    "description": "Rendered RouterOS RFC99 CCR2004 gateway configuration intent."
+  },
+  "target": {
+    "identity": "{{ routeros_rfc99_gateway_identity }}",
+    "expectedModel": "{{ routeros_rfc99_gateway_expected_model }}",
+    "expectedBoardName": "{{ routeros_rfc99_gateway_expected_board_name }}",
+    "routerosArch": "{{ routeros_rfc99_gateway_routeros_arch }}"
+  },
+  "interfaces": {
+    "wanInterface": "{{ routeros_rfc99_gateway_wan_interface }}",
+    "lanBridge": "{{ routeros_rfc99_gateway_lan_bridge }}",
+    "lanUplinkInterface": "{{ routeros_rfc99_gateway_lan_uplink_interface }}",
+    "managementInterface": "{{ routeros_rfc99_gateway_management_interface }}",
+    "renames": {{ dict(routeros_rfc99_gateway_interface_renames | map(attribute='default_name') | zip(routeros_rfc99_gateway_interface_renames | map(attribute='name'))) | to_json }}
+  },
+  "wan": {
+    "mode": "{{ routeros_rfc99_gateway_wan_mode }}",
+    "cidr": "{{ routeros_rfc99_gateway_wan_cidr }}",
+    "gateway": "{{ routeros_rfc99_gateway_wan_gateway }}",
+    "natEnabled": {{ (routeros_rfc99_gateway_nat_enabled | bool) | to_json }}
+  },
+  "vlans": {{ routeros_rfc99_gateway_vlan_plan | to_json }},
+  "legacyBridgeAddresses": {{ routeros_rfc99_gateway_legacy_bridge_addresses | to_json }},
+  "management": {
+    "allowedCidrs": {{ routeros_rfc99_gateway_management_cidrs | to_json }},
+    "sshEnabled": {{ (routeros_rfc99_gateway_ssh_enabled | bool) | to_json }},
+    "httpsEnabled": {{ (routeros_rfc99_gateway_https_enabled | bool) | to_json }},
+    "apiEnabled": {{ (routeros_rfc99_gateway_api_enabled | bool) | to_json }},
+    "apiSslEnabled": {{ (routeros_rfc99_gateway_api_ssl_enabled | bool) | to_json }},
+    "certificateName": "{{ routeros_rfc99_gateway_certificate_name }}",
+    "certificateSource": "self-signed-until-internal-ca-is-wired"
+  },
+  "services": {
+    "syslogEnabled": {{ (routeros_rfc99_gateway_syslog_enabled | bool) | to_json }},
+    "syslogRemoteHost": "{{ routeros_rfc99_gateway_syslog_remote_host }}",
+    "snmpEnabled": {{ (routeros_rfc99_gateway_snmp_enabled | bool) | to_json }},
+    "wireguardEnabled": {{ (routeros_rfc99_gateway_wireguard_enabled | bool) | to_json }},
+    "zerotierScaffoldEnabled": {{ (routeros_rfc99_gateway_zerotier_scaffold_enabled | bool) | to_json }},
+    "ripEnabled": {{ (routeros_rfc99_gateway_rip_enabled | bool) | to_json }}
+  },
+  "apply": {
+    "enabled": {{ (routeros_rfc99_gateway_apply | bool) | to_json }},
+    "mode": "render-only"
+  }
+}

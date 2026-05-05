@@ -1,0 +1,2 @@
+# arguments for prometheus alertmanager
+command_args="--config.file=/etc/alertmanager/config.yml --storage.path=/var/lib/alertmanager --web.listen-address={{ resolved_alertmanager_telemetry.listen_address }}:{{ resolved_alertmanager_telemetry.listen_port }}{% if resolved_alertmanager_telemetry.external_url | length > 0 %} --web.external-url={{ resolved_alertmanager_telemetry.external_url }}{% endif %}{% for extra_arg in resolved_alertmanager_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

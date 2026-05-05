@@ -1,0 +1,10 @@
+---
+netboot_publish_root: /var/lib/netboot/path-b
+netboot_public_base_url: http://boot.example.net/path-b
+netboot_menu_timeout_ms: 5000
+netboot_default_role: installer
+netboot_enable_serial_console: true
+netboot_serial_console: console=ttyS0,115200
+netboot_local_console: console=tty0
+netboot_artifact_base_url: "{{ netboot_public_base_url }}/artifacts"
+netboot_host_map_extra: []

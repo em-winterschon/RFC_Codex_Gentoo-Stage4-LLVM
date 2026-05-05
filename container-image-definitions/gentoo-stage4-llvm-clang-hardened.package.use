@@ -1,0 +1,4 @@
+# Container rootfs builds are merged-usr. Keep the awk alternatives shim from
+# trying to materialize split-usr symlinks inside the image rootfs.
+app-alternatives/awk -split-usr
+llvm-runtimes/clang-runtime -openmp

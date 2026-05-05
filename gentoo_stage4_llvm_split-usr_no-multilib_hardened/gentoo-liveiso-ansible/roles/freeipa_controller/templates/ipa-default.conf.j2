@@ -1,0 +1,6 @@
+[global]
+realm = {{ resolved_freeipa_controller.realm }}
+domain = {{ resolved_freeipa_controller.domain }}
+server = {{ resolved_freeipa_controller.server_hostname }}
+xmlrpc_uri = https://{{ resolved_freeipa_controller.server_hostname }}/ipa/xml
+enable_ra = {{ resolved_freeipa_controller.enable_ca | bool | ternary('True', 'False') }}
