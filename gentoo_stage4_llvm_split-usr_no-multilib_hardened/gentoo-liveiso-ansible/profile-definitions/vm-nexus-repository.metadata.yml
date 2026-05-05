@@ -1,0 +1,33 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-nexus-repository
+  purpose: Stage5 virtual-host profile for Sonatype Nexus Repository OSS as an infrastructure repository proxy and package-cache control point.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: nexus-repository
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-nexus-repository.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-arch/tar
+      - app-arch/gzip
+      - net-misc/curl
+      - www-servers/nginx
+      - app-admin/rsyslog
+    app_version_lock_id: sonatype-nexus-repository-oss
+    upstream_app_version: 3.90.1-01
+    bundled_runtime: Temurin JDK 21.0.9+10
+    installer_sha256_linux_x86_64: 6f3240f34bb46b99d93b2c512333651ea227b4c65248c8154ae275933c320556
+    installer_sha256_linux_aarch64: e8aa707821fdf09838b1db5826b21753d926c1f9c692012fe061fba544241ae6
+  deployment_notes:
+    - Nexus Repository OSS is staged from the locally downloaded vendor tarball under /tmp/Nexus-Repo-OSS.
+    - Proxy repository creation through the Nexus API is deferred until admin credentials and TLS are vaulted.
+    - Persistent data should live on a large VM data disk mounted under /var/lib/nexus before production use.

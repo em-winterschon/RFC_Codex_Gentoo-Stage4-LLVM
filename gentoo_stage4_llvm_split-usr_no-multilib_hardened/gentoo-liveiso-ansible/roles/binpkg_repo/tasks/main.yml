@@ -1,0 +1,59 @@
+---
+- name: Resolve binpkg repository settings
+  ansible.builtin.set_fact:
+    binpkg_repo_enabled: "{{ resolved_profile_binpkg_repo.enabled | default(binpkg_repo_default_enabled) | bool }}"
+    resolved_binpkg_repo:
+      repository_root: "{{ resolved_profile_binpkg_repo.repository_root | default(binpkg_repo_default_repository_root) }}"
+      repo_id: "{{ resolved_profile_binpkg_repo.repo_id | default(binpkg_repo_default_repo_id) }}"
+      listen_address: "{{ resolved_profile_binpkg_repo.listen_address | default(binpkg_repo_default_listen_address) }}"
+      listen_port: "{{ resolved_profile_binpkg_repo.listen_port | default(binpkg_repo_default_listen_port) }}"
+      server_name: "{{ resolved_profile_binpkg_repo.server_name | default(binpkg_repo_default_server_name) }}"
+      autoindex: "{{ resolved_profile_binpkg_repo.autoindex | default(binpkg_repo_default_autoindex) | bool }}"
+      runlevel: "{{ resolved_profile_binpkg_repo.runlevel | default(binpkg_repo_default_runlevel) }}"
+
+- name: Ensure binpkg repository directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ binpkg_repo_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_binpkg_repo.repository_root }}"
+    - "{{ resolved_binpkg_repo.repository_root }}/{{ resolved_binpkg_repo.repo_id }}"
+    - /etc/nginx/conf.d
+    - /var/log/nginx
+    - /usr/sbin
+  loop_control:
+    loop_var: binpkg_repo_dir
+  when: binpkg_repo_enabled
+
+- name: Install binpkg index helper
+  ansible.builtin.template:
+    src: stage5-binpkg-index.sh.j2
+    dest: "{{ install_target_root }}/usr/sbin/stage5-binpkg-index"
+    mode: '0755'
+  when: binpkg_repo_enabled
+
+- name: Render nginx binpkg repository site
+  ansible.builtin.template:
+    src: binpkg-repo.nginx.conf.j2
+    dest: "{{ install_target_root }}/etc/nginx/conf.d/stage5-binpkg-repo.conf"
+    mode: '0644'
+  when: binpkg_repo_enabled
+
+- name: Ensure nginx loads managed conf.d sites
+  ansible.builtin.lineinfile:
+    path: "{{ install_target_root }}/etc/nginx/nginx.conf"
+    insertafter: '^\s*include\s+/etc/nginx/mime\.types\.nginx;'
+    line: "\tinclude /etc/nginx/conf.d/*.conf;"
+  when: binpkg_repo_enabled
+
+- name: Enable nginx for binpkg repository
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + ['nginx']
+        ) | unique
+      }}
+  when: binpkg_repo_enabled

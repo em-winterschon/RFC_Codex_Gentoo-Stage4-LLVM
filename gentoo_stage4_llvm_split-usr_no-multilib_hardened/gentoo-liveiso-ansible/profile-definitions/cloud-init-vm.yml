@@ -1,0 +1,12 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/cloud-init-base.packages
+  cloud_init:
+    enabled: true
+    disable_root: false
+    ssh_pwauth: false
+    datasource_list:
+      - NoCloud
+      - ConfigDrive
+    seedfrom: file:///var/lib/cloud/seed/nocloud-net/

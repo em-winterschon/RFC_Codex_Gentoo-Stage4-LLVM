@@ -1,0 +1,36 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-identity-controller
+  purpose: Hardened Gentoo VM profile for the primary FreeIPA plus FreeRADIUS controller that anchors Stage5 RBAC and AAA policy.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: identity-controller
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-virtual-host-identity-controller.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - vm-guest-application-server
+      - cloud-init-vm
+      - aaa-domain-client
+  package_pins:
+    tracked_atoms:
+      - net-nds/389-ds-base
+      - net-dialup/freeradius
+      - sys-auth/sssd
+      - app-crypt/mit-krb5
+    app_runtime_packages:
+      - net-dns/bind-tools
+      - net-nds/openldap
+  vendor_package_gap:
+    missing_in_current_tree:
+      - freeipa server package
+    workaround: Keep FreeIPA server bootstrap overlay-managed while native directory, Kerberos, SSSD, and FreeRADIUS primitives remain under Gentoo package control.
+  source_references:
+    - https://packages.gentoo.org/packages/net-nds/389-ds-base
+    - https://packages.gentoo.org/packages/net-dialup/freeradius
+    - https://packages.gentoo.org/packages/sys-auth/sssd

@@ -139,6 +139,33 @@ qemu_device_help_output() {
   "${QEMU_BIN}" -device help 2>&1 || true
 }
 
+resolve_nonempty_file() {
+  local candidate
+
+  for candidate in "$@"; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && -f "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+    if [[ -f "${candidate}" && -s "${candidate}" ]]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+resolve_ovmf_path() {
+  EFI_FIRM="$(
+    resolve_nonempty_file \
+      "${EFI_FIRM}" \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.fd \
+      /usr/share/edk2/OvmfX64/OVMF_CODE.secboot.fd
+  )" || fail "No usable OVMF code image found; checked ${EFI_FIRM} and standard edk2 paths"
+}
+
 device_path() {
   printf '%s/bus/pci/devices/%s' "${SYSFS_ROOT}" "$(canonicalize_pci_bdf "$1")"
 }
@@ -241,6 +268,11 @@ validate_display_backend() {
     fail "Unsupported QEMU_DISPLAY_MODE: ${mode}"
     ;;
   esac
+}
+
+validate_efi_firmware() {
+  resolve_ovmf_path
+  [[ -f "${EFI_FIRM}" ]] || fail "EFI_FIRM is missing: ${EFI_FIRM}"
 }
 
 validate_video_device() {
@@ -423,6 +455,7 @@ run_qemu_cmd() {
 
 main() {
   ensure_base_dir
+  validate_efi_firmware
   prepare_iso
   validate_host_disks
   validate_net_backend

@@ -1,0 +1,356 @@
+---
+inventory_intake_version: 1
+
+datacenters:
+  - name: local-rfc1918-lab
+    slug: local-rfc1918-lab
+    timezone: America/Los_Angeles
+    facility: local-lab
+    management_prefixes:
+      - 172.16.99.0/24
+    access_paths:
+      - local-management-lan
+      - serial-console
+      - future-zerotier-overlay
+    owners:
+      - codex-ops
+
+prefixes:
+  - prefix: 172.16.99.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: management
+    gateway: 172.16.99.1
+    vlan:
+      id: 1
+      name: management-compat
+  - prefix: 172.16.98.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: proxmox-sdn-lab
+    vlan:
+      id: 98
+      name: proxmox-sdn-lab
+  - prefix: 10.9.8.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: pathb-lab-services
+    vlan:
+      id: 1098
+      name: pathb-lab-services
+  - prefix: 10.77.0.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: container-management
+    vlan:
+      id: 1077
+      name: container-management
+  - prefix: 10.77.1.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: container-applications
+    vlan:
+      id: 1078
+      name: container-applications
+
+devices:
+  - name: hasslehoff
+    site: local-rfc1918-lab
+    role: proxmox-hypervisor
+    manufacturer: Generic
+    model: Proxmox-8.4-host
+    status: active
+    management_ip: 172.16.99.9
+    interfaces:
+      - name: vmbr0
+        type: bridge
+        purpose: management
+      - name: bond0
+        type: lag
+        purpose: css326-lacp
+      - name: eno1
+        type: 1gbase-t
+        lag: bond0
+      - name: eno2
+        type: 1gbase-t
+        lag: bond0
+    notes:
+      - Management bridge rides bond0 over CSS326 ge5/ge6.
+      - ConnectX-5 ports are reserved for RoCE-v2 and must not join vmbr0.
+  - name: sw_mgmt_css326
+    site: local-rfc1918-lab
+    role: access-switch
+    manufacturer: MikroTik
+    model: CSS326-24G-2S+
+    status: active
+    management_ip: 172.16.99.6
+    management_protocol: swos-http
+    serial_number: HHD0AERY8JN
+    software_target: SwOS 2.18.1751448030
+    interfaces:
+      - name: ge4
+        purpose: ccr2004-management
+      - name: ge5
+        lag: hasslehoff-bond0
+        status: active
+      - name: ge6
+        lag: hasslehoff-bond0
+        status: active
+      - name: ge24
+        purpose: crs354-management
+        status: active
+      - name: sfp1
+        purpose: crs309-spine-target
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: Intel
+        optic_sku: FTLX8571D3BCV-IT
+      - name: sfp2
+        purpose: legacy-crs354-uplink
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: Intel
+        optic_sku: FTLX8571D3BCV-IT
+    notes:
+      - Live SwOS snapshot archived outside the repo under /root/operator-private/swos/css326.
+      - SwOS 2.18 has no observed syslog destination support; use SNMP polling and HTTP backup snapshots.
+      - SNMP is enabled with the vaulted/read-only community tracked in operator-private state.
+      - ge5 and ge6 are active LACP members for Hasslehoff bond0.
+  - name: sw_mgmt_mkcrs354
+    site: local-rfc1918-lab
+    role: distribution-switch
+    manufacturer: MikroTik
+    model: CRS354-48G-4S+2Q+
+    status: active
+    management_ip: 172.16.99.7
+    management_interface: ether49
+    serial_number: HJV0AWTYBCD
+    software_target: RouterOS 7.22.2
+    serial_console: /dev/ttyUSB1
+    interfaces:
+      - name: ether49
+        type: 100base-tx
+        purpose: management
+      - name: sfp-sfpplus1
+        type: 10gbase-x-sfpp
+        purpose: crs309-lacp-member
+        lag: bond-crs309
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: FS.com
+        optic_sku: SFP-10GSR-85
+        status: active
+      - name: sfp-sfpplus2
+        type: 10gbase-x-sfpp
+        purpose: crs309-lacp-member
+        lag: bond-crs309
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: FS.com
+        optic_sku: SFP-10GSR-85
+        status: active
+      - name: sfp-sfpplus3
+        type: 10gbase-x-sfpp
+        purpose: qnap-archive-lacp-member
+        lag: bond-qnap
+        media: 10G-DAC
+      - name: sfp-sfpplus4
+        type: 10gbase-x-sfpp
+        purpose: qnap-archive-lacp-member
+        lag: bond-qnap
+        media: 10G-DAC
+      - name: qsfpplus1
+        type: 40gbase-x-qsfpp
+        purpose: future-roce-v2-rdma
+        status: disconnected
+      - name: qsfpplus2
+        type: 40gbase-x-qsfpp
+        purpose: future-roce-v2-rdma
+        status: disconnected
+    notes:
+      - Live snapshot archived outside the repo at /root/operator-private/routeros/crs354/20260504T194533Z.
+      - Stale sfp-sfpplus1 OPNsense address 172.16.254.7/24 is disabled after CRS309 LACP cutover.
+      - CRS309 LACP validated active on 2026-05-04 with both members at 10Gbps.
+      - Unless explicitly noted otherwise, 10G SFP+ optics are 10G-SR over MMF; no SMF optics are in use.
+  - name: sw_spine_crs309_rfc99
+    site: local-rfc1918-lab
+    role: spine-aggregation-switch
+    manufacturer: MikroTik
+    model: CRS309-1G-8S+
+    status: active
+    management_ip: 172.16.99.8
+    management_interface: br-spine
+    software_target: RouterOS 7.22.2
+    serial_console: /dev/ttyUSB0
+    interfaces:
+      - name: br-spine
+        type: bridge
+        purpose: management
+      - name: sfp-sfpplus1
+        type: 10gbase-x-sfpp
+        purpose: ccr2004-gateway-uplink
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: FS.com
+        optic_sku: SFP-10GSR-85
+        status: active
+      - name: sfp-sfpplus2
+        type: 10gbase-x-sfpp
+        purpose: crs354-lacp-member
+        lag: bond-crs354
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: FS.com
+        optic_sku: SFP-10GSR-85
+        status: active
+      - name: sfp-sfpplus3
+        type: 10gbase-x-sfpp
+        purpose: crs354-lacp-member
+        lag: bond-crs354
+        media: 10G-SR
+        fiber: MMF
+        optic_vendor: FS.com
+        optic_sku: SFP-10GSR-85
+        status: active
+      - name: sfp-sfpplus4
+        type: 10gbase-x-sfpp
+        purpose: future-ccr-pci-dac-member
+        lag: bond-hasslehoff-ccr25g
+        media: 10G-DAC
+      - name: sfp-sfpplus5
+        type: 10gbase-x-sfpp
+        purpose: future-ccr-pci-dac-member
+        lag: bond-hasslehoff-ccr25g
+        media: 10G-DAC
+      - name: sfp-sfpplus8
+        type: 10gbase-x-sfpp
+        purpose: future-css326-aggregation
+        media: 10G-SR
+        fiber: MMF
+    notes:
+      - Factory reset and bootstrapped as RouterOS spine on 2026-05-04.
+      - Upgraded to RouterOS package and RouterBOARD firmware 7.22.2 on 2026-05-04.
+      - Optional container and zerotier packages were removed before upgrade to free CRS309 flash space.
+      - CCR2004 link validated at 10Gbps after replacing marginal Intel SR optics with FS.com SFP-10GSR-85 optics.
+      - CRS354 LACP validated active on 2026-05-04 with both members at 10Gbps.
+  - name: qnap_archive_ts435xeu
+    site: local-rfc1918-lab
+    role: archive-storage
+    manufacturer: QNAP
+    model: TS435XEU
+    status: active
+    interfaces:
+      - name: sfpplus1
+        type: 10gbase-x-sfpp
+        lag: bond0
+        media: 10G-DAC
+      - name: sfpplus2
+        type: 10gbase-x-sfpp
+        lag: bond0
+        media: 10G-DAC
+    notes:
+      - Connected to CRS354 sfp-sfpplus3 and sfp-sfpplus4 as bond-qnap.
+  - name: rtr_mgmt_ccr2004
+    site: local-rfc1918-lab
+    role: routeros-gateway-candidate
+    manufacturer: MikroTik
+    model: CCR2004-1G-2XS-PCIe
+    status: planned
+    management_ip: 172.16.99.120
+  - name: svc_netbox_stage4
+    site: local-rfc1918-lab
+    role: ipam-dcim
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: active
+    management_ip: 172.16.99.62
+    hypervisor: hasslehoff
+    vmid: 1062
+  - name: svc_identity_ipa01
+    site: local-rfc1918-lab
+    role: identity-controller
+    manufacturer: Rocky
+    model: rocky-freeipa-vm
+    status: active
+    management_ip: 172.16.99.63
+    fqdn: ipa01.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1063
+  - name: svc_container_services_safe_move_01
+    site: local-rfc1918-lab
+    role: container-services-staging
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.89
+    fqdn: svc-container-services-safe-move-01.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1089
+    notes:
+      - Temporary Hasslehoff staging VM for safe container-services migration.
+      - Do not assign the production Path B service IP until cutover validation passes.
+
+clusters:
+  - name: hasslehoff-proxmox
+    site: local-rfc1918-lab
+    role: proxmox
+    endpoint: https://172.16.99.9:8006
+    members:
+      - hasslehoff
+    storage_pools:
+      - local-lvm
+      - local
+    bridges:
+      - vmbr0
+  - name: local-stage4-services
+    site: local-rfc1918-lab
+    role: stage4-service-vms
+    endpoint: https://172.16.99.9:8006
+    members:
+      - svc_netbox_stage4
+      - svc_identity_ipa01
+      - svc_container_services_safe_move_01
+
+service_vips:
+  - name: netbox-http
+    site: local-rfc1918-lab
+    address: 172.16.99.62
+    owners:
+      - ipam-dcim
+    listeners:
+      - protocol: http
+        port: 80
+  - name: identity-ldap-radius
+    site: local-rfc1918-lab
+    address: 172.16.99.63
+    owners:
+      - identity-aaa
+    listeners:
+      - protocol: tcp
+        port: 389
+      - protocol: tcp
+        port: 636
+      - protocol: udp
+        port: 1812
+      - protocol: udp
+        port: 1813
+  - name: rsyslog-ingest-vip
+    site: local-rfc1918-lab
+    address: 10.9.8.20
+    owners:
+      - observability
+    listeners:
+      - protocol: tcp
+        port: 514
+      - protocol: udp
+        port: 514
+  - name: elasticsearch-vip
+    site: local-rfc1918-lab
+    address: 10.9.8.21
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 9200
+      - protocol: tcp
+        port: 9300

@@ -1,0 +1,49 @@
+---
+- name: Resolve Elastic APM container application profile
+  ansible.builtin.set_fact:
+    container_elastic_apm_profile: "{{ resolved_profile_container_app_profiles.elastic_apm | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure Elastic APM configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_elastic_apm_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_elastic_apm_profile.enabled | default(false) | bool
+
+- name: Render Elastic APM configuration
+  ansible.builtin.template:
+    src: apm-server.yml.j2
+    dest: "{{ install_target_root }}{{ container_elastic_apm_config_dir }}/apm-server.yml"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_elastic_apm_profile.enabled | default(false) | bool
+
+- name: Register Elastic APM runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'elastic-apm',
+              'description': 'Elastic APM ingestion service',
+              'image': container_elastic_apm_profile.image,
+              'network': container_elastic_apm_profile.network | default('apps'),
+              'ip_address': container_elastic_apm_profile.ip_address | default(''),
+              'published_ports': container_elastic_apm_profile.published_ports | default(['8200:8200/tcp']),
+              'cap_add': container_elastic_apm_profile.cap_add | default([]),
+              'environment': container_elastic_apm_profile.env | default({}),
+              'volumes': [
+                container_elastic_apm_config_dir + '/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro'
+              ],
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_elastic_apm_profile.enabled | default(false) | bool

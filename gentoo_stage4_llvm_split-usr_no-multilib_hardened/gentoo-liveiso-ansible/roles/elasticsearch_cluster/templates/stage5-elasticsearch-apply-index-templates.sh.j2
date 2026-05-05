@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+template_dir="${ELASTICSEARCH_INDEX_TEMPLATE_DIR:-/etc/elasticsearch/index-templates.d}"
+endpoint_host="{{ '127.0.0.1' if resolved_elasticsearch_cluster.network_host in ['0.0.0.0', '::'] else resolved_elasticsearch_cluster.network_host }}"
+endpoint="${ELASTICSEARCH_URL:-http://${endpoint_host}:{{ resolved_elasticsearch_cluster.http_port }}}"
+
+if [ ! -d "${template_dir}" ]; then
+  echo "missing Elasticsearch index-template directory: ${template_dir}" >&2
+  exit 1
+fi
+
+for template in "${template_dir}"/*.json; do
+  [ -f "${template}" ] || continue
+  name="$(basename "${template}" .json)"
+  curl -fsS \
+    -H 'Content-Type: application/json' \
+    -X PUT "${endpoint}/_index_template/${name}" \
+    --data-binary "@${template}"
+  printf '\n'
+done

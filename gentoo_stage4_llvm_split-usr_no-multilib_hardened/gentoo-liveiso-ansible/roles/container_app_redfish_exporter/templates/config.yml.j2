@@ -1,0 +1,5 @@
+listen_port: {{ container_redfish_exporter_profile.listen_port | default(9220) }}
+username: {{ (container_redfish_exporter_profile.username | default('monitor')) | to_json }}
+password: {{ (container_redfish_exporter_profile.password | default('change-me')) | to_json }}
+timeout: {{ container_redfish_exporter_profile.timeout | default(40) }}
+job: {{ (container_redfish_exporter_profile.job | default('redfish-stage5')) | to_json }}

@@ -8,6 +8,25 @@
     - rc-update add dbus default
   when: install_networkmanager | bool
 
+- name: Ensure NetworkManager system connection directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/NetworkManager/system-connections"
+    state: directory
+    mode: '0700'
+  when:
+    - install_networkmanager | bool
+    - networkmanager_connections | default([]) | length > 0
+
+- name: Render managed NetworkManager connections
+  ansible.builtin.template:
+    src: networkmanager-connection.nmconnection.j2
+    dest: "{{ install_target_root }}/etc/NetworkManager/system-connections/{{ item.name }}.nmconnection"
+    mode: '0600'
+  loop: "{{ networkmanager_connections | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: install_networkmanager | bool
+
 - name: Enable sshd on OpenRC
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh

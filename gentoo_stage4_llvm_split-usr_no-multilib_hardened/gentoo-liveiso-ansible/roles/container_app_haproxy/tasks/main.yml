@@ -1,0 +1,54 @@
+---
+- name: Resolve haproxy container application profile
+  ansible.builtin.set_fact:
+    container_haproxy_profile: "{{ resolved_profile_container_app_profiles.haproxy | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+    resolved_haproxy_service_types_local: "{{ resolved_profile_haproxy_service_types | default([]) }}"
+
+- name: Ensure haproxy configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_haproxy_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool
+
+- name: Render haproxy configuration
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: "{{ install_target_root }}{{ container_haproxy_config_dir }}/haproxy.cfg"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool
+
+- name: Register haproxy runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'haproxy',
+              'description': 'haproxy load balancer and reverse proxy',
+              'image': container_haproxy_profile.image,
+              'pull_policy': container_haproxy_profile.pull_policy | default('missing'),
+              'network': container_haproxy_profile.network | default('apps'),
+              'ip_address': container_haproxy_profile.ip_address | default(''),
+              'published_ports': container_haproxy_profile.published_ports | default(['80:80/tcp', '443:443/tcp']),
+              'pre_commands': container_haproxy_profile.pre_commands | default([]),
+              'cap_add': container_haproxy_profile.cap_add | default([]),
+              'environment': container_haproxy_profile.env | default({}),
+              'tmpfs': container_haproxy_profile.tmpfs | default(['/tmp:rw,noexec,nosuid,size=64m', '/run:rw,noexec,nosuid,size=16m']),
+              'volumes': [
+                container_haproxy_config_dir + '/haproxy.cfg:' + (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')) + ':ro'
+              ],
+              'command': container_haproxy_profile.command | default(['/usr/sbin/haproxy', '-f', (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')), '-db']),
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool

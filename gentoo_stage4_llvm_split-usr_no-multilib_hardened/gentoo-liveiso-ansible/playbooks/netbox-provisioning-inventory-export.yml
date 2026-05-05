@@ -1,0 +1,48 @@
+---
+- name: Export NetBox provisioning inventory and IPAM maps
+  hosts: localhost
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+    netbox_provisioning_export_script: "{{ repo_root }}/scripts/export-netbox-provisioning-inventory.py"
+    netbox_provisioning_export_dir: "/tmp/netbox-provisioning-inventory"
+    netbox_provisioning_inventory_output: "{{ netbox_provisioning_export_dir }}/hosts.yml"
+    netbox_provisioning_ipam_output: "{{ netbox_provisioning_export_dir }}/ipam.json"
+    netbox_provisioning_service_targets_output: "{{ netbox_provisioning_export_dir }}/service-targets.json"
+    netbox_provisioning_api_url: "{{ netbox_api_url | default('http://172.16.99.62') }}"
+    netbox_provisioning_token_file: "{{ netbox_seed_token_file | default('/root/operator-private/netbox/svc-netbox-stage4-admin-token') }}"
+    netbox_provisioning_tag: "{{ netbox_provisioning_filter_tag | default('codex-managed') }}"
+  tasks:
+    - name: Ensure NetBox provisioning export directory exists
+      ansible.builtin.file:
+        path: "{{ netbox_provisioning_export_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Export provisioning inventory from NetBox
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ netbox_provisioning_export_script }}"
+          - --netbox-api-url
+          - "{{ netbox_provisioning_api_url }}"
+          - --netbox-token-file
+          - "{{ netbox_provisioning_token_file }}"
+          - --tag
+          - "{{ netbox_provisioning_tag }}"
+          - --inventory-output
+          - "{{ netbox_provisioning_inventory_output }}"
+          - --ipam-output
+          - "{{ netbox_provisioning_ipam_output }}"
+          - --service-targets-output
+          - "{{ netbox_provisioning_service_targets_output }}"
+      changed_when: false
+      register: netbox_provisioning_export
+
+    - name: Report NetBox provisioning export summary
+      ansible.builtin.debug:
+        msg: >-
+          NetBox provisioning export wrote {{ netbox_provisioning_inventory_output }},
+          {{ netbox_provisioning_ipam_output }}, and
+          {{ netbox_provisioning_service_targets_output }};
+          summary={{ (netbox_provisioning_export.stdout | from_json).summary }}.

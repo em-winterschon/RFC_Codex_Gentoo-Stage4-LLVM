@@ -1,0 +1,128 @@
+---
+storage_confirm_destroy: true
+storage_allow_mdadm_under_zfs: false
+
+liveiso_work_dir: /root/gentoo-liveiso-work
+install_target_root: /mnt/gentoo
+install_arch: amd64
+install_boot_mode: uefi
+preflight_require_runtime_uefi: false
+
+install_hostname: binpkg-repository
+install_timezone: America/Los_Angeles
+install_keymap: us
+install_locale: en_US.UTF-8 UTF-8
+install_root_password_hash: ""
+
+storage_layout: single-drive
+storage_devices:
+  - /dev/disk/by-id/ata-QEMU_HARDDISK_stage4-root
+zfs_boot_pool_devices: []
+zfs_root_pool_devices: []
+esp_size_mib: 1024
+swap_size_gib: 8
+zpool_name: rpool
+zpool_compatibility: 'off'
+zpool_altroot: "{{ install_target_root }}"
+
+stage3_flavor: llvm-openrc
+stage3_base_url: https://distfiles.gentoo.org/releases/amd64/autobuilds
+stage3_verify_checksum: true
+portage_sync_command: emerge-webrsync
+
+profile_overlay_name: local-install-profile
+profile_name: install-target
+profile_parents:
+  - gentoo:default/linux/amd64/23.0/llvm
+  - gentoo:default/linux/amd64/23.0/no-multilib/hardened
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/netbox-managed-inventory.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-binpkg-repository.yml"
+
+portage_cpu_profile: x86_64_v2_generic
+gpu_stack: none
+kernel_strategy: gentoo-kernel-bin
+kernel_package_map:
+  gentoo-kernel-bin: sys-kernel/gentoo-kernel-bin
+  gentoo-kernel: sys-kernel/gentoo-kernel
+  gentoo-sources: sys-kernel/gentoo-sources
+
+boot_strategy: zfsbootmenu
+boot_create_efi_nvram_entry: false
+zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
+zfsbootmenu_boot_label: ZFSBootMenu
+zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
+zfsbootmenu_timeout: 0
+install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
+
+install_openssh: true
+install_networkmanager: true
+networkmanager_connections:
+  - name: pathb-static
+    type: ethernet
+    interface_name: enp0s3
+    addresses:
+      - 10.9.8.90/24
+    gateway4: 10.9.8.108
+    dns4:
+      - 1.1.1.1
+      - 8.8.8.8
+root_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@livecd
+finalize_unmount_target: false
+finalize_reboot_host: false
+
+cpu_flags_x86_override: []
+portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
+portage_features:
+  - buildpkg
+  - parallel-install
+  - merge-sync
+portage_buildpkg_enabled: true
+portage_usepkg_enabled: false
+portage_getbinpkg_enabled: false
+portage_pkgdir: /srv/stage5-binpkgs/stage4-hardened-llvm-merged_usr__stage5-service_container-gentoo_stage4_llvm_clang_hardened__amd64__x86_64_v2_generic
+portage_binpkg_format: tar
+portage_binpkg_compress: zstd
+portage_binpkg_compress_flags: "-2"
+portage_binhost: ""
+portage_binrepos: []
+portage_emerge_default_opts_extra:
+  - --autounmask=y
+  - --autounmask-backtrack=y
+  - --autounmask-continue=y
+  - --autounmask-unrestricted-atoms=y
+  - --autounmask-use=y
+  - --autounmask-write=y
+portage_global_use:
+  - bindist
+  - bzip2
+  - cli
+  - ipv6
+  - lld
+  - zstd
+portage_extra_use: []
+portage_makeopts_jobs: "{{ ansible_processor_vcpus | default(32) }}"
+portage_emerge_jobs: 16
+portage_load_average: 56
+portage_gpg_key_refresh: false
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-binpkg-repository
+  local_hostname: binpkg-repository
+  disable_root: false
+  ssh_pwauth: false
+
+profile_rsyslog:
+  forward_enabled: true
+  forward_protocol: tcp
+  forward_hostname: rsyslog-vip.example.internal
+  forward_port: 6514

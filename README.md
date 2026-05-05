@@ -15,10 +15,14 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
   versioned source for the GitHub wiki; publish separately after PR approval
 - [docs/workflows/codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
   persistent ntfy approval-watcher install and validation flow
+- [docs/workflows/stage4-netboot-path-b.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-netboot-path-b.json)
+  Path B iPXE asset publication and operator handoff flow
+- [docs/workflows/stage4-routeros-pathb-deployment.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-routeros-pathb-deployment.json)
+  RouterOS CHR Path B render/apply workflow for the isolated iPXE lab
 - [docs/workflows/stage4-vm-install-and-boot.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json)
-  Stage4 VM build, install, and target-disk boot validation flow
+  Path A LiveISO/QEMU Stage4 build, install, and target-disk boot validation flow
 - [docs/workflows/stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)
-  staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
+  Path A staged destination-host Ansible execution flow with a remote-viewable control-flow pipeline
 
 Wiki publication policy:
 
@@ -134,6 +138,34 @@ PR and release validation:
 - `.github/workflows/notify.yml` sends repository event notifications to ntfy when configured
 - the shell validation sequence currently covers shell syntax checks for committed `.sh` files, generator/output parity for the Ansible Python environment helper, and unit tests for `gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
 - Python linting and formatting are enforced through `ruff` and `black`
+
+## Container Publishing
+
+Container rootfs and image build workflow:
+
+- `docs/CONTAINER-BUILDING.md`
+
+The first supported image publication target is `GHCR`.
+
+Use:
+
+```bash
+bash scripts/publish-container-ghcr.sh \
+  --local-image localhost/gentoo-stage4-base:latest \
+  --image-name gentoo-stage4-base \
+  --tag git-$(git rev-parse --short HEAD) \
+  --namespace em-winterschon \
+  --source-url https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
+  --description "Gentoo Stage4 LLVM/Clang hardened base container"
+```
+
+Authentication:
+
+- `GHCR_TOKEN` in the environment, or
+- `--token-file /path/to/token`
+
+Use immutable tags such as `git-<sha>` for validated builds and reserve `latest`
+for explicitly promoted images only.
 
 ## Stage4 control flow
 

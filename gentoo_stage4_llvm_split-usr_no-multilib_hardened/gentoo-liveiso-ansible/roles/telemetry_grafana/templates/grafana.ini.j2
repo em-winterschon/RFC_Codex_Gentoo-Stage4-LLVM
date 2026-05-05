@@ -1,0 +1,13 @@
+[server]
+http_addr = {{ resolved_grafana_telemetry.http_addr }}
+http_port = {{ resolved_grafana_telemetry.http_port }}
+{% if resolved_grafana_telemetry.domain | length > 0 %}
+domain = {{ resolved_grafana_telemetry.domain }}
+{% endif %}
+{% if resolved_grafana_telemetry.root_url | length > 0 %}
+root_url = {{ resolved_grafana_telemetry.root_url }}
+{% endif %}
+
+[security]
+admin_user = {{ resolved_grafana_telemetry.admin_user }}
+admin_password = {{ resolved_grafana_telemetry.admin_password }}

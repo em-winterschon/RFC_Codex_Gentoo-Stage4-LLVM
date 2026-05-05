@@ -1,0 +1,141 @@
+---
+local_inventory_observed:
+  captured_at: "2026-05-02T02:03:00Z"
+  source: ansible-ssh
+  private_snapshot_path: /root/operator-private/local-network/hasslehoff-20260501-190301
+  fqdn: cls0-rfc99-hasslehoff-099009.rfc1918.host
+  os_family: Debian
+  os_version: "12.12"
+  kernel: 6.8.12-14-pve
+  cpu:
+    vcpus: 8
+    cores: 4
+  memory_mb: 64121
+  virtualization:
+    type: kvm
+    role: host
+  interfaces:
+    management_bond:
+      name: bond0
+      state: up
+      members:
+        - eno1
+        - eno2
+      switch: sw_mgmt_css326
+      switch_ports:
+        - ge5
+        - ge6
+    management_bridge:
+      name: vmbr0
+      state: up
+      address_family: management-compat
+    proxmox_sdn:
+      name: sdn0vn0
+      state: up
+      address_family: proxmox-sdn-lab
+    ccr2004_pcie_ports:
+      - enp1s0f0
+      - enp1s0f1
+      - enp1s0f2
+      - enp1s0f3
+    roce_v2_reserved_ports:
+      - enp2s0f0np0
+      - enp2s0f1np1
+
+proxmox_observed_vms:
+  - vmid: 1001
+    name: gw-rfc99-vyos-routeprime
+    status: stopped
+    maxcpu: 2
+    memory_mb: 2048
+    disk_gb: 0
+    tags:
+      - network-appliance
+      - router
+      - vyos
+  - vmid: 1011
+    name: ctbsd-rfc99-jailerprime-099099
+    status: stopped
+    maxcpu: 4
+    memory_mb: 16384
+    disk_gb: 128
+    service_notes:
+      - Retired FreeBSD jail host path for NetBox.
+      - User directed replacement with a Stage4 Gentoo VM on Hasslehoff.
+    tags:
+      - freebsd
+      - jail-host
+      - oci-bsd
+  - vmid: 1012
+    name: eph-sun99-sourcebot-099229
+    status: stopped
+    maxcpu: 4
+    memory_mb: 16384
+    disk_gb: 64
+    tags:
+      - linux
+      - rocky
+      - sourcebot
+      - ephemeral
+  - vmid: 1062
+    name: svc-netbox-stage4
+    status: running
+    maxcpu: 4
+    memory_mb: 16384
+    disk_gb: 80
+    service_notes:
+      - Stage4 Gentoo replacement NetBox VM.
+      - Imported from populated Stage4 QCOW, stamped with static management IP 172.16.99.62/24.
+      - Root filesystem expanded to 80 GiB after the initial 24 GiB image caused Portage scratch-space pressure.
+      - Native NetBox service dependency bootstrap is tracked through /var/log/codex-netbox-bootstrap-deps.log on the guest.
+    tags:
+      - gentoo
+      - stage4
+      - netbox
+  - vmid: 1063
+    name: svc-identity-ipa01
+    status: running
+    maxcpu: 4
+    memory_mb: 12288
+    disk_gb: 80
+    service_notes:
+      - Rocky 9 FreeIPA controller candidate for centralized RBAC and AAA.
+      - Static management IP 172.16.99.63/24 on vmbr0.
+      - FreeIPA, SSSD, and FreeRADIUS are validated.
+      - Recovery snapshot codex-freeipa-radius-live was created after RADIUS LDAP bridge validation.
+    tags:
+      - rocky
+      - freeipa
+      - radius
+      - identity
+
+proxmox_api_access:
+  token_identity: "{{ vault_hasslehoff_proxmox_api_token_id }}"
+  minimum_validated_acl:
+    path: /
+    role: PVEAuditor
+    reason: Required for API-backed VM inventory visibility with privsep tokens.
+  validation:
+    playbook: playbooks/proxmox-api-validate.yml
+    last_validated_at: "2026-05-01T18:49:06-07:00"
+    observed_vm_count: 4
+
+proxmox_cluster_observed:
+  captured_at: "2026-05-01T18:50:00-07:00"
+  name: prx-rfc99-prime
+  quorate: false
+  nodes:
+    - name: hasslehoff
+      ip: 172.16.99.9
+      nodeid: 1
+      online: true
+      local: true
+      maxcpu: 8
+      maxmem_mb: 64121
+    - name: nanoprime
+      ip: 172.16.99.13
+      nodeid: 2
+      online: false
+      local: false
+      maxcpu: 8
+      maxmem_mb: 7922

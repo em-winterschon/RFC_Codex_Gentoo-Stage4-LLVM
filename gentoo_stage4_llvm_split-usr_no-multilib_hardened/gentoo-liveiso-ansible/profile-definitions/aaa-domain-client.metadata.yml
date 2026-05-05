@@ -1,0 +1,22 @@
+---
+gentoo_system_profile_metadata:
+  id: aaa-domain-client
+  purpose: Reusable Stage5 overlay that joins a host to the shared FreeIPA-backed domain via SSSD and Kerberos.
+  profile_taxonomy:
+    stage: stage5
+    role_class: identity-overlay
+    role_name: domain-client
+    package_layers:
+      - profile-package-lists/stage5-domain-client.packages
+  base_profile:
+    intended_overlay_on:
+      - hardened-llvm-stage4-merged-usr
+      - hardened-llvm-stage4-split-usr
+  package_pins:
+    tracked_atoms:
+      - sys-auth/sssd
+      - app-crypt/mit-krb5
+      - net-nds/openldap
+  source_references:
+    - https://packages.gentoo.org/packages/sys-auth/sssd
+    - https://packages.gentoo.org/packages/app-crypt/mit-krb5

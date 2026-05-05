@@ -1,5 +1,8 @@
 ---
 gentoo_profile_definition:
+  profile_parents:
+    - gentoo:default/linux/amd64/23.0/llvm
+    - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
   repository_enable:
     - guru
     - xira

@@ -1,0 +1,54 @@
+---
+- name: Resolve rsyslog settings
+  ansible.builtin.set_fact:
+    rsyslog_enabled: >-
+      {{
+        resolved_profile_rsyslog.enabled
+        | default(rsyslog_default_enabled)
+        | bool
+      }}
+    resolved_rsyslog: >-
+      {{
+        {
+          'listen_udp': resolved_profile_rsyslog.listen_udp | default(rsyslog_default_listen_udp),
+          'listen_tcp': resolved_profile_rsyslog.listen_tcp | default(rsyslog_default_listen_tcp),
+          'udp_port': resolved_profile_rsyslog.udp_port | default(rsyslog_default_udp_port),
+          'tcp_port': resolved_profile_rsyslog.tcp_port | default(rsyslog_default_tcp_port),
+          'forward_enabled': resolved_profile_rsyslog.forward_enabled | default(rsyslog_default_forward_enabled),
+          'forward_protocol': resolved_profile_rsyslog.forward_protocol | default(rsyslog_default_forward_protocol),
+          'forward_port': resolved_profile_rsyslog.forward_port | default(rsyslog_default_forward_port),
+          'forward_hostname': resolved_profile_rsyslog.forward_hostname | default(rsyslog_default_forward_hostname),
+          'queue_spool_directory': resolved_profile_rsyslog.queue_spool_directory | default(rsyslog_default_queue_spool_directory),
+          'template_name': resolved_profile_rsyslog.template_name | default(rsyslog_default_template_name),
+          'template_string': resolved_profile_rsyslog.template_string | default(rsyslog_default_template_string),
+          'tls_enabled': resolved_profile_rsyslog.tls_enabled | default(rsyslog_default_tls_enabled),
+          'tls_ca_file': resolved_profile_rsyslog.tls_ca_file | default(rsyslog_default_tls_ca_file)
+        }
+      }}
+
+- name: Ensure rsyslog directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ rsyslog_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/rsyslog.d
+    - "{{ resolved_rsyslog.queue_spool_directory }}"
+  loop_control:
+    loop_var: rsyslog_dir
+  when: rsyslog_enabled
+
+- name: Render rsyslog base configuration
+  ansible.builtin.template:
+    src: rsyslog-stage5.conf.j2
+    dest: "{{ install_target_root }}/etc/rsyslog.d/90-stage5.conf"
+    mode: '0644'
+  when: rsyslog_enabled
+
+- name: Enable rsyslog service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['rsyslog']) | unique
+      }}
+  when: rsyslog_enabled

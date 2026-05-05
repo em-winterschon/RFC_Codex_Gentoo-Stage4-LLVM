@@ -1,0 +1,129 @@
+---
+- name: Resolve Jenkins controller settings
+  ansible.builtin.set_fact:
+    jenkins_controller_enabled: >-
+      {{
+        resolved_profile_jenkins_controller.enabled
+        | default(jenkins_controller_default_enabled)
+        | bool
+      }}
+    resolved_jenkins_controller: >-
+      {{
+        {
+          'home': resolved_profile_jenkins_controller.home
+            | default(jenkins_controller_default_home),
+          'webroot': resolved_profile_jenkins_controller.webroot
+            | default(jenkins_controller_default_webroot),
+          'http_port': resolved_profile_jenkins_controller.http_port
+            | default(jenkins_controller_default_http_port),
+          'http_listen_address': resolved_profile_jenkins_controller.http_listen_address
+            | default(jenkins_controller_default_http_listen_address),
+          'prefix': resolved_profile_jenkins_controller.prefix
+            | default(jenkins_controller_default_prefix),
+          'agent_port': resolved_profile_jenkins_controller.agent_port
+            | default(jenkins_controller_default_agent_port),
+          'service_user': resolved_profile_jenkins_controller.service_user
+            | default(jenkins_controller_default_service_user),
+          'service_group': resolved_profile_jenkins_controller.service_group
+            | default(jenkins_controller_default_service_group),
+          'java_bin': resolved_profile_jenkins_controller.java_bin
+            | default(jenkins_controller_default_java_bin),
+          'java_opts': resolved_profile_jenkins_controller.java_opts
+            | default(jenkins_controller_default_java_opts),
+          'url': resolved_profile_jenkins_controller.url
+            | default(jenkins_controller_default_url),
+          'admin_email': resolved_profile_jenkins_controller.admin_email
+            | default(jenkins_controller_default_admin_email),
+          'executors': resolved_profile_jenkins_controller.executors
+            | default(jenkins_controller_default_executors),
+          'plugin_catalog': resolved_profile_jenkins_controller.plugin_catalog
+            | default(jenkins_controller_default_plugin_catalog),
+          'folders': resolved_profile_jenkins_controller.folders
+            | default(jenkins_controller_default_folders),
+          'builder_farm_uplink_interfaces': resolved_profile_jenkins_controller.builder_farm_uplink_interfaces
+            | default(jenkins_controller_default_builder_farm_uplink_interfaces),
+          'builder_farm_switch_name': resolved_profile_jenkins_controller.builder_farm_switch_name
+            | default(jenkins_controller_default_builder_farm_switch_name),
+          'builder_farm_switch_port_profile': resolved_profile_jenkins_controller.builder_farm_switch_port_profile
+            | default(jenkins_controller_default_builder_farm_switch_port_profile),
+          'agent_labels': resolved_profile_jenkins_controller.agent_labels
+            | default(jenkins_controller_default_agent_labels),
+          'environment': resolved_profile_jenkins_controller.environment
+            | default(jenkins_controller_default_env)
+        }
+      }}
+
+- name: Ensure Jenkins controller support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ jenkins_controller_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/jenkins
+    - /usr/local/libexec/jenkins
+    - "{{ resolved_jenkins_controller.home }}"
+    - "{{ resolved_jenkins_controller.home }}/casc_configs"
+    - "{{ resolved_jenkins_controller.home }}/init.groovy.d"
+    - "{{ resolved_jenkins_controller.home }}/seed-manifests"
+    - "{{ resolved_jenkins_controller.home }}/builder-farm"
+    - "{{ resolved_jenkins_controller.webroot }}"
+  loop_control:
+    loop_var: jenkins_controller_dir
+  when: jenkins_controller_enabled
+
+- name: Render Jenkins launch helper
+  ansible.builtin.template:
+    src: launch-jenkins.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/jenkins/launch-jenkins.sh"
+    mode: '0755'
+  when: jenkins_controller_enabled
+
+- name: Render Jenkins Configuration as Code manifest
+  ansible.builtin.template:
+    src: jenkins.casc.yml.j2
+    dest: "{{ install_target_root }}{{ resolved_jenkins_controller.home }}/casc_configs/jenkins.yaml"
+    mode: '0644'
+  when: jenkins_controller_enabled
+
+- name: Render Jenkins plugin manifest
+  ansible.builtin.template:
+    src: plugins.txt.j2
+    dest: "{{ install_target_root }}{{ resolved_jenkins_controller.home }}/seed-manifests/plugins.txt"
+    mode: '0644'
+  when: jenkins_controller_enabled
+
+- name: Render Jenkins builder farm manifest
+  ansible.builtin.template:
+    src: builder-farm.json.j2
+    dest: "{{ install_target_root }}{{ resolved_jenkins_controller.home }}/builder-farm/builder-farm.json"
+    mode: '0644'
+  when: jenkins_controller_enabled
+
+- name: Render Jenkins init hook for setup wizard suppression
+  ansible.builtin.template:
+    src: disable-setup-wizard.groovy.j2
+    dest: "{{ install_target_root }}{{ resolved_jenkins_controller.home }}/init.groovy.d/00-disable-setup-wizard.groovy"
+    mode: '0644'
+  when: jenkins_controller_enabled
+
+- name: Register Jenkins controller OpenRC action service
+  ansible.builtin.set_fact:
+    openrc_action_services: >-
+      {{
+        (openrc_action_services | default([]))
+        + [
+            {
+              'name': 'jenkins-controller',
+              'description': 'Jenkins controller with Configuration as Code and builder-farm metadata',
+              'command': '/usr/local/libexec/jenkins/launch-jenkins.sh',
+              'runlevel': 'default',
+              'enabled': true,
+              'user': resolved_jenkins_controller.service_user,
+              'group': resolved_jenkins_controller.service_group,
+              'dependencies_need': ['net'],
+              'output_log': resolved_jenkins_controller.home + '/jenkins-controller.log',
+              'error_log': resolved_jenkins_controller.home + '/jenkins-controller.err.log'
+            }
+          ]
+      }}
+  when: jenkins_controller_enabled

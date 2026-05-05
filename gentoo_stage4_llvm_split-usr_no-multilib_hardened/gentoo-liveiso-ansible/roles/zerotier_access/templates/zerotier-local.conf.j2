@@ -1,0 +1,8 @@
+{
+  "settings": {
+    "allowManaged": {{ resolved_zerotier.allow_managed | bool | lower }},
+    "allowGlobal": {{ resolved_zerotier.allow_global | bool | lower }},
+    "allowDefault": {{ resolved_zerotier.allow_default | bool | lower }},
+    "allowDNS": {{ resolved_zerotier.allow_dns | bool | lower }}
+  }
+}

@@ -1,0 +1,2 @@
+# arguments for prometheus blackbox exporter
+command_args="--config.file=/etc/blackbox_exporter/blackbox.yml --web.listen-address={{ resolved_blackbox_exporter_telemetry.listen_address }}:{{ resolved_blackbox_exporter_telemetry.listen_port }}{% for extra_arg in resolved_blackbox_exporter_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

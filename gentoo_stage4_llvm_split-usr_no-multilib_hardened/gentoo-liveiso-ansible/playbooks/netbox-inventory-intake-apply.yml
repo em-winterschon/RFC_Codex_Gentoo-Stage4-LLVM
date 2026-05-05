@@ -1,0 +1,40 @@
+---
+- name: Apply NetBox inventory intake definitions
+  hosts: localhost
+  gather_facts: false
+  vars:
+    inventory_intake_root: "{{ playbook_dir }}/../inventory-intake/sites"
+    inventory_intake_apply_script: "{{ playbook_dir }}/../../../scripts/netbox_apply_inventory_intake.py"
+    netbox_inventory_apply: false
+    netbox_inventory_update_existing: false
+    netbox_inventory_format: text
+    netbox_inventory_api_url: "{{ netbox_api_url | default('http://172.16.99.62') }}"
+    netbox_inventory_token_file: "{{ netbox_seed_token_file | default('') }}"
+    netbox_inventory_token: "{{ netbox_api_token | default('') }}"
+
+  tasks:
+    - name: Build NetBox inventory intake apply command
+      ansible.builtin.set_fact:
+        netbox_inventory_apply_argv: >-
+          {{
+            [
+              'python3',
+              inventory_intake_apply_script,
+              inventory_intake_root,
+              '--api-url',
+              netbox_inventory_api_url,
+              '--format',
+              netbox_inventory_format
+            ]
+            + (['--token-file', netbox_inventory_token_file] if netbox_inventory_token_file | length > 0 else [])
+            + (['--token', netbox_inventory_token] if netbox_inventory_token | length > 0 else [])
+            + (['--apply'] if netbox_inventory_apply | bool else [])
+            + (['--update-existing'] if netbox_inventory_update_existing | bool else [])
+          }}
+      no_log: "{{ netbox_inventory_token | length > 0 }}"
+
+    - name: Apply or dry-run NetBox inventory intake files
+      ansible.builtin.command:
+        argv: "{{ netbox_inventory_apply_argv }}"
+      changed_when: netbox_inventory_apply | bool
+      no_log: "{{ (netbox_inventory_apply | bool) or (netbox_inventory_token | length > 0) }}"

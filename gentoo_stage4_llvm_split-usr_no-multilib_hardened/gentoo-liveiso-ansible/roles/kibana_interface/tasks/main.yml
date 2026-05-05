@@ -1,0 +1,42 @@
+---
+- name: Resolve Kibana settings
+  ansible.builtin.set_fact:
+    kibana_enabled: >-
+      {{
+        resolved_profile_kibana.enabled
+        | default(kibana_default_enabled)
+        | bool
+      }}
+    resolved_kibana: >-
+      {{
+        {
+          'server_name': resolved_profile_kibana.server_name | default(kibana_default_server_name),
+          'server_host': resolved_profile_kibana.server_host | default(kibana_default_server_host),
+          'server_port': resolved_profile_kibana.server_port | default(kibana_default_server_port),
+          'base_path': resolved_profile_kibana.base_path | default(kibana_default_base_path),
+          'public_base_url': resolved_profile_kibana.public_base_url | default(kibana_default_public_base_url),
+          'elasticsearch_hosts': resolved_profile_kibana.elasticsearch_hosts | default(kibana_default_elasticsearch_hosts)
+        }
+      }}
+
+- name: Ensure Kibana configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/kibana"
+    state: directory
+    mode: '0755'
+  when: kibana_enabled
+
+- name: Render Kibana configuration
+  ansible.builtin.template:
+    src: kibana.yml.j2
+    dest: "{{ install_target_root }}/etc/kibana/kibana.yml"
+    mode: '0644'
+  when: kibana_enabled
+
+- name: Enable Kibana service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['kibana']) | unique
+      }}
+  when: kibana_enabled

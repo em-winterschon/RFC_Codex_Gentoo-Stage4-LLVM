@@ -1,0 +1,2 @@
+# Managed by gentoo-liveiso-ansible
+unqualified-search-registries = [{% for registry in resolved_container_registries %}"{{ registry }}"{% if not loop.last %}, {% endif %}{% endfor %}]

@@ -75,13 +75,10 @@ find "${WIKI_WORKTREE}" -maxdepth 1 -type f -name '*.md' -delete
 
 while IFS= read -r src_file; do
   base_name="$(basename "${src_file}")"
-  if [[ "${base_name}" == 'README.md' ]]; then
-    continue
-  fi
   cp "${src_file}" "${WIKI_WORKTREE}/${base_name}"
 done < <(find "${SOURCE_DIR}" -maxdepth 1 -type f -name '*.md' | sort)
 
-if git -C "${WIKI_WORKTREE}" diff --quiet --exit-code && git -C "${WIKI_WORKTREE}" diff --cached --quiet --exit-code; then
+if [[ -z "$(git -C "${WIKI_WORKTREE}" status --porcelain)" ]]; then
   printf 'Wiki checkout is already in sync with %s\n' "${SOURCE_DIR}"
   exit 0
 fi

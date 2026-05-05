@@ -1,0 +1,41 @@
+---
+- name: Capture MikroTik SwOS state snapshots
+  hosts: mikrotik_swos
+  gather_facts: false
+  vars:
+    swos_snapshot_root: /root/operator-private/swos
+    swos_snapshot_script: "{{ playbook_dir }}/../../../scripts/collect-mikrotik-swos-state.py"
+
+  tasks:
+    - name: Build SwOS snapshot timestamp
+      ansible.builtin.set_fact:
+        swos_snapshot_stamp: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
+
+    - name: Build SwOS snapshot output directory
+      ansible.builtin.set_fact:
+        swos_snapshot_output_dir: "{{ swos_snapshot_root }}/{{ inventory_hostname }}/{{ swos_snapshot_stamp }}"
+
+    - name: Ensure SwOS snapshot output directory exists
+      ansible.builtin.file:
+        path: "{{ swos_snapshot_output_dir }}"
+        state: directory
+        mode: "0750"
+
+    - name: Collect SwOS state and backup
+      ansible.builtin.command:
+        argv:
+          - "{{ swos_snapshot_script }}"
+          - --host
+          - "{{ ansible_host }}"
+          - --username
+          - "{{ swos_username }}"
+          - --output-dir
+          - "{{ swos_snapshot_output_dir }}"
+      environment:
+        SWOS_PASSWORD: "{{ swos_password }}"
+      no_log: true
+      changed_when: false
+
+    - name: Report SwOS snapshot path
+      ansible.builtin.debug:
+        msg: "SwOS snapshot captured at {{ swos_snapshot_output_dir }}"

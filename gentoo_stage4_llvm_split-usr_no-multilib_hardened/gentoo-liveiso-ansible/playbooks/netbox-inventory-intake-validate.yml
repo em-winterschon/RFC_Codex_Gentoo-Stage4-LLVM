@@ -1,0 +1,19 @@
+---
+- name: Validate NetBox inventory intake definitions
+  hosts: localhost
+  gather_facts: false
+  vars:
+    inventory_intake_root: "{{ playbook_dir }}/../inventory-intake/sites"
+    inventory_intake_validator: "{{ playbook_dir }}/../../../scripts/validate_netbox_inventory_intake.py"
+    inventory_intake_format: text
+
+  tasks:
+    - name: Validate repo-safe NetBox inventory intake files
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ inventory_intake_validator }}"
+          - "{{ inventory_intake_root }}"
+          - "--format"
+          - "{{ inventory_intake_format }}"
+      changed_when: false

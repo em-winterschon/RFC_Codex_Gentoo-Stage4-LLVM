@@ -1,0 +1,103 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage4-routeros-rfc99-gateway-deployment",
+    "description": "Render and review the physical CCR2004 RouterOS RFC99 gateway replacement configuration before any live import.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible subtree containing the RouterOS RFC99 gateway playbook and role."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/local-network/hosts.yml",
+      "description": "Inventory containing the routeros_rfc99_gateways host group."
+    },
+    {
+      "name": "limit_target",
+      "required": true,
+      "default": "gw_rfc99_mkccr2004_16g",
+      "description": "RouterOS host entry to render."
+    },
+    {
+      "name": "render_root",
+      "required": false,
+      "default": "/tmp/routeros-rfc99-gateway",
+      "description": "Local filesystem location where the role renders the .rsc file and JSON manifest."
+    }
+  ],
+  "stages": [
+    {
+      "id": "syntax-check",
+      "summary": "Validate the RouterOS RFC99 gateway playbook syntax before touching the RouterOS host.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/routeros-rfc99-gateway.yml",
+        "--syntax-check"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "render-intent",
+      "summary": "Render the CCR2004 RouterOS .rsc configuration and JSON manifest locally without applying them.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/routeros-rfc99-gateway.yml",
+        "-l",
+        "${limit_target}",
+        "-e",
+        "routeros_rfc99_gateway_render_root=${render_root}"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "${render_root}/${limit_target}-rfc99-gateway.rsc",
+        "${render_root}/${limit_target}-rfc99-gateway.json"
+      ]
+    },
+    {
+      "id": "review-rendered-config",
+      "summary": "Review generated RouterOS commands, cabling assumptions, service restrictions, and rollback path before live serial import.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf 'Review rendered CCR2004 RSC: sfp-sfpplus1 WAN, sfp-sfpplus2 LAN trunk, ge1-ge16 renames, SSH/HTTPS/API-SSL only, self-signed cert, VLAN plan, normalized overlapping prefixes.\\n'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "live-apply-gate",
+      "summary": "Document the explicit live-apply gate; this workflow does not mutate RouterOS.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf 'No live apply is implemented. Keep serial console open, export backups, then add a gated serial/SSH import stage only after review.\\n'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

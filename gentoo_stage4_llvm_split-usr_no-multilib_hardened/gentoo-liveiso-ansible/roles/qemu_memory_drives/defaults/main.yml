@@ -1,0 +1,15 @@
+---
+qemu_memory_drives_enabled: false
+qemu_memory_drives_mount_root: /dev/shm/qemu-memory-drives
+qemu_memory_drives_tmpfs_size: 256G
+qemu_memory_drives_instance_name: stage4-devvm
+qemu_memory_drives_manifest_name: memory-drives.json
+qemu_memory_drives:
+  - name: portage-cache
+    size_gib: 32
+    format: qcow2
+    serial: mem-portage-cache
+    device_model: virtio-blk-pci
+    purpose_tags:
+      - portage
+      - cache

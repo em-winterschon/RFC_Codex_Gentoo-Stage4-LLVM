@@ -1,0 +1,117 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-podman-exporter.yml"
+  - "{{ playbook_dir }}/../profile-definitions/netbox-managed-inventory.yml"
+  - "{{ playbook_dir }}/../profile-definitions/container-service-base-image.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
+  - "{{ playbook_dir }}/../profile-definitions/container-rsyslog-collector.yml"
+  - "{{ playbook_dir }}/../profile-definitions/container-haproxy-elasticsearch-test-vip.yml"
+
+install_hostname: container-services
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-container-services
+  local_hostname: container-services
+  disable_root: false
+  ssh_pwauth: false
+
+profile_local_user_accounts:
+  - name: deploy
+    comment: Container deployment operator
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
+
+profile_container_services:
+  runtime_root: /var/lib/container-services-ephemeral
+
+profile_container_app_profiles:
+  ntfy:
+    enabled: false
+    pull_policy: never
+  nginx:
+    enabled: true
+    pull_policy: missing
+  haproxy:
+    enabled: true
+    pull_policy: missing
+
+profile_memory_storage:
+  enabled: true
+  mounts:
+    - path: /var/lib/container-services-ephemeral
+      size: 32G
+      mode: "0755"
+      options:
+        - noatime
+    - path: /var/tmp/portage-tmpfs
+      size: 48G
+      mode: "1777"
+      options:
+        - noatime
+
+profile_site_security_profile:
+  compliance_mode: strict
+  firewall:
+    allowed_management_cidrs:
+      - 10.9.8.0/24
+      - 172.16.99.0/24
+  ipam:
+    source: flat-file-json
+    flat_file_json:
+      site: pathb-lab
+      networks:
+        apps:
+          gateway: 10.77.1.1
+          subnet: 10.77.1.0/24
+        mgmt:
+          gateway: 10.77.0.1
+          subnet: 10.77.0.0/24
+
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-vip.example.internal
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_service_readiness:
+  enabled: true
+  checks:
+    - name: container-services-nginx
+      target: 10.9.8.89
+      port: 8080
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5
+    - name: container-services-haproxy-http
+      target: 10.9.8.89
+      port: 80
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5
+    - name: container-services-rsyslog-tcp
+      target: 10.9.8.89
+      port: 514
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5
+    - name: elasticsearch-test-vip-http
+      target: 10.9.8.92
+      port: 9200
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5

@@ -1,0 +1,3 @@
+---
+container_site_security_profile_default:
+  compliance_mode: standard

@@ -1,0 +1,213 @@
+---
+inventory_intake_version: 1
+
+datacenters:
+  - name: RFC99
+    slug: rfc99
+    timezone: America/Los_Angeles
+    facility: operator-confirmed
+    management_prefixes:
+      - 172.16.99.0/24
+      - 192.168.1.0/24
+    access_paths:
+      - local-management-lan
+      - serial-console
+      - future-zerotier-overlay
+    owners:
+      - codex-ops
+
+prefixes:
+  - prefix: 172.16.99.0/24
+    site: rfc99
+    status: active
+    role: rfc99-lan-management
+    gateway: 172.16.99.1
+  - prefix: 192.168.1.0/24
+    site: rfc99
+    status: active
+    role: upstream-provider-router-lan
+    gateway: 192.168.1.254
+  - prefix: 99.7.56.156/32
+    site: rfc99
+    status: provider-assigned
+    role: fiber-wan-public-ip
+
+devices:
+  - name: gw_rfc99_mkcrs309
+    site: rfc99
+    role: routeros-gateway
+    manufacturer: MikroTik
+    model: CRS309-1G-8S+IN
+    status: planned
+    management_ip: 172.16.99.1
+    serial_console: /dev/ttyUSB2
+    interfaces:
+      - name: ether1
+        type: 1000base-t
+        purpose: poe-management
+      - name: sfp-sfpplus1
+        type: 10gbase-x-sfpp
+        purpose: wan-uplink
+      - name: sfp-sfpplus2
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+      - name: sfp-sfpplus3
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+      - name: sfp-sfpplus4
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+      - name: sfp-sfpplus5
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+      - name: sfp-sfpplus6
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+      - name: sfp-sfpplus7
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+      - name: sfp-sfpplus8
+        type: 10gbase-x-sfpp
+        purpose: lan-bridge-member
+    notes:
+      - Source file listed CRS309 LAN as 172.16.99.1/16, but staged prefix is 172.16.99.0/24 until final router policy is confirmed.
+      - Import script /tmp/crs309-router-mode-idc.wip.rsc is destructive and must be applied in gated phases only.
+      - Replace IDC moniker with RFC99 before any RouterOS import.
+      - Admin password and all device credentials are excluded from repo intake and must be stored in Ansible Vault.
+  - name: gw_rfc99_mkccr2004_16g
+    site: rfc99
+    role: routeros-gateway
+    manufacturer: MikroTik
+    model: CCR2004-16G-2S+PC
+    status: planned
+    serial_console: /dev/ttyUSB2
+    interfaces:
+      - name: ether1
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:59
+      - name: ether2
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5a
+      - name: ether3
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5b
+      - name: ether4
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5c
+      - name: ether5
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5d
+      - name: ether6
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5e
+      - name: ether7
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:5f
+      - name: ether8
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:60
+      - name: ether9
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:61
+      - name: ether10
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:62
+      - name: ether11
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:63
+      - name: ether12
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:64
+      - name: ether13
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:65
+      - name: ether14
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:66
+      - name: ether15
+        type: 1000base-t
+        purpose: factory-default-management
+        mac_address: d0:ea:11:4e:bd:67
+      - name: ether16
+        type: 1000base-t
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:68
+      - name: sfp-sfpplus1
+        type: 10gbase-x-sfpp
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:69
+      - name: sfp-sfpplus2
+        type: 10gbase-x-sfpp
+        purpose: unassigned
+        mac_address: d0:ea:11:4e:bd:6a
+    notes:
+      - Planned rackable RouterOS replacement for gw_rfc99_mkcrs309.
+      - Observed board-name is CCR2004-16G-2S+ on RouterOS 7.19.6, arm64, 4 cores, 4096 MiB RAM.
+      - Factory default IP is 192.168.88.1/24 on ether15; management IP is intentionally unassigned until management-only bootstrap is applied.
+      - Admin bootstrap credential is stored in Ansible Vault as vault_rfc99_ccr2004_16g_admin_password.
+      - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
+  - name: gw_rfc99_att_bgw320
+    site: rfc99
+    role: provider-wan-router
+    manufacturer: HUMAX
+    model: BGW320-500
+    status: active
+    management_ip: 192.168.1.254
+    fqdn: gw-xgs-pon-att5ge.rfc1918.io
+    interfaces:
+      - name: lan
+        type: 10gbase-t
+        purpose: provider-lan-ip-passthrough
+        mac_address: ec:c3:02:f2:a1:50
+    notes:
+      - Fiber WAN router public IP is 99.7.56.156.
+      - IP passthrough mode is DHCPS-fixed.
+      - Packet filter blocks IPv6 WAN ingress and LAN egress.
+  - name: sw_rfc99_xgs1250_pri
+    site: rfc99
+    role: administrative-switch
+    manufacturer: Zyxel
+    model: XGS1250-12
+    status: active
+    management_ip: 172.16.99.250
+    fqdn: sw-xgs-1250-pri.rfc1918.io
+    interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
+        mac_address: d8:ec:e5:aa:bb:ce
+    notes:
+      - Source credentials omitted; rotate and store replacement credential in Ansible Vault.
+  - name: sw_rfc99_xgs1250_sec
+    site: rfc99
+    role: administrative-switch
+    manufacturer: Zyxel
+    model: XGS1250-12
+    status: active
+    management_ip: 192.168.1.251
+    fqdn: sw-xgs-1250-sec.rfc1918.io
+    interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
+        mac_address: d8:ec:e5:97:27:84
+    notes:
+      - Source credentials omitted; rotate and store replacement credential in Ansible Vault.
+
+clusters: []
+
+service_vips: []

@@ -1,0 +1,32 @@
+---
+- name: Resolve Podman exporter telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_podman_exporter_enabled: >-
+      {{
+        resolved_profile_telemetry.podman_exporter.enabled
+        | default(telemetry_podman_exporter_default_enabled)
+        | bool
+      }}
+    resolved_podman_exporter_telemetry: >-
+      {{
+        {
+          'listen_address': resolved_profile_telemetry.podman_exporter.listen_address | default(telemetry_podman_exporter_default_listen_address),
+          'listen_port': resolved_profile_telemetry.podman_exporter.listen_port | default(telemetry_podman_exporter_default_listen_port),
+          'extra_args': resolved_profile_telemetry.podman_exporter.extra_args | default(telemetry_podman_exporter_default_extra_args)
+        }
+      }}
+
+- name: Render Podman exporter OpenRC configuration
+  ansible.builtin.template:
+    src: podman_exporter.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/podman_exporter"
+    mode: '0644'
+  when: telemetry_podman_exporter_enabled
+
+- name: Enable Podman exporter service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['podman_exporter']) | unique
+      }}
+  when: telemetry_podman_exporter_enabled

@@ -1,0 +1,33 @@
+---
+dns_hetzner_cloud_api_endpoint: https://api.hetzner.cloud/v1
+dns_hetzner_cloud_provider: hetzner_cloud_dns
+
+dns_hetzner_cloud_change_policy:
+  source_of_truth: netbox
+  default_ttl: 300
+  apply: false
+  allow_delete: false
+
+dns_hetzner_cloud_token_groups:
+  - name: rfc1918
+    token_name: "{{ vault_hetzner_dns_rfc1918_token_name | default('') }}"
+    api_token: "{{ vault_hetzner_dns_rfc1918_api_token | default('') }}"
+    zones: "{{ vault_hetzner_dns_rfc1918_zones | default([]) }}"
+  - name: vernetzen
+    token_name: "{{ vault_hetzner_dns_vernetzen_token_name | default('') }}"
+    api_token: "{{ vault_hetzner_dns_vernetzen_api_token | default('') }}"
+    zones: "{{ vault_hetzner_dns_vernetzen_zones | default([]) }}"
+  - name: yukon
+    token_name: "{{ vault_hetzner_dns_yukon_token_name | default('') }}"
+    api_token: "{{ vault_hetzner_dns_yukon_api_token | default('') }}"
+    zones: "{{ vault_hetzner_dns_yukon_zones | default([]) }}"
+
+dns_hetzner_cloud_zone_groups:
+  - name: rfc1918
+    zones: "{{ vault_hetzner_dns_rfc1918_zones | default([]) }}"
+  - name: vernetzen
+    zones: "{{ vault_hetzner_dns_vernetzen_zones | default([]) }}"
+  - name: yukon
+    zones: "{{ vault_hetzner_dns_yukon_zones | default([]) }}"
+
+dns_hetzner_cloud_managed_rrsets: []

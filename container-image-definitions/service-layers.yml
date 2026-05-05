@@ -1,0 +1,69 @@
+---
+container_service_layers:
+  base:
+    image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:latest
+    immutable_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc:git-e5bf45f
+    immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage3-llvm-clang-openrc@sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
+    digest: sha256:4c0cc158b9ab55f7b126dcd80deb8327959a0fd8cd132af7fa09a438df4e85b6
+    source_commit: e5bf45f
+    profile_definition: gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/container-service-base-image.yml
+  defaults:
+    registry_namespace: ghcr.io/em-winterschon
+    runtime_init: openrc
+    systemd_policy: without-systemd
+    runtime_pull_policy: missing
+    binpkg_repo_id: stage3-llvm_clang_openrc__stage5-service_container-base__amd64__x86_64_v2_generic
+  services:
+    nginx:
+      build_mode: portage-layer
+      image_name: gentoo-stage5-nginx
+      image: ghcr.io/em-winterschon/gentoo-stage5-nginx:latest
+      runtime_pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-nginx:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-nginx@sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
+      digest: sha256:8604b39531e508348a3ac3094621b3aef51ca8927721f17087742b888e6e9c90
+      package_list: container-image-definitions/gentoo-stage5-nginx.packages
+      packages:
+        - www-servers/nginx
+      config_role: container_app_nginx
+      runtime_profile: vm-container-services
+    haproxy:
+      build_mode: portage-layer
+      image_name: gentoo-stage5-haproxy
+      image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest
+      runtime_pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy@sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      digest: sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      package_list: container-image-definitions/gentoo-stage5-haproxy.packages
+      packages:
+        - net-proxy/haproxy
+      config_role: container_app_haproxy
+      runtime_profile: vm-container-services
+    rsyslog_collector:
+      build_mode: portage-layer
+      image_name: gentoo-stage5-rsyslog-collector
+      image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest
+      runtime_pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:git-396998a
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector@sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
+      digest: sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287
+      bootstrap_package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages
+      package_list: container-image-definitions/gentoo-stage5-rsyslog-collector.packages
+      packages:
+        - app-admin/rsyslog
+      config_role: container_app_rsyslog_collector
+      runtime_profile: container-rsyslog-collector
+      notes:
+        - Built in two phases so libestr and libfastjson land before rsyslog pkg-config/configure.
+        - Enables app-admin/rsyslog[elasticsearch] for omelasticsearch forwarding.
+    ntfy:
+      build_mode: upstream-image
+      image_name: ntfy
+      upstream_image: docker.io/binwiederhier/ntfy:v2.14.0
+      runtime_pull_policy: never
+      config_role: container_app_ntfy
+      runtime_profile: vm-container-services
+      notes:
+        - No Gentoo Portage atom was present in the current builder tree; keep upstream-image mode until an overlay ebuild exists.
+        - Live Path B deployment disables ntfy and uses pull_policy=never until the image source is controlled.

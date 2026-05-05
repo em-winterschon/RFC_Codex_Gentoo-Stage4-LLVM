@@ -1,0 +1,8 @@
+---
+telemetry_snmp_exporter_default_enabled: false
+telemetry_snmp_exporter_default_listen_address: "0.0.0.0"
+telemetry_snmp_exporter_default_listen_port: 9116
+telemetry_snmp_exporter_default_include_default_config: true
+telemetry_snmp_exporter_default_auths: {}
+telemetry_snmp_exporter_default_modules: {}
+telemetry_snmp_exporter_default_extra_args: []

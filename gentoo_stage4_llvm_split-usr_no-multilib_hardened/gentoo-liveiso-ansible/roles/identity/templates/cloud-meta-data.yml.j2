@@ -1,0 +1,2 @@
+instance-id: {{ resolved_profile_cloud_init.instance_id | default(inventory_hostname) }}
+local-hostname: {{ resolved_profile_cloud_init.local_hostname | default(install_hostname) }}

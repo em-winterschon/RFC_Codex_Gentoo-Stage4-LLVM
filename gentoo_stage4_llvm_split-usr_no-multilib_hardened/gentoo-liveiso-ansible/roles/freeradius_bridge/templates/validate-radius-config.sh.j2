@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+
+if command -v radiusd >/dev/null 2>&1; then
+  exec radiusd -XC -d /etc/raddb
+fi
+
+cat <<'EOF'
+radiusd is not installed yet.
+When the FreeRADIUS package is present, run:
+  radiusd -XC -d /etc/raddb
+EOF

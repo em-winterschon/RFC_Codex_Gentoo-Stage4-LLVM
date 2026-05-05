@@ -35,6 +35,81 @@
     state: directory
     mode: '0755'
 
+- name: Ensure package.accept_keywords directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.accept_keywords"
+    state: directory
+    mode: '0755'
+
+- name: Ensure package.license directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.license"
+    state: directory
+    mode: '0755'
+
+- name: Ensure package.unmask directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.unmask"
+    state: directory
+    mode: '0755'
+
+- name: Ensure env directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/env"
+    state: directory
+    mode: '0755'
+
+- name: Ensure package.env directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.env"
+    state: directory
+    mode: '0755'
+
+- name: Ensure binrepos.conf directory exists when binrepos are configured
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/binrepos.conf"
+    state: directory
+    mode: '0755'
+  when: (portage_binrepos | default([])) | length > 0
+
+- name: Remove inherited binary package repositories when none are configured
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/binrepos.conf"
+    state: absent
+  when: (portage_binrepos | default([])) | length == 0
+
+- name: Ensure common Portage and compiler cache directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ portage_runtime_dir.path }}"
+    state: directory
+    mode: "{{ portage_runtime_dir.mode }}"
+  loop:
+    - { path: /var/tmp/portage-tmpfs, mode: '1777' }
+    - { path: /var/tmp/portage-tmpfs/ccache-tmp, mode: '1777' }
+    - { path: /var/log/portage, mode: '0755' }
+    - { path: /var/cache/ccache, mode: '0755' }
+  loop_control:
+    loop_var: portage_runtime_dir
+
+- name: Ensure configured Portage binary package directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ portage_pkgdir if portage_pkgdir.startswith('/') else '/' + portage_pkgdir }}"
+    state: directory
+    mode: '0755'
+  when: (portage_pkgdir | default('')) | length > 0
+
+- name: Write configured binary package repositories
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/binrepos.conf/{{ portage_binrepo.name }}.conf"
+    mode: '0644'
+    content: |
+      [{{ portage_binrepo.name }}]
+      priority = {{ portage_binrepo.priority | default(10) }}
+      sync-uri = {{ portage_binrepo.sync_uri }}
+  loop: "{{ portage_binrepos | default([]) }}"
+  loop_control:
+    loop_var: portage_binrepo
+
 - name: Force installkernel to keep kernels on ZFS /boot instead of ESP
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/etc/portage/package.use/installkernel"
@@ -95,11 +170,57 @@
   loop_control:
     loop_var: portage_package_mask_file
 
+- name: Write extra package.unmask fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.unmask/{{ portage_package_unmask_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_unmask_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_unmask_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_unmask_file
+
+- name: Write extra package.accept_keywords fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.accept_keywords/{{ portage_package_accept_keywords_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_accept_keywords_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_accept_keywords_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_accept_keywords_file
+
+- name: Write extra package.license fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.license/{{ portage_package_license_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_license_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_license_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_license_file
+
+- name: Write extra env files from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/env/{{ portage_env_file.key }}"
+    mode: '0644'
+    content: "{{ portage_env_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_env_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_env_file
+
+- name: Write extra package.env fragments from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/package.env/{{ portage_package_env_file.key }}"
+    mode: '0644'
+    content: "{{ portage_package_env_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_package_env_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_package_env_file
+
 - name: Link package.mask fragments from selected profile definitions
   ansible.builtin.file:
     src: "{{ portage_package_mask_link.src }}"
     dest: "{{ install_target_root }}/etc/portage/package.mask/{{ portage_package_mask_link.name }}"
     state: link
+    force: true
   loop: "{{ resolved_portage_package_mask_symlinks | default([]) }}"
   loop_control:
     loop_var: portage_package_mask_link

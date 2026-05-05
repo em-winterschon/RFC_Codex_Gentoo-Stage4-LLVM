@@ -1,0 +1,9 @@
+---
+telemetry_grafana_default_enabled: false
+telemetry_grafana_default_http_addr: "0.0.0.0"
+telemetry_grafana_default_http_port: 3000
+telemetry_grafana_default_domain: ""
+telemetry_grafana_default_root_url: ""
+telemetry_grafana_default_admin_user: admin
+telemetry_grafana_default_admin_password: changeme
+telemetry_grafana_default_datasources: []

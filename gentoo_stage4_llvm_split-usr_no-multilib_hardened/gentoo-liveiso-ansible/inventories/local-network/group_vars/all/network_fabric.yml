@@ -1,0 +1,393 @@
+---
+network_fabric_site: local-rfc1918-lab
+
+network_fabric_management_prefix: 172.16.99.0/24
+network_fabric_management_gateway: 172.16.99.1
+
+network_fabric_media_defaults:
+  sfp_plus_10g_default:
+    media: 10G-SR
+    fiber: MMF
+    single_mode_fiber_in_use: false
+    optic_vendors:
+      - FS.com
+      - 10Gtek
+    reference_skus:
+      fs_com_10g_sr: SFP-10GSR-85
+      ten_gtek_10g_sr: AXS85-192-M3
+  sfp_plus_10g_dac:
+    media: 10G-DAC
+    vendors:
+      - generic-compatible
+      - arista-compatible
+      - intel-compatible
+      - juniper-compatible
+
+network_fabric_devices:
+  hasslehoff:
+    role: proxmox-hypervisor
+    management_ip: 172.16.99.9
+    management_interface: vmbr0
+    notes:
+      - Proxmox 8.4 host.
+      - Management bridge rides bond0 over CSS326 ge5/ge6.
+      - ConnectX-5 ports are reserved for RoCE-v2 and must not join vmbr0.
+  sw_mgmt_css326:
+    role: access-switch
+    management_ip: 172.16.99.6
+    management_protocol: swos-http
+    model: CSS326-24G-2S+
+    manufacturer: MikroTik
+    serial_number: HHD0AERY8JN
+    observed_swos_version: 2.18.1751448030
+    swos_version_target: 2.18.1751448030
+    observed_mac: f4:1e:57:89:af:be
+    snmp:
+      enabled: true
+      community: rfc1918.read
+      contact: toor@rfc1918.host
+      location: RFC99-25U-WHT
+    syslog:
+      supported: false
+      reason: SwOS CSS326 exposes SNMP and HTTP backup/state endpoints but no syslog destination controls in the observed 2.18 UI/API.
+    notes:
+      - Live SwOS snapshot archived under /root/operator-private/swos/css326.
+      - Identity is sw-mgmt-mkcss326.
+      - Static management IP is 172.16.99.6.
+      - Address acquisition mode is static.
+      - ge5 and ge6 are active LACP members for Hasslehoff bond0.
+      - sfp1 and sfp2 currently contain Intel FTLX8571D3BCV-IT 10G-SR MMF optics.
+  sw_mgmt_mkcrs354:
+    role: distribution-switch
+    management_ip: 172.16.99.7
+    management_interface: ether49
+    serial_console: /dev/ttyUSB1
+    serial_baud: 115200
+    model: CRS354-48G-4S+2Q+
+    serial_number: HJV0AWTYBCD
+    observed_routeros_version: 7.22.2
+    observed_routerboard_firmware: 7.22.2
+    observed_architecture: mipsbe
+    observed_memory: 128MiB
+    observed_cpu_count: 1
+    routeros_version_target: 7.22.2
+    notes:
+      - Live serial snapshot archived under /root/operator-private/routeros/crs354/20260504T194533Z.
+      - Management currently rides ether49 at 172.16.99.7/24.
+      - Stale sfp-sfpplus1 OPNsense address 172.16.254.7/24 was disabled during CRS309 spine cutover.
+      - sfp-sfpplus1 and sfp-sfpplus2 are active LACP members toward CRS309 using 10G-SR over MMF.
+      - sfp-sfpplus3 and sfp-sfpplus4 are already bond-qnap members for the QNAP TS435XEU archive server over 10G DAC.
+      - QSFP 40G ports are disconnected and reserved for future RoCE-v2 RDMA fabric.
+  sw_spine_crs309_rfc99:
+    role: spine-aggregation-switch
+    management_ip: 172.16.99.8
+    management_interface: br-spine
+    serial_console: /dev/ttyUSB0
+    serial_baud: 115200
+    model: CRS309-1G-8S+
+    observed_routeros_version: 7.22.2
+    observed_routerboard_firmware: 7.22.2
+    routeros_version_target: 7.22.2
+    status: active
+    notes:
+      - Rebuilt from factory reset as sw-spine-crs309-rfc99.
+      - Upgraded to RouterOS package and RouterBOARD firmware 7.22.2 on 2026-05-04.
+      - Optional RouterOS container and zerotier packages were removed before upgrade to recover flash space.
+      - CCR2004 gateway uplink is active on CRS309 sfp-sfpplus1 using FS.com SFP-10GSR-85 10G-SR optics over MMF.
+      - CRS354 LACP is active on CRS309 sfp-sfpplus2 plus sfp-sfpplus3.
+      - Hasslehoff CCR-PCI 10G DAC target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.
+      - CSS326 10G aggregation target is CRS309 sfp-sfpplus8.
+  qnap_archive_ts435xeu:
+    role: archive-storage
+    model: TS435XEU
+    manufacturer: QNAP
+    status: active
+    notes:
+      - 1U QNAP archive server.
+      - Connected to CRS354 sfp-sfpplus3 plus sfp-sfpplus4 as bond-qnap over 10G DAC.
+  rtr_mgmt_ccr2004:
+    role: routeros-gateway-candidate
+    management_ip: 172.16.99.120
+    model: CCR2004-1G-2XS-PCIe
+  gw_rfc99_mkccr2004_16g:
+    role: routeros-gateway-replacement
+    model: CCR2004-16G-2S+PC
+    manufacturer: MikroTik
+    status: planned
+    replaces: gw_rfc99_mkcrs309
+    serial_console: /dev/ttyUSB2
+    observed_board_name: CCR2004-16G-2S+
+    observed_routeros_version: 7.19.6
+    observed_architecture: arm64
+    observed_cpu_count: 4
+    observed_memory: 4096MiB
+    factory_default_ip: 192.168.88.1/24
+    factory_default_interface: ether15
+    notes:
+      - Rackable replacement target for the CRS309 RouterOS gateway plan.
+      - Management IP is intentionally unassigned until management-only bootstrap is rendered and applied.
+      - Admin bootstrap credential is stored only in Ansible Vault.
+      - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
+      - Factory default config has 192.168.88.1/24 on ether15 and broad management services enabled; do not expose it to production L2 before hardening.
+  ctbsd_rfc99_jailerprime_099099:
+    role: retired-freebsd-jail-host
+    hypervisor: hasslehoff
+    proxmox_vmid: 1011
+    status: stopped-retired
+    notes:
+      - Former NetBox jail host.
+      - Superseded by svc_netbox_stage4 after repeated FreeBSD jail path instability.
+  svc_netbox_stage4:
+    role: ipam-dcim
+    hypervisor: hasslehoff
+    proxmox_vmid: 1062
+    runtime: gentoo-stage4-vm
+    status: active
+    management_ip: 172.16.99.62
+    api_url: http://172.16.99.62
+    target_version: 4.5.9
+    notes:
+      - Stage4 Gentoo VM imported from the populated LLVM OpenRC QCOW image.
+      - VM disk was expanded to 80 GiB before NetBox dependency bootstrap.
+      - NetBox API validation passes with the root-only bootstrap token.
+      - Essential NetBox operational integrations are installed under /opt/netbox-essentials.
+      - Repo-safe local fabric seed created baseline site, VLAN, prefix, device, and management IP records.
+  svc_identity_ipa01:
+    role: identity-controller
+    hypervisor: hasslehoff
+    proxmox_vmid: 1063
+    runtime: rocky-freeipa-vm
+    status: active
+    management_ip: 172.16.99.63
+    fqdn: ipa01.rfc1918.host
+    realm: RFC1918.HOST
+    domain: rfc1918.host
+    notes:
+      - Rocky 9 FreeIPA controller candidate for centralized RBAC and AAA.
+      - FreeRADIUS bridge is co-located initially for switch, router, firewall, WAP, and VPN AAA.
+      - DNS remains external/static until RouterOS or NetBox-backed DNS is normalized.
+      - FreeIPA, SSSD, and FreeRADIUS are validated; recovery snapshot is codex-freeipa-radius-live.
+
+network_fabric_links:
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge4
+    endpoint_b:
+      device: rtr_mgmt_ccr2004
+      interface: management-1gbe
+    purpose: ccr2004-management
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge5
+    endpoint_b:
+      device: hasslehoff
+      interface: eno1
+    purpose: hasslehoff-lacp-member
+    lag: hasslehoff-bond0
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge6
+    endpoint_b:
+      device: hasslehoff
+      interface: eno2
+    purpose: hasslehoff-lacp-member
+    lag: hasslehoff-bond0
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge24
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: ether49
+    purpose: crs354-management
+    notes:
+      - Live CRS354 management IP is assigned to ether49, not ether1.
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: sfp1
+    endpoint_b:
+      device: opnsense
+      interface: management-lan
+    purpose: current-management-gateway
+    status: legacy
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: sfp2
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus2
+    purpose: crs354-uplink
+    status: superseded-by-crs309-spine-plan
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: sfp-sfpplus2
+    endpoint_b:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus1
+    purpose: gateway-to-spine-trunk
+    media: 10G-SR
+    fiber: MMF
+    optics:
+      endpoint_a:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+      endpoint_b:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+    validation:
+      status: link-ok
+      rate: 10Gbps
+      observed_at: 2026-05-04
+  - endpoint_a:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus2
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus1
+    purpose: crs309-crs354-lacp-member
+    lag: crs309-crs354-lag
+    media: 10G-SR
+    fiber: MMF
+    optics:
+      endpoint_a:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+      endpoint_b:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+    status: active
+    validation:
+      status: link-ok
+      rate: 10Gbps
+      observed_at: 2026-05-04
+  - endpoint_a:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus3
+    endpoint_b:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus2
+    purpose: crs309-crs354-lacp-member
+    lag: crs309-crs354-lag
+    media: 10G-SR
+    fiber: MMF
+    optics:
+      endpoint_a:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+      endpoint_b:
+        vendor: FS.com
+        sku: SFP-10GSR-85
+    status: active
+    validation:
+      status: link-ok
+      rate: 10Gbps
+      observed_at: 2026-05-04
+  - endpoint_a:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus3
+    endpoint_b:
+      device: qnap_archive_ts435xeu
+      interface: sfpplus1
+    purpose: qnap-archive-lacp-member
+    lag: qnap-ts435xeu-bond0
+    media: 10G-DAC
+  - endpoint_a:
+      device: sw_mgmt_mkcrs354
+      interface: sfp-sfpplus4
+    endpoint_b:
+      device: qnap_archive_ts435xeu
+      interface: sfpplus2
+    purpose: qnap-archive-lacp-member
+    lag: qnap-ts435xeu-bond0
+    media: 10G-DAC
+
+network_fabric_lags:
+  hasslehoff-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge5
+      - ge6
+    host: hasslehoff
+    host_ports:
+      - eno1
+      - eno2
+    validated: true
+  crs309-crs354-lag:
+    mode: 802.3ad
+    switch_a: sw_spine_crs309_rfc99
+    switch_a_ports:
+      - sfp-sfpplus2
+      - sfp-sfpplus3
+    switch_b: sw_mgmt_mkcrs354
+    switch_b_ports:
+      - sfp-sfpplus1
+      - sfp-sfpplus2
+    media: 10G-SR
+    fiber: MMF
+    status: active
+    validation:
+      crs309_bond: bond-crs354
+      crs354_bond: bond-crs309
+      active_ports:
+        crs309:
+          - sfp-sfpplus2
+          - sfp-sfpplus3
+        crs354:
+          - sfp-sfpplus1
+          - sfp-sfpplus2
+      observed_at: 2026-05-04
+  qnap-ts435xeu-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_mkcrs354
+    switch_ports:
+      - sfp-sfpplus3
+      - sfp-sfpplus4
+    host: qnap_archive_ts435xeu
+    host_ports:
+      - sfpplus1
+      - sfpplus2
+    media: 10G-DAC
+    observed_routeros_bond: bond-qnap
+    status: observed
+
+network_fabric_vlan_plan:
+  - vlan_id: 1
+    name: management-compat
+    prefix: 172.16.99.0/24
+    status: active-transition
+  - vlan_id: 98
+    name: proxmox-sdn-lab
+    prefix: 172.16.98.0/24
+    status: active-local
+  - vlan_id: 1098
+    name: pathb-lab-services
+    prefix: 10.9.8.0/24
+    status: active-chr-backed
+  - vlan_id: 1077
+    name: container-management
+    prefix: 10.77.0.0/24
+    status: planned
+  - vlan_id: 1078
+    name: container-applications
+    prefix: 10.77.1.0/24
+    status: planned
+  - vlan_id: 1200
+    name: oob-power-management
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1300
+    name: builder-farm
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1400
+    name: roce-v2-control
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1500
+    name: llm-rag-service-control
+    prefix: operator-assigned
+    status: planned
+  - vlan_id: 1501
+    name: llm-rag-inference-data
+    prefix: operator-assigned
+    status: planned

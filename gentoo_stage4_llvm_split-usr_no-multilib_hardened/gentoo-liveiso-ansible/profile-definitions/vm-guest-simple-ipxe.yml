@@ -1,0 +1,11 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-base.packages
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  modules_load_files:
+    vm-guest-simple.conf: |
+      virtio_blk
+      virtio_net
+      virtio_pci

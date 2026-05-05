@@ -1,0 +1,16 @@
+app-containers/buildah
+app-containers/conmon
+app-containers/podman
+app-containers/crun
+app-containers/skopeo
+app-containers/slirp4netns
+app-containers/aardvark-dns
+app-containers/netavark
+net-firewall/nftables
+net-misc/bridge-utils
+net-misc/curl
+net-proxy/haproxy
+www-servers/nginx
+app-misc/jq
+sys-apps/iproute2
+sys-fs/fuse-overlayfs

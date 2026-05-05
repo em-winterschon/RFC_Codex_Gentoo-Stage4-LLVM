@@ -1,0 +1,2 @@
+# Baseline policy for service containers remains OpenRC and non-systemd.
+-systemd

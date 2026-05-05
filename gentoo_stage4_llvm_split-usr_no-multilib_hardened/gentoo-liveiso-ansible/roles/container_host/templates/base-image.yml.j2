@@ -1,0 +1,31 @@
+# Managed by gentoo-liveiso-ansible
+container_base_image:
+{% if resolved_profile_container_base_image | default({}) | length > 0 %}
+  name: {{ resolved_profile_container_base_image.name | default('') | quote }}
+  image: {{ resolved_profile_container_base_image.image | default('') | quote }}
+  immutable_image: {{ resolved_profile_container_base_image.immutable_image | default('') | quote }}
+  immutable_digest_image: {{ resolved_profile_container_base_image.immutable_digest_image | default('') | quote }}
+  digest: {{ resolved_profile_container_base_image.digest | default('') | quote }}
+  local_image: {{ resolved_profile_container_base_image.local_image | default('') | quote }}
+  source_commit: {{ resolved_profile_container_base_image.source_commit | default('') | quote }}
+  source_profile: {{ resolved_profile_container_base_image.source_profile | default('') | quote }}
+  binpkg_repo_id: {{ resolved_profile_container_base_image.binpkg_repo_id | default('') | quote }}
+  binpkg_uri: {{ resolved_profile_container_base_image.binpkg_uri | default('') | quote }}
+{% else %}
+  name: ""
+  image: ""
+  immutable_image: ""
+  immutable_digest_image: ""
+  digest: ""
+  local_image: ""
+  source_commit: ""
+  source_profile: ""
+  binpkg_repo_id: ""
+  binpkg_uri: ""
+{% endif %}
+container_app_build_defaults:
+  base_image: {{ resolved_profile_container_app_build_defaults.base_image | default(resolved_profile_container_base_image.image | default('')) | quote }}
+  immutable_base_image: {{ resolved_profile_container_app_build_defaults.immutable_base_image | default(resolved_profile_container_base_image.immutable_image | default('')) | quote }}
+  immutable_base_digest_image: {{ resolved_profile_container_app_build_defaults.immutable_base_digest_image | default(resolved_profile_container_base_image.immutable_digest_image | default('')) | quote }}
+  base_digest: {{ resolved_profile_container_app_build_defaults.base_digest | default(resolved_profile_container_base_image.digest | default('')) | quote }}
+  publish_namespace: {{ resolved_profile_container_app_build_defaults.publish_namespace | default('') | quote }}

@@ -1,0 +1,94 @@
+---
+name: container-services-safe-move
+slo_document_version: 1
+description: >
+  Point-in-time SLO gate for moving the container-services workload from the
+  local Path B QEMU VM to a Hasslehoff Stage4 staging VM.
+criteria:
+  availability: All migration-critical listeners must accept connections.
+  latency: Local lab control-plane checks should complete inside 1000 ms.
+  correctness: HTTP checks must return an expected 2xx or 3xx response.
+  dependency_scope: >
+    Elasticsearch backend reachability from the Hasslehoff management subnet is
+    validated in a separate dependency phase so core container move readiness
+    can be assessed independently from cross-subnet routing.
+services:
+  - name: container-services-source
+    checks:
+      - name: haproxy-http-source
+        protocol: http
+        target: 10.9.8.89
+        port: 80
+        path: /
+        expected_status: [200, 301, 302, 403, 404]
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [pre-move, post-move]
+      - name: nginx-source
+        protocol: http
+        target: 10.9.8.89
+        port: 8080
+        path: /
+        expected_status: [200, 301, 302, 403, 404]
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [pre-move, post-move]
+      - name: rsyslog-tcp-source
+        protocol: tcp
+        target: 10.9.8.89
+        port: 514
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [pre-move, post-move]
+      - name: elasticsearch-vip-source
+        protocol: http
+        target: 10.9.8.92
+        port: 9200
+        path: /
+        expected_status: [200, 401]
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [pre-move, post-move]
+  - name: container-services-safe-move-target
+    checks:
+      - name: ssh-management-target
+        protocol: tcp
+        target: 172.16.99.89
+        port: 22
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [target-boot, post-move]
+      - name: haproxy-http-target
+        protocol: http
+        target: 172.16.99.89
+        port: 80
+        path: /
+        expected_status: [200, 301, 302, 403, 404]
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [post-move]
+      - name: nginx-target
+        protocol: http
+        target: 172.16.99.89
+        port: 8080
+        path: /
+        expected_status: [200, 301, 302, 403, 404]
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [post-move]
+      - name: rsyslog-tcp-target
+        protocol: tcp
+        target: 172.16.99.89
+        port: 514
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [post-move]
+      - name: elasticsearch-http-target
+        protocol: http
+        target: 172.16.99.89
+        port: 9200
+        path: /
+        expected_status: [200, 401]
+        latency_budget_ms: 1000
+        timeout_seconds: 3
+        phases: [post-move-elasticsearch-dependency]

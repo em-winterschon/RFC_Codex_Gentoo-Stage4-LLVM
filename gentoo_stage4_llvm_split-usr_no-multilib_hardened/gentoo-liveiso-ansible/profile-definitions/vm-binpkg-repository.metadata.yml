@@ -1,0 +1,27 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-binpkg-repository
+  purpose: Hardened Gentoo VM profile for hosting Stage4 and Stage5 custom Portage binary package repositories.
+  profile_taxonomy:
+    stage: stage5
+    role_class: package-repository
+    role_name: binpkg-repository
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-appserver.packages
+      - profile-package-lists/stage5-virtual-host-binpkg-repository.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - hardened-llvm-stage4-merged-usr
+      - cloud-init-vm
+      - vm-guest-application-server
+  package_pins:
+    tracked_atoms:
+      - www-servers/nginx
+      - net-misc/rsync
+      - sys-apps/portage
+  service_segments:
+    - package-hosting
+    - ci-artifact-cache

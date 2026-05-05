@@ -1,0 +1,45 @@
+---
+- name: Resolve guest memory storage settings
+  ansible.builtin.set_fact:
+    guest_memory_storage_enabled: >-
+      {{
+        resolved_profile_memory_storage.enabled
+        | default(profile_memory_storage_default_enabled)
+        | bool
+      }}
+    guest_memory_storage_mounts: >-
+      {{
+        resolved_profile_memory_storage.mounts
+        | default(profile_memory_storage_default_mounts)
+      }}
+
+- name: Ensure target ZFS datasets are mounted before guest memory storage directories exist
+  ansible.builtin.command: "zfs mount -a"
+  register: guest_memory_storage_zfs_mounts
+  changed_when: false
+  failed_when: guest_memory_storage_zfs_mounts.rc not in [0]
+  when:
+    - guest_memory_storage_enabled
+    - storage_layout is defined
+    - storage_layout in ['single-drive', 'zfs-mirror', 'zfs-boot-root-mirror', 'zraid1', 'zraid2', 'zraid3', 'draid']
+
+- name: Ensure guest memory storage mount directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ guest_memory_mount.path }}"
+    state: directory
+    mode: "{{ guest_memory_mount.mode | default('0755') }}"
+  loop: "{{ guest_memory_storage_mounts }}"
+  loop_control:
+    loop_var: guest_memory_mount
+  when: guest_memory_storage_enabled
+
+- name: Add managed tmpfs mounts to fstab
+  ansible.builtin.blockinfile:
+    path: "{{ install_target_root }}/etc/fstab"
+    marker: "# {mark} ANSIBLE MANAGED MEMORY STORAGE"
+    block: "{{ lookup('template', 'fstab.memory-storage.j2') | trim }}"
+    insertafter: EOF
+    append_newline: true
+  when:
+    - guest_memory_storage_enabled
+    - guest_memory_storage_mounts | length > 0

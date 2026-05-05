@@ -1,0 +1,5 @@
+{
+  "enabled": {{ zerotier_enabled | bool | lower }},
+  "network_id": {{ resolved_zerotier.network_id | to_json }},
+  "moon_nodes": {{ resolved_zerotier.moon_nodes | to_json }}
+}

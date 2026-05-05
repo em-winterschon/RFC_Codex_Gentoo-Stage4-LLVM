@@ -1,0 +1,50 @@
+---
+- name: Resolve IPMI exporter container application profile
+  ansible.builtin.set_fact:
+    container_ipmi_exporter_profile: "{{ resolved_profile_container_app_profiles.ipmi_exporter | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure IPMI exporter configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_ipmi_exporter_config_dir }}"
+    state: directory
+    mode: '0755'
+  when:
+    - container_services_enabled
+    - container_ipmi_exporter_profile.enabled | default(false) | bool
+
+- name: Render IPMI exporter configuration
+  ansible.builtin.template:
+    src: ipmi_remote.yml.j2
+    dest: "{{ install_target_root }}{{ container_ipmi_exporter_config_dir }}/ipmi_remote.yml"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_ipmi_exporter_profile.enabled | default(false) | bool
+
+- name: Register IPMI exporter runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'ipmi-exporter',
+              'description': 'Prometheus IPMI exporter',
+              'image': container_ipmi_exporter_profile.image,
+              'network': container_ipmi_exporter_profile.network | default('mgmt'),
+              'ip_address': container_ipmi_exporter_profile.ip_address | default(''),
+              'published_ports': container_ipmi_exporter_profile.published_ports | default(['9290:9290/tcp']),
+              'cap_add': container_ipmi_exporter_profile.cap_add | default([]),
+              'environment': container_ipmi_exporter_profile.env | default({}),
+              'volumes': [
+                container_ipmi_exporter_config_dir + '/ipmi_remote.yml:/etc/ipmi_exporter/ipmi_remote.yml:ro'
+              ],
+              'command': ['--config.file=/etc/ipmi_exporter/ipmi_remote.yml'],
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_ipmi_exporter_profile.enabled | default(false) | bool
