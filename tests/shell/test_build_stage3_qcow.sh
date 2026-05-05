@@ -41,6 +41,7 @@ mark_stage3_builder_globals_used() {
     "${PORTAGE_SYNC_COMMAND-}" \
     "${STAGE3_MAKE_CONF_APPEND-}" \
     "${STAGE3_PACKAGE_USE_APPEND-}" \
+    "${STAGE3_PACKAGE_UNMASK_APPEND-}" \
     "${STAGE3_LATEST_TXT-}" \
     "${STAGE3_LLVM_TARGETS-}" \
     "${STAGE3_STAGE_TARBALL_NAME-}" \
@@ -110,6 +111,7 @@ reset_builder_state() {
   PORTAGE_SYNC_COMMAND='emerge-webrsync'
   STAGE3_MAKE_CONF_APPEND=''
   STAGE3_PACKAGE_USE_APPEND=''
+  STAGE3_PACKAGE_UNMASK_APPEND=''
   STAGE3_RELEASE_ARCH=''
   STAGE3_CURRENT_DIR=''
   STAGE3_LATEST_TXT=''
@@ -292,6 +294,7 @@ test_render_bootstrap_script_includes_extra_portage_fragments() {
   STAGE3_LLVM_TARGETS='X86'
   STAGE3_MAKE_CONF_APPEND=$'MAKEOPTS="-j48 -l64"\nUSE="${USE} X dbus spice -systemd"\nVIDEO_CARDS="${VIDEO_CARDS} qxl modesetting"'
   STAGE3_PACKAGE_USE_APPEND=$'app-emulation/spice-vdagent gtk -systemd\nx11-base/xorg-server xorg elogind udev -systemd'
+  STAGE3_PACKAGE_UNMASK_APPEND=$'>=dev-python/pyqt5-5.15.11'
   WORK_BOOTSTRAP_SCRIPT="${temp_dir}/bootstrap-stage3-vm.sh"
 
   render_bootstrap_script
@@ -305,6 +308,8 @@ test_render_bootstrap_script_includes_extra_portage_fragments() {
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/stage3-extra'
   assert_contains "${bootstrap}" 'app-emulation/spice-vdagent gtk -systemd'
   assert_contains "${bootstrap}" 'x11-base/xorg-server xorg elogind udev -systemd'
+  assert_contains "${bootstrap}" 'cat > /etc/portage/package.unmask/stage3-extra'
+  assert_contains "${bootstrap}" '>=dev-python/pyqt5-5.15.11'
   rm -rf "${temp_dir}"
 }
 

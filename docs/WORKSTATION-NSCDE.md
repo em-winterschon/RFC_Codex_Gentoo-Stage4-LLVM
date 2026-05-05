@@ -94,13 +94,22 @@ INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
 '
 STAGE3_PACKAGE_USE_APPEND='
 app-emulation/spice-vdagent gtk -systemd
+media-libs/freetype harfbuzz png
 x11-base/xorg-server xorg elogind udev -systemd
+'
+STAGE3_PACKAGE_UNMASK_APPEND='
+>=dev-python/pyqt5-5.15.11
 '
 ```
 
 The builder creates `/dev/shm/portage-tmpfs`, `/var/cache/binpkgs`, and
 `/var/log/portage` inside the target before running Portage so RAM-backed
 temporary builds and binpkg output work during bootstrap.
+
+The PyQt5 unmask is explicit because Gentoo masked `dev-python/pyqt5` pending
+tree removal while the current NsCDE upstream install path still expects PyQt5.
+If NsCDE moves to PyQt6 or a local overlay ebuild replaces that dependency, this
+profile should drop the unmask.
 
 Current live-build convention:
 

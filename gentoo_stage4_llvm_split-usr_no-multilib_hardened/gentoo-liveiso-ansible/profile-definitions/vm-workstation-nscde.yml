@@ -4,13 +4,17 @@ gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
   make_conf_append: |
-    USE="${USE} X dbus gtk qt5 spice truetype xinerama -systemd -wayland"
+    USE="${USE} X dbus gtk qt5 spice truetype xinerama elogind udev -systemd -wayland"
     VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev"
     INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
   package_use_files:
     40-workstation-nscde: |
       app-emulation/spice-vdagent gtk -systemd
+      media-libs/freetype harfbuzz png
       x11-base/xorg-server xorg elogind udev -systemd
+  package_unmask_files:
+    40-workstation-nscde: |
+      >=dev-python/pyqt5-5.15.11
   modules_load_files:
     vm-workstation-nscde.conf: |
       uinput

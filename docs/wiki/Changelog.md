@@ -89,6 +89,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   `codex-workstation-nscde-build` with Portage binpkg generation enabled and
   workstation Xorg/SPICE/NsCDE dependencies staged from the profile package
   list.
+- Encoded the first workstation resolver corrections: `media-libs/freetype`
+  requires `harfbuzz` for the GTK/xscreensaver path, and PyQt5 remains
+  explicitly unmasked until NsCDE can be moved to a non-masked dependency path.
 
 ## 2026-05-03
 
