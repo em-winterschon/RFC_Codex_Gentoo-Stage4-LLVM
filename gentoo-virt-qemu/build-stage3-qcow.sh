@@ -41,6 +41,8 @@ STAGE3_SSH_PACKAGE="${STAGE3_SSH_PACKAGE:-net-misc/openssh}"
 STAGE3_NETWORK_SERVICE="${STAGE3_NETWORK_SERVICE:-dhcpcd}"
 STAGE3_SSH_SERVICE="${STAGE3_SSH_SERVICE:-sshd}"
 STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod}"
+STAGE3_MAKE_CONF_APPEND="${STAGE3_MAKE_CONF_APPEND-}"
+STAGE3_PACKAGE_USE_APPEND="${STAGE3_PACKAGE_USE_APPEND-}"
 VM_HOSTNAME="${VM_HOSTNAME:-${INSTANCE_NAME}}"
 VM_TIMEZONE="${VM_TIMEZONE:-UTC}"
 VM_LOCALE="${VM_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -489,9 +491,21 @@ COMMON_CFLAGS="\${COMMON_FLAGS}"
 COMMON_CXXFLAGS="\${COMMON_FLAGS}"
 MAKECONF
 
+if [[ -n ${STAGE3_MAKE_CONF_APPEND@Q} ]]; then
+  cat >> /etc/portage/make.conf <<'MAKECONF_EXTRA'
+${STAGE3_MAKE_CONF_APPEND}
+MAKECONF_EXTRA
+fi
+
 cat > /etc/portage/package.use/stage3-qcow-kernel <<'PKGUSE'
 sys-kernel/installkernel dracut
 PKGUSE
+
+if [[ -n ${STAGE3_PACKAGE_USE_APPEND@Q} ]]; then
+  cat > /etc/portage/package.use/stage3-extra <<'PKGUSE_EXTRA'
+${STAGE3_PACKAGE_USE_APPEND}
+PKGUSE_EXTRA
+fi
 
 cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
 [DEFAULT]

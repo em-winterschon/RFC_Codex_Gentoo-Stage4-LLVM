@@ -39,6 +39,8 @@ mark_stage3_builder_globals_used() {
     "${SSH_AUTHORIZED_KEY_FILE-}" \
     "${STAGE3_ROOT_PASSWORD_HASH-}" \
     "${PORTAGE_SYNC_COMMAND-}" \
+    "${STAGE3_MAKE_CONF_APPEND-}" \
+    "${STAGE3_PACKAGE_USE_APPEND-}" \
     "${STAGE3_LATEST_TXT-}" \
     "${STAGE3_LLVM_TARGETS-}" \
     "${STAGE3_STAGE_TARBALL_NAME-}" \
@@ -106,6 +108,8 @@ reset_builder_state() {
   SSH_AUTHORIZED_KEY_FILE=''
   STAGE3_ROOT_PASSWORD_HASH=''
   PORTAGE_SYNC_COMMAND='emerge-webrsync'
+  STAGE3_MAKE_CONF_APPEND=''
+  STAGE3_PACKAGE_USE_APPEND=''
   STAGE3_RELEASE_ARCH=''
   STAGE3_CURRENT_DIR=''
   STAGE3_LATEST_TXT=''
@@ -280,6 +284,28 @@ EOF
   rm -rf "${temp_dir}"
 }
 
+test_render_bootstrap_script_includes_extra_portage_fragments() {
+  local temp_dir bootstrap
+  temp_dir="$(mktemp -d)"
+
+  reset_builder_state
+  STAGE3_LLVM_TARGETS='X86'
+  STAGE3_MAKE_CONF_APPEND=$'MAKEOPTS="-j48 -l64"\nUSE="${USE} X dbus spice -systemd"\nVIDEO_CARDS="${VIDEO_CARDS} qxl modesetting"'
+  STAGE3_PACKAGE_USE_APPEND=$'app-emulation/spice-vdagent gtk -systemd\nx11-base/xorg-server xorg elogind udev -systemd'
+  WORK_BOOTSTRAP_SCRIPT="${temp_dir}/bootstrap-stage3-vm.sh"
+
+  render_bootstrap_script
+
+  bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
+  assert_contains "${bootstrap}" 'MAKEOPTS="-j48 -l64"'
+  assert_contains "${bootstrap}" 'USE="${USE} X dbus spice -systemd"'
+  assert_contains "${bootstrap}" 'VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting"'
+  assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/stage3-extra'
+  assert_contains "${bootstrap}" 'app-emulation/spice-vdagent gtk -systemd'
+  assert_contains "${bootstrap}" 'x11-base/xorg-server xorg elogind udev -systemd'
+  rm -rf "${temp_dir}"
+}
+
 test_resolve_host_tool_paths_falls_back_to_command_v() {
   local temp_dir tool_dir old_path
   temp_dir="$(mktemp -d)"
@@ -315,6 +341,7 @@ test_resolve_stage3_target_rejects_invalid_enum
 test_validate_stage3_profile_preset_rejects_invalid_enum
 test_main_dry_run_prints_stage3_build_plan
 test_hardened_profile_preset_renders_profile_specific_portage_config
+test_render_bootstrap_script_includes_extra_portage_fragments
 test_resolve_host_tool_paths_falls_back_to_command_v
 
 printf 'PASS: %s\n' "$(basename "$0")"
