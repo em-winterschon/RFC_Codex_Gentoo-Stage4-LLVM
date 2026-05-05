@@ -1,0 +1,67 @@
+---
+- name: Build read-only Hetzner DNS inventory report
+  hosts: localhost
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+    hetzner_dns_inventory_script: "{{ repo_root }}/scripts/report-hetzner-dns-inventory.py"
+    hetzner_dns_inventory_output: "/tmp/hetzner-dns-inventory-report.json"
+    hetzner_dns_api_endpoint: "{{ dns_hetzner_cloud_api_endpoint | default('https://api.hetzner.cloud/v1') }}"
+    hetzner_dns_token_groups: "{{ dns_hetzner_cloud_token_groups | default([]) }}"
+  tasks:
+    - name: Assert Hetzner DNS token groups are configured
+      ansible.builtin.assert:
+        that:
+          - hetzner_dns_token_groups | length > 0
+        fail_msg: "No Hetzner DNS token groups are configured."
+
+    - name: Create temporary Hetzner DNS token group file
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .json
+      register: hetzner_dns_token_group_file
+
+    - name: Generate Hetzner DNS inventory report with temporary token material
+      block:
+        - name: Render temporary Hetzner DNS token group file
+          ansible.builtin.copy:
+            dest: "{{ hetzner_dns_token_group_file.path }}"
+            mode: "0600"
+            content: "{{ hetzner_dns_token_groups | to_nice_json }}"
+          no_log: true
+
+        - name: Generate read-only Hetzner DNS inventory report
+          ansible.builtin.command:
+            argv:
+              - python3
+              - "{{ hetzner_dns_inventory_script }}"
+              - --api-endpoint
+              - "{{ hetzner_dns_api_endpoint }}"
+              - --token-groups-file
+              - "{{ hetzner_dns_token_group_file.path }}"
+              - --format
+              - json
+              - --output
+              - "{{ hetzner_dns_inventory_output }}"
+          changed_when: false
+
+        - name: Read Hetzner DNS inventory report
+          ansible.builtin.slurp:
+            src: "{{ hetzner_dns_inventory_output }}"
+          register: hetzner_dns_inventory_report_raw
+
+        - name: Report Hetzner DNS inventory summary
+          ansible.builtin.debug:
+            msg: >-
+              Hetzner DNS inventory report generated at {{ hetzner_dns_inventory_output }};
+              zones_readable={{ (hetzner_dns_inventory_report_raw.content | b64decode | from_json).summary.zones_readable }}/{{ (hetzner_dns_inventory_report_raw.content | b64decode | from_json).summary.zones_configured }},
+              records_total={{ (hetzner_dns_inventory_report_raw.content | b64decode | from_json).summary.records_total }},
+              records_by_type={{ (hetzner_dns_inventory_report_raw.content | b64decode | from_json).summary.records_by_type }},
+              connectivity_hosts={{ (hetzner_dns_inventory_report_raw.content | b64decode | from_json).summary.connectivity_hosts }},
+              errors={{ (hetzner_dns_inventory_report_raw.content | b64decode | from_json).summary.errors }}.
+      always:
+        - name: Remove temporary Hetzner DNS token group file
+          ansible.builtin.file:
+            path: "{{ hetzner_dns_token_group_file.path }}"
+            state: absent
+          when: hetzner_dns_token_group_file.path is defined

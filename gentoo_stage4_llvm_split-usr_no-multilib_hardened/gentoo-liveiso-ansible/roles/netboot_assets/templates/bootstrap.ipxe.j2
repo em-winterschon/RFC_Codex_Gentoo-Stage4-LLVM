@@ -1,0 +1,4 @@
+#!ipxe
+dhcp
+set base-url {{ netboot_public_base_url }}
+chain ${base-url}/hosts/by-mac.ipxe || chain ${base-url}/menu.ipxe

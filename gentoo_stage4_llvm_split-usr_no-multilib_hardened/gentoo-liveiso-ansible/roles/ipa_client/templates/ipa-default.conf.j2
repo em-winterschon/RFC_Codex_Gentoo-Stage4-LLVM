@@ -1,0 +1,11 @@
+[global]
+realm = {{ resolved_ipa_client.realm }}
+domain = {{ resolved_ipa_client.domain }}
+{% if resolved_ipa_client.servers | length > 0 %}
+server = {{ resolved_ipa_client.servers[0] }}
+xmlrpc_uri = https://{{ resolved_ipa_client.servers[0] }}/ipa/xml
+{% else %}
+server = _srv_
+xmlrpc_uri = https://{{ resolved_ipa_client.domain }}/ipa/xml
+{% endif %}
+enable_ra = True

@@ -1,0 +1,18 @@
+{
+  "instance_name": {{ qemu_memory_drives_instance_name | to_json }},
+  "mount_root": {{ qemu_memory_drives_mount_root | to_json }},
+  "manifest_path": {{ qemu_memory_drives_manifest_path | to_json }},
+  "drives": [
+{% for qemu_memory_drive in qemu_memory_drives %}
+    {
+      "name": {{ qemu_memory_drive.name | to_json }},
+      "path": {{ (qemu_memory_drive_dir + '/' + qemu_memory_drive.name + '.' + (qemu_memory_drive.format | default('qcow2'))) | to_json }},
+      "format": {{ (qemu_memory_drive.format | default('qcow2')) | to_json }},
+      "serial": {{ (qemu_memory_drive.serial | default('mem-' + qemu_memory_drive.name)) | to_json }},
+      "device_model": {{ (qemu_memory_drive.device_model | default('virtio-blk-pci')) | to_json }},
+      "bootindex": {{ (qemu_memory_drive.bootindex | default('')) | to_json }},
+      "purpose_tags": {{ (qemu_memory_drive.purpose_tags | default([])) | to_json }}
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  ]
+}

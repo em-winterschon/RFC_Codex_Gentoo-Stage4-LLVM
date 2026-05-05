@@ -1,0 +1,7 @@
+dev-util/jenkins-bin
+sys-devel/distcc
+dev-util/ccache
+dev-vcs/git
+net-misc/curl
+net-misc/rsync
+app-misc/jq

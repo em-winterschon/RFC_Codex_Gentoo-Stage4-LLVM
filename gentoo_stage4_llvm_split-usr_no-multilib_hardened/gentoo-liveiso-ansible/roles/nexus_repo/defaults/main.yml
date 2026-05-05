@@ -1,0 +1,47 @@
+---
+nexus_repo_default_enabled: false
+nexus_repo_default_version: 3.90.1-01
+nexus_repo_default_architecture: x86_64
+nexus_repo_default_installer_path: /tmp/Nexus-Repo-OSS/sonatype-nexus-repo-oss_-3.90.1-01-linux-x86_64.tar.gz
+nexus_repo_default_installer_sha256: 6f3240f34bb46b99d93b2c512333651ea227b4c65248c8154ae275933c320556
+nexus_repo_default_install_root: /opt
+nexus_repo_default_extracted_dir_name: nexus-3.90.1-01
+nexus_repo_default_symlink_path: /opt/nexus
+nexus_repo_default_work_root: /var/lib/sonatype-work
+nexus_repo_default_data_root: /var/lib/nexus
+nexus_repo_default_log_root: /var/log/nexus
+nexus_repo_default_service_user: nexus
+nexus_repo_default_service_group: nexus
+nexus_repo_default_listen_host: 0.0.0.0
+nexus_repo_default_listen_port: 8081
+nexus_repo_default_context_path: /
+nexus_repo_default_runlevel: default
+nexus_repo_default_heap_min: 4096m
+nexus_repo_default_heap_max: 4096m
+nexus_repo_default_direct_memory: 4096m
+nexus_repo_default_proxy_intent_path: /etc/nexus/proxy-intent.yml
+nexus_repo_default_transparent_proxy_repositories:
+  - name: maven-central
+    format: maven2
+    type: proxy
+    remote_url: https://repo1.maven.org/maven2/
+  - name: npmjs
+    format: npm
+    type: proxy
+    remote_url: https://registry.npmjs.org/
+  - name: pypi
+    format: pypi
+    type: proxy
+    remote_url: https://pypi.org/
+  - name: docker-hub
+    format: docker
+    type: proxy
+    remote_url: https://registry-1.docker.io/
+  - name: ghcr
+    format: docker
+    type: proxy
+    remote_url: https://ghcr.io/
+  - name: gentoo-distfiles
+    format: raw
+    type: proxy
+    remote_url: https://distfiles.gentoo.org/

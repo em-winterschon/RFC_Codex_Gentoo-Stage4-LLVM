@@ -1,0 +1,21 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-base.packages
+    - profile-package-lists/stage5-virtual-host-appserver.packages
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    20-vm-guest-appserver: |
+      app-emulation/xe-guest-utilities xenstore
+  package_accept_keywords_files:
+    20-vm-guest-appserver: |
+      =app-emulation/xe-guest-utilities-6.2.0_p1120-r1 ~amd64
+  modules_load_files:
+    vm-guest-appserver.conf: |
+      bonding
+      virtio_blk
+      virtio_net
+      virtio_pci
+      xen_blkfront
+      xen_netfront

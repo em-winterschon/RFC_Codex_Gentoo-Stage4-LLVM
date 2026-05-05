@@ -1,0 +1,5 @@
+apm-server:
+  host: "0.0.0.0:8200"
+
+output.elasticsearch:
+  hosts: {{ container_elastic_apm_profile.elasticsearch_hosts | default(['http://127.0.0.1:9200']) | to_json }}

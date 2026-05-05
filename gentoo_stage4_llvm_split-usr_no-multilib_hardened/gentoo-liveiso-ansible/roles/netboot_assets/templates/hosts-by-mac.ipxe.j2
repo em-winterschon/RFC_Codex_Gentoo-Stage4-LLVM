@@ -1,0 +1,7 @@
+#!ipxe
+dhcp
+set base-url {{ netboot_public_base_url }}
+{% for netboot_host in netboot_resolved_host_map %}
+iseq ${net0/mac} {{ netboot_host.match_mac | lower }} && chain ${base-url}/hosts/{{ netboot_host.script_name }}
+{% endfor %}
+chain ${base-url}/menu.ipxe

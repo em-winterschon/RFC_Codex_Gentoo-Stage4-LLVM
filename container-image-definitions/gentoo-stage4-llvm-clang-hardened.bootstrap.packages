@@ -1,0 +1,10 @@
+# Compiler/runtime packages that must exist in the target sysroot before the
+# larger application graph can safely run CMake or compiler ABI checks.
+#
+# These are emerged with a temporary libgcc/libstdc++ fallback. Once they are
+# installed, the builder verifies normal clang + llvm-libunwind/libc++ ABI
+# linking against the target rootfs before starting the main graph.
+llvm-runtimes/libunwind
+llvm-runtimes/libcxxabi
+llvm-runtimes/libcxx
+llvm-runtimes/compiler-rt

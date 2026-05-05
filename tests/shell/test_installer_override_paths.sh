@@ -63,6 +63,10 @@ test_boot_commandline_templates_do_not_regress_console_typo() {
   assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" "console=tty0"
   assert_file_not_contains_token "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "sole=tty0"
   assert_file_not_contains_token "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" "sole=tty0"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "zgenhostid -f"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "install_items+=\" /etc/hostid \""
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "spl_hostid="
+  assert_file_not_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "src: /etc/hostid"
 }
 
 test_llvm_clang_portage_profile_exists() {
@@ -71,7 +75,7 @@ test_llvm_clang_portage_profile_exists() {
 
   assert_file_contains "${profile}" "profile_id: llvm-clang-hardened-portage"
   assert_file_contains "${profile}" "LDFLAGS=\"-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld\""
-  assert_file_contains "${profile}" "CC=\"gcc\""
+  assert_file_contains "${profile}" "CC=gcc"
   assert_file_contains "${profile}" "sys-libs/glibc gcc-compat.conf"
   assert_file_contains "${profile}" "llvm-core/clang-toolchain-symlinks native-symlinks -gcc-symlinks"
 

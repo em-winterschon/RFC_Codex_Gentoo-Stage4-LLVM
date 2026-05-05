@@ -1,0 +1,8 @@
+---
+- name: Render and optionally apply RouterOS Path B lab configuration
+  hosts: routeros_pathb
+  gather_facts: false
+  become: false
+
+  roles:
+    - routeros_pathb

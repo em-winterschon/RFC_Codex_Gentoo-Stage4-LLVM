@@ -1,5 +1,17 @@
 ---
 portage_cpu_profiles:
+  x86_64_v2_generic:
+    march: x86-64-v2
+    tune: generic
+    rust_target_cpu: x86-64-v2
+    llvm_targets: "X86"
+    notes: "Portable x86-64-v2 baseline for generic virtual guests and container builders"
+  x86_64_v3_generic:
+    march: x86-64-v3
+    tune: generic
+    rust_target_cpu: x86-64-v3
+    llvm_targets: "X86"
+    notes: "Portable x86-64-v3 baseline for modern virtual guests and container builders"
   amd_ryzen_z1_extreme:
     march: znver4
     tune: znver4

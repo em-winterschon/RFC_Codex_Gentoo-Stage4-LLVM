@@ -1,0 +1,6 @@
+---
+telemetry_elasticsearch_exporter_default_enabled: false
+telemetry_elasticsearch_exporter_default_listen_address: "0.0.0.0"
+telemetry_elasticsearch_exporter_default_listen_port: 9114
+telemetry_elasticsearch_exporter_default_es_uri: "http://127.0.0.1:9200"
+telemetry_elasticsearch_exporter_default_extra_args: []

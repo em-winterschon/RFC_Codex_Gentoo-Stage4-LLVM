@@ -1,0 +1,97 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "RouterOSPathBManifest",
+  "metadata": {
+    "name": "{{ inventory_hostname }}",
+    "description": "Rendered RouterOS Path B configuration intent."
+  },
+  "bootMode": "{{ routeros_pathb_boot_mode }}",
+  "routerosArch": "{{ routeros_pathb_routeros_arch }}",
+  "routerosRelease": "{{ routeros_pathb_routeros_release }}",
+  "identity": "{{ routeros_pathb_identity }}",
+  "labName": "{{ routeros_pathb_lab_name }}",
+  "lanInterface": "{{ routeros_pathb_lan_interface }}",
+  "lanCidr": "{{ routeros_pathb_lan_cidr }}",
+  "lanNetworkCidr": "{{ routeros_pathb_lan_network_cidr }}",
+  "wan": {
+    "enabled": {{ (routeros_pathb_wan_enabled | bool) | to_json }},
+    "interface": "{{ routeros_pathb_wan_interface }}",
+    "cidr": "{{ routeros_pathb_wan_cidr }}",
+    "gateway": "{{ routeros_pathb_wan_gateway }}",
+    "natEnabled": {{ (routeros_pathb_nat_enabled | bool) | to_json }},
+    "firewallBaselineEnabled": {{ (routeros_pathb_firewall_baseline_enabled | bool) | to_json }}
+  },
+  "gateway": "{{ routeros_pathb_gateway }}",
+  "dnsServers": {{ routeros_pathb_dns_servers | to_json }},
+  "dnsAllowRemoteRequests": {{ (routeros_pathb_dns_allow_remote_requests | bool) | to_json }},
+  "dhcp": {
+    "serverName": "{{ routeros_pathb_dhcp_server_name }}",
+    "poolName": "{{ routeros_pathb_dhcp_pool_name }}",
+    "poolRanges": {{ routeros_pathb_dhcp_pool_ranges | to_json }},
+    "dnsServers": {{ routeros_pathb_dhcp_dns_servers | to_json }},
+    "leaseTime": "{{ routeros_pathb_dhcp_lease_time }}",
+    "nextServer": "{{ routeros_pathb_boot_next_server }}",
+    "bootFileName": "{{ routeros_pathb_boot_file_name }}"
+  },
+  "ntp": {
+    "clientEnabled": {{ (routeros_pathb_ntp_client_enabled | bool) | to_json }},
+    "clientMode": "{{ routeros_pathb_ntp_client_mode }}",
+    "clientServers": {{ routeros_pathb_ntp_client_servers | to_json }},
+    "serverEnabled": {{ (routeros_pathb_ntp_server_enabled | bool) | to_json }},
+    "broadcast": {{ (routeros_pathb_ntp_server_broadcast | bool) | to_json }},
+    "multicast": {{ (routeros_pathb_ntp_server_multicast | bool) | to_json }},
+    "broadcastAddresses": {{ routeros_pathb_ntp_server_broadcast_addresses | to_json }}
+  },
+  "ssh": {
+    "enabled": {{ (routeros_pathb_ssh_enabled | bool) | to_json }},
+    "port": {{ routeros_pathb_ssh_port }},
+    "passwordAuthentication": "{{ routeros_pathb_ssh_password_authentication }}",
+    "forwardingEnabled": "{{ routeros_pathb_ssh_forwarding }}",
+    "allowedCidrs": {{ routeros_pathb_management_cidrs | to_json }}
+  },
+  "https": {
+    "enabled": {{ (routeros_pathb_https_enabled | bool) | to_json }},
+    "port": {{ routeros_pathb_https_port }},
+    "httpEnabled": {{ (routeros_pathb_http_enabled | bool) | to_json }},
+    "httpRedirectStrategy": "{{ routeros_pathb_http_redirect_strategy }}",
+    "certificateName": "{{ routeros_pathb_certificate_name }}"
+  },
+  "syslog": {
+    "clientEnabled": {{ (routeros_pathb_syslog_client_enabled | bool) | to_json }},
+    "clientTransport": "{{ routeros_pathb_syslog_client_transport }}",
+    "remoteHost": "{{ routeros_pathb_syslog_remote_host }}",
+    "udpPort": {{ routeros_pathb_syslog_remote_port_udp }},
+    "tcpPort": {{ routeros_pathb_syslog_remote_port_tcp }},
+    "nativeServerEnabled": {{ (routeros_pathb_syslog_server_enabled | bool) | to_json }},
+    "nativeServerStrategy": "{{ routeros_pathb_syslog_server_strategy }}",
+    "nativeServerNote": "{{ routeros_pathb_syslog_server_note }}"
+  },
+  "snmp": {
+    "enabled": {{ (routeros_pathb_snmp_enabled | bool) | to_json }},
+    "disablePublic": {{ (routeros_pathb_snmp_disable_public | bool) | to_json }},
+    "v2cEnabled": {{ (routeros_pathb_snmp_v2c_enabled | bool) | to_json }},
+    "v2cCommunity": "{{ routeros_pathb_snmp_v2c_community }}",
+    "v2cAddresses": {{ routeros_pathb_snmp_v2c_addresses | to_json }},
+    "v2cWriteAccess": {{ (routeros_pathb_snmp_v2c_write_access | bool) | to_json }},
+    "v3Enabled": {{ (routeros_pathb_snmp_v3_enabled | bool) | to_json }},
+    "v3Name": "{{ routeros_pathb_snmp_v3_name }}",
+    "v3AuthProtocol": "{{ routeros_pathb_snmp_v3_auth_protocol }}",
+    "v3PrivProtocol": "{{ routeros_pathb_snmp_v3_priv_protocol }}",
+    "v3WriteAccess": {{ (routeros_pathb_snmp_v3_write_access | bool) | to_json }}
+  },
+  "requiredPackages": {{ routeros_pathb_required_packages | to_json }},
+  "supportedRequiredPackages": {{ routeros_pathb_supported_required_packages | to_json }},
+  "unsupportedRequiredPackages": {{ routeros_pathb_unsupported_required_packages | to_json }},
+  "containerEnablementNote": "{{ routeros_pathb_container_enablement_note }}",
+  "zerotierArchNote": "{{ routeros_pathb_zerotier_arch_note }}",
+  "serialConsole": {
+    "mode": "{{ routeros_pathb_serial_console_mode }}",
+    "baud": {{ routeros_pathb_serial_console_baud }}
+  },
+  "ha": {
+    "mode": "{{ routeros_pathb_ha_mode }}",
+    "peer": "{{ routeros_pathb_ha_peer }}",
+    "note": "{{ routeros_pathb_future_ha_note }}"
+  },
+  "targets": {{ routeros_pathb_target_hosts | to_json }}
+}

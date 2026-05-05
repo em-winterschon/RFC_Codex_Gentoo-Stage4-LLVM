@@ -1,0 +1,2 @@
+# arguments for prometheus snmp exporter
+command_args="{% if resolved_snmp_exporter_telemetry.include_default_config %}--config.file=/etc/snmp_exporter/snmp.yml {% endif %}--config.file=/etc/snmp_exporter/snmp-stage5.yml --web.listen-address={{ resolved_snmp_exporter_telemetry.listen_address }}:{{ resolved_snmp_exporter_telemetry.listen_port }}{% for extra_arg in resolved_snmp_exporter_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

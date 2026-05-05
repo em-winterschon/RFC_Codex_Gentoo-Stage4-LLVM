@@ -1,0 +1,15 @@
+#!ipxe
+dhcp
+set host-name {{ netboot_host.name }}
+set host-mac {{ netboot_host.match_mac }}
+set base-url {{ netboot_public_base_url }}
+iseq ${net0/mac} ${host-mac} || goto menu
+chain ${base-url}/roles/{{ netboot_host.role }}.ipxe || goto failed
+
+:failed
+echo Failed to load role {{ netboot_host.role }} for {{ netboot_host.name }}
+sleep 3
+goto menu
+
+:menu
+chain ${base-url}/menu.ipxe

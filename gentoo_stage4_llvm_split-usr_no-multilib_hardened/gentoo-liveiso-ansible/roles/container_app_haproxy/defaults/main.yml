@@ -1,0 +1,2 @@
+---
+container_haproxy_config_dir: /etc/container-services/apps/haproxy

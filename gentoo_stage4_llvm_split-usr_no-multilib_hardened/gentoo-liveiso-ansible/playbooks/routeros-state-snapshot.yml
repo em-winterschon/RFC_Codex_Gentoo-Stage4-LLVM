@@ -1,0 +1,73 @@
+---
+- name: Capture MikroTik RouterOS state snapshots
+  hosts: mikrotik_routeros
+  gather_facts: false
+  vars:
+    routeros_snapshot_root: /root/operator-private/routeros/state-snapshots
+    routeros_snapshot_script: "{{ playbook_dir }}/../../../scripts/collect-mikrotik-routeros-state.py"
+    routeros_snapshot_skip_when_no_host: true
+    routeros_snapshot_timeout_seconds: 20
+
+  tasks:
+    - name: Determine whether RouterOS SSH snapshot should run
+      ansible.builtin.set_fact:
+        routeros_snapshot_enabled_effective: >-
+          {{
+            routeros_state_snapshot_enabled | default(
+              ansible_host is defined
+              and ansible_host != inventory_hostname
+              and ansible_user is defined
+              and ansible_password is defined
+              and (ansible_password | string | length) > 0
+              and routeros_management_state | default('') != 'serial-discovered'
+            )
+          }}
+
+    - name: Build RouterOS snapshot timestamp
+      ansible.builtin.set_fact:
+        routeros_snapshot_stamp: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
+
+    - name: Build RouterOS snapshot output directory
+      ansible.builtin.set_fact:
+        routeros_snapshot_output_dir: "{{ routeros_snapshot_root }}/{{ inventory_hostname }}/{{ routeros_snapshot_stamp }}"
+
+    - name: Ensure RouterOS snapshot output directory exists
+      ansible.builtin.file:
+        path: "{{ routeros_snapshot_output_dir }}"
+        state: directory
+        mode: "0750"
+      delegate_to: localhost
+      when: routeros_snapshot_enabled_effective | bool
+
+    - name: Collect RouterOS state over SSH
+      ansible.builtin.command:
+        argv:
+          - "{{ routeros_snapshot_script }}"
+          - --host
+          - "{{ ansible_host }}"
+          - --username
+          - "{{ ansible_user }}"
+          - --output-dir
+          - "{{ routeros_snapshot_output_dir }}"
+          - --timeout
+          - "{{ routeros_snapshot_timeout_seconds | string }}"
+          - --allow-failures
+      environment:
+        ROUTEROS_PASSWORD: "{{ ansible_password | default('') }}"
+      delegate_to: localhost
+      no_log: "{{ ansible_password is defined }}"
+      changed_when: false
+      when: routeros_snapshot_enabled_effective | bool
+
+    - name: Report RouterOS snapshot path
+      ansible.builtin.debug:
+        msg: "RouterOS snapshot captured at {{ routeros_snapshot_output_dir }}"
+      when: routeros_snapshot_enabled_effective | bool
+
+    - name: Report skipped RouterOS snapshot
+      ansible.builtin.debug:
+        msg: >-
+          RouterOS snapshot skipped for {{ inventory_hostname }};
+          enabled={{ routeros_snapshot_enabled_effective }};
+          reason={{ routeros_state_snapshot_reason | default('missing SSH host/password, serial-discovered management, or explicit inventory gate') }}.
+      when: not routeros_snapshot_enabled_effective | bool

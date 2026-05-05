@@ -21,15 +21,51 @@ DEFAULT_PROFILE_REFERENCE = (
 )
 ALLOWED_PROFILE_KEYS = {
     "metadata",
+    "profile_id",
     "repository_enable",
     "make_conf_append",
     "env_files",
     "package_env_files",
     "package_use_files",
     "package_accept_keywords_files",
+    "package_license_files",
     "package_mask_files",
+    "package_unmask_files",
     "package_mask_symlinks",
     "kernel_config_fragment_files",
+    "profile_parents",
+    "package_atoms",
+    "package_list_files",
+    "openrc_services_enable",
+    "modules_load_files",
+    "local_user_accounts",
+    "cloud_init",
+    "aaa_policy_files",
+    "aaa_policy",
+    "freeipa_controller",
+    "ipa_client",
+    "freeradius_bridge",
+    "rsyslog",
+    "elasticsearch_cluster",
+    "kibana",
+    "netbox_connector",
+    "netbox_essentials",
+    "netbox_server",
+    "zerotier",
+    "telemetry",
+    "binpkg_repo",
+    "nexus_repo",
+    "haproxy_service_types",
+    "service_readiness",
+    "container_base_image",
+    "container_app_build_defaults",
+    "container_services",
+    "container_app_profiles",
+    "container_service_segments",
+    "site_security_profile",
+    "memory_storage",
+    "jenkins_controller",
+    "distcc_farm",
 }
 
 
@@ -100,14 +136,25 @@ def validate_profile_metadata(path: Path) -> None:
     document = load_yaml(path)
     if not isinstance(document, dict):
         fail(f"{path} must contain a top-level mapping")
-    metadata = document.get("portage_profile_metadata")
-    if not isinstance(metadata, dict):
-        fail(f"{path} must define portage_profile_metadata as a mapping")
-    source_profile = metadata.get("source_profile_definition")
-    if not isinstance(source_profile, str) or not source_profile:
-        fail(f"{path} must define source_profile_definition")
-    if not (PROFILE_DIR / source_profile).is_file():
-        fail(f"{path} references missing source_profile_definition {source_profile}")
+    portage_metadata = document.get("portage_profile_metadata")
+    system_metadata = document.get("gentoo_system_profile_metadata")
+
+    if isinstance(portage_metadata, dict):
+        source_profile = portage_metadata.get("source_profile_definition")
+        if not isinstance(source_profile, str) or not source_profile:
+            fail(f"{path} must define source_profile_definition")
+        if not (PROFILE_DIR / source_profile).is_file():
+            fail(f"{path} references missing source_profile_definition {source_profile}")
+        if "package_pins" not in portage_metadata:
+            fail(f"{path} must define package_pins")
+        return
+
+    if isinstance(system_metadata, dict):
+        if "package_pins" not in system_metadata:
+            fail(f"{path} must define package_pins")
+        return
+
+    fail(f"{path} must define portage_profile_metadata or gentoo_system_profile_metadata")
 
 
 def validate_inventory_defaults(path: Path) -> None:

@@ -1,0 +1,70 @@
+---
+- name: Resolve Grafana telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_grafana_enabled: >-
+      {{
+        resolved_profile_telemetry.grafana.enabled
+        | default(telemetry_grafana_default_enabled)
+        | bool
+      }}
+    resolved_grafana_telemetry: >-
+      {{
+        {
+          'http_addr': resolved_profile_telemetry.grafana.http_addr | default(telemetry_grafana_default_http_addr),
+          'http_port': resolved_profile_telemetry.grafana.http_port | default(telemetry_grafana_default_http_port),
+          'domain': resolved_profile_telemetry.grafana.domain | default(telemetry_grafana_default_domain),
+          'root_url': resolved_profile_telemetry.grafana.root_url | default(telemetry_grafana_default_root_url),
+          'admin_user': resolved_profile_telemetry.grafana.admin_user | default(telemetry_grafana_default_admin_user),
+          'admin_password': resolved_profile_telemetry.grafana.admin_password | default(telemetry_grafana_default_admin_password),
+          'datasources': resolved_profile_telemetry.grafana.datasources | default(telemetry_grafana_default_datasources)
+        }
+      }}
+
+- name: Ensure Grafana directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ grafana_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/grafana
+    - /etc/grafana/provisioning
+    - /etc/grafana/provisioning/datasources
+    - /etc/conf.d
+  loop_control:
+    loop_var: grafana_dir
+  when: telemetry_grafana_enabled
+
+- name: Render Grafana configuration
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: "{{ install_target_root }}/etc/grafana/grafana.ini"
+    mode: '0644'
+  when: telemetry_grafana_enabled
+
+- name: Render Grafana datasources
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/grafana/provisioning/datasources/stage5-datasources.yml"
+    mode: '0644'
+    content: >-
+      {{
+        {
+          'apiVersion': 1,
+          'datasources': resolved_grafana_telemetry.datasources
+        } | to_nice_yaml(indent=2, sort_keys=False)
+      }}
+  when: telemetry_grafana_enabled
+
+- name: Render Grafana OpenRC configuration
+  ansible.builtin.template:
+    src: grafana.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/grafana"
+    mode: '0644'
+  when: telemetry_grafana_enabled
+
+- name: Enable Grafana service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['grafana']) | unique
+      }}
+  when: telemetry_grafana_enabled

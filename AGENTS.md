@@ -141,6 +141,14 @@ Output:
 - Use plain language unless the task clearly benefits from domain-specific terminology.
 - Keep tone professional and grounded.
 
+### 5.5 Compression and Decompression Preference
+- SHOULD: use `zstd` with `-2 --rsyncable --auto-threads=physical --exclude-compressed` for compression and decompression workflows whenever compatible with the target format and toolchain.
+- If `zstd` is not compatible or not available, prefer fallback formats in this order:
+  1. `xz`
+  2. `pigz`
+  3. `gzip`
+- When a lower-preference format is used, note the compatibility or tooling reason in code comments, docs, or commit context when relevant.
+
 ## 6. MAY Rules
 
 Use these when they improve usefulness, not by default:

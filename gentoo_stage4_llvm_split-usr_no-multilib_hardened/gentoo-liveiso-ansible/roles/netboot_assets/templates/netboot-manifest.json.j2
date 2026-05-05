@@ -1,0 +1,51 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "PathBNetbootManifest",
+  "metadata": {
+    "name": "path-b-ipxe-assets",
+    "description": "Published iPXE asset set for Gentoo Path B netboot imaging."
+  },
+  "publicBaseUrl": "{{ netboot_public_base_url }}",
+  "publishRoot": "{{ netboot_publish_root }}",
+  "defaultRole": "{{ netboot_default_role }}",
+  "serialConsole": {
+    "enabled": {{ (netboot_enable_serial_console | bool) | lower }},
+    "localConsole": "{{ netboot_local_console }}",
+    "serialConsole": "{{ netboot_serial_console }}"
+  },
+  "roles": [
+{% for netboot_role_name, netboot_role_data in netboot_roles.items() %}
+    {
+      "name": "{{ netboot_role_name }}",
+      "description": "{{ netboot_role_data.description }}",
+      "kernelUrl": "{{ netboot_role_data.kernel_url | default('') }}",
+      "initrdUrl": "{{ netboot_role_data.initrd_url | default('') }}",
+      "rootfsUrl": "{{ netboot_role_data.rootfs_url | default('') }}",
+      "extraCmdline": "{{ netboot_role_data.extra_cmdline | default('') }}",
+      "sanbootUrl": "{{ netboot_role_data.sanboot_url | default('') }}"
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  ],
+  "hosts": [
+{% for netboot_host in netboot_resolved_host_map %}
+    {
+      "inventoryName": "{{ netboot_host.inventory_name | default(netboot_host.name) }}",
+      "name": "{{ netboot_host.name }}",
+      "matchMac": "{{ netboot_host.match_mac }}",
+      "role": "{{ netboot_host.role }}",
+      "scriptName": "{{ netboot_host.script_name }}",
+      "interfaceName": "{{ netboot_host.interface_name | default('') }}",
+      "bootType": "{{ netboot_host.boot_type | default('') }}",
+      "dhcpClientOptions": {{ netboot_host.dhcp_client_options | default([]) | to_json }},
+      "osType": "{{ netboot_host.os_type | default('') }}",
+      "osName": "{{ netboot_host.os_name | default('') }}",
+      "osVersion": "{{ netboot_host.os_version | default('') }}",
+      "machineType": "{{ netboot_host.machine_type | default('') }}",
+      "platform": "{{ netboot_host.platform | default('') }}",
+      "arch": "{{ netboot_host.arch | default('') }}",
+      "staticAddress": "{{ netboot_host.static_address | default('') }}",
+      "gateway": "{{ netboot_host.gateway | default('') }}"
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+  ]
+}

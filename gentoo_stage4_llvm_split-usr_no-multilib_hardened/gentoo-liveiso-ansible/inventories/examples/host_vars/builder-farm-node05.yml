@@ -1,0 +1,21 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
+
+install_hostname: builder-farm-node05
+
+profile_cloud_init:
+  instance_id: builder-farm-node05
+  local_hostname: builder-farm-node05
+
+profile_distcc_farm:
+  worker_metadata:
+    node_name: builder-farm-node05
+    storage_devices:
+      - nvme0n1
+      - nvme1n1

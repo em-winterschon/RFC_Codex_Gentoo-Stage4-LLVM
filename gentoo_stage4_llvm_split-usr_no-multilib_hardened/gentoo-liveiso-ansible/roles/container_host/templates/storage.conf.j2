@@ -1,0 +1,8 @@
+# Managed by gentoo-liveiso-ansible
+[storage]
+driver = "overlay"
+graphroot = "{{ resolved_container_runtime_root }}/storage"
+runroot = "/run/containers/storage"
+
+[storage.options]
+mount_program = "/usr/bin/fuse-overlayfs"

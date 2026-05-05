@@ -1,0 +1,40 @@
+---
+inventory_intake_version: 1
+
+datacenters:
+  - name: FMT2
+    slug: fmt2
+    timezone: America/Los_Angeles
+    facility: operator-confirmed
+    management_prefixes:
+      - 192.168.132.2/32
+    access_paths:
+      - openvpn-site-to-site
+      - future-rfc99-vpn-router-vm
+    owners:
+      - codex-ops
+
+prefixes:
+  - prefix: 66.160.146.148/32
+    site: fmt2
+    status: active
+    role: gw-sfo200-public-vip
+  - prefix: 192.168.132.2/32
+    site: fmt2
+    status: active
+    role: rfc99-openvpn-tunnel-address
+
+devices:
+  - name: vpn_rfc99_fmt2_openvpn_bridge
+    site: fmt2
+    role: vpn-bridge-vm
+    manufacturer: Generic
+    model: openvpn-compatibility-vm
+    status: planned
+    notes:
+      - RouterOS OpenVPN does not support the current static-key AES-256-CBC/SHA512/LZ4-v2 tunnel profile.
+      - Build a compatibility VPN VM and route RFC99/SUN99 to FMT2 through it.
+
+clusters: []
+
+service_vips: []

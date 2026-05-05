@@ -1,0 +1,25 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "RouterOSSpineDistributionManifest",
+  "metadata": {
+    "name": "routeros-spine-distribution",
+    "description": "Rendered RouterOS CRS309 spine and CRS354 distribution configuration intent."
+  },
+  "targetVersion": "{{ routeros_spine_distribution_target_version }}",
+  "apply": {
+    "enabled": {{ (routeros_spine_distribution_apply | bool) | to_json }},
+    "mode": "render-only"
+  },
+  "spine": {{ routeros_spine_distribution_spine | to_json }},
+  "distribution": {{ routeros_spine_distribution_distribution | to_json }},
+  "validation": {
+    "required": [
+      "CRS309 RouterOS and RouterBOARD firmware match targetVersion",
+      "CRS354 RouterOS and RouterBOARD firmware match targetVersion",
+      "CRS309 bond-crs354 has both LACP members active",
+      "CRS354 bond-crs309 has both LACP members active",
+      "CRS354 stale OPNsense address and default route are disabled",
+      "Management reachability succeeds between CRS309, CRS354, and CCR2004"
+    ]
+  }
+}

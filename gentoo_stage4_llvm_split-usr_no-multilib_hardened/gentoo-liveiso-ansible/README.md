@@ -15,7 +15,7 @@ of LiveISO via root SSH.
 
 ## Why a local profile overlay exists
 
-The desired target profile is effectively:
+The default target profile is effectively:
 
 - amd64
 - openrc
@@ -26,10 +26,15 @@ The desired target profile is effectively:
 
 Gentoo exposes these profile axes, but this scaffold treats the exact combination as a local
 profile overlay so that the installer can compose the desired state cleanly and predictably.
-The default overlay parents are:
+The default split-usr overlay parents are:
 
 - `gentoo:default/linux/amd64/23.0/llvm`
 - `gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened`
+
+For merged-usr consumers such as container roots and new VM profiles, use the
+parallel merged-usr overlay definition:
+
+- `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
 
 Adjust `profile_parents` if the upstream profile graph changes.
 
@@ -64,6 +69,8 @@ That can still be useful in some environments, but it is not the default recomme
 
 Available `portage_cpu_profile` values:
 
+- `x86_64_v2_generic`
+- `x86_64_v3_generic`
 - `amd_ryzen_z1_extreme`
 - `amd_epyc_zen4`
 - `amd_epyc_zen5`
@@ -82,6 +89,8 @@ These primarily drive:
 GPU-specific Portage settings are intentionally separate via `gpu_stack`.
 
 ## Quick start
+
+### Path A: LiveISO execution from the target or installer VM
 
 ### Local execution from the LiveISO
 
@@ -131,6 +140,83 @@ Relevant inventory keys:
 - `kernel_config_fragment_files`
 - the default `llvm-clang-hardened-portage.yml` profile definition
 
+### Path B: iPXE asset publication for fleet bootstrapping
+
+Use this path when hosts or VMs should reach a Gentoo provisioning environment
+through DHCP/TFTP or UEFI HTTP into iPXE, then fetch kernel/initramfs/rootfs
+artifacts over HTTP/HTTPS before running the same Stage4 workflow.
+
+Build the provisioning artifacts first:
+
+```bash
+bash scripts/build-path-b-netboot-artifacts.sh
+```
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/netboot-path-b.yml \
+  -l netboot_control_local
+```
+
+This renders:
+
+- `bootstrap.ipxe`
+- `menu.ipxe`
+- `roles/*.ipxe`
+- `hosts/*.ipxe`
+- `manifests/path-b-netboot.json`
+
+Path B host metadata should be defined on the `install_targets` inventory
+entries themselves so the same host records drive Ansible control, iPXE
+dispatch, and published manifest data:
+
+```yaml
+target_system_remote:
+  ansible_host: 10.9.8.7
+  ansible_user: root
+  ansible_python_interpreter: /usr/bin/python3
+  netboot_enabled: true
+  netboot_interface_name: eth0
+  netboot_mac_address: "52:54:00:12:34:56"
+  netboot_type: dhcp
+  netboot_dhcp_client_options:
+    - "class-id=PXEClient:Arch:00000:UNDI:002001"
+  netboot_os_type: linux
+  netboot_os_name: gentoo
+  netboot_os_version: stage4-current
+  netboot_machine_type: qemu
+  netboot_platform: uefi
+  netboot_arch: amd64
+  netboot_role: installer
+```
+
+Relevant enums:
+
+- `netboot_type`: `static`, `dhcp`, `bootp`
+- `netboot_os_type`: `linux`, `bsd`, `router-os`, `solaris`, `other`
+- `netboot_os_name`: `gentoo`, `centos`, `rocky`, `debian`, `devuan`, `solaris`, `tribblix`, `dietpi`, `fedora`, `freebsd`, `netbsd`, `other`
+- `netboot_machine_type`: `metal`, `qemu`, `xen`, `embedded`
+- `netboot_platform`: `bios`, `uefi`, `other`
+- `netboot_arch`: `amd64`, `arm64`, `ppc64le`, `other`
+
+Optional fields:
+
+- `netboot_host_alias`
+- `netboot_script_name`
+- `netboot_static_address`
+- `netboot_gateway`
+
+The rendered role scripts now boot the published SquashFS environment through
+dracut live-boot arguments such as:
+
+- `root=live:http://.../artifacts/gentoo-installer/rootfs.img`
+- `rd.live.image`
+- `ip=dhcp`
+
+Path A remains the supported fallback for systems that cannot join the iPXE
+network or otherwise require a LiveISO-style entry path.
+
 ### Install sequences
 
 The installer now supports staged `install_sequence` execution. The default sequence is:
@@ -176,6 +262,149 @@ selected_roles:
   - portage
   - boot
 ```
+
+The default `target-integration` stage now includes two additional roles:
+
+- `platform_profile`
+- `identity`
+- `container_host`
+- `container_app_ntfy`
+- `container_app_nginx`
+- `container_app_haproxy`
+- `container_net_policy`
+- `container_service_segments`
+
+`platform_profile` writes profile-driven `modules-load.d` fragments and enables native
+OpenRC services. `identity` creates local users and, when requested, writes NoCloud
+compatible `cloud-init` seed data under `/var/lib/cloud/seed/nocloud-net/`.
+The container roles are dormant unless a profile defines
+`container_services.enabled: true`; when enabled, they render Podman host config,
+service-segment network helpers, site-security `nftables` policy, and app-profile
+artifacts for `ntfy`, `nginx`, and `haproxy`.
+
+### Ephemeral memory-backed storage
+
+Two separate knobs now exist for faster iterative VM development:
+
+- hypervisor-side tmpfs-backed QEMU disks via `playbooks/qemu-memory-drives.yml`
+- guest-side tmpfs mounts via the `memory_storage` role in `target-integration`
+
+Hypervisor-side example:
+
+```bash
+ansible-playbook \
+  -i inventories/examples/hosts.yml \
+  playbooks/qemu-memory-drives.yml \
+  -l qemu_control_local \
+  -e qemu_memory_drives_enabled=true \
+  -e qemu_memory_drives_instance_name=stage4-devvm
+```
+
+That renders a manifest such as:
+
+```text
+/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json
+```
+
+and the stage3 launcher can attach it with:
+
+```bash
+QEMU_MEMORY_DRIVES_FILE=/dev/shm/qemu-memory-drives/stage4-devvm/memory-drives.json \
+bash ../../gentoo-virt-qemu/qemu-launch-stage3-vm.sh
+```
+
+Guest-side example for a container host:
+
+```yaml
+profile_container_services:
+  runtime_root: /var/lib/container-services-ephemeral
+
+profile_memory_storage:
+  enabled: true
+  mounts:
+    - path: /var/lib/container-services-ephemeral
+      size: 32G
+      mode: "0755"
+      options:
+        - noatime
+```
+
+This is intended for:
+
+- Portage tmpdirs and caches
+- Podman image/runtime scratch space
+- disposable application data for short-lived development containers
+
+### Container-Services VM profile
+
+Use the simple guest profile as the base, then layer the container-services overlay:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-container-services.yml"
+```
+
+Example host-vars file:
+
+- `inventories/examples/host_vars/vm-container-services.yml`
+
+The profile adds:
+
+- Podman plus `conmon`, `crun`, `netavark`, `aardvark-dns`, `fuse-overlayfs`
+- `nftables`-driven site-security policy
+- profile-driven container service segments
+- app-profile roles for `ntfy`, `nginx`, and `haproxy`
+- optional IPAM ingestion from a flat JSON file or a pre-normalized NetBox API endpoint
+- a narrow `sys-apps/systemd-utils` exception scoped only to the Podman/netavark container stack while keeping the repo-wide `without-systemd` posture elsewhere
+
+### Jenkins controller and distcc builder farm
+
+The repo now carries a Stage 5 controller profile plus a Stage 5 builder-farm
+worker profile:
+
+- `profile-definitions/vm-jenkins-controller.yml`
+- `profile-definitions/metal-builder-farm-node.yml`
+
+Example controller stack:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-jenkins-controller.yml"
+```
+
+Example builder node stack:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
+```
+
+Supporting examples:
+
+- `inventories/examples/host_vars/vm-jenkins-controller.yml`
+- `inventories/examples/group_vars/ci_controllers.yml`
+- `inventories/examples/group_vars/builder_farm_nodes.yml`
+
+These roles render:
+
+- a Jenkins controller launcher plus JCasC manifest
+- distcc client and worker manifests
+- managed `DISTCC_HOSTS` policy in `make.conf`
+- OpenRC-managed `jenkins-controller` and `distccd-farm` services
+
+The intended first fabric is a dedicated builder LAN carried to a switch and
+uplinked from one of the BlueField2 interfaces:
+
+- `ens7f0np0`
+- `ens7f1np0`
 
 Example direct role override:
 
@@ -512,19 +741,55 @@ If you want to carry house policy as data instead of editing the roles, set
 - `package_use_files`
 - `package_accept_keywords_files`
 - `package_mask_files`
+- `package_unmask_files`
 - `package_mask_symlinks`
 - `kernel_config_fragment_files`
+- `package_atoms`
+- `package_list_files`
+- `modules_load_files`
+- `openrc_services_enable`
+- `cloud_init`
+- `jenkins_controller`
+- `distcc_farm`
 
-An optional `metadata` mapping may also be present. The installer ignores that
-block, but it is useful for keeping package lists, GCC fallback policy, and
-validated exact-version pin sets next to the active Portage profile data.
+## Stage language
 
-The included presets:
+The repo uses a layered profile language:
+
+- `Stage 4`
+  - shared OS baseline policy
+  - compiler, linker, hardening, OpenRC, and Portage behavior
+  - example: `llvm-clang-hardened-portage.yml`
+- `Stage 5`
+  - role overlay
+  - host or service intent carried on top of the Stage 4 baseline
+  - package layers, module hints, service defaults, and role-specific policy
+
+Current Stage 5 role classes:
+
+- `metal-host`
+- `virtual-host`
+- `service-container`
+- `cloud-init-overlay`
+- `ci-controller`
+- `builder-farm-node`
+
+For scalability, Stage 5 package sets should live in external flat files under
+`profile-package-lists/` and be referenced through `package_list_files` instead
+of embedding long `package_atoms` lists inline.
+
+The included Stage 4 presets:
 
 - `profile-definitions/hardened-llvm-stage4.yml`
+- `profile-definitions/hardened-llvm-stage4-split-usr.yml`
+- `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
 - `profile-definitions/llvm-clang-hardened-portage.yml`
 
-adds the Hardened LLVM/OpenRC stage4 policy from the separate setup draft:
+The compatibility alias `hardened-llvm-stage4.yml` retains the split-usr
+baseline. The explicit split-usr and merged-usr variants make usr-layout
+selection data-driven for new consumers.
+
+The Stage 4 policy adds:
 
 - enables `guru`, `xira`, and `without-systemd`
 - appends hardened LLVM-oriented `make.conf` settings
@@ -549,9 +814,116 @@ Example:
 
 ```yaml
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-split-usr.yml"
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 ```
+
+## Gentoo system profiles
+
+The repo now carries a reusable LLVM/Clang Portage baseline plus three stackable
+system-profile overlays plus modular cloud-init overlays:
+
+- `profile-definitions/llvm-clang-hardened-portage.yml`
+- `profile-definitions/cloud-init-baremetal.yml`
+- `profile-definitions/cloud-init-vm.yml`
+- `profile-definitions/hypervisor-xen-qemu-libvirt-host.yml`
+- `profile-definitions/vm-guest-application-server.yml`
+- `profile-definitions/vm-guest-simple-ipxe.yml`
+
+Use them as stacked data, with the Stage 4 baseline first and the Stage 5 role
+overlay(s) after it.
+
+For new VM profiles that should match container-root behavior, prefer:
+
+- `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
+
+For existing metal or compatibility-sensitive installs, keep:
+
+- `profile-definitions/hardened-llvm-stage4-split-usr.yml`
+
+### Hypervisor host profile
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-baremetal.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hypervisor-xen-qemu-libvirt-host.yml"
+```
+
+This profile targets bare-metal Xen/QEMU/Libvirt hosts and adds:
+
+- Xen, Xen tools, QEMU, Libvirt, guestfs tools
+- Open vSwitch
+- NVMe-oF and RDMA userland support
+- NVDIMM / PMem tooling via `ndctl`
+- ZFS 2.4.x testing-track pins
+- kernel modules for `nvme-rdma`, `mlx5_*`, `qede`, `libnvdimm`, `nd_pmem`, and `zfs`
+
+Vendor-managed pieces are explicitly tracked in metadata rather than forced into
+Portage:
+
+- BlueField2 DOCA / MLNX_OFED host drivers
+- AMDGPU Pro userspace nuances beyond Gentoo-provided `amdgpu-pro-vulkan`
+
+### VM guest application-server profile
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+```
+
+This profile targets hardened OpenRC guests with:
+
+- serial console plus SSH-only operational model
+- `qemu-guest-agent`
+- `xe-guest-utilities`
+- `bonding`, `virtio_*`, and `xen_*front` kernel module load hints
+- cloud-init behavior supplied by the separate `cloud-init-vm` overlay
+
+### VM guest simple iPXE profile
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+```
+
+This profile keeps the package set small for Path B bring-up and repeatable iPXE
+testing.
+
+### Per-host accounts and cloud-init
+
+Use the modular cloud-init overlays to enable package and datasource defaults, then
+keep host-specific instance IDs, hostnames, and users in inventory:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+
+profile_local_user_accounts:
+  - name: deploy
+    groups:
+      - wheel
+    sudo_nopasswd: true
+    ssh_authorized_keys: []
+
+profile_cloud_init:
+  instance_id: vm-guest-appserver
+  local_hostname: appserver
+```
+
+Example host records are included under:
+
+- `inventories/examples/host_vars/hypervisor-host.yml`
+- `inventories/examples/host_vars/vm-guest-appserver.yml`
+- `inventories/examples/host_vars/vm-guest-simple.yml`
+
+Each profile also has a matching `*.metadata.yml` file that records package pinning,
+kernel-module expectations, and any vendor-managed components that are outside the
+Gentoo tree.
 - per-interface network policy beyond enabling NetworkManager
 
 ## Suggested next steps

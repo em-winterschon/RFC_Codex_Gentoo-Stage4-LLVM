@@ -45,7 +45,7 @@ profile_parents:
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 
-portage_cpu_profile: intel_xeon_8370c
+portage_cpu_profile: x86_64_v2_generic
 gpu_stack: none
 
 kernel_strategy: gentoo-kernel-bin

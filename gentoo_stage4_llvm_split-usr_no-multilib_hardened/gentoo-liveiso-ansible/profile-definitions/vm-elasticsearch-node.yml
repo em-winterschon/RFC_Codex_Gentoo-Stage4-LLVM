@@ -1,0 +1,42 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-elasticsearch-node.packages
+  package_accept_keywords_files:
+    40-elasticsearch: |
+      =app-misc/elasticsearch-9.3.1 ~amd64
+  package_license_files:
+    40-elasticsearch: |
+      app-misc/elasticsearch Elastic-2.0
+  elasticsearch_cluster:
+    enabled: true
+    version: 9.3.1
+    package_atom: =app-misc/elasticsearch-9.3.1
+    cluster_name: stage5-observability
+    http_port: 9200
+    transport_port: 9300
+    security_enabled: false
+    http_ssl_enabled: false
+    transport_ssl_enabled: false
+    auto_create_index: stage5-*
+    java_home: /opt/openjdk-bin-21.0.10_p7
+    require_localmount: true
+    roles:
+      - master
+      - data
+      - ingest
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+    forward_hostname: log-vip.example.internal
+    forward_protocol: tcp
+    forward_port: 514
+  haproxy_service_types:
+    - name: elasticsearch-http
+      bind: "*:9200"
+      mode: http
+      backend_name: be_elasticsearch_http
+      servers:
+        - name: elasticsearch-local
+          address: 127.0.0.1
+          port: 9200

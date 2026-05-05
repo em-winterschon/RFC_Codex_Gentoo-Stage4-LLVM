@@ -1,0 +1,73 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-elasticsearch-node.packages
+  package_atoms:
+    - =app-misc/elasticsearch-9.3.1
+    - net-analyzer/nmap
+  package_accept_keywords_files:
+    40-elasticsearch: |
+      =app-misc/elasticsearch-9.3.1 ~amd64
+  package_license_files:
+    40-elasticsearch: |
+      app-misc/elasticsearch Elastic-2.0
+  elasticsearch_cluster:
+    enabled: true
+    version: 9.3.1
+    package_atom: =app-misc/elasticsearch-9.3.1
+    cluster_name: stage5-elasticsearch-test
+    node_name: vm-elasticsearch-test
+    network_host: 0.0.0.0
+    publish_host: 10.9.8.91
+    http_port: 9200
+    transport_port: 9300
+    discovery_type: single-node
+    seed_hosts: []
+    initial_master_nodes: []
+    roles:
+      - master
+      - data
+      - ingest
+    heap: 2g
+    java_home: /opt/openjdk-bin-21.0.10_p7
+    require_localmount: true
+    security_enabled: false
+    http_ssl_enabled: false
+    transport_ssl_enabled: false
+    auto_create_index: stage5-*
+    index_templates:
+      - name: stage5-syslog
+        body:
+          index_patterns:
+            - stage5-syslog*
+          template:
+            settings:
+              number_of_shards: 1
+              number_of_replicas: 0
+            mappings:
+              properties:
+                "@timestamp":
+                  type: date
+                host:
+                  type: keyword
+                program:
+                  type: keyword
+                message:
+                  type: text
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+    forward_hostname: log-vip.example.internal
+    forward_protocol: tcp
+    forward_port: 514
+  service_readiness:
+    enabled: true
+    checks:
+      - name: elasticsearch-test-node-http
+        target: 10.9.8.91
+        port: 9200
+        protocol: tcp
+        phases:
+          - post_boot
+        retries: 24
+        delay: 5

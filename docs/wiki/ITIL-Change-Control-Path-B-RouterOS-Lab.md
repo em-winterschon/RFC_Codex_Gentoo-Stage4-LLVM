@@ -1,0 +1,166 @@
+# ITIL Change Control: Path B RouterOS Lab Bring-Up
+
+This page mirrors the versioned source document:
+
+- `docs/CHANGE-CONTROL-PATH-B-ROUTEROS-LAB.md`
+
+It also depends on:
+
+- `docs/workflows/stage4-routeros-pathb-deployment.json`
+- `docs/wiki/RouterOS-Path-B.md`
+
+## Summary
+
+Purpose:
+
+- stand up a safe, isolated Path B iPXE lab on `10.9.8.0/24`
+- keep Path A LiveISO-driven imaging intact as fallback
+- validate the full boot chain before any production or physical-host adoption
+
+Scope:
+
+1. build Path B provisioning artifacts
+2. publish Path B iPXE assets
+3. bring up isolated host-side lab networking
+4. create a RouterOS CHR VM in QEMU
+5. configure DHCP/iPXE handoff on the isolated segment
+6. boot one client VM into the Gentoo provisioning flow
+
+Current status:
+
+- RouterOS CHR lab is operational on `10.9.8.0/24`
+- Path B assets publish over HTTP
+- a UEFI client VM now reaches:
+  - iPXE
+  - dracut `switch_root`
+  - OpenRC `default`
+  - SSH on `10.9.8.98`
+- the provisioner now converges to a single IPv4 address and default route
+- the container-services validation overlay is now past the earlier
+  `rpds-py`, `cryptography`, `buildah`, and `skopeo` blockers
+- generic guest CPU tuning for this lab should use `x86_64_v2_generic`
+  unless a stricter guest CPU contract is known
+- the first reusable Gentoo base-container image build is now wired to run from
+  the installed container-services target using image-local package, USE, and
+  `package.use` inputs
+- the latest accelerated base-image run used:
+  - guest size: `32` vCPU, `32 GiB` RAM
+  - Portage parallelism: `MAKEOPTS="-j64"`, `EMERGE_DEFAULT_OPTS="--jobs=16"`
+  - package graph: `482`
+  - stop point: `app-alternatives/awk-4` at package `116`
+  - completed count before failure: `115`
+- the next rerun should use the now-committed image-local rule:
+  - `app-alternatives/awk -split-usr`
+
+## Command Sequence Reference
+
+### 1. Build Path B provisioning artifacts
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+bash scripts/build-path-b-netboot-artifacts.sh
+```
+
+### 2. Publish Path B assets
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM
+bash tests/shell/test_netboot_assets.sh
+
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ansible-playbook -i inventories/examples/hosts.yml playbooks/netboot-path-b.yml -l netboot_control_local
+```
+
+### 3. Prepare isolated lab network
+
+```bash
+ip addr add 10.9.8.108/24 dev lo
+ip link add br-pathb type bridge
+ip addr add 10.9.8.108/24 dev br-pathb
+ip link set br-pathb up
+```
+
+### 4. Launch RouterOS CHR VM
+
+```bash
+qemu-img create -f qcow2 /opt/routeros/routeros-lab.qcow2 2G
+
+qemu-system-x86_64 \
+  -enable-kvm \
+  -machine q35,accel=kvm \
+  -cpu host \
+  -m 2048 \
+  -smp 2 \
+  -drive if=virtio,file=/opt/routeros/routeros-lab.qcow2,format=qcow2 \
+  -nic bridge,br=br-pathb,model=virtio-net-pci \
+  -serial mon:stdio
+```
+
+### 5. Validate client iPXE boot
+
+```bash
+qemu-system-x86_64 \
+  -enable-kvm \
+  -machine q35,accel=kvm \
+  -cpu host \
+  -m 4096 \
+  -smp 2 \
+  -boot order=n \
+  -nic bridge,br=br-pathb,model=virtio-net-pci \
+  -serial mon:stdio
+```
+
+### 6. Hand off to Stage4 installer
+
+```bash
+cd /root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+bash scripts/run-install-sequence.sh \
+  --inventory inventories/examples/hosts.yml \
+  --limit target_system_remote \
+  --sequence storage-foundation \
+  --checkpoint \
+  --control-flow-path /tmp/ansible-control-flow/path-b-client.storage.jsonl
+```
+
+## Validation Gates
+
+- artifact build completes
+- asset render completes
+- host lab address is reachable
+- RouterOS CHR VM boots
+- client reaches iPXE
+- iPXE fetches Path B assets
+- provisioning environment reaches installer handoff
+- provisioning environment reaches OpenRC `default`
+- SSH is reachable on the provisioner
+- Path A remains unaffected
+
+## Rollback
+
+```bash
+pkill -f qemu-system-x86_64 || true
+ip addr del 10.9.8.108/24 dev br-pathb || true
+ip link set br-pathb down || true
+ip link del br-pathb type bridge || true
+ip addr del 10.9.8.108/24 dev lo || true
+```
+
+## Status
+
+This document is planning and execution guidance for the Path B RouterOS lab.
+The following execution state is now validated:
+
+- RouterOS CHR provides DHCP and iPXE handoff on `10.9.8.0/24`
+- UEFI clients require an EFI iPXE binary first; the working lab method is an
+  embedded `ipxe.efi` that chains to
+  `http://10.9.8.108:8080/bootstrap.ipxe`
+- the Path B provisioner can reach OpenRC `default` and SSH
+- the first simple-guest validation reached:
+  - destructive storage layout on the target disk
+  - stage3 tarball download during `chroot-bootstrap`
+- upstream access for the provisioner now uses the rebuilt RouterOS Path B
+  gateway at `10.9.8.1`
+- RouterOS owns WAN `192.168.1.222/24`, routes via `192.168.1.254`, and
+  masquerades `10.9.8.0/24` out `pathb-wan`
+- the current base-image rerun blocker is the merged-usr `awk` collision above,
+  not transport, RouterOS, or Path B provisioning

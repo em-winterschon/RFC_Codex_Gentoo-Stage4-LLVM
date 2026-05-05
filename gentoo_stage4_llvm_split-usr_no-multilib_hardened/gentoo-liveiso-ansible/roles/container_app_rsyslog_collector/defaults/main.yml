@@ -1,0 +1,2 @@
+---
+container_rsyslog_collector_config_dir: /etc/container-services/apps/rsyslog-collector

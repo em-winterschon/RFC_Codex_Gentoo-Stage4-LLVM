@@ -25,14 +25,18 @@
   ansible.builtin.stat:
     path: /sys/firmware/efi/efivars
   register: efi_vars
-  when: install_boot_mode == 'uefi'
+  when:
+    - install_boot_mode == 'uefi'
+    - preflight_require_runtime_uefi | bool
 
 - name: Fail if UEFI was requested but firmware is not in UEFI mode
   ansible.builtin.assert:
     that:
       - efi_vars.stat.exists
     fail_msg: "UEFI mode requested, but /sys/firmware/efi/efivars is missing."
-  when: install_boot_mode == 'uefi'
+  when:
+    - install_boot_mode == 'uefi'
+    - preflight_require_runtime_uefi | bool
 
 - name: Create work directory
   ansible.builtin.file:
@@ -58,19 +62,219 @@
     selected_gpu_profile: "{{ gpu_profiles[gpu_stack] }}"
     resolved_portage_enable_repositories: "{{ portage_enable_repositories | default(['guru']) }}"
     resolved_portage_make_conf_append: "{{ portage_make_conf_append | default('') }}"
+    resolved_portage_package_use_files: "{{ portage_package_use_files | default({}) }}"
+    resolved_portage_package_mask_files: "{{ portage_package_mask_files | default({}) }}"
+    resolved_portage_package_unmask_files: "{{ portage_package_unmask_files | default({}) }}"
+    resolved_portage_package_mask_symlinks: "{{ portage_package_mask_symlinks | default([]) }}"
+    resolved_portage_package_accept_keywords_files: "{{ portage_package_accept_keywords_files | default({}) }}"
+    resolved_portage_package_license_files: "{{ portage_package_license_files | default({}) }}"
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
-    resolved_portage_package_use_files: "{{ portage_package_use_files | default({}) }}"
-    resolved_portage_package_accept_keywords_files: "{{ portage_package_accept_keywords_files | default({}) }}"
-    resolved_portage_package_mask_files: "{{ portage_package_mask_files | default({}) }}"
-    resolved_portage_package_mask_symlinks: "{{ portage_package_mask_symlinks | default([]) }}"
     resolved_kernel_config_fragment_files: "{{ kernel_config_fragment_files | default({}) }}"
+    resolved_profile_parents: "{{ profile_parents | default([]) }}"
+    resolved_profile_package_atoms: "{{ profile_package_atoms | default([]) }}"
+    resolved_profile_package_list_files: "{{ profile_package_list_files | default([]) }}"
+    resolved_profile_openrc_services_enable: "{{ profile_openrc_services_enable | default([]) }}"
+    resolved_profile_modules_load_files: "{{ profile_modules_load_files | default({}) }}"
+    resolved_profile_local_user_accounts: "{{ profile_local_user_accounts | default([]) }}"
+    resolved_profile_cloud_init: "{{ profile_cloud_init | default({}) }}"
+    resolved_profile_aaa_policy_files: "{{ profile_aaa_policy_files | default([]) }}"
+    resolved_profile_aaa_policy: "{{ profile_aaa_policy | default({}) }}"
+    resolved_profile_freeipa_controller: "{{ profile_freeipa_controller | default({}) }}"
+    resolved_profile_ipa_client: "{{ profile_ipa_client | default({}) }}"
+    resolved_profile_freeradius_bridge: "{{ profile_freeradius_bridge | default({}) }}"
+    resolved_profile_rsyslog: "{{ profile_rsyslog | default({}) }}"
+    resolved_profile_elasticsearch_cluster: "{{ profile_elasticsearch_cluster | default({}) }}"
+    resolved_profile_kibana: "{{ profile_kibana | default({}) }}"
+    resolved_profile_netbox_connector: "{{ profile_netbox_connector | default({}) }}"
+    resolved_profile_netbox_essentials: "{{ profile_netbox_essentials | default({}) }}"
+    resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
+    resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
+    resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
+    resolved_profile_nexus_repo: "{{ profile_nexus_repo | default({}) }}"
+    resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
+    resolved_profile_service_readiness: "{{ profile_service_readiness | default({}) }}"
+    resolved_profile_container_base_image: "{{ profile_container_base_image | default({}) }}"
+    resolved_profile_container_app_build_defaults: "{{ profile_container_app_build_defaults | default({}) }}"
+    resolved_profile_container_services: "{{ profile_container_services | default({}) }}"
+    resolved_profile_container_app_profiles: "{{ profile_container_app_profiles | default({}) }}"
+    resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
+    resolved_profile_site_security_profile: "{{ profile_site_security_profile | default({}) }}"
+    resolved_profile_memory_storage: "{{ profile_memory_storage | default({}) }}"
+    resolved_profile_jenkins_controller: "{{ profile_jenkins_controller | default({}) }}"
+    resolved_profile_distcc_farm: "{{ profile_distcc_farm | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml
   loop: "{{ profile_definition_files | default([]) }}"
   loop_control:
     loop_var: profile_definition_file
+
+- name: Reapply explicit inventory-level AAA policy file overrides after definition layering
+  ansible.builtin.set_fact:
+    resolved_profile_aaa_policy_files: >-
+      {{
+        (
+          resolved_profile_aaa_policy_files
+          + (profile_aaa_policy_files | default([]))
+        ) | unique
+      }}
+
+- name: Load selected AAA policy definition files
+  ansible.builtin.include_tasks: load_aaa_policy_definition.yml
+  loop: "{{ resolved_profile_aaa_policy_files | default([]) }}"
+  loop_control:
+    loop_var: aaa_policy_definition_file
+
+- name: Reapply explicit inventory-level profile overrides after definition layering
+  ansible.builtin.set_fact:
+    resolved_profile_cloud_init: >-
+      {{
+        resolved_profile_cloud_init
+        | combine(profile_cloud_init | default({}), recursive=True)
+      }}
+    resolved_profile_aaa_policy: >-
+      {{
+        resolved_profile_aaa_policy
+        | combine(profile_aaa_policy | default({}), recursive=True)
+      }}
+    resolved_profile_freeipa_controller: >-
+      {{
+        resolved_profile_freeipa_controller
+        | combine(profile_freeipa_controller | default({}), recursive=True)
+      }}
+    resolved_profile_ipa_client: >-
+      {{
+        resolved_profile_ipa_client
+        | combine(profile_ipa_client | default({}), recursive=True)
+      }}
+    resolved_profile_freeradius_bridge: >-
+      {{
+        resolved_profile_freeradius_bridge
+        | combine(profile_freeradius_bridge | default({}), recursive=True)
+      }}
+    resolved_profile_rsyslog: >-
+      {{
+        resolved_profile_rsyslog
+        | combine(profile_rsyslog | default({}), recursive=True)
+      }}
+    resolved_profile_elasticsearch_cluster: >-
+      {{
+        resolved_profile_elasticsearch_cluster
+        | combine(profile_elasticsearch_cluster | default({}), recursive=True)
+      }}
+    resolved_profile_kibana: >-
+      {{
+        resolved_profile_kibana
+        | combine(profile_kibana | default({}), recursive=True)
+      }}
+    resolved_profile_netbox_connector: >-
+      {{
+        resolved_profile_netbox_connector
+        | combine(profile_netbox_connector | default({}), recursive=True)
+      }}
+    resolved_profile_netbox_essentials: >-
+      {{
+        resolved_profile_netbox_essentials
+        | combine(profile_netbox_essentials | default({}), recursive=True)
+      }}
+    resolved_profile_zerotier: >-
+      {{
+        resolved_profile_zerotier
+        | combine(profile_zerotier | default({}), recursive=True)
+      }}
+    resolved_profile_telemetry: >-
+      {{
+        resolved_profile_telemetry
+        | combine(profile_telemetry | default({}), recursive=True)
+      }}
+    resolved_profile_binpkg_repo: >-
+      {{
+        resolved_profile_binpkg_repo
+        | combine(profile_binpkg_repo | default({}), recursive=True)
+      }}
+    resolved_profile_nexus_repo: >-
+      {{
+        resolved_profile_nexus_repo
+        | combine(profile_nexus_repo | default({}), recursive=True)
+      }}
+    resolved_profile_haproxy_service_types: >-
+      {{
+        profile_haproxy_service_types
+        if profile_haproxy_service_types is defined
+        else resolved_profile_haproxy_service_types
+      }}
+    resolved_profile_service_readiness: >-
+      {{
+        resolved_profile_service_readiness
+        | combine(profile_service_readiness | default({}), recursive=True)
+      }}
+    resolved_profile_container_base_image: >-
+      {{
+        resolved_profile_container_base_image
+        | combine(profile_container_base_image | default({}), recursive=True)
+      }}
+    resolved_profile_container_app_build_defaults: >-
+      {{
+        resolved_profile_container_app_build_defaults
+        | combine(profile_container_app_build_defaults | default({}), recursive=True)
+      }}
+    resolved_profile_container_services: >-
+      {{
+        resolved_profile_container_services
+        | combine(profile_container_services | default({}), recursive=True)
+      }}
+    resolved_profile_container_app_profiles: >-
+      {{
+        resolved_profile_container_app_profiles
+        | combine(profile_container_app_profiles | default({}), recursive=True)
+      }}
+    resolved_profile_container_service_segments: >-
+      {{
+        profile_container_service_segments
+        if profile_container_service_segments is defined
+        else resolved_profile_container_service_segments
+      }}
+    resolved_profile_site_security_profile: >-
+      {{
+        resolved_profile_site_security_profile
+        | combine(profile_site_security_profile | default({}), recursive=True)
+      }}
+    resolved_profile_memory_storage: >-
+      {{
+        resolved_profile_memory_storage
+        | combine(profile_memory_storage | default({}), recursive=True)
+      }}
+    resolved_profile_jenkins_controller: >-
+      {{
+        resolved_profile_jenkins_controller
+        | combine(profile_jenkins_controller | default({}), recursive=True)
+      }}
+    resolved_profile_distcc_farm: >-
+      {{
+        resolved_profile_distcc_farm
+        | combine(profile_distcc_farm | default({}), recursive=True)
+      }}
+
+- name: Resolve package atoms from selected profile package list files
+  ansible.builtin.set_fact:
+    resolved_profile_package_atoms: >-
+      {{
+        (
+          resolved_profile_package_atoms
+          + (
+            lookup('ansible.builtin.file', playbook_dir ~ '/../' ~ resolved_profile_package_list_file)
+            .splitlines()
+            | map('trim')
+            | reject('equalto', '')
+            | reject('match', '^#')
+            | list
+          )
+        ) | unique
+      }}
+  loop: "{{ resolved_profile_package_list_files | default([]) }}"
+  loop_control:
+    loop_var: resolved_profile_package_list_file
 
 - name: Ensure storage device list is present
   ansible.builtin.assert:

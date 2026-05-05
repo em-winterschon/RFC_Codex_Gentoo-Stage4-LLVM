@@ -1,0 +1,50 @@
+---
+- name: Generate Hetzner DNS dry-run plan from NetBox source of truth
+  hosts: localhost
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+    hetzner_dns_plan_script: "{{ repo_root }}/scripts/plan-hetzner-dns-from-netbox.py"
+    hetzner_dns_plan_output: "/tmp/hetzner-dns-plan-from-netbox.json"
+    hetzner_dns_netbox_api_url: "{{ netbox_api_url | default('http://172.16.99.62') }}"
+    hetzner_dns_netbox_token_file: "{{ netbox_seed_token_file | default('/root/operator-private/netbox/svc-netbox-stage4-admin-token') }}"
+    hetzner_dns_zone_groups: "{{ dns_hetzner_cloud_zone_groups | default([]) }}"
+    hetzner_dns_default_ttl: "{{ dns_hetzner_cloud_change_policy.default_ttl | default(300) }}"
+  tasks:
+    - name: Assert DNS zone groups are available
+      ansible.builtin.assert:
+        that:
+          - hetzner_dns_zone_groups | length > 0
+        fail_msg: "No Hetzner DNS zone groups are configured."
+
+    - name: Generate DNS dry-run plan from NetBox IP addresses
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ hetzner_dns_plan_script }}"
+          - --netbox-api-url
+          - "{{ hetzner_dns_netbox_api_url }}"
+          - --netbox-token-file
+          - "{{ hetzner_dns_netbox_token_file }}"
+          - --zone-groups-json
+          - "{{ hetzner_dns_zone_groups | to_json }}"
+          - --default-ttl
+          - "{{ hetzner_dns_default_ttl | string }}"
+          - --format
+          - json
+          - --output
+          - "{{ hetzner_dns_plan_output }}"
+      changed_when: false
+
+    - name: Read DNS dry-run plan
+      ansible.builtin.slurp:
+        src: "{{ hetzner_dns_plan_output }}"
+      register: hetzner_dns_plan_raw
+
+    - name: Report DNS dry-run plan summary
+      ansible.builtin.debug:
+        msg: >-
+          DNS plan generated at {{ hetzner_dns_plan_output }};
+          records={{ (hetzner_dns_plan_raw.content | b64decode | from_json).summary.records }},
+          skipped={{ (hetzner_dns_plan_raw.content | b64decode | from_json).summary.skipped }},
+          apply={{ (hetzner_dns_plan_raw.content | b64decode | from_json).apply }}.

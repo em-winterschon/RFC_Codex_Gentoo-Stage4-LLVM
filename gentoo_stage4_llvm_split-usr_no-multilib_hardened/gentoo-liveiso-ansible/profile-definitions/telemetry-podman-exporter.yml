@@ -1,0 +1,19 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-metrics-podman-exporter.packages
+  package_accept_keywords_files:
+    40-prometheus-podman-exporter: |
+      app-metrics/prometheus-podman-exporter ~amd64
+  telemetry:
+    podman_exporter:
+      enabled: true
+  haproxy_service_types:
+    - name: podman-exporter-http
+      bind: "*:9882"
+      mode: http
+      backend_name: be_podman_exporter_http
+      servers:
+        - name: podman-exporter
+          address: 127.0.0.1
+          port: 9882

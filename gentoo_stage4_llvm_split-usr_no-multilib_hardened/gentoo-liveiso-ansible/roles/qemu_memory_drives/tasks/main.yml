@@ -1,0 +1,59 @@
+---
+- name: Resolve qemu memory drive paths
+  ansible.builtin.set_fact:
+    qemu_memory_drive_dir: "{{ qemu_memory_drives_mount_root }}/{{ qemu_memory_drives_instance_name }}"
+    qemu_memory_drives_manifest_path: "{{ qemu_memory_drives_mount_root }}/{{ qemu_memory_drives_instance_name }}/{{ qemu_memory_drives_manifest_name }}"
+
+- name: Ensure qemu memory drive mount root exists
+  ansible.builtin.file:
+    path: "{{ qemu_memory_drives_mount_root }}"
+    state: directory
+    mode: '0755'
+  when: qemu_memory_drives_enabled | bool
+
+- name: Mount tmpfs for qemu memory drives when requested
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if ! mountpoint -q {{ qemu_memory_drives_mount_root | quote }}; then
+      mount -t tmpfs -o size={{ qemu_memory_drives_tmpfs_size | quote }} tmpfs {{ qemu_memory_drives_mount_root | quote }}
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: qemu_memory_drives_enabled | bool
+
+- name: Ensure qemu memory drive instance directory exists
+  ansible.builtin.file:
+    path: "{{ qemu_memory_drive_dir }}"
+    state: directory
+    mode: '0755'
+  when: qemu_memory_drives_enabled | bool
+
+- name: Create or resize qemu memory drive images
+  ansible.builtin.shell: |
+    set -euo pipefail
+    drive_path={{ (qemu_memory_drive_dir + '/' + qemu_memory_drive.name + '.' + (qemu_memory_drive.format | default('qcow2'))) | quote }}
+    size_gib={{ qemu_memory_drive.size_gib | int }}
+    format={{ qemu_memory_drive.format | default('qcow2') | quote }}
+    if [[ "$format" == "raw" ]]; then
+      truncate -s "${size_gib}G" "$drive_path"
+    else
+      if [[ -f "$drive_path" ]]; then
+        qemu-img resize -f "$format" "$drive_path" "${size_gib}G"
+      else
+        qemu-img create -f "$format" "$drive_path" "${size_gib}G"
+      fi
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ qemu_memory_drives }}"
+  loop_control:
+    loop_var: qemu_memory_drive
+  when: qemu_memory_drives_enabled | bool
+
+- name: Render qemu memory drive manifest
+  ansible.builtin.template:
+    src: memory-drives.json.j2
+    dest: "{{ qemu_memory_drives_manifest_path }}"
+    mode: '0644'
+  when: qemu_memory_drives_enabled | bool

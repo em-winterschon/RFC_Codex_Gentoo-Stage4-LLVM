@@ -1,0 +1,54 @@
+---
+- name: Seed NetBox from local network fabric
+  hosts: netbox_services
+  gather_facts: false
+  vars:
+    netbox_seed_script_path: "{{ playbook_dir }}/../../../scripts/netbox_seed_local_network.py"
+    netbox_seed_fabric_path: "{{ playbook_dir }}/../inventories/local-network/group_vars/all/network_fabric.yml"
+    netbox_seed_apply: false
+    netbox_seed_update_existing: false
+    netbox_seed_token_file: ""
+
+  tasks:
+    - name: Assert NetBox token source is configured
+      ansible.builtin.assert:
+        that:
+          - (netbox_api_token | default('') | length > 0) or (netbox_seed_token_file | length > 0)
+        fail_msg: >-
+          Set netbox_api_token through vault or pass netbox_seed_token_file
+          pointing at a root-only token file outside the repository.
+
+    - name: Build NetBox seed command arguments
+      ansible.builtin.set_fact:
+        netbox_seed_command_args: >-
+          {{
+            [
+              'python3',
+              netbox_seed_script_path,
+              '--api-url',
+              netbox_api_url,
+              '--fabric',
+              netbox_seed_fabric_path
+            ]
+            + ([] if netbox_seed_apply | bool else ['--dry-run'])
+            + (['--update-existing'] if netbox_seed_update_existing | bool else [])
+          }}
+
+    - name: Execute NetBox local fabric seed
+      ansible.builtin.command:
+        argv: "{{ netbox_seed_command_args }}"
+      delegate_to: localhost
+      environment:
+        NETBOX_TOKEN: "{{ netbox_api_token | default('') }}"
+        NETBOX_TOKEN_FILE: "{{ netbox_seed_token_file }}"
+      register: netbox_seed_result
+      changed_when: netbox_seed_apply | bool
+      no_log: true
+
+    - name: Report sanitized NetBox seed summary
+      ansible.builtin.debug:
+        msg: >-
+          NetBox local fabric seed completed for {{ inventory_hostname }};
+          apply={{ netbox_seed_apply | bool }},
+          update_existing={{ netbox_seed_update_existing | bool }},
+          token_file={{ (netbox_seed_token_file | length > 0) | bool }}.

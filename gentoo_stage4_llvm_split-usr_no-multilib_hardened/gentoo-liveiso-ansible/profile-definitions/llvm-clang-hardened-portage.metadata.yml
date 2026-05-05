@@ -6,6 +6,18 @@ portage_profile_metadata:
     Machine-readable package policy metadata for the LLVM/Clang-hardened
     Portage baseline. This file documents fallback packages and validated exact
     atom pins without forcing them globally.
+  package_pins:
+    tracked_atoms:
+      - llvm-core/clang-toolchain-symlinks
+      - llvm-core/lld-toolchain-symlinks
+      - llvm-core/clang-linker-config
+      - llvm-runtimes/clang-runtime
+      - sys-devel/gcc
+      - sys-libs/glibc
+    validated_alias_mode_2026_04_25:
+      - =sys-kernel/gentoo-kernel-6.18.18
+      - =sys-fs/zfs-2.3.6
+      - =sys-fs/zfs-kmod-2.3.6
   package_lists:
     clang_first_toolchain:
       description: Prefer LLVM/Clang and LLD for the default system toolchain.

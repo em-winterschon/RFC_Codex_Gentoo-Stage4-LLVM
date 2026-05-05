@@ -1,0 +1,43 @@
+---
+netbox_essentials_default_enabled: false
+netbox_essentials_default_install_root: /opt/netbox-essentials
+netbox_essentials_default_venv_path: /opt/netbox-essentials/venv
+netbox_essentials_default_source_root: /opt/netbox-essentials/src
+netbox_essentials_default_data_root: /var/lib/netbox-essentials
+netbox_essentials_default_python_packages:
+  - pynetbox
+  - requests
+  - pyyaml
+netbox_essentials_default_repositories:
+  - name: netbox-agent
+    url: https://github.com/Solvik/netbox-agent.git
+    purpose: on-host inventory automation
+  - name: netbox-sync
+    url: https://github.com/bb-Ricardo/netbox-sync.git
+    purpose: Redfish and host inventory synchronization
+  - name: netbox-tools
+    url: https://github.com/allenrobel/netbox-tools.git
+    purpose: operational NetBox tools and Ansible Vault integration helpers
+  - name: devicetype-library
+    url: https://github.com/netbox-community/devicetype-library.git
+    purpose: community device type, module type, and manufacturer definitions
+  - name: Device-Type-Library-Import
+    url: https://github.com/netbox-community/Device-Type-Library-Import.git
+    purpose: automated import tooling for devicetype-library
+netbox_essentials_default_device_type_import:
+  enabled: true
+  vendors:
+    - APC
+    - Arista
+    - Cisco
+    - CyberPower
+    - Eaton
+    - Juniper
+    - MikroTik
+    - Opengear
+  log_path: /var/log/netbox-essentials/device-type-import-essential.log
+netbox_essentials_default_packages:
+  - dev-vcs/git
+  - dev-python/pip
+  - dev-python/virtualenv
+  - net-misc/curl

@@ -1,0 +1,8 @@
+---
+- name: Prepare tmpfs-backed QEMU memory drives
+  hosts: qemu_hypervisors
+  gather_facts: true
+  become: true
+
+  roles:
+    - qemu_memory_drives

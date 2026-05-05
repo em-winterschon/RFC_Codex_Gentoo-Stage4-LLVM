@@ -1,0 +1,8 @@
+---
+- name: Render RFC99 RouterOS gateway configuration
+  hosts: routeros_rfc99_gateways
+  gather_facts: false
+  become: false
+
+  roles:
+    - routeros_rfc99_gateway

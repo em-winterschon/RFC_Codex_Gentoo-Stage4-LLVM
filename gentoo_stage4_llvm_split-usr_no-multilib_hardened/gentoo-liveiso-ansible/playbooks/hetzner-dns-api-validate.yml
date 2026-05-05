@@ -1,0 +1,37 @@
+---
+- name: Validate Hetzner Cloud DNS API token groups
+  hosts: localhost
+  gather_facts: false
+  vars:
+    hetzner_dns_api_endpoint: "{{ dns_hetzner_cloud_api_endpoint | default('https://api.hetzner.cloud/v1') }}"
+    hetzner_dns_token_groups: "{{ dns_hetzner_cloud_token_groups | default([]) }}"
+  tasks:
+    - name: Assert Hetzner DNS token groups are configured
+      ansible.builtin.assert:
+        that:
+          - hetzner_dns_token_groups | length > 0
+        fail_msg: "No Hetzner Cloud DNS API token groups are configured."
+
+    - name: Validate Hetzner Cloud DNS API token can list zones
+      ansible.builtin.uri:
+        url: "{{ hetzner_dns_api_endpoint }}/zones"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ item.api_token }}"
+          Accept: application/json
+        status_code: 200
+        return_content: true
+        timeout: 30
+      loop: "{{ hetzner_dns_token_groups }}"
+      loop_control:
+        label: "{{ item.name }}:{{ item.token_name }}"
+      no_log: true
+      register: hetzner_dns_zone_results
+      when:
+        - item.api_token | default('') | length > 0
+
+    - name: Summarize validated Hetzner Cloud DNS API token groups
+      ansible.builtin.debug:
+        msg: >-
+          Validated {{ hetzner_dns_zone_results.results | default([]) | length }}
+          Hetzner Cloud DNS API token group(s).

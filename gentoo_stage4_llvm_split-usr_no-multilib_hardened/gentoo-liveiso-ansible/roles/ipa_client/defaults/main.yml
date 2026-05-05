@@ -1,0 +1,20 @@
+---
+ipa_client_default_enabled: false
+ipa_client_default_domain: example.internal
+ipa_client_default_realm: EXAMPLE.INTERNAL
+ipa_client_default_servers: []
+ipa_client_default_dns_discovery_domain: ""
+ipa_client_default_hostname: ""
+ipa_client_default_domain_join_mode: manual
+ipa_client_default_configure_krb5: true
+ipa_client_default_configure_sssd: true
+ipa_client_default_mkhomedir: true
+ipa_client_default_cache_credentials: true
+ipa_client_default_enumerate: false
+ipa_client_default_ssh_trust_ipa_keys: true
+ipa_client_default_hbac_provider: ipa
+ipa_client_default_sudo_provider: ipa
+ipa_client_default_access_provider: ipa
+ipa_client_default_home_dir_template: /home/%u
+ipa_client_default_default_shell: /bin/bash
+ipa_client_default_ca_cert_path: /etc/ssl/certs/ca-certificates.crt

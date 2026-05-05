@@ -1,0 +1,19 @@
+# Managed by gentoo-liveiso-ansible
+user nginx;
+worker_processes auto;
+error_log /dev/stderr notice;
+pid /tmp/nginx.pid;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  include /etc/nginx/mime.types.nginx;
+  default_type application/octet-stream;
+  types_hash_max_size 4096;
+  access_log /dev/stdout;
+  sendfile on;
+  keepalive_timeout 65;
+  include /etc/nginx/conf.d/*.conf;
+}

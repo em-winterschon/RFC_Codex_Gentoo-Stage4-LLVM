@@ -1,0 +1,21 @@
+---
+gentoo_system_profile_metadata:
+  id: cloud-init-vm
+  purpose: Modular cloud-init overlay for VM-oriented Gentoo profiles using NoCloud or ConfigDrive seed data.
+  profile_taxonomy:
+    stage: stage5
+    role_class: cloud-init-overlay
+    role_name: cloud-init-vm
+    package_layers:
+      - profile-package-lists/cloud-init-base.packages
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/cloud-init-25.1
+  cloud_init:
+    datasource_list:
+      - NoCloud
+      - ConfigDrive
+    enabled_by_profile: true
+    notes: Host-specific instance IDs, hostnames, and user-data details should be supplied through inventory variables.
+  source_references:
+    - https://packages.gentoo.org/packages/app-emulation/cloud-init

@@ -1,0 +1,60 @@
+---
+- name: Resolve container service segment settings
+  ansible.builtin.set_fact:
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+    resolved_container_service_segments_local: "{{ resolved_profile_container_service_segments | default([]) }}"
+    resolved_container_runtime_apps_local: "{{ container_runtime_applications | default([]) }}"
+    resolved_container_runtime_root: "{{ resolved_profile_container_services.runtime_root | default('/var/lib/container-services') }}"
+
+- name: Ensure container runtime script directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_runtime_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /usr/local/libexec/container-services
+    - /etc/container-services
+  loop_control:
+    loop_var: container_runtime_dir
+  when: container_services_enabled
+
+- name: Render network bootstrap helper
+  ansible.builtin.template:
+    src: ensure-networks.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/container-services/ensure-networks.sh"
+    mode: '0755'
+  when: container_services_enabled
+
+- name: Render Podman service wrappers
+  ansible.builtin.template:
+    src: podman-app-run.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/container-services/run-{{ container_runtime_app.name }}.sh"
+    mode: '0755'
+  loop: "{{ resolved_container_runtime_apps_local }}"
+  loop_control:
+    loop_var: container_runtime_app
+  when: container_services_enabled
+
+- name: Register OpenRC managed container services
+  ansible.builtin.set_fact:
+    openrc_action_services: >-
+      {{
+        (openrc_action_services | default([]))
+        + [
+            {
+              'name': 'container-' + container_runtime_app.name,
+              'description': container_runtime_app.description | default('Podman service ' + container_runtime_app.name),
+              'command': '/usr/local/libexec/container-services/run-' + container_runtime_app.name + '.sh',
+              'runlevel': container_service_runlevel,
+              'enabled': container_runtime_app.enabled | default(true),
+              'dependencies_need': ['net'],
+              'dependencies_use': ['nftables', 'cgroups'],
+              'output_log': resolved_container_runtime_root + '/logs/' + container_runtime_app.name + '.log',
+              'error_log': resolved_container_runtime_root + '/logs/' + container_runtime_app.name + '.err.log'
+            }
+          ]
+      }}
+  loop: "{{ resolved_container_runtime_apps_local }}"
+  loop_control:
+    loop_var: container_runtime_app
+  when: container_services_enabled

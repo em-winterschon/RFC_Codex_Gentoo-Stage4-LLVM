@@ -1,0 +1,18 @@
+server {
+    listen {{ resolved_binpkg_repo.listen_address }}:{{ resolved_binpkg_repo.listen_port }};
+    server_name {{ resolved_binpkg_repo.server_name }};
+
+    root {{ resolved_binpkg_repo.repository_root }};
+    charset utf-8;
+
+    location / {
+        {% if resolved_binpkg_repo.autoindex | bool %}
+        autoindex on;
+        autoindex_exact_size off;
+        autoindex_localtime on;
+        {% else %}
+        autoindex off;
+        {% endif %}
+        try_files $uri $uri/ =404;
+    }
+}
