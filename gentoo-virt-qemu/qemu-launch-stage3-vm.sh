@@ -30,6 +30,12 @@ QEMU_MEMORY_DRIVES_FILE="${QEMU_MEMORY_DRIVES_FILE:-}"
 QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
 QEMU_DAEMONIZE="${QEMU_DAEMONIZE:-1}"
 QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-none}"
+QEMU_VIDEO_DEVICE="${QEMU_VIDEO_DEVICE:-auto}"
+QEMU_VIDEO_DEVICE_HELP_OUTPUT="${QEMU_VIDEO_DEVICE_HELP_OUTPUT-}"
+QEMU_SPICE_PORT="${QEMU_SPICE_PORT:-5931}"
+QEMU_SPICE_ADDRESS="${QEMU_SPICE_ADDRESS:-127.0.0.1}"
+QEMU_SPICE_OPTIONS="${QEMU_SPICE_OPTIONS:-port=${QEMU_SPICE_PORT},addr=${QEMU_SPICE_ADDRESS},disable-ticketing=on}"
+QEMU_SPICE_AGENT="${QEMU_SPICE_AGENT:-1}"
 QEMU_SERIAL_MODE="${QEMU_SERIAL_MODE:-file}"
 QEMU_SERIAL_FILE="${QEMU_SERIAL_FILE:-${STAGE3_IMAGE_DIR}/state/${INSTANCE_NAME}.serial.log}"
 QEMU_SERIAL_TCP="${QEMU_SERIAL_TCP:-127.0.0.1:4555,server=on,wait=off,telnet=on}"
@@ -119,6 +125,25 @@ network_backend_name() {
 
 display_mode_name() {
   printf '%s' "${QEMU_DISPLAY_MODE}"
+}
+
+video_device_name() {
+  if [[ "${QEMU_VIDEO_DEVICE}" != 'auto' ]]; then
+    printf '%s' "${QEMU_VIDEO_DEVICE}"
+    return 0
+  fi
+
+  case "$(display_mode_name)" in
+  spice)
+    printf 'qxl-vga'
+    ;;
+  none)
+    printf ''
+    ;;
+  *)
+    printf 'virtio-vga'
+    ;;
+  esac
 }
 
 serial_mode_name() {
@@ -224,6 +249,28 @@ default_launcher_log_file() {
     "$(launcher_log_timestamp)"
 }
 
+qemu_display_help_output() {
+  if [[ -n "${QEMU_DISPLAY_HELP_OUTPUT}" ]]; then
+    printf '%s' "${QEMU_DISPLAY_HELP_OUTPUT}"
+    return 0
+  fi
+
+  "${QEMU_BIN}" -display help 2>&1 || true
+}
+
+qemu_help_output() {
+  "${QEMU_BIN}" -help 2>&1 || true
+}
+
+qemu_device_help_output() {
+  if [[ -n "${QEMU_VIDEO_DEVICE_HELP_OUTPUT}" ]]; then
+    printf '%s' "${QEMU_VIDEO_DEVICE_HELP_OUTPUT}"
+    return 0
+  fi
+
+  "${QEMU_BIN}" -device help 2>&1 || true
+}
+
 setup_launcher_logging() {
   if [[ "${LAUNCHER_LOG_ENABLE}" != '1' || "${LAUNCHER_LOG_INITIALIZED}" == '1' ]]; then
     return 0
@@ -322,16 +369,34 @@ validate_display_backend() {
     return 0
     ;;
   gtk | sdl)
-    help_output="${QEMU_DISPLAY_HELP_OUTPUT}"
-    if [[ -z "${help_output}" ]]; then
-      help_output="$("${QEMU_BIN}" -display help 2>&1 || true)"
-    fi
+    help_output="$(qemu_display_help_output)"
     [[ "${help_output}" == *"$(display_mode_name)"* ]] || fail "QEMU display mode '$(display_mode_name)' is not available in ${QEMU_BIN}"
+    ;;
+  spice)
+    help_output="$(qemu_help_output)"
+    [[ "${help_output}" == *'-spice '* ]] || fail "QEMU SPICE support is not available in ${QEMU_BIN}; rebuild QEMU with USE=spice"
     ;;
   *)
     fail "Unsupported QEMU_DISPLAY_MODE: $(display_mode_name)"
     ;;
   esac
+}
+
+validate_video_device() {
+  local device help_output
+
+  device="$(video_device_name)"
+  [[ -n "${device}" ]] || return 0
+
+  case "${device}" in
+  std | virtio-vga | qxl-vga) ;;
+  *)
+    fail "Unsupported QEMU_VIDEO_DEVICE: ${device} (supported: auto, std, virtio-vga, qxl-vga)"
+    ;;
+  esac
+
+  help_output="$(qemu_device_help_output)"
+  [[ "${help_output}" == *"name \"${device}\""* || "${help_output}" == *"${device}"* ]] || fail "QEMU video device '${device}' is not available in ${QEMU_BIN}"
 }
 
 validate_serial_mode() {
@@ -421,7 +486,29 @@ append_display_args() {
   gtk | sdl)
     QEMU_CMD+=(-display "$(display_mode_name)")
     ;;
+  spice)
+    QEMU_CMD+=(-display none -spice "${QEMU_SPICE_OPTIONS}")
+    ;;
   esac
+}
+
+append_video_args() {
+  local device
+
+  device="$(video_device_name)"
+  [[ -n "${device}" ]] || return 0
+  QEMU_CMD+=(-device "${device}")
+}
+
+append_spice_agent_args() {
+  [[ "$(display_mode_name)" == 'spice' ]] || return 0
+  [[ "${QEMU_SPICE_AGENT}" == '1' ]] || return 0
+
+  QEMU_CMD+=(
+    -device virtio-serial-pci
+    -chardev spicevmc,id=spiceagent,name=vdagent
+    -device virtserialport,chardev=spiceagent,name=com.redhat.spice.0
+  )
 }
 
 append_serial_args() {
@@ -484,6 +571,8 @@ build_qemu_cmd() {
   append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
   append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
   append_memory_drives
+  append_video_args
+  append_spice_agent_args
 
   QEMU_CMD+=(
     -netdev "${RESOLVED_QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
@@ -597,9 +686,11 @@ main() {
   validate_memory_drives_file
   validate_net_backend
   validate_display_backend
+  validate_video_device
   validate_serial_mode
   log "Boot source: $(boot_source_name)"
   log "Network mode: $(network_mode_name)"
+  log "Display mode: $(display_mode_name) (video: $(video_device_name))"
   if [[ "$(boot_source_name)" == 'qcow' ]]; then
     log "QCOW image: ${QCOW_IMAGE}"
   else

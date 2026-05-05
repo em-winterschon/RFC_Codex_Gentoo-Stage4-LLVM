@@ -1,0 +1,23 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-workstation-nscde.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: vm-workstation-nscde
+
+profile_cloud_init:
+  enabled: true
+  instance_id: vm-workstation-nscde
+  local_hostname: vm-workstation-nscde
+  disable_root: false
+  ssh_pwauth: false
+
+workstation_spice_listen_host: 127.0.0.1
+workstation_spice_port: 5931

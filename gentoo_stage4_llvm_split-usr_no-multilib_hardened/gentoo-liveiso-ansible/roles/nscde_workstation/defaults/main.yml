@@ -1,0 +1,13 @@
+---
+nscde_workstation_default_enabled: false
+nscde_workstation_default_version: "2.3"
+nscde_workstation_default_source_url: https://github.com/NsCDE/NsCDE/archive/refs/tags/2.3.tar.gz
+nscde_workstation_default_source_sha256: fc4fd5f16b901b865f44b7483fa01a28189b5d5b95766375e026cc317456b297
+nscde_workstation_default_source_dir_name: NsCDE-2.3
+nscde_workstation_default_work_root: /var/tmp/nscde-workstation
+nscde_workstation_default_install_prefix: /opt/NsCDE
+nscde_workstation_default_build_jobs: 8
+nscde_workstation_default_create_skel_xinitrc: true
+nscde_workstation_default_create_root_xinitrc: true
+nscde_workstation_default_xsession_desktop_path: /usr/share/xsessions/nscde.desktop
+nscde_workstation_default_session_command: /opt/NsCDE/bin/nscde

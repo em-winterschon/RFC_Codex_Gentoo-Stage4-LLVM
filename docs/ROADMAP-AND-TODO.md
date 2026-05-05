@@ -186,8 +186,8 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `WS-001` | planned | Define Stage5 workstation VM overlay | stable Stage4 VM base | Add a `vm-workstation-nscde` profile that layers Xorg, SPICE guest support, and NsCDE onto the existing Stage4 VM base without changing server defaults. |
-| `WS-002` | planned | Decide NsCDE packaging strategy | `WS-001`, upstream install review | Prefer repo-managed package atoms or a local overlay ebuild if practical; fallback is a controlled source-install role pinned to an upstream tag/checksum. |
+| `WS-001` | scaffolded | Define Stage5 workstation VM overlay | stable Stage4 VM base | `vm-workstation-nscde` profile, metadata, package list, host vars, SPICE QEMU wrapper, and source-install role are scaffolded on the workstation branch. |
+| `WS-002` | active | Decide NsCDE packaging strategy | `WS-001`, upstream install review | First path is a controlled source-install role pinned to upstream tag `2.3`; a local overlay ebuild remains the preferred follow-up after live validation. |
 | `WS-003` | planned | Build and validate workstation on on-host QEMU before Hasslehoff | `WS-001`, `WS-002` | Use the on-host machine first for high-resource iteration; Hasslehoff validation waits for GPU passthrough hardware selection and install. |
 
 ## Medium-Term Work

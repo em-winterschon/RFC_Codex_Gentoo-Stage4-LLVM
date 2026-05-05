@@ -42,6 +42,7 @@ for profile in \
   vm-guest-simple-ipxe.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml \
   zerotier-managed-access.yml
@@ -68,6 +69,7 @@ for metadata in \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
+  vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
   vm-nexus-repository.metadata.yml
 do
@@ -94,6 +96,7 @@ for host_var in \
   vm-guest-simple.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml
 do
@@ -122,10 +125,14 @@ for package_list in \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
+  stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages
 do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"
 done
+
+test -d "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/nscde_workstation"
+test -f "${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-workstation-nscde-vm.sh"
 
 test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 

@@ -79,6 +79,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   pattern for `FORGE_TOKEN`.
 - Added the 2026-05-04 EOD report and opened the next Stage5 workstation VM
   planning track for a QEMU-first Xorg, SPICE, and NsCDE workstation profile.
+- Added initial `vm-workstation-nscde` profile scaffolding, normalized Xorg and
+  NsCDE package atoms, SPICE/QXL QEMU launch support, and the
+  `nscde_workstation` source-install role pinned to NsCDE `2.3`.
 
 ## 2026-05-03
 

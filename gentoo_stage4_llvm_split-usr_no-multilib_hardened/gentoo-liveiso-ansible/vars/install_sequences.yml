@@ -50,6 +50,7 @@ install_role_sequences:
           - kibana_interface
           - netbox_connector
           - zerotier_access
+          - nscde_workstation
           - platform_profile
           - identity
           - memory_storage
@@ -113,6 +114,7 @@ install_role_sequences:
           - kibana_interface
           - netbox_connector
           - zerotier_access
+          - nscde_workstation
           - platform_profile
           - identity
           - finalize
@@ -181,6 +183,7 @@ install_role_sequences:
           - kibana_interface
           - netbox_connector
           - zerotier_access
+          - nscde_workstation
           - platform_profile
           - identity
           - memory_storage
@@ -243,6 +246,7 @@ install_role_sequences:
           - kibana_interface
           - netbox_connector
           - zerotier_access
+          - nscde_workstation
           - platform_profile
           - identity
           - memory_storage

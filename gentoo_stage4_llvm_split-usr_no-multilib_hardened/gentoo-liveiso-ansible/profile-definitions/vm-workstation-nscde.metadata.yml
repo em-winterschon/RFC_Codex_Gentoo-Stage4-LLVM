@@ -1,0 +1,31 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-workstation-nscde
+  purpose: Stage5 virtual-host workstation profile for Xorg, SPICE guest integration, and NsCDE desktop validation.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: workstation-nscde
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-simple-ipxe
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-emulation/spice-vdagent
+      - x11-base/xorg-server
+      - x11-base/xorg-drivers
+      - x11-drivers/xf86-video-qxl
+      - x11-wm/fvwm3
+    app_version_lock_id: nscde
+    upstream_app_version: "2.3"
+    source_sha256: fc4fd5f16b901b865f44b7483fa01a28189b5d5b95766375e026cc317456b297
+  deployment_notes:
+    - This profile intentionally reverses the server VM default of disabling X, gtk, qt5, and spice.
+    - On-host QEMU validation should use SPICE/QXL before Hasslehoff GPU passthrough work starts.
+    - NsCDE is source-installed from the pinned upstream tag until a local overlay ebuild is added.

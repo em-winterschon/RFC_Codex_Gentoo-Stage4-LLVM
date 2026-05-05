@@ -1,0 +1,50 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-workstation-nscde
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+  make_conf_append: |
+    USE="${USE} X dbus gtk qt5 spice truetype xinerama -systemd -wayland"
+    VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev"
+    INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
+  package_use_files:
+    40-workstation-nscde: |
+      app-emulation/spice-vdagent gtk -systemd
+      x11-base/xorg-server xorg elogind udev -systemd
+  modules_load_files:
+    vm-workstation-nscde.conf: |
+      uinput
+      virtio_blk
+      virtio_console
+      virtio_net
+      virtio_pci
+  openrc_services_enable:
+    - dbus
+    - spice-vdagent
+    - rsyslog
+  nscde_workstation:
+    enabled: true
+    version: "2.3"
+    source_url: https://github.com/NsCDE/NsCDE/archive/refs/tags/2.3.tar.gz
+    source_sha256: fc4fd5f16b901b865f44b7483fa01a28189b5d5b95766375e026cc317456b297
+    source_dir_name: NsCDE-2.3
+    work_root: /var/tmp/nscde-workstation
+    install_prefix: /opt/NsCDE
+    build_jobs: 16
+    create_skel_xinitrc: true
+    create_root_xinitrc: true
+    xsession_desktop_path: /usr/share/xsessions/nscde.desktop
+    session_command: /opt/NsCDE/bin/nscde
+  service_readiness:
+    enabled: true
+    checks:
+      - name: ssh
+        protocol: tcp
+        target: "{{ ansible_host | default('127.0.0.1') }}"
+        port: 22
+        timeout_seconds: 5
+      - name: spice
+        protocol: tcp
+        target: "{{ workstation_spice_listen_host | default('127.0.0.1') }}"
+        port: "{{ workstation_spice_port | default(5931) }}"
+        timeout_seconds: 5

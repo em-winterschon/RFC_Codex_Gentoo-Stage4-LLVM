@@ -39,6 +39,7 @@
       - netbox_essentials
       - netbox_connector
       - zerotier_access
+      - nscde_workstation
       - platform_profile
       - identity
       - memory_storage

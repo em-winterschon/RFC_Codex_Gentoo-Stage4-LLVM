@@ -62,6 +62,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)
+- [Workstation NsCDE](Workstation-NsCDE)
 - [Container Building](Container-Building)
 - [Container Publishing](Container-Publishing)
 - [Identity AAA](Identity-AAA)
