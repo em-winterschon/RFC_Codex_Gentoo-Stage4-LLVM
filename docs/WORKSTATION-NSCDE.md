@@ -74,6 +74,41 @@ Connect from the host with a SPICE client such as:
 remote-viewer spice://127.0.0.1:5931
 ```
 
+## On-Host Image Build
+
+The first workstation build is intentionally staged on the on-host QEMU system
+before Hasslehoff validation. The build path uses the standard LLVM/OpenRC
+stage3 base plus the workstation package list and injects profile-specific
+Portage fragments through the QCOW builder:
+
+```bash
+STAGE3_MAKE_CONF_APPEND='
+MAKEOPTS="-j48 -l64"
+EMERGE_DEFAULT_OPTS="--jobs=3 --load-average=64 --buildpkg=y --with-bdeps=y --complete-graph=y --autounmask=y --autounmask-backtrack=y --autounmask-continue=y --autounmask-unrestricted-atoms=y --autounmask-use=y --autounmask-write=y --binpkg-respect-use=y"
+FEATURES="${FEATURES} buildpkg parallel-fetch"
+PORTAGE_TMPDIR="/dev/shm/portage-tmpfs"
+PKGDIR="/var/cache/binpkgs"
+USE="${USE} X dbus gtk qt5 spice truetype xinerama elogind udev -systemd -wayland"
+VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev"
+INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
+'
+STAGE3_PACKAGE_USE_APPEND='
+app-emulation/spice-vdagent gtk -systemd
+x11-base/xorg-server xorg elogind udev -systemd
+'
+```
+
+The builder creates `/dev/shm/portage-tmpfs`, `/var/cache/binpkgs`, and
+`/var/log/portage` inside the target before running Portage so RAM-backed
+temporary builds and binpkg output work during bootstrap.
+
+Current live-build convention:
+
+```bash
+tmux attach -t codex-workstation-nscde-build
+tail -f /opt/gentoo-virt-qemu/workstation-nscde/logs/latest.log
+```
+
 ## Validation
 
 Minimum validation gates:

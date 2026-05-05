@@ -82,6 +82,13 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added initial `vm-workstation-nscde` profile scaffolding, normalized Xorg and
   NsCDE package atoms, SPICE/QXL QEMU launch support, and the
   `nscde_workstation` source-install role pinned to NsCDE `2.3`.
+- Added Stage3 QCOW builder overlay hooks for profile-specific `make.conf` and
+  `package.use` fragments, including RAM-backed Portage temp directory
+  preparation for `/dev/shm/portage-tmpfs`.
+- Started the on-host `vm-workstation-nscde` image build in tmux session
+  `codex-workstation-nscde-build` with Portage binpkg generation enabled and
+  workstation Xorg/SPICE/NsCDE dependencies staged from the profile package
+  list.
 
 ## 2026-05-03
 
