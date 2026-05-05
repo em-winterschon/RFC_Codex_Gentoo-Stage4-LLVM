@@ -74,6 +74,11 @@ infrastructure work. It is intentionally higher level than `git log`.
   `playbooks/routeros-state-snapshot.yml` for read-only RouterOS state
   snapshots. CRS309 SSH snapshot capture is validated; CRS354 remains on
   serial snapshot capture until its SSH command behavior is normalized.
+- Added the Forge GitHub token to the encrypted local-network Ansible Vault
+  under `vault_github_forge_*` variables and documented the non-secret usage
+  pattern for `FORGE_TOKEN`.
+- Added the 2026-05-04 EOD report and opened the next Stage5 workstation VM
+  planning track for a QEMU-first Xorg, SPICE, and NsCDE workstation profile.
 
 ## 2026-05-03
 

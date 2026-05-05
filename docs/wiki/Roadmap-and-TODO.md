@@ -182,6 +182,14 @@ Dependency:
 | `LLM-003` | pending | Scaffold OpenWebUI and Ollama service definitions | `LLM-001`, GPU service inventory access | Operator already has separate deployment automation; import only after Codex access is available. |
 | `LLM-004` | pending | Scaffold RAG ingestion, embedding, and retrieval pipeline roles | `LLM-002`, `LLM-003` | Keep metrics, logs, provider routing, and service VIPs explicit. |
 
+### Workstation VM Profiles
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `WS-001` | planned | Define Stage5 workstation VM overlay | stable Stage4 VM base | Add a `vm-workstation-nscde` profile that layers Xorg, SPICE guest support, and NsCDE onto the existing Stage4 VM base without changing server defaults. |
+| `WS-002` | planned | Decide NsCDE packaging strategy | `WS-001`, upstream install review | Prefer repo-managed package atoms or a local overlay ebuild if practical; fallback is a controlled source-install role pinned to an upstream tag/checksum. |
+| `WS-003` | planned | Build and validate workstation on on-host QEMU before Hasslehoff | `WS-001`, `WS-002` | Use the on-host machine first for high-resource iteration; Hasslehoff validation waits for GPU passthrough hardware selection and install. |
+
 ## Medium-Term Work
 
 | ID | Status | Task | Depends On | Notes |
