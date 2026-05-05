@@ -92,6 +92,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Encoded the first workstation resolver corrections: `media-libs/freetype`
   requires `harfbuzz` for the GTK/xscreensaver path, and PyQt5 remains
   explicitly unmasked until NsCDE can be moved to a non-masked dependency path.
+- Added `app-text/xmlto[text]` to the workstation Portage policy for the
+  `dunst[xdg] -> xdg-utils` documentation helper dependency chain.
 
 ## 2026-05-03
 

@@ -93,6 +93,7 @@ VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev"
 INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
 '
 STAGE3_PACKAGE_USE_APPEND='
+app-text/xmlto text
 app-emulation/spice-vdagent gtk -systemd
 media-libs/freetype harfbuzz png
 x11-base/xorg-server xorg elogind udev -systemd

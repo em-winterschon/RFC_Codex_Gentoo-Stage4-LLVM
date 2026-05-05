@@ -9,6 +9,7 @@ gentoo_profile_definition:
     INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
   package_use_files:
     40-workstation-nscde: |
+      app-text/xmlto text
       app-emulation/spice-vdagent gtk -systemd
       media-libs/freetype harfbuzz png
       x11-base/xorg-server xorg elogind udev -systemd
