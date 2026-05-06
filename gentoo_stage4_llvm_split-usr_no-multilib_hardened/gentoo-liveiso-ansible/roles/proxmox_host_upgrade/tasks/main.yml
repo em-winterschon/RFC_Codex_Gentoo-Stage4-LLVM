@@ -1,0 +1,115 @@
+---
+- name: Gather Proxmox host upgrade timestamp
+  ansible.builtin.set_fact:
+    proxmox_host_upgrade_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
+
+- name: Resolve Proxmox host snapshot names
+  ansible.builtin.set_fact:
+    proxmox_host_upgrade_pre_snapshot_resolved: >-
+      {{
+        proxmox_host_upgrade_pre_snapshot_name
+        | default(proxmox_host_upgrade_snapshot_prefix ~ '-pre-' ~ proxmox_host_upgrade_timestamp, true)
+      }}
+    proxmox_host_upgrade_post_snapshot_resolved: >-
+      {{
+        proxmox_host_upgrade_post_snapshot_name
+        | default(proxmox_host_upgrade_snapshot_prefix ~ '-post-' ~ proxmox_host_upgrade_timestamp, true)
+      }}
+
+- name: Read Proxmox version
+  ansible.builtin.command: pveversion
+  register: proxmox_host_upgrade_pveversion
+  changed_when: false
+
+- name: Read Debian codename
+  ansible.builtin.command: awk -F= '/^VERSION_CODENAME=/{print $2}' /etc/os-release
+  register: proxmox_host_upgrade_debian_codename
+  changed_when: false
+
+- name: Assert Proxmox major version remains in supported upgrade lane
+  ansible.builtin.assert:
+    that:
+      - proxmox_host_upgrade_pveversion.stdout is search('pve-manager/' ~ proxmox_host_upgrade_allowed_pve_major ~ '\\.')
+    fail_msg: >-
+      Refusing maintenance run because this host is not in the expected PVE
+      {{ proxmox_host_upgrade_allowed_pve_major }} lane: {{ proxmox_host_upgrade_pveversion.stdout }}.
+
+- name: Assert Debian codename remains in supported upgrade lane
+  ansible.builtin.assert:
+    that:
+      - proxmox_host_upgrade_debian_codename.stdout == proxmox_host_upgrade_allowed_debian_codename
+    fail_msg: >-
+      Refusing maintenance run because this host is on Debian
+      {{ proxmox_host_upgrade_debian_codename.stdout }}, expected
+      {{ proxmox_host_upgrade_allowed_debian_codename }}.
+
+- name: Inspect apt source files for accidental PVE9/Trixie sources
+  ansible.builtin.command: >-
+    grep -RHE '(^deb|Types:|Suites:|URIs:).*trixie|download.proxmox.com/debian/pve.*trixie'
+    /etc/apt/sources.list /etc/apt/sources.list.d
+  register: proxmox_host_upgrade_trixie_sources
+  changed_when: false
+  failed_when: false
+  when: proxmox_host_upgrade_validate_no_pve9_sources | bool
+
+- name: Assert apt sources are still on the PVE8 Debian lane
+  ansible.builtin.assert:
+    that:
+      - proxmox_host_upgrade_trixie_sources.rc | default(1) != 0
+    fail_msg: >-
+      Refusing maintenance run because trixie/PVE9-like apt sources were found:
+      {{ proxmox_host_upgrade_trixie_sources.stdout | default('') }}
+  when: proxmox_host_upgrade_validate_no_pve9_sources | bool
+
+- name: Publish Proxmox upgrade plan when apply is disabled
+  ansible.builtin.debug:
+    msg:
+      apply_required: "{{ proxmox_host_upgrade_apply }}"
+      pre_snapshot: "{{ proxmox_host_upgrade_snapshot_dataset }}@{{ proxmox_host_upgrade_pre_snapshot_resolved }}"
+      apt_update: "{{ proxmox_host_upgrade_apt_update }}"
+      dist_upgrade: "{{ proxmox_host_upgrade_dist_upgrade }}"
+      boot_tool_refresh: "{{ proxmox_host_upgrade_refresh_boot_tool }}"
+      post_snapshot: "{{ proxmox_host_upgrade_snapshot_dataset }}@{{ proxmox_host_upgrade_post_snapshot_resolved }}"
+      reboot: "{{ proxmox_host_upgrade_reboot }}"
+  when: not (proxmox_host_upgrade_apply | bool)
+
+- name: Stop before mutation when apply is disabled
+  ansible.builtin.meta: end_host
+  when: not (proxmox_host_upgrade_apply | bool)
+
+- name: Create pre-upgrade recursive ZFS snapshot
+  ansible.builtin.command: >-
+    zfs snapshot {{ '-r' if proxmox_host_upgrade_snapshot_recursive | bool else '' }}
+    {{ proxmox_host_upgrade_snapshot_dataset }}@{{ proxmox_host_upgrade_pre_snapshot_resolved }}
+  changed_when: true
+  when: proxmox_host_upgrade_snapshot_enabled | bool
+
+- name: Refresh apt package indexes
+  ansible.builtin.apt:
+    update_cache: true
+  environment: "{{ proxmox_host_upgrade_apt_environment }}"
+  when: proxmox_host_upgrade_apt_update | bool
+
+- name: Apply Proxmox host dist-upgrade
+  ansible.builtin.apt:
+    upgrade: dist
+    autoremove: "{{ proxmox_host_upgrade_autoremove | bool }}"
+  environment: "{{ proxmox_host_upgrade_apt_environment }}"
+  when: proxmox_host_upgrade_dist_upgrade | bool
+
+- name: Refresh Proxmox boot tool
+  ansible.builtin.command: proxmox-boot-tool refresh
+  changed_when: true
+  when: proxmox_host_upgrade_refresh_boot_tool | bool
+
+- name: Create post-upgrade recursive ZFS snapshot
+  ansible.builtin.command: >-
+    zfs snapshot {{ '-r' if proxmox_host_upgrade_snapshot_recursive | bool else '' }}
+    {{ proxmox_host_upgrade_snapshot_dataset }}@{{ proxmox_host_upgrade_post_snapshot_resolved }}
+  changed_when: true
+  when: proxmox_host_upgrade_snapshot_enabled | bool
+
+- name: Reboot Proxmox host after upgrade
+  ansible.builtin.reboot:
+    reboot_timeout: 900
+  when: proxmox_host_upgrade_reboot | bool

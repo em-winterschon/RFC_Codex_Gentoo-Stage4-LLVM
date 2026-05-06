@@ -1,0 +1,3 @@
+# Managed by Ansible role gpu_host_policy.
+# Bind selected GPU functions to vfio-pci for passthrough.
+options vfio-pci ids={{ gpu_host_policy_vfio_ids | join(',') }}{% if gpu_host_policy_vfio_disable_vga | bool %} disable_vga=1{% endif %}

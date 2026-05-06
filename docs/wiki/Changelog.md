@@ -19,6 +19,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   - `playbooks/gpu-host-policy-render-check.yml`
 - Added Hasslehoff post-maintenance PCIe inventory for the NVIDIA Quadro K1200
   and QLogic QL41232HOCU CNA.
+- Added gated Proxmox host maintenance upgrade scaffolding with pre/post ZFS
+  root snapshots.
+- Added gated NVIDIA DOCA/OFED repository/package scaffolding for future RoCE
+  standardization.
+- Added CRS309 render-only intent for Hasslehoff QLogic LACP on
+  `sfp-sfpplus4/5`.
 
 ### Changed
 
@@ -26,6 +32,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   local-network inventory.
 - Placed Hasslehoff in `gpu_compute` and `bmc_managed`, with BMC live access
   disabled until its IPMI/Redfish credentials are imported into Ansible Vault.
+- Extended Hasslehoff GPU policy to blacklist `snd_hda_intel` and prepare exact
+  vfio-pci binding for K1200 functions `10de:13bc` and `10de:0fbc`.
 
 ## 2026-05-04
 

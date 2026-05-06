@@ -98,13 +98,59 @@ hasslehoff_post_maintenance_pcie:
       pcie_link: "8GT/s x4"
       iommu_group: 19
 
+hasslehoff_qlogic_lacp:
+  bond_name: bond-qlogic0
+  switch: sw_spine_crs309_rfc99
+  routeros_bond: bond-hasslehoff-qlogic
+  members:
+    - host_interface: enp4s0f0
+      host_pci_address: "0000:04:00.0"
+      switch_interface: sfp-sfpplus4
+    - host_interface: enp4s0f1
+      host_pci_address: "0000:04:00.1"
+      switch_interface: sfp-sfpplus5
+  linux_bond_recommendation:
+    mode: 802.3ad
+    lacp_rate: fast
+    miimon: 100
+    xmit_hash_policy: layer3+4
+    initial_mtu: 1500
+    future_mtu_after_path_validation: 9000
+  ethtool_recommendation_after_link_validation:
+    combined_channels: 4
+    rx_ring: 4096
+    tx_ring: 8191
+    keep_offloads_enabled:
+      - rx-checksumming
+      - tx-checksumming
+      - tcp-segmentation-offload
+      - generic-segmentation-offload
+      - generic-receive-offload
+      - rx-vlan-offload
+      - tx-vlan-offload
+      - ntuple-filters
+      - hw-tc-offload
+  sriov_policy:
+    default: disabled
+    reason: Use Linux bond and bridge for general VM connectivity; reserve SR-IOV VFs for explicit direct-path high-throughput VMs.
+
 gpu_compute_enabled: true
 gpu_host_policy_blacklisted_modules:
   - nouveau
   - nvidiafb
+  - snd_hda_intel
 gpu_host_policy_grub_cmdline_tokens:
-  - modprobe.blacklist=nouveau,nvidiafb
+  - modprobe.blacklist=nouveau,nvidiafb,snd_hda_intel
   - nouveau.modeset=0
+gpu_passthrough_enabled: true
+gpu_host_policy_vfio_ids:
+  - "10de:13bc"
+  - "10de:0fbc"
+gpu_host_policy_manage_kernel_cmdline: true
+gpu_host_policy_kernel_cmdline_tokens:
+  - modprobe.blacklist=nouveau,nvidiafb,snd_hda_intel
+  - nouveau.modeset=0
+gpu_host_policy_proxmox_boot_tool_refresh: false
 gpu_host_policy_update_grub: false
 gpu_host_policy_update_initramfs: false
 

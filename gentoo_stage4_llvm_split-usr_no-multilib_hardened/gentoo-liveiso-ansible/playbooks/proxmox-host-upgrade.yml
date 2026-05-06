@@ -1,0 +1,7 @@
+---
+- name: Plan or apply Proxmox host maintenance upgrade
+  hosts: proxmox_hypervisors
+  gather_facts: false
+  serial: 1
+  roles:
+    - role: proxmox_host_upgrade

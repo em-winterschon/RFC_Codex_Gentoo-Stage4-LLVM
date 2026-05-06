@@ -1,0 +1,85 @@
+---
+- name: Manage NVIDIA DOCA/OFED host repository
+  when: nvidia_doca_ofed_enabled | bool
+  block:
+    - name: Read running kernel release
+      ansible.builtin.command: uname -r
+      register: nvidia_doca_ofed_uname
+      changed_when: false
+
+    - name: Publish DOCA/OFED plan when apply is disabled
+      ansible.builtin.debug:
+        msg:
+          apply_required: "{{ nvidia_doca_ofed_apply }}"
+          kernel: "{{ nvidia_doca_ofed_uname.stdout }}"
+          repo_deb_url: "{{ nvidia_doca_ofed_repo_deb_url }}"
+          repo_deb_path: "{{ nvidia_doca_ofed_repo_deb_path }}"
+          packages: "{{ nvidia_doca_ofed_install_packages }}"
+          kernel_headers_required: "{{ nvidia_doca_ofed_kernel_headers_required }}"
+          custom_kernel_allowed: "{{ nvidia_doca_ofed_allow_custom_kernel }}"
+      when: not (nvidia_doca_ofed_apply | bool)
+
+    - name: Stop before mutation when DOCA/OFED apply is disabled
+      ansible.builtin.meta: end_host
+      when: not (nvidia_doca_ofed_apply | bool)
+
+    - name: Check kernel headers/build tree
+      ansible.builtin.stat:
+        path: "/lib/modules/{{ nvidia_doca_ofed_uname.stdout }}/build"
+      register: nvidia_doca_ofed_kernel_build
+      when: nvidia_doca_ofed_kernel_headers_required | bool
+
+    - name: Assert kernel headers/build tree exists
+      ansible.builtin.assert:
+        that:
+          - nvidia_doca_ofed_kernel_build.stat.exists | default(false)
+        fail_msg: >-
+          Kernel build tree /lib/modules/{{ nvidia_doca_ofed_uname.stdout }}/build is missing.
+          Install matching Proxmox kernel headers before DOCA/OFED driver installation.
+      when: nvidia_doca_ofed_kernel_headers_required | bool
+
+    - name: Guard custom Proxmox kernel DOCA/OFED installs
+      ansible.builtin.assert:
+        that:
+          - nvidia_doca_ofed_allow_custom_kernel | bool
+          - nvidia_doca_ofed_custom_kernel_ack == nvidia_doca_ofed_uname.stdout
+        fail_msg: >-
+          Refusing DOCA/OFED install on custom kernel {{ nvidia_doca_ofed_uname.stdout }}
+          without explicit nvidia_doca_ofed_allow_custom_kernel and matching ack.
+
+    - name: Assert a DOCA/OFED repository package source is configured
+      ansible.builtin.assert:
+        that:
+          - (nvidia_doca_ofed_repo_deb_url | length > 0) or (nvidia_doca_ofed_repo_deb_path | length > 0)
+        fail_msg: Configure nvidia_doca_ofed_repo_deb_url or nvidia_doca_ofed_repo_deb_path before apply.
+
+    - name: Download NVIDIA DOCA/OFED repository package
+      ansible.builtin.get_url:
+        url: "{{ nvidia_doca_ofed_repo_deb_url }}"
+        dest: "{{ nvidia_doca_ofed_repo_deb_dest }}"
+        mode: '0644'
+        checksum: "{{ nvidia_doca_ofed_repo_deb_checksum | default(omit, true) }}"
+      when: nvidia_doca_ofed_repo_deb_url | length > 0
+
+    - name: Copy local NVIDIA DOCA/OFED repository package
+      ansible.builtin.copy:
+        src: "{{ nvidia_doca_ofed_repo_deb_path }}"
+        dest: "{{ nvidia_doca_ofed_repo_deb_dest }}"
+        mode: '0644'
+      when:
+        - nvidia_doca_ofed_repo_deb_url | length == 0
+        - nvidia_doca_ofed_repo_deb_path | length > 0
+
+    - name: Install NVIDIA DOCA/OFED repository package
+      ansible.builtin.apt:
+        deb: "{{ nvidia_doca_ofed_repo_deb_dest }}"
+
+    - name: Refresh apt after NVIDIA repository installation
+      ansible.builtin.apt:
+        update_cache: true
+      when: nvidia_doca_ofed_apt_update_after_repo | bool
+
+    - name: Install NVIDIA DOCA/OFED packages
+      ansible.builtin.apt:
+        name: "{{ nvidia_doca_ofed_install_packages }}"
+        state: present

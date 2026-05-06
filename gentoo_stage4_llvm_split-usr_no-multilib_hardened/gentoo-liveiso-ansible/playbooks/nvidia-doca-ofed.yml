@@ -1,0 +1,7 @@
+---
+- name: Plan or install NVIDIA DOCA/OFED host drivers
+  hosts: roce_hosts
+  gather_facts: false
+  serial: 1
+  roles:
+    - role: nvidia_doca_ofed

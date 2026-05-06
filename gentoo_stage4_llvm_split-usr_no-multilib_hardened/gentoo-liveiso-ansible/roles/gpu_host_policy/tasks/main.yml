@@ -29,6 +29,18 @@
           (gpu_host_policy_blacklist_nvidia_when_present | bool)
         )
       }}
+    gpu_host_policy_effective_kernel_tokens: >-
+      {{
+        (
+          gpu_host_policy_kernel_cmdline_tokens
+          + (
+            ['vfio-pci.ids=' ~ (gpu_host_policy_vfio_ids | join(','))]
+            if ((gpu_passthrough_enabled | bool) and (gpu_host_policy_vfio_ids | length > 0))
+            else []
+          )
+        )
+        | unique
+      }}
 
 - name: Ensure GPU host policy parent directories exist
   ansible.builtin.file:
@@ -38,6 +50,9 @@
   loop:
     - "{{ gpu_host_policy_modprobe_blacklist_path | dirname }}"
     - "{{ gpu_host_policy_grub_dropin_path | dirname }}"
+    - "{{ gpu_host_policy_vfio_modprobe_path | dirname }}"
+    - "{{ gpu_host_policy_vfio_modules_load_path | dirname }}"
+    - "{{ gpu_host_policy_kernel_cmdline_path | dirname }}"
   loop_control:
     loop_var: gpu_policy_parent_dir
   when: gpu_host_policy_should_apply | bool
@@ -58,12 +73,89 @@
   register: gpu_host_policy_grub_render
   when: gpu_host_policy_should_apply | bool
 
+- name: Render vfio-pci GPU binding policy
+  ansible.builtin.template:
+    src: vfio-pci-gpu.conf.j2
+    dest: "{{ gpu_host_policy_root }}{{ gpu_host_policy_vfio_modprobe_path }}"
+    mode: '0644'
+  register: gpu_host_policy_vfio_render
+  when:
+    - gpu_host_policy_should_apply | bool
+    - gpu_passthrough_enabled | bool
+    - gpu_host_policy_vfio_ids | length > 0
+
+- name: Render vfio module load policy
+  ansible.builtin.template:
+    src: vfio-modules.conf.j2
+    dest: "{{ gpu_host_policy_root }}{{ gpu_host_policy_vfio_modules_load_path }}"
+    mode: '0644'
+  register: gpu_host_policy_vfio_modules_render
+  when:
+    - gpu_host_policy_should_apply | bool
+    - gpu_passthrough_enabled | bool
+    - gpu_host_policy_vfio_ids | length > 0
+
+- name: Check existing kernel command line file
+  ansible.builtin.stat:
+    path: "{{ gpu_host_policy_root }}{{ gpu_host_policy_kernel_cmdline_path }}"
+  register: gpu_host_policy_kernel_cmdline_stat
+  when:
+    - gpu_host_policy_should_apply | bool
+    - gpu_host_policy_manage_kernel_cmdline | bool
+
+- name: Read existing kernel command line file
+  ansible.builtin.slurp:
+    path: "{{ gpu_host_policy_root }}{{ gpu_host_policy_kernel_cmdline_path }}"
+  register: gpu_host_policy_kernel_cmdline_existing
+  when:
+    - gpu_host_policy_should_apply | bool
+    - gpu_host_policy_manage_kernel_cmdline | bool
+    - gpu_host_policy_kernel_cmdline_stat.stat.exists | default(false)
+
+- name: Resolve managed kernel command line
+  ansible.builtin.set_fact:
+    gpu_host_policy_resolved_kernel_cmdline: >-
+      {{
+        (
+          (
+            (
+              gpu_host_policy_kernel_cmdline_existing.content
+              | default('')
+              | b64decode
+              | trim
+            )
+            if (gpu_host_policy_kernel_cmdline_stat.stat.exists | default(false))
+            else gpu_host_policy_kernel_cmdline_base
+          ).split()
+          + gpu_host_policy_effective_kernel_tokens
+        )
+        | reject('equalto', '')
+        | unique
+        | join(' ')
+      }}
+  when:
+    - gpu_host_policy_should_apply | bool
+    - gpu_host_policy_manage_kernel_cmdline | bool
+
+- name: Render managed kernel command line
+  ansible.builtin.copy:
+    dest: "{{ gpu_host_policy_root }}{{ gpu_host_policy_kernel_cmdline_path }}"
+    content: "{{ gpu_host_policy_resolved_kernel_cmdline }}\n"
+    mode: '0644'
+  register: gpu_host_policy_kernel_cmdline_render
+  when:
+    - gpu_host_policy_should_apply | bool
+    - gpu_host_policy_manage_kernel_cmdline | bool
+
 - name: Update initramfs after GPU host policy change
   ansible.builtin.command: "{{ gpu_host_policy_initramfs_update_command }}"
   changed_when: true
   when:
     - gpu_host_policy_update_initramfs | bool
-    - gpu_host_policy_modprobe_render is changed
+    - >-
+      gpu_host_policy_modprobe_render is changed
+      or gpu_host_policy_vfio_render is changed
+      or gpu_host_policy_vfio_modules_render is changed
     - gpu_host_policy_root | length == 0
 
 - name: Update GRUB after GPU host policy change
@@ -74,10 +166,19 @@
     - gpu_host_policy_grub_render is changed
     - gpu_host_policy_root | length == 0
 
+- name: Refresh Proxmox boot tool after kernel command line change
+  ansible.builtin.command: "{{ gpu_host_policy_proxmox_boot_tool_command }}"
+  changed_when: true
+  when:
+    - gpu_host_policy_proxmox_boot_tool_refresh | bool
+    - gpu_host_policy_kernel_cmdline_render is changed
+    - gpu_host_policy_root | length == 0
+
 - name: Refuse update commands against alternate render root
   ansible.builtin.assert:
     that:
       - not (gpu_host_policy_update_grub | bool)
       - not (gpu_host_policy_update_initramfs | bool)
-    fail_msg: update-grub/update-initramfs are only allowed when gpu_host_policy_root is empty.
+      - not (gpu_host_policy_proxmox_boot_tool_refresh | bool)
+    fail_msg: update-grub/update-initramfs/proxmox-boot-tool are only allowed when gpu_host_policy_root is empty.
   when: gpu_host_policy_root | length > 0

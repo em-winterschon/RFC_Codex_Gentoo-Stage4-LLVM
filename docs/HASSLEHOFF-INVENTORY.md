@@ -56,6 +56,13 @@ The QLogic card is x8-capable but is installed in an x4 electrical slot, so
 `8GT/s x4` is expected and is the slot limit. The removed MikroTik
 CCR2004-1G-2XS-PCIe card is no longer present in PCI inventory.
 
+Planned QLogic cabling:
+
+| Hasslehoff Port | CRS309 Port | Bundle |
+| --- | --- | --- |
+| `enp4s0f0` | `sfp-sfpplus4` | `bond-hasslehoff-qlogic` |
+| `enp4s0f1` | `sfp-sfpplus5` | `bond-hasslehoff-qlogic` |
+
 Hasslehoff is now a member of the `gpu_compute` inventory group. The
 `gpu_host_policy` role renders:
 
@@ -66,9 +73,16 @@ Default blacklisted modules:
 
 - `nouveau`
 - `nvidiafb`
+- `snd_hda_intel` on Hasslehoff only
 
 The role does not reboot the host and does not run `update-grub` or
 `update-initramfs` unless the corresponding explicit booleans are enabled.
+
+Hasslehoff-specific passthrough policy binds both K1200 functions to
+`vfio-pci` on next reboot:
+
+- `10de:13bc`
+- `10de:0fbc`
 
 ## Observed Proxmox VMs
 

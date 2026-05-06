@@ -45,6 +45,23 @@
     /interface bridge port set [find where interface="{{ routeros_spine_distribution_spine.crs354_bond.name }}"] bridge="{{ routeros_spine_distribution_spine.bridge }}" comment="CRS354 distribution LACP"
 }
 
+:if ([:len [/interface bonding find where name="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}"]] = 0) do={
+    /interface bonding add name="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}" mode=802.3ad slaves={{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.slaves | join(',') }} lacp-rate={{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.lacp_rate }} lacp-mode=active transmit-hash-policy={{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.transmit_hash_policy }} comment="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.comment }}"
+} else={
+    /interface bonding set [find where name="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}"] mode=802.3ad slaves={{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.slaves | join(',') }} lacp-rate={{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.lacp_rate }} lacp-mode=active transmit-hash-policy={{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.transmit_hash_policy }} comment="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.comment }}"
+}
+
+{% for slave in routeros_spine_distribution_spine.hasslehoff_qlogic_bond.slaves %}
+/interface bridge port remove [find where interface="{{ slave }}"]
+{% endfor %}
+{% if routeros_spine_distribution_spine.hasslehoff_qlogic_bond.bridge_port | bool %}
+:if ([:len [/interface bridge port find where interface="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}"]] = 0) do={
+    /interface bridge port add bridge="{{ routeros_spine_distribution_spine.bridge }}" interface="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}" comment="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.comment }}"
+} else={
+    /interface bridge port set [find where interface="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}"] bridge="{{ routeros_spine_distribution_spine.bridge }}" comment="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.comment }}"
+}
+{% endif %}
+
 /tool bandwidth-server set enabled=no
 :if ([:len [/ip service find where name="reverse-proxy"]] > 0) do={ /ip service set reverse-proxy disabled=yes }
 
@@ -55,6 +72,10 @@
 /interface bonding monitor "{{ routeros_spine_distribution_spine.crs354_bond.name }}" once
 /interface ethernet monitor {{ routeros_spine_distribution_spine.crs354_bond.slaves | join(',') }} once
 /interface bridge port print terse where interface="{{ routeros_spine_distribution_spine.crs354_bond.name }}"
+:put "### validate-crs309-hasslehoff-qlogic-bond"
+/interface bonding monitor "{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}" once
+/interface ethernet monitor {{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.slaves | join(',') }} once
+/interface bridge port print terse where interface="{{ routeros_spine_distribution_spine.hasslehoff_qlogic_bond.name }}"
 :put "### validate-crs309-reachability"
 /ping {{ routeros_spine_distribution_distribution.management_ip }} count=5
 /ping {{ routeros_spine_distribution_spine.gateway }} count=5
