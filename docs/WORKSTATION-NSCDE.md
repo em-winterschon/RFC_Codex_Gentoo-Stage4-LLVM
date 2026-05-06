@@ -13,7 +13,7 @@ The first target is deliberately conservative:
 - NsCDE source install pinned to upstream tag `2.3`
 - NVIDIA Quadro K1200 passthrough validation on Hasslehoff
 - CUDA userland pinned to the newest locally available CUDA 12.9.1 ebuild
-- no display manager requirement for the first pass
+- optional SLiM display-manager session integration
 - `startx` / `.xinitrc` starts `/opt/NsCDE/bin/nscde`
 
 ## Files
@@ -24,10 +24,36 @@ The first target is deliberately conservative:
   `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/vm-workstation-nscde.metadata.yml`
 - Package list:
   `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-package-lists/stage5-virtual-host-workstation-nscde.packages`
-- Role:
+- NsCDE source-install role:
   `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/nscde_workstation/`
+- Cross-OS session-stack role:
+  `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/workstation_session_stack/`
 - On-host launcher:
   `gentoo-virt-qemu/qemu-launch-workstation-nscde-vm.sh`
+
+## Workstation Session Stack Model
+
+The repo uses `workstation_session_stack` as the shared moniker for display
+manager, desktop environment, and window manager wiring. This keeps the role
+taxonomy portable:
+
+- Display manager: `slim`
+- Desktop environment: `nscde`
+- Window manager: `fvwm3`
+
+The role normalizes OS-family aliases before selecting OS-specific tasks:
+
+- `gentoo` uses Portage atoms such as `x11-misc/slim` and `x11-wm/fvwm3`.
+- `debian`, `devuan`, and `ubuntu` share the Debian-family task path.
+- `freebsd`, `freebsd14`, and `freebsd-14` share the FreeBSD task path.
+- `solaris`, `solaris11`, `solaris-11.4`, `tribblix-ce`, `omnios`, and
+  `openindiana` share the Solaris-family task path.
+
+Package installation commands are gated by
+`workstation_session_stack_package_install_enabled=false` by default. Gentoo
+image builds still prefer package-list driven installation, while FreeBSD and
+Solaris-family hosts can opt into their native package-manager commands once
+their repository policy is defined.
 
 ## NsCDE Source Policy
 
@@ -141,6 +167,19 @@ It also masks `>x11-drivers/nvidia-drivers-580.159.03-r1` for this profile so
 future image builds do not silently advance the K1200 VM onto an incompatible
 driver branch.
 
+Live VM `1094` validation after the guest driver blacklist reboot showed:
+
+```text
+nouveau modules: none
+nvidia modules: nvidia_uvm,nvidia_drm,nvidia_modeset,nvidia
+nvidia-smi: Quadro K1200, driver 580.159.03, 4096 MiB
+nvcc: CUDA compilation tools, release 12.9, V12.9.86
+```
+
+The GPU driver and CUDA userland are validated. Physical video output and the
+Xorg/NsCDE session gate remain pending until the K1200 has cabling, EDID, or
+PiKVM visibility and the new session-stack role is applied to the live guest.
+
 ## On-Host Image Build
 
 The first workstation build is intentionally staged on the on-host QEMU system
@@ -209,12 +248,14 @@ Minimum validation gates:
    channel support.
 5. `startx` starts NsCDE using `/root/.xinitrc` or a user inherited from
    `/etc/skel/.xinitrc`.
+6. Optional SLiM session entry presents `nscde` as the selected desktop
+   environment after `workstation_session_stack` has been applied.
 
 ## Follow-On Work
 
 - Add a local overlay ebuild for NsCDE after the source-install path is
   validated.
-- Add display-manager support only after the manual `startx` session is stable.
-- Add Hasslehoff GPU passthrough validation after hardware selection and
-  installation. Initial VM `1094` is live; NVIDIA/CUDA package validation is
-  the active gate.
+- Apply `workstation_session_stack` to live VM `1094`, install `x11-misc/slim`,
+  and confirm `/opt/NsCDE/bin/nscde` before starting the physical-output gate.
+- Validate Hasslehoff physical K1200 video through a direct monitor first, then
+  PiKVM/EDID capture after cabling is stable.

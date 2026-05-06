@@ -15,6 +15,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added exact workstation GPU package pins for the Quadro K1200 validation VM:
   `=x11-drivers/nvidia-drivers-580.159.03-r1` and
   `=dev-util/nvidia-cuda-toolkit-12.9.1-r1`.
+- Added `workstation_session_stack`, a cross-OS session abstraction for display
+  managers, desktop environments, and window managers. Initial mappings cover
+  Gentoo, Debian/Devuan, FreeBSD 14, Solaris 11.4, Tribblix-CE, OmniOS, and
+  OpenIndiana task families.
 
 ### Changed
 
@@ -27,6 +31,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   and package-mask gates so the Maxwell K1200 stays on the R580 driver branch.
 - Switched the workstation profile to disk-backed `PORTAGE_TMPDIR=/var/tmp/portage`
   for CUDA builds on smaller VMs.
+- Added `x11-misc/slim` and `workstation_session_stack` wiring to the NsCDE
+  workstation profile, package list, installer playbook, and install sequences.
 
 ### Operational Notes
 
@@ -38,8 +44,12 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Proxmox VM `1094`, `vm-workstation-nscde-gpu01`, is running at
   `172.16.99.94` with K1200 VGA/audio functions passed through and a serial
   console enabled for boot visibility.
-- The live workstation VM has started the NVIDIA R580 and CUDA 12.9.1 package
-  merge with binpkg generation enabled.
+- The live workstation VM completed the NVIDIA R580 and CUDA 12.9.1 package
+  merge. After blacklisting `nouveau` and `nvidiafb` in the guest and rebooting,
+  `nvidia-smi` reports Quadro K1200 on driver `580.159.03`, and
+  `/opt/cuda/bin/nvcc --version` reports CUDA `12.9`.
+- Xorg and `startx` are present in VM `1094`; `/opt/NsCDE/bin/nscde` and SLiM
+  are still pending live application of the workstation session-stack role.
 
 ## 2026-05-05
 

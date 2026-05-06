@@ -51,6 +51,7 @@ install_role_sequences:
           - netbox_connector
           - zerotier_access
           - nscde_workstation
+          - workstation_session_stack
           - platform_profile
           - identity
           - memory_storage
@@ -115,6 +116,7 @@ install_role_sequences:
           - netbox_connector
           - zerotier_access
           - nscde_workstation
+          - workstation_session_stack
           - platform_profile
           - identity
           - finalize

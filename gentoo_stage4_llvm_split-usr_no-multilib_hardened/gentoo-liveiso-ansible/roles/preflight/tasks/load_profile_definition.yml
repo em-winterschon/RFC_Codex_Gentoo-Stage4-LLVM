@@ -259,6 +259,14 @@
             recursive=True
           )
       }}
+    resolved_profile_workstation_session_stack: >-
+      {{
+        resolved_profile_workstation_session_stack
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.workstation_session_stack | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_haproxy_service_types: >-
       {{
         resolved_profile_haproxy_service_types

@@ -196,7 +196,8 @@ Dependency:
 | `WS-001` | scaffolded | Define Stage5 workstation VM overlay | stable Stage4 VM base | `vm-workstation-nscde` profile, metadata, package list, host vars, SPICE QEMU wrapper, and source-install role are scaffolded on the workstation branch. |
 | `WS-002` | active | Decide NsCDE packaging strategy | `WS-001`, upstream install review | First path is a controlled source-install role pinned to upstream tag `2.3`; a local overlay ebuild remains the preferred follow-up after live validation. |
 | `WS-003` | completed | Build and validate workstation on on-host QEMU before Hasslehoff | `WS-001`, `WS-002` | Bootable NsCDE workstation QCOW was built on the on-host system and copied to Hasslehoff as `/var/lib/vz/template/cache/vm-workstation-nscde.qcow2`. |
-| `WS-004` | active | Validate Hasslehoff GPU workstation VM | `WS-003`, `PNR-025`, `PNR-028` | VM `1094` is running at `172.16.99.94` with K1200 passthrough and serial console. NVIDIA R580 plus CUDA 12.9.1 package merge is active; final gates are `nvidia-smi`, `nvcc --version`, Xorg/NsCDE start, and tagged `vmbr-qlogic0` connectivity checks. |
+| `WS-004` | active | Validate Hasslehoff GPU workstation VM | `WS-003`, `PNR-025`, `PNR-028` | VM `1094` is running at `172.16.99.94` with K1200 passthrough and serial console. NVIDIA R580 plus CUDA 12.9.1 are installed and validated with `nvidia-smi` and `nvcc`; remaining gates are live session-stack application, Xorg/NsCDE start, physical video/PiKVM output, and tagged `vmbr-qlogic0` connectivity checks. |
+| `WS-005` | scaffolded | Normalize cross-OS workstation session stack | `WS-001`, `WS-002` | `workstation_session_stack` models display managers, desktop environments, and window managers with OS-family task aliases for Gentoo, Debian/Devuan, FreeBSD, and Solaris-family systems. Package mutation is gated until each OS repository policy is finalized. |
 
 ## Medium-Term Work
 

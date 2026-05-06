@@ -1,0 +1,10 @@
+# Managed by gentoo-liveiso-ansible workstation_session_stack
+default_path /bin:/usr/bin:/usr/local/bin
+default_xserver /usr/bin/X
+xserver_arguments -nolisten tcp
+login_cmd exec /bin/sh -l ~/.xinitrc %session
+sessions {{ resolved_workstation_session_stack.desktop_environments | map(attribute='id') | list | join(',') }}
+halt_cmd /sbin/poweroff
+reboot_cmd /sbin/reboot
+daemon yes
+current_theme default

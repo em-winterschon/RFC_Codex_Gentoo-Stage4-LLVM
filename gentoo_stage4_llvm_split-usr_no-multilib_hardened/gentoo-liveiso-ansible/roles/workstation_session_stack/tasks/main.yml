@@ -1,0 +1,48 @@
+---
+- name: Resolve workstation session stack settings
+  ansible.builtin.set_fact:
+    workstation_session_stack_enabled: "{{ resolved_profile_workstation_session_stack.enabled | default(workstation_session_stack_default_enabled) | bool }}"
+    resolved_workstation_session_stack:
+      os_family: "{{ resolved_profile_workstation_session_stack.os_family | default(workstation_session_stack_default_os_family) }}"
+      session_command: "{{ resolved_profile_workstation_session_stack.session_command | default(workstation_session_stack_default_session_command) }}"
+      create_skel_xinitrc: "{{ resolved_profile_workstation_session_stack.create_skel_xinitrc | default(workstation_session_stack_default_create_skel_xinitrc) | bool }}"
+      create_root_xinitrc: "{{ resolved_profile_workstation_session_stack.create_root_xinitrc | default(workstation_session_stack_default_create_root_xinitrc) | bool }}"
+      session_dir: "{{ resolved_profile_workstation_session_stack.session_dir | default(workstation_session_stack_default_session_dir) }}"
+      slim_conf_path: "{{ resolved_profile_workstation_session_stack.slim_conf_path | default(workstation_session_stack_default_slim_conf_path) }}"
+      display_managers: "{{ resolved_profile_workstation_session_stack.display_managers | default(workstation_session_stack_default_display_managers) }}"
+      desktop_environments: "{{ resolved_profile_workstation_session_stack.desktop_environments | default(workstation_session_stack_default_desktop_environments) }}"
+      window_managers: "{{ resolved_profile_workstation_session_stack.window_managers | default(workstation_session_stack_default_window_managers) }}"
+
+- name: Resolve workstation session stack OS family
+  ansible.builtin.set_fact:
+    workstation_session_stack_raw_os_family: "{{ resolved_workstation_session_stack.os_family | lower | regex_replace('[^a-z0-9]+', '-') }}"
+  when: workstation_session_stack_enabled
+
+- name: Normalize workstation session stack OS family
+  ansible.builtin.set_fact:
+    workstation_session_stack_os_family: >-
+      {{
+        workstation_session_stack_os_family_aliases.get(
+          workstation_session_stack_raw_os_family,
+          workstation_session_stack_raw_os_family
+        )
+      }}
+  when: workstation_session_stack_enabled
+
+- name: Assert workstation session stack OS family is supported
+  ansible.builtin.assert:
+    that:
+      - workstation_session_stack_os_family in workstation_session_stack_supported_os_families
+    fail_msg: >-
+      Unsupported workstation_session_stack.os_family={{ resolved_workstation_session_stack.os_family }}.
+      Normalized value {{ workstation_session_stack_os_family }} is not one of
+      {{ workstation_session_stack_supported_os_families | join(', ') }}.
+  when: workstation_session_stack_enabled
+
+- name: Apply OS-family workstation session stack policy
+  ansible.builtin.include_tasks: "{{ workstation_session_stack_os_family }}.yml"
+  when: workstation_session_stack_enabled
+
+- name: Apply common workstation session files
+  ansible.builtin.include_tasks: common.yml
+  when: workstation_session_stack_enabled

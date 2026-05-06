@@ -56,6 +56,28 @@ gentoo_profile_definition:
     create_root_xinitrc: true
     xsession_desktop_path: /usr/share/xsessions/nscde.desktop
     session_command: /opt/NsCDE/bin/nscde
+  workstation_session_stack:
+    enabled: true
+    os_family: gentoo
+    session_command: /opt/NsCDE/bin/nscde
+    create_skel_xinitrc: true
+    create_root_xinitrc: true
+    session_dir: /usr/share/xsessions
+    slim_conf_path: /etc/slim.conf
+    desktop_environments:
+      - id: nscde
+        name: NsCDE
+        comment: Not so Common Desktop Environment
+        session_command: /opt/NsCDE/bin/nscde
+        try_exec: /opt/NsCDE/bin/nscde
+        xsession_enabled: true
+    display_managers:
+      - id: slim
+        name: SLiM
+        default_session: nscde
+    window_managers:
+      - id: fvwm3
+        name: FVWM3
   service_readiness:
     enabled: true
     checks:
