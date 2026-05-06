@@ -117,7 +117,7 @@ Dependency:
 | `PNR-025` | active | Track Hasslehoff GPU compute and passthrough host policy | workstation VM profile | Hasslehoff is in `gpu_compute`; the `gpu_host_policy` role renders `nouveau`, `nvidiafb`, and Hasslehoff-specific `snd_hda_intel` blacklist controls, vfio-pci K1200 ID binding, a GRUB drop-in, and optional Proxmox `/etc/kernel/cmdline` handling. |
 | `PNR-026` | scaffolded | Add gated Proxmox host maintenance upgrade workflow | `PNR-016` | `proxmox_host_upgrade` is plan-only by default, validates the PVE8/bookworm lane, and creates pre/post recursive ZFS snapshots around apt maintenance when explicitly applied. |
 | `PNR-027` | scaffolded | Add gated NVIDIA DOCA/OFED host-driver workflow | `PNR-026`, RoCE fabric | `nvidia_doca_ofed` requires explicit repo package input, matching kernel headers, and a custom-kernel acknowledgement before installing on a Proxmox kernel. |
-| `PNR-028` | active | Bring up Hasslehoff QLogic LACP and workstation VM direct-path network test | `PNR-020`, `PNR-025` | Both QLogic 10G-SR physical links validate cleanly. Next gates are CRS309 `bond-hasslehoff-qlogic`, Hasslehoff Linux bond, SR-IOV VF persistence, and VM attachment. |
+| `PNR-028` | active | Bring up Hasslehoff QLogic LACP and workstation VM high-speed network test | `PNR-020`, `PNR-025` | CRS309 `bond-hasslehoff-qlogic`, Hasslehoff `bond-qlogic0`, and `vmbr-qlogic0` are live. SR-IOV is blocked because the QLogic functions expose no SR-IOV capability; workstation VM `1094` uses tagged virtio NICs on `vmbr-qlogic0` as the fallback. |
 | `PNR-029` | completed | Normalize RouterOS serial command automation for CRS309 | `PNR-020` | Added `scripts/routeros-serial-command.py` with VT100/ANSI answerback handling for RouterOS `ESC Z` terminal-identification probes; live read-only CRS309 identity command validated. |
 | `PNR-016` | active | Capture Hasslehoff host backups before gateway and VM changes | `PNR-001` | `scripts/backup-hasslehoff-config.sh` now captures `/etc/pve`, network/sysctl state, Proxmox JSON, and host summaries to `/root/operator-private/hasslehoff/backups`. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
@@ -195,7 +195,8 @@ Dependency:
 | --- | --- | --- | --- | --- |
 | `WS-001` | scaffolded | Define Stage5 workstation VM overlay | stable Stage4 VM base | `vm-workstation-nscde` profile, metadata, package list, host vars, SPICE QEMU wrapper, and source-install role are scaffolded on the workstation branch. |
 | `WS-002` | active | Decide NsCDE packaging strategy | `WS-001`, upstream install review | First path is a controlled source-install role pinned to upstream tag `2.3`; a local overlay ebuild remains the preferred follow-up after live validation. |
-| `WS-003` | planned | Build and validate workstation on on-host QEMU before Hasslehoff | `WS-001`, `WS-002` | Use the on-host machine first for high-resource iteration; Hasslehoff validation waits for GPU passthrough hardware selection and install. |
+| `WS-003` | completed | Build and validate workstation on on-host QEMU before Hasslehoff | `WS-001`, `WS-002` | Bootable NsCDE workstation QCOW was built on the on-host system and copied to Hasslehoff as `/var/lib/vz/template/cache/vm-workstation-nscde.qcow2`. |
+| `WS-004` | active | Validate Hasslehoff GPU workstation VM | `WS-003`, `PNR-025`, `PNR-028` | VM `1094` is running at `172.16.99.94` with K1200 passthrough and serial console. NVIDIA R580 plus CUDA 12.9.1 package merge is active; final gates are `nvidia-smi`, `nvcc --version`, Xorg/NsCDE start, and tagged `vmbr-qlogic0` connectivity checks. |
 
 ## Medium-Term Work
 

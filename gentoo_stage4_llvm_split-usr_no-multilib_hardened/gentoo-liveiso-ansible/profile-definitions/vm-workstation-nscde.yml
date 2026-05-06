@@ -5,15 +5,29 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
   make_conf_append: |
     USE="${USE} X dbus gtk qt5 spice truetype xinerama elogind udev -systemd -wayland"
-    VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev"
+    VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev nvidia"
     INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
+    PORTAGE_TMPDIR="/var/tmp/portage"
   package_use_files:
     40-workstation-nscde: |
       app-text/xmlto text
       app-emulation/spice-vdagent gtk -systemd
+      =dev-util/nvidia-cuda-toolkit-12.9.1-r1 clang profiler -debugger -examples -nsight -rdma -sanitizer
       media-libs/freetype harfbuzz png
       dev-python/pillow -truetype
       x11-base/xorg-server xorg elogind udev -systemd
+      =x11-drivers/nvidia-drivers-580.159.03-r1 X tools -kernel-open -persistenced -powerd -wayland
+  package_accept_keywords_files:
+    40-workstation-nscde-gpu: |
+      =dev-util/nvidia-cuda-toolkit-12.9.1-r1 ~amd64
+      =x11-drivers/nvidia-drivers-580.159.03-r1 ~amd64
+  package_license_files:
+    40-workstation-nscde-gpu: |
+      =dev-util/nvidia-cuda-toolkit-12.9.1-r1 NVIDIA-CUDA
+      =x11-drivers/nvidia-drivers-580.159.03-r1 NVIDIA-2025
+  package_mask_files:
+    40-workstation-nscde-gpu: |
+      >x11-drivers/nvidia-drivers-580.159.03-r1
   package_unmask_files:
     40-workstation-nscde: |
       >=dev-python/pyqt5-5.15.11

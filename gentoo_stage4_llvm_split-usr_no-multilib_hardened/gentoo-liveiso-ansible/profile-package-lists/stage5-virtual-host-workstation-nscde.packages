@@ -7,10 +7,13 @@ dev-perl/File-MimeInfo
 dev-python/pyqt5
 dev-python/pyxdg
 dev-python/pyyaml
+=dev-util/nvidia-cuda-toolkit-12.9.1-r1
+dev-util/opencl-headers
 media-fonts/dejavu
 media-gfx/imagemagick
 net-misc/wget
 sys-apps/dbus
+virtual/opencl
 x11-apps/xauth
 x11-apps/xdpyinfo
 x11-apps/xinit
@@ -22,6 +25,7 @@ x11-base/xorg-apps
 x11-base/xorg-drivers
 x11-base/xorg-fonts
 x11-base/xorg-server
+=x11-drivers/nvidia-drivers-580.159.03-r1
 x11-drivers/xf86-video-qxl
 x11-misc/dunst
 x11-misc/qt5ct

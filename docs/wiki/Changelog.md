@@ -3,6 +3,44 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-06
+
+### Added
+
+- Added `scripts/proxmox-create-workstation-nscde-gpu-vm.sh` for the
+  Hasslehoff Stage5 workstation GPU VM path.
+- Added regression coverage for Proxmox workstation VM rendering, extra Proxmox
+  NICs, host PCI passthrough options, and imported-disk resolution from Proxmox
+  `unusedN` slots.
+- Added exact workstation GPU package pins for the Quadro K1200 validation VM:
+  `=x11-drivers/nvidia-drivers-580.159.03-r1` and
+  `=dev-util/nvidia-cuda-toolkit-12.9.1-r1`.
+
+### Changed
+
+- Extended the generic Proxmox Stage4 service VM creator with configurable
+  serial, VGA, extra `netN`, and `hostpciN` settings.
+- Fixed the Proxmox VM creator to attach the disk reported by `qm config` after
+  `qm importdisk` instead of assuming the imported zvol is always
+  `vm-${VMID}-disk-0`.
+- Updated the workstation profile with explicit NVIDIA/CUDA keyword, license,
+  and package-mask gates so the Maxwell K1200 stays on the R580 driver branch.
+- Switched the workstation profile to disk-backed `PORTAGE_TMPDIR=/var/tmp/portage`
+  for CUDA builds on smaller VMs.
+
+### Operational Notes
+
+- Hasslehoff QLogic LACP is live through host bond `bond-qlogic0`, VLAN-aware
+  Proxmox bridge `vmbr-qlogic0`, and CRS309 `bond-hasslehoff-qlogic`.
+- The installed QLogic QL41232HOCU does not expose SR-IOV in Linux, so the
+  requested workstation one-VF-per-port design is blocked. The live fallback is
+  virtio NICs on tagged VLANs over `vmbr-qlogic0`.
+- Proxmox VM `1094`, `vm-workstation-nscde-gpu01`, is running at
+  `172.16.99.94` with K1200 VGA/audio functions passed through and a serial
+  console enabled for boot visibility.
+- The live workstation VM has started the NVIDIA R580 and CUDA 12.9.1 package
+  merge with binpkg generation enabled.
+
 ## 2026-05-05
 
 ### Added

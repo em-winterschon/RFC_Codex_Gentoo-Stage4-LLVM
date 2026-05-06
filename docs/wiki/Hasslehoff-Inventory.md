@@ -84,6 +84,15 @@ Hasslehoff-specific passthrough policy binds both K1200 functions to
 - `10de:13bc`
 - `10de:0fbc`
 
+Live post-reboot validation showed both K1200 functions bound to `vfio-pci`
+and available for Proxmox passthrough.
+
+The QLogic CNA is now cabled to CRS309 `sfp-sfpplus4/5` as
+`bond-hasslehoff-qlogic`. Hasslehoff runs host-side `bond-qlogic0` and
+VLAN-aware bridge `vmbr-qlogic0`. The requested SR-IOV VF design is blocked by
+hardware/firmware exposure: neither QLogic PCI function exposes
+`sriov_totalvfs`, and `lspci` shows no SR-IOV capability.
+
 ## Observed Proxmox VMs
 
 | VMID | Name | Status | CPU | Memory MiB | Disk GiB | Tags |
@@ -93,6 +102,7 @@ Hasslehoff-specific passthrough policy binds both K1200 functions to
 | `1012` | `eph-sun99-sourcebot-099229` | stopped | `4` | `16384` | `64` | `linux`, `rocky`, `sourcebot`, `ephemeral` |
 | `1062` | `svc-netbox-stage4` | running | `4` | `16384` | `80` | `gentoo`, `stage4`, `netbox`; replacement NetBox VM |
 | `1063` | `svc-identity-ipa01` | running | `4` | `12288` | `80` | `rocky`, `freeipa`, `radius`, `identity`; central RBAC/AAA candidate |
+| `1094` | `vm-workstation-nscde-gpu01` | running | `8` | `24576` | `160` | `gentoo`, `stage4`, `workstation-nscde`, `gpu`; K1200 passthrough VM at `172.16.99.94` |
 
 ## Observed Proxmox Cluster
 

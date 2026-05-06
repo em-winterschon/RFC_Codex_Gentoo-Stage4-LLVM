@@ -11,6 +11,8 @@ The first target is deliberately conservative:
 - Stage4 merged-usr LLVM/OpenRC VM base
 - Xorg, QXL, and SPICE guest integration
 - NsCDE source install pinned to upstream tag `2.3`
+- NVIDIA Quadro K1200 passthrough validation on Hasslehoff
+- CUDA userland pinned to the newest locally available CUDA 12.9.1 ebuild
 - no display manager requirement for the first pass
 - `startx` / `.xinitrc` starts `/opt/NsCDE/bin/nscde`
 
@@ -74,6 +76,71 @@ Connect from the host with a SPICE client such as:
 remote-viewer spice://127.0.0.1:5931
 ```
 
+## Hasslehoff GPU Workstation VM
+
+The first Hasslehoff GPU validation VM is:
+
+| Field | Value |
+| --- | --- |
+| VMID | `1094` |
+| Name | `vm-workstation-nscde-gpu01` |
+| Management IP | `172.16.99.94/24` |
+| Stage5 role | `workstation-nscde` |
+| Source image | `/var/lib/vz/template/cache/vm-workstation-nscde.qcow2` |
+| GPU passthrough | NVIDIA Quadro K1200 VGA `0000:01:00.0`, audio `0000:01:00.1` |
+| Serial console | Proxmox `serial0=socket`; guest kernel uses `console=ttyS0,115200 console=tty0` |
+| Management NIC | `net0` on `vmbr0` |
+| High-speed test NICs | `net1` / `net2` on `vmbr-qlogic0`, VLAN tags `1098` and `1099` |
+
+QLogic SR-IOV was requested for one VF per physical port, but the installed
+QL41232HOCU functions currently expose no SR-IOV capability to Linux:
+
+```text
+/sys/bus/pci/devices/0000:04:00.0/sriov_totalvfs: absent
+/sys/bus/pci/devices/0000:04:00.1/sriov_totalvfs: absent
+lspci SR-IOV capability: absent
+```
+
+The operational fallback is a host-side `802.3ad` bond over `enp4s0f0` and
+`enp4s0f1`, a VLAN-aware Proxmox bridge `vmbr-qlogic0`, and per-VM virtio NICs
+on explicit VLAN tags. This preserves the LACP uplink and keeps VM networking
+observable through the host bridge.
+
+Use the Proxmox wrapper from the repo root:
+
+```bash
+bash scripts/proxmox-create-workstation-nscde-gpu-vm.sh --dry-run
+PROXMOX_APPLY=1 PROXMOX_REPLACE=1 bash scripts/proxmox-create-workstation-nscde-gpu-vm.sh --apply
+```
+
+The generic Proxmox VM creator resolves the imported disk from the `unusedN`
+entry reported by `qm config` after `qm importdisk`. This avoids stale zvol
+suffix assumptions during replacement cycles.
+
+## NVIDIA And CUDA Pinning
+
+The K1200 is a Maxwell GPU, so the workstation profile pins the driver to the
+R580 branch rather than letting Portage select newer branches intended for
+newer GPUs:
+
+```text
+=x11-drivers/nvidia-drivers-580.159.03-r1
+=dev-util/nvidia-cuda-toolkit-12.9.1-r1
+```
+
+The profile carries the required `~amd64` keyword gates and license grants:
+
+```text
+=x11-drivers/nvidia-drivers-580.159.03-r1 ~amd64
+=dev-util/nvidia-cuda-toolkit-12.9.1-r1 ~amd64
+=x11-drivers/nvidia-drivers-580.159.03-r1 NVIDIA-2025
+=dev-util/nvidia-cuda-toolkit-12.9.1-r1 NVIDIA-CUDA
+```
+
+It also masks `>x11-drivers/nvidia-drivers-580.159.03-r1` for this profile so
+future image builds do not silently advance the K1200 VM onto an incompatible
+driver branch.
+
 ## On-Host Image Build
 
 The first workstation build is intentionally staged on the on-host QEMU system
@@ -89,7 +156,7 @@ FEATURES="${FEATURES} buildpkg parallel-fetch"
 PORTAGE_TMPDIR="/dev/shm/portage-tmpfs"
 PKGDIR="/var/cache/binpkgs"
 USE="${USE} X dbus gtk qt5 spice truetype xinerama elogind udev -systemd -wayland"
-VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev"
+VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev nvidia"
 INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
 '
 STAGE3_PACKAGE_USE_APPEND='
@@ -98,6 +165,8 @@ app-emulation/spice-vdagent gtk -systemd
 media-libs/freetype harfbuzz png
 dev-python/pillow -truetype
 x11-base/xorg-server xorg elogind udev -systemd
+=dev-util/nvidia-cuda-toolkit-12.9.1-r1 clang profiler -debugger -examples -nsight -rdma -sanitizer
+=x11-drivers/nvidia-drivers-580.159.03-r1 X tools -kernel-open -persistenced -powerd -wayland
 '
 STAGE3_PACKAGE_UNMASK_APPEND='
 >=dev-python/pyqt5-5.15.11
@@ -108,6 +177,10 @@ STAGE3_PACKAGE_UNMASK_APPEND='
 The builder creates `/dev/shm/portage-tmpfs`, `/var/cache/binpkgs`, and
 `/var/log/portage` inside the target before running Portage so RAM-backed
 temporary builds and binpkg output work during bootstrap.
+
+For the live Hasslehoff GPU VM, use disk-backed `PORTAGE_TMPDIR=/var/tmp/portage`
+instead. CUDA preflight requires more than `7 GiB` of workspace and the VM has a
+smaller tmpfs than the on-host build machine.
 
 The PyQt5 unmask is explicit because Gentoo masked `dev-python/pyqt5` pending
 tree removal while the current NsCDE upstream install path still expects PyQt5.
@@ -143,4 +216,5 @@ Minimum validation gates:
   validated.
 - Add display-manager support only after the manual `startx` session is stable.
 - Add Hasslehoff GPU passthrough validation after hardware selection and
-  installation.
+  installation. Initial VM `1094` is live; NVIDIA/CUDA package validation is
+  the active gate.

@@ -86,16 +86,30 @@ Rationale:
 
 ## SR-IOV
 
-Do not combine host LACP and VM SR-IOV VFs as the default VM connectivity
-model. For general VM networking, use the host bond and Linux bridge. Use SR-IOV
-only for specific high-throughput VMs on explicit VLANs or direct paths because
-VFs bypass much of the host bridge/bond behavior and complicate live migration,
-firewalling, and observability.
+Do not assume SR-IOV is available on the installed QLogic QL41232HOCU. The
+current Hasslehoff presentation exposes no SR-IOV capability:
 
-For the Hasslehoff workstation test VM, SR-IOV is allowed as a deliberate
-exception: allocate one VF from each QLogic physical function for direct VM
-testing while keeping the normal management NIC on the existing 1GbE LACP-backed
-Proxmox bridge.
+```text
+/sys/bus/pci/devices/0000:04:00.0/sriov_totalvfs: absent
+/sys/bus/pci/devices/0000:04:00.1/sriov_totalvfs: absent
+lspci SR-IOV capability: absent
+```
+
+That makes the requested "one VF from each physical port" workstation design
+impossible on the current card/firmware/kernel exposure.
+
+The live fallback is:
+
+```text
+enp4s0f0 + enp4s0f1 -> bond-qlogic0 -> vmbr-qlogic0
+bond mode: 802.3ad
+bond hash: layer3+4
+bridge: VLAN-aware, bridge-vids 2-4094
+```
+
+VMs attach normal virtio NICs to `vmbr-qlogic0` with explicit VLAN tags. The
+first workstation GPU VM uses VLAN tags `1098` and `1099` for two high-speed
+test NICs while retaining `net0` on the management bridge.
 
 ## CRS309 RouterOS Intent
 
@@ -111,3 +125,7 @@ transmit-hash-policy=layer-3-and-4
 ```
 
 The rendered RSC should be reviewed before serial-gated import.
+
+Live validation on 2026-05-06 showed both CRS309 members active in
+`bond-hasslehoff-qlogic`, with the Linux partner system ID visible from
+RouterOS and the Linux bridge `vmbr-qlogic0` up on Hasslehoff.
