@@ -99,6 +99,7 @@
 :error ("[" . $cfgTag . "] invalid WAN mode {{ routeros_rfc99_gateway_wan_mode }}")
 {% endif %}
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
+/ip settings set send-redirects={{ routeros_rfc99_gateway_send_redirects | ternary("yes", "no") }} accept-redirects={{ routeros_rfc99_gateway_accept_redirects | ternary("yes", "no") }} secure-redirects={{ routeros_rfc99_gateway_secure_redirects | ternary("yes", "no") }}
 
 # DHCP service is managed by future NetBox/IPAM-specific roles, not the gateway
 # baseline. Disable inherited defconf state so it cannot leak leases during
@@ -182,6 +183,9 @@
 /ip firewall filter add chain=input action=accept in-interface-list=WAN protocol=udp dst-port=67,68 comment="RFC99 input dhcp-client"
 /ip firewall filter add chain=input action=accept in-interface-list=WAN protocol=udp dst-port={{ routeros_rfc99_gateway_wireguard_listen_port }} comment="RFC99 input wireguard"
 /ip firewall filter add chain=input action=drop in-interface-list=WAN comment="RFC99 input drop wan"
+{% if routeros_rfc99_gateway_suppress_lan_icmp_redirects | bool %}
+/ip firewall filter add chain=output action=drop protocol=icmp icmp-options=5:0-255 out-interface-list=LAN comment="RFC99 output suppress LAN ICMP redirects"
+{% endif %}
 /ip firewall filter add chain=forward action=fasttrack-connection connection-state=established,related in-interface-list=LAN out-interface-list=WAN hw-offload=yes comment="RFC99 fasttrack lan-wan"
 /ip firewall filter add chain=forward action=accept connection-state=established,related,untracked comment="RFC99 forward established"
 /ip firewall filter add chain=forward action=drop connection-state=invalid comment="RFC99 forward invalid"

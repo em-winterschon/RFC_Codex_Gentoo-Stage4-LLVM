@@ -19,6 +19,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   managers, desktop environments, and window managers. Initial mappings cover
   Gentoo, Debian/Devuan, FreeBSD 14, Solaris 11.4, Tribblix-CE, OmniOS, and
   OpenIndiana task families.
+- Added CCR2004 RouterOS role coverage for LAN ICMP redirect suppression while
+  legacy `/24` prefixes share the `br-lan` L2 domain.
 
 ### Changed
 
@@ -33,6 +35,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   for CUDA builds on smaller VMs.
 - Added `x11-misc/slim` and `workstation_session_stack` wiring to the NsCDE
   workstation profile, package list, installer playbook, and install sequences.
+- Updated the live CCR2004 gateway to disable IPv4 redirects and drop generated
+  LAN ICMP redirect packets so `172.16.99.0/24` hosts can consistently transit
+  to `172.16.199.0/24` through the router.
 
 ### Operational Notes
 

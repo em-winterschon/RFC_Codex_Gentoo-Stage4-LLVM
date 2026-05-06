@@ -77,6 +77,7 @@ test_routeros_rfc99_gateway_rendered_config() {
   assert_file_contains "${rsc}" '/ip address add address=10.9.8.1/24 interface=vlan1098-pathb-lab-services comment="RFC99 VLAN pathb-lab-services"'
   assert_file_contains "${rsc}" '/ip address remove [find where interface="sfp-sfpplus1" and dynamic=no]'
   assert_file_contains "${rsc}" '/ip route remove [find where dst-address="0.0.0.0/0" and dynamic=no and gateway="192.168.1.254"]'
+  assert_file_contains "${rsc}" '/ip settings set send-redirects=no accept-redirects=no secure-redirects=no'
   assert_file_contains "${rsc}" '/ip dhcp-server disable [find]'
   assert_file_contains "${rsc}" '/ip service set ssh disabled=no port=22 address=172.16.99.0/24,10.9.8.0/24,10.128.128.0/24'
   assert_file_contains "${rsc}" '/certificate add name="rfc99-gw-selfsigned-template" common-name="gw-rfc99-mkccr2004-16g.rfc1918.host"'
@@ -93,6 +94,7 @@ test_routeros_rfc99_gateway_rendered_config() {
   assert_file_contains "${rsc}" '/tool bandwidth-server set enabled=no'
   assert_file_contains "${rsc}" '/snmp set enabled=no contact="RFC99" location="CCR2004-16G-2S+PC"'
   assert_file_contains "${rsc}" '/ip firewall nat add chain=srcnat action=masquerade out-interface-list=WAN comment="RFC99 WAN SNAT"'
+  assert_file_contains "${rsc}" '/ip firewall filter add chain=output action=drop protocol=icmp icmp-options=5:0-255 out-interface-list=LAN comment="RFC99 output suppress LAN ICMP redirects"'
   assert_file_not_contains "${rsc}" '172.16.229.1/22'
   assert_file_not_contains "${rsc}" '172.16.230.1/22'
 

@@ -51,6 +51,13 @@ The rendered management plane enables SSH, HTTPS, and API-SSL only. It disables
 telnet, FTP, HTTP, plaintext API, and WinBox. Management services are restricted
 to configured management CIDRs.
 
+The gateway also disables IPv4 redirect acceptance/sending and installs an
+output-chain suppressor for ICMP redirect type `5` toward LAN interfaces. This
+is required while multiple legacy `/24` prefixes, including `172.16.99.0/24`
+and `172.16.199.0/24`, share `br-lan`; hosts must consistently use the
+CCR2004 as their L3 transit point instead of learning direct same-L2 host
+redirects.
+
 ## Network Plan
 
 The role encodes current VLAN intent:

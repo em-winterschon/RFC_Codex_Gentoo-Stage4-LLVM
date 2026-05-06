@@ -183,6 +183,10 @@ routeros_rfc99_gateway_legacy_bridge_addresses:
 routeros_rfc99_gateway_nat_enabled: true
 routeros_rfc99_gateway_firewall_enabled: true
 routeros_rfc99_gateway_firewall_comment_prefix: RFC99
+routeros_rfc99_gateway_send_redirects: false
+routeros_rfc99_gateway_accept_redirects: false
+routeros_rfc99_gateway_secure_redirects: false
+routeros_rfc99_gateway_suppress_lan_icmp_redirects: true
 
 routeros_rfc99_gateway_ssh_enabled: true
 routeros_rfc99_gateway_ssh_port: 22
