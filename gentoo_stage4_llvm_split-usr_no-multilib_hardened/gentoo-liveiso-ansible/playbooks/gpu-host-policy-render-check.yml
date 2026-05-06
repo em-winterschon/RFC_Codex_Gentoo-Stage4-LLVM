@@ -1,0 +1,39 @@
+---
+- name: Validate GPU host policy renders blacklist configuration safely
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    gpu_host_policy_root: /tmp/gpu-host-policy-render-check
+    gpu_compute_enabled: true
+    gpu_host_policy_detect_nvidia: false
+    gpu_host_policy_update_grub: false
+    gpu_host_policy_update_initramfs: false
+  pre_tasks:
+    - name: Reset temporary GPU host policy render root
+      ansible.builtin.file:
+        path: "{{ gpu_host_policy_root }}"
+        state: absent
+
+  roles:
+    - role: gpu_host_policy
+
+  post_tasks:
+    - name: Read rendered modprobe blacklist
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/modprobe.d/blacklist-nouveau.conf"
+      register: gpu_policy_rendered_blacklist
+
+    - name: Read rendered GRUB drop-in
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/default/grub.d/99-gpu-compute-blacklist.cfg"
+      register: gpu_policy_rendered_grub
+
+    - name: Assert NVIDIA display drivers are blacklisted in rendered files
+      ansible.builtin.assert:
+        that:
+          - "'blacklist nouveau' in (gpu_policy_rendered_blacklist.content | b64decode)"
+          - "'blacklist nvidiafb' in (gpu_policy_rendered_blacklist.content | b64decode)"
+          - "'modprobe.blacklist=nouveau,nvidiafb' in (gpu_policy_rendered_grub.content | b64decode)"
+          - "'nouveau.modeset=0' in (gpu_policy_rendered_grub.content | b64decode)"
+        fail_msg: GPU host policy render did not include the required NVIDIA blacklist controls.

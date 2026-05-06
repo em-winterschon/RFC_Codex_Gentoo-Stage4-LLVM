@@ -26,6 +26,7 @@
 - [Container-Services Validation](Container-Services-Validation)
 - [Container Building](Container-Building)
 - [Container Publishing](Container-Publishing)
+- [BMC Management](BMC-Management)
 - [Identity AAA](Identity-AAA)
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
 - [Telemetry Observability](Telemetry-Observability)

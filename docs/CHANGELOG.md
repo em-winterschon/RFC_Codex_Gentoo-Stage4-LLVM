@@ -3,6 +3,30 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-05
+
+### Added
+
+- Added `bmc_redfish` and `bmc_idrac` Ansible roles for BMC management
+  scaffolding. The roles default to safe read-only behavior and require
+  explicit mutation gates for power, boot override, and virtual media actions.
+- Added `gpu_host_policy` for GPU compute and passthrough hosts. The role
+  renders `nouveau` and `nvidiafb` blacklist controls plus a GRUB drop-in and
+  does not reboot or run update commands unless explicitly enabled.
+- Added BMC and GPU validation playbooks:
+  - `playbooks/bmc-redfish-validate.yml`
+  - `playbooks/gpu-host-policy.yml`
+  - `playbooks/gpu-host-policy-render-check.yml`
+- Added Hasslehoff post-maintenance PCIe inventory for the NVIDIA Quadro K1200
+  and QLogic QL41232HOCU CNA.
+
+### Changed
+
+- Added `gpu_compute`, `bmc_managed`, and `dell_idrac` inventory groups to the
+  local-network inventory.
+- Placed Hasslehoff in `gpu_compute` and `bmc_managed`, with BMC live access
+  disabled until its IPMI/Redfish credentials are imported into Ansible Vault.
+
 ## 2026-05-04
 
 ### Changed

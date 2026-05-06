@@ -34,7 +34,41 @@ Summary:
 - Memory: `64121` MiB
 - Management path: `bond0` over `eno1` + `eno2`, bridged through `vmbr0`
 - RoCE-v2 reserved ports: `enp2s0f0np0`, `enp2s0f1np1`
-- CCR2004 PCIe-facing ports observed on host: `enp1s0f0` through `enp1s0f3`
+- CCR2004-PCIe card: removed on `2026-05-05` to free the CPU x8/x16 slot
+- QLogic QL41232HOCU CNA ports: `enp4s0f0`, `enp4s0f1`
+- NVIDIA Quadro K1200: PCIe `0000:01:00.0`, audio function `0000:01:00.1`
+
+## 2026-05-05 PCIe Maintenance Update
+
+Hasslehoff was shut down cleanly for PCIe maintenance. VMs `1062`, `1063`, and
+`1089` were stopped before host halt and restarted after the hardware swap.
+
+Installed hardware after maintenance:
+
+| Device | PCIe Address | Linux Interface | Driver | Notes |
+| --- | --- | --- | --- | --- |
+| NVIDIA Quadro K1200 VGA | `0000:01:00.0` | n/a | `nouveau` observed before reboot policy application | Intended for workstation VM passthrough through `vfio-pci`. |
+| NVIDIA Quadro K1200 audio | `0000:01:00.1` | n/a | n/a | Same IOMMU group as VGA function. |
+| QLogic QL41232HOCU port 0 | `0000:04:00.0` | `enp4s0f0` | `qede` | Firmware `mfw 8.30.18.0`, PCIe `8GT/s x4`, link down until cabled. |
+| QLogic QL41232HOCU port 1 | `0000:04:00.1` | `enp4s0f1` | `qede` | Firmware `mfw 8.30.18.0`, PCIe `8GT/s x4`, link down until cabled. |
+
+The QLogic card is x8-capable but is installed in an x4 electrical slot, so
+`8GT/s x4` is expected and is the slot limit. The removed MikroTik
+CCR2004-1G-2XS-PCIe card is no longer present in PCI inventory.
+
+Hasslehoff is now a member of the `gpu_compute` inventory group. The
+`gpu_host_policy` role renders:
+
+- `/etc/modprobe.d/blacklist-nouveau.conf`
+- `/etc/default/grub.d/99-gpu-compute-blacklist.cfg`
+
+Default blacklisted modules:
+
+- `nouveau`
+- `nvidiafb`
+
+The role does not reboot the host and does not run `update-grub` or
+`update-initramfs` unless the corresponding explicit booleans are enabled.
 
 ## Observed Proxmox VMs
 

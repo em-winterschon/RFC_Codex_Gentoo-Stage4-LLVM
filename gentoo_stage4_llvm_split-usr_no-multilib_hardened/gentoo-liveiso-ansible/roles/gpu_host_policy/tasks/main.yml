@@ -1,0 +1,83 @@
+---
+- name: Detect NVIDIA PCI devices
+  ansible.builtin.command: lspci -Dnmm
+  register: gpu_host_policy_lspci
+  changed_when: false
+  failed_when: false
+  when: gpu_host_policy_detect_nvidia | bool
+
+- name: Resolve GPU host policy state
+  ansible.builtin.set_fact:
+    gpu_host_policy_nvidia_present: >-
+      {{
+        (gpu_host_policy_lspci.stdout | default(''))
+        is search('\"10de:')
+      }}
+    gpu_host_policy_should_apply: >-
+      {{
+        (gpu_compute_enabled | bool)
+        or
+        (
+          (gpu_host_policy_blacklist_nvidia_when_present | bool)
+          and
+          ((gpu_host_policy_lspci.stdout | default('')) is search('\"10de:'))
+        )
+        or
+        (
+          (not (gpu_host_policy_detect_nvidia | bool))
+          and
+          (gpu_host_policy_blacklist_nvidia_when_present | bool)
+        )
+      }}
+
+- name: Ensure GPU host policy parent directories exist
+  ansible.builtin.file:
+    path: "{{ gpu_host_policy_root }}{{ gpu_policy_parent_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ gpu_host_policy_modprobe_blacklist_path | dirname }}"
+    - "{{ gpu_host_policy_grub_dropin_path | dirname }}"
+  loop_control:
+    loop_var: gpu_policy_parent_dir
+  when: gpu_host_policy_should_apply | bool
+
+- name: Render NVIDIA framebuffer and nouveau blacklist
+  ansible.builtin.template:
+    src: blacklist-nvidia-gpu.conf.j2
+    dest: "{{ gpu_host_policy_root }}{{ gpu_host_policy_modprobe_blacklist_path }}"
+    mode: '0644'
+  register: gpu_host_policy_modprobe_render
+  when: gpu_host_policy_should_apply | bool
+
+- name: Render GPU compute GRUB drop-in
+  ansible.builtin.template:
+    src: grub-gpu-compute-blacklist.cfg.j2
+    dest: "{{ gpu_host_policy_root }}{{ gpu_host_policy_grub_dropin_path }}"
+    mode: '0644'
+  register: gpu_host_policy_grub_render
+  when: gpu_host_policy_should_apply | bool
+
+- name: Update initramfs after GPU host policy change
+  ansible.builtin.command: "{{ gpu_host_policy_initramfs_update_command }}"
+  changed_when: true
+  when:
+    - gpu_host_policy_update_initramfs | bool
+    - gpu_host_policy_modprobe_render is changed
+    - gpu_host_policy_root | length == 0
+
+- name: Update GRUB after GPU host policy change
+  ansible.builtin.command: "{{ gpu_host_policy_grub_update_command }}"
+  changed_when: true
+  when:
+    - gpu_host_policy_update_grub | bool
+    - gpu_host_policy_grub_render is changed
+    - gpu_host_policy_root | length == 0
+
+- name: Refuse update commands against alternate render root
+  ansible.builtin.assert:
+    that:
+      - not (gpu_host_policy_update_grub | bool)
+      - not (gpu_host_policy_update_initramfs | bool)
+    fail_msg: update-grub/update-initramfs are only allowed when gpu_host_policy_root is empty.
+  when: gpu_host_policy_root | length > 0

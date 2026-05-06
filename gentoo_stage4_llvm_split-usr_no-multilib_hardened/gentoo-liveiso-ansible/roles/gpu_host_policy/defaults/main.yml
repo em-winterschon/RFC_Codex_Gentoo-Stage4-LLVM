@@ -1,0 +1,20 @@
+---
+gpu_compute_enabled: false
+gpu_host_policy_root: ""
+
+gpu_host_policy_detect_nvidia: true
+gpu_host_policy_blacklist_nvidia_when_present: true
+gpu_host_policy_blacklisted_modules:
+  - nouveau
+  - nvidiafb
+
+gpu_host_policy_modprobe_blacklist_path: /etc/modprobe.d/blacklist-nouveau.conf
+gpu_host_policy_grub_dropin_path: /etc/default/grub.d/99-gpu-compute-blacklist.cfg
+gpu_host_policy_grub_cmdline_tokens:
+  - modprobe.blacklist=nouveau,nvidiafb
+  - nouveau.modeset=0
+
+gpu_host_policy_update_grub: false
+gpu_host_policy_update_initramfs: false
+gpu_host_policy_grub_update_command: update-grub
+gpu_host_policy_initramfs_update_command: update-initramfs -u
