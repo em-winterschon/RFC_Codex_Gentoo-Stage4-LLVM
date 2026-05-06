@@ -78,6 +78,14 @@ gentoo_profile_definition:
     window_managers:
       - id: fvwm3
         name: FVWM3
+    display_policy:
+      enabled: false
+      renderer: nvidia
+      preferred_mode: 1280x720
+      fallback_modes:
+        - 1024x768
+        - 1920x1080
+      validation_title: PiKVM K1200 deterministic test pattern
   service_readiness:
     enabled: true
     checks:

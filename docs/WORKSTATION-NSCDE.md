@@ -177,8 +177,34 @@ nvcc: CUDA compilation tools, release 12.9, V12.9.86
 ```
 
 The GPU driver and CUDA userland are validated. Physical video output and the
-Xorg/NsCDE session gate remain pending until the K1200 has cabling, EDID, or
-PiKVM visibility and the new session-stack role is applied to the live guest.
+Xorg physical-output gate was validated through PiKVM after forcing Xorg to
+drive the K1200 directly at `1280x720@60`.
+
+The scrambled PiKVM web video was not a WebRTC/H.264/MJPEG issue. A raw
+uStreamer snapshot showed the corruption before browser transport. The VM was
+booting with QXL as primary framebuffer and NVIDIA as a later secondary
+framebuffer, while the K1200 emitted a captureable but corrupted default
+console mode. Starting Xorg on the NVIDIA GPU and setting `1280x720@60`
+produced a clean PiKVM frame.
+
+The stable path is an opt-in display policy overlay:
+
+```yaml
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/vm-workstation-nscde.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-workstation-nscde-gpu-pikvm.yml"
+```
+
+That overlay renders:
+
+```text
+/etc/X11/xorg.conf.d/90-workstation-gpu-display.conf
+/usr/local/sbin/workstation-gpu-display-test
+```
+
+For the live VM, the validation helper leaves Xorg running on display `:7`
+with the deterministic `PiKVM K1200 deterministic test pattern` xterm. The
+captured PiKVM mode is `1280x720p60` and Direct H.264 is confirmed readable.
 
 ## On-Host Image Build
 
@@ -250,12 +276,14 @@ Minimum validation gates:
    `/etc/skel/.xinitrc`.
 6. Optional SLiM session entry presents `nscde` as the selected desktop
    environment after `workstation_session_stack` has been applied.
+7. GPU passthrough guests can run `workstation-gpu-display-test` to force a
+   deterministic NVIDIA Xorg mode for PiKVM capture validation.
 
 ## Follow-On Work
 
 - Add a local overlay ebuild for NsCDE after the source-install path is
   validated.
-- Apply `workstation_session_stack` to live VM `1094`, install `x11-misc/slim`,
-  and confirm `/opt/NsCDE/bin/nscde` before starting the physical-output gate.
-- Validate Hasslehoff physical K1200 video through a direct monitor first, then
-  PiKVM/EDID capture after cabling is stable.
+- Apply SLiM and the final NsCDE startup path on live VM `1094`; the NVIDIA
+  Xorg/PiKVM display policy is now validated independently.
+- Decide whether the production display default should remain `1280x720@60` for
+  PiKVM stability or move back to `1920x1080@60` after EDID/adapter testing.

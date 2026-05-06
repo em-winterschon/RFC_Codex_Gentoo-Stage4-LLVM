@@ -19,6 +19,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   managers, desktop environments, and window managers. Initial mappings cover
   Gentoo, Debian/Devuan, FreeBSD 14, Solaris 11.4, Tribblix-CE, OmniOS, and
   OpenIndiana task families.
+- Added an opt-in workstation GPU display policy for NVIDIA passthrough guests.
+  It renders a deterministic Xorg config and `workstation-gpu-display-test`
+  helper for PiKVM capture validation.
 - Added CCR2004 RouterOS role coverage for LAN ICMP redirect suppression while
   legacy `/24` prefixes share the `br-lan` L2 domain.
 - Added a scoped CCR2004 management-compat DHCP definition for
@@ -60,6 +63,10 @@ infrastructure work. It is intentionally higher level than `git log`.
   `/opt/cuda/bin/nvcc --version` reports CUDA `12.9`.
 - Xorg and `startx` are present in VM `1094`; `/opt/NsCDE/bin/nscde` and SLiM
   are still pending live application of the workstation session-stack role.
+- PiKVM raw uStreamer snapshots showed the original corruption before browser
+  transport, so WebRTC/Direct H.264/Legacy MJPEG were ruled out. The live VM now
+  has a managed NVIDIA Xorg policy at `1280x720@60`; Direct H.264 displays the
+  deterministic K1200 test pattern cleanly.
 
 ## 2026-05-05
 

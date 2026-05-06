@@ -9,9 +9,11 @@
       create_root_xinitrc: "{{ resolved_profile_workstation_session_stack.create_root_xinitrc | default(workstation_session_stack_default_create_root_xinitrc) | bool }}"
       session_dir: "{{ resolved_profile_workstation_session_stack.session_dir | default(workstation_session_stack_default_session_dir) }}"
       slim_conf_path: "{{ resolved_profile_workstation_session_stack.slim_conf_path | default(workstation_session_stack_default_slim_conf_path) }}"
+      xserver_arguments: "{{ resolved_profile_workstation_session_stack.xserver_arguments | default(workstation_session_stack_default_xserver_arguments) }}"
       display_managers: "{{ resolved_profile_workstation_session_stack.display_managers | default(workstation_session_stack_default_display_managers) }}"
       desktop_environments: "{{ resolved_profile_workstation_session_stack.desktop_environments | default(workstation_session_stack_default_desktop_environments) }}"
       window_managers: "{{ resolved_profile_workstation_session_stack.window_managers | default(workstation_session_stack_default_window_managers) }}"
+      display_policy: "{{ workstation_session_stack_default_display_policy | combine(resolved_profile_workstation_session_stack.display_policy | default({}), recursive=True) }}"
 
 - name: Resolve workstation session stack OS family
   ansible.builtin.set_fact:
@@ -46,3 +48,9 @@
 - name: Apply common workstation session files
   ansible.builtin.include_tasks: common.yml
   when: workstation_session_stack_enabled
+
+- name: Apply optional workstation GPU display policy
+  ansible.builtin.include_tasks: display_policy.yml
+  when:
+    - workstation_session_stack_enabled
+    - resolved_workstation_session_stack.display_policy.enabled | bool

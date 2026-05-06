@@ -32,6 +32,9 @@ assert_file_exists "${ROLE_DIR}/tasks/solaris.yml"
 assert_file_exists "${ROLE_DIR}/templates/xinitrc.j2"
 assert_file_exists "${ROLE_DIR}/templates/xsession.desktop.j2"
 assert_file_exists "${ROLE_DIR}/templates/slim.conf.j2"
+assert_file_exists "${ROLE_DIR}/templates/xorg-nvidia-display.conf.j2"
+assert_file_exists "${ROLE_DIR}/templates/workstation-gpu-display-test.j2"
+assert_file_exists "${ROLE_DIR}/tasks/display_policy.yml"
 
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" '^workstation_session_stack_default_enabled: false$'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'devuan: debian'
@@ -41,6 +44,10 @@ assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'workstation_session_stack_os_
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'workstation_session_stack_os_family_aliases.get'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'workstation_session_stack_supported_os_families'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'include_tasks: "\{\{ workstation_session_stack_os_family \}\}\.yml"'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'display_policy.yml'
+assert_file_contains "${ROLE_DIR}/tasks/display_policy.yml" 'xorg-nvidia-display.conf.j2'
+assert_file_contains "${ROLE_DIR}/templates/xorg-nvidia-display.conf.j2" 'Driver "nvidia"'
+assert_file_contains "${ROLE_DIR}/templates/workstation-gpu-display-test.j2" 'Xorg "\$\{display\}" -config "\$\{xorg_conf\}"'
 assert_file_contains "${ROLE_DIR}/tasks/gentoo.yml" 'x11-misc/slim'
 assert_file_contains "${ROLE_DIR}/tasks/gentoo.yml" 'emerge'
 assert_file_contains "${ROLE_DIR}/tasks/freebsd.yml" 'pkg install -y'
@@ -52,6 +59,7 @@ assert_file_contains "${PROFILE_FILE}" 'desktop_environments:'
 assert_file_contains "${PROFILE_FILE}" 'id: nscde'
 assert_file_contains "${PROFILE_FILE}" 'display_managers:'
 assert_file_contains "${PROFILE_FILE}" 'id: slim'
+assert_file_contains "${PROFILE_FILE}" 'display_policy:'
 assert_file_contains "${PACKAGE_LIST}" '^x11-misc/slim$'
 
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -7,19 +7,20 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-simple-ipxe.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-workstation-nscde.yml"
-  # Add this overlay only for NVIDIA passthrough guests with PiKVM validation.
-  # - "{{ playbook_dir }}/../profile-definitions/vm-workstation-nscde-gpu-pikvm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-workstation-nscde-gpu-pikvm.yml"
 
 install_networkmanager: true
 install_openssh: true
-install_hostname: vm-workstation-nscde
+install_hostname: vm-workstation-nscde-gpu01
 
 profile_cloud_init:
   enabled: true
-  instance_id: vm-workstation-nscde
-  local_hostname: vm-workstation-nscde
+  instance_id: vm-workstation-nscde-gpu01
+  local_hostname: vm-workstation-nscde-gpu01
   disable_root: false
   ssh_pwauth: false
 
-workstation_spice_listen_host: 127.0.0.1
-workstation_spice_port: 5931
+profile_workstation_session_stack:
+  display_policy:
+    bus_id: PCI:1:0:0
+    preferred_mode: 1280x720
