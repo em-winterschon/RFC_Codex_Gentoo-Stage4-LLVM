@@ -25,6 +25,13 @@ infrastructure work. It is intentionally higher level than `git log`.
   standardization.
 - Added CRS309 render-only intent for Hasslehoff QLogic LACP on
   `sfp-sfpplus4/5`.
+- Added `scripts/routeros-serial-command.py`, a RouterOS serial helper that
+  handles the `ESC Z` terminal-identification probe emitted after login.
+- Added `tests/shell/test_routeros_serial_command.sh` to regression-test serial
+  helper answerback and transcript redaction behavior.
+- Added EOD status for 2026-05-05 covering GPU passthrough scaffolding, QLogic
+  link validation, RouterOS serial automation, and the gated Hasslehoff
+  workstation VM next path.
 
 ### Changed
 
@@ -34,6 +41,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   disabled until its IPMI/Redfish credentials are imported into Ansible Vault.
 - Extended Hasslehoff GPU policy to blacklist `snd_hda_intel` and prepare exact
   vfio-pci binding for K1200 functions `10de:13bc` and `10de:0fbc`.
+- Documented live Hasslehoff QLogic to CRS309 10G-SR validation and the failed
+  optic diagnosis.
 
 ## 2026-05-04
 

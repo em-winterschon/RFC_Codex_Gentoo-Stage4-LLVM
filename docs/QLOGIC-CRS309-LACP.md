@@ -12,6 +12,25 @@ Use the CRS309 ports previously reserved for the removed CCR2004-PCIe card:
 The CRS309 render-only role now names this bundle
 `bond-hasslehoff-qlogic`.
 
+## Physical Validation
+
+Both physical members validated on 2026-05-05 after replacing a failed optic:
+
+| Host Port | CRS309 Port | Host State | CRS309 State | Notes |
+| --- | --- | --- | --- | --- |
+| `enp4s0f0` | `sfp-sfpplus4` | `10Gbps`, full, `LOWER_UP` | `link-ok`, `10Gbps`, full | Clean error counters |
+| `enp4s0f1` | `sfp-sfpplus5` | `10Gbps`, full, `LOWER_UP` | `link-ok`, `10Gbps`, full | Clean error counters after optic replacement |
+
+Validated optical receive levels:
+
+- Host `enp4s0f0`: approximately `-0.82 dBm`
+- Host `enp4s0f1`: approximately `-2.15 dBm`
+- CRS309 `sfp-sfpplus4`: approximately `-3.416 dBm`
+- CRS309 `sfp-sfpplus5`: approximately `-1.589 dBm`
+
+The failed optic symptom was asymmetric: one side saw usable light while CRS309
+received only marginal light around `-10.4 dBm`, preventing link-up.
+
 ## Linux Bond Recommendation
 
 Initial host-side bond settings:
@@ -72,6 +91,11 @@ model. For general VM networking, use the host bond and Linux bridge. Use SR-IOV
 only for specific high-throughput VMs on explicit VLANs or direct paths because
 VFs bypass much of the host bridge/bond behavior and complicate live migration,
 firewalling, and observability.
+
+For the Hasslehoff workstation test VM, SR-IOV is allowed as a deliberate
+exception: allocate one VF from each QLogic physical function for direct VM
+testing while keeping the normal management NIC on the existing 1GbE LACP-backed
+Proxmox bridge.
 
 ## CRS309 RouterOS Intent
 

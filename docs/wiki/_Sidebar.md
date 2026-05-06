@@ -35,6 +35,7 @@
 - [Observability Access](Observability-Access)
 - [Changelog](Changelog)
 - [SITREP Status 2026-05-03](SITREP-Status-2026-05-03)
+- [EOD Status 2026-05-05](EOD-Status-2026-05-05)
 - [EOD Status 2026-05-04](EOD-Status-2026-05-04)
 - [EOD Status 2026-05-03](EOD-Status-2026-05-03)
 - [EOD Status 2026-05-02](EOD-Status-2026-05-02)
