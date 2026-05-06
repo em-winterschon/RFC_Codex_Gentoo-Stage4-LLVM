@@ -6,15 +6,24 @@
 desktop validation on the on-host QEMU system before GPU-passthrough testing on
 Hasslehoff.
 
-The first target is deliberately conservative:
+The current target is `Stage4 LOX` plus a Stage5 NsCDE workstation overlay:
 
-- Stage4 merged-usr LLVM/OpenRC VM base
+- Stage4 LOX means LLVM/Clang, OpenRC, and Xorg
+- Canonical ID:
+  `stage4-lox__stage5-workstation-nscde__<arch>__gpu-universal-xorg`
+- Active amd64 binpkg ID:
+  `stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg`
 - Xorg, QXL, and SPICE guest integration
 - NsCDE source install pinned to upstream tag `2.3`
 - NVIDIA Quadro K1200 passthrough validation on Hasslehoff
+- AMDGPU/ROCm/AMDGPU-PRO and Intel Xe/Level Zero/OpenCL/Vulkan package
+  readiness for later workstation variants
 - CUDA userland pinned to the newest locally available CUDA 12.9.1 ebuild
 - optional SLiM display-manager session integration
 - `startx` / `.xinitrc` starts `/opt/NsCDE/bin/nscde`
+
+Wayland, Plasma, SDDM, XWayland, wlroots, and xdg-desktop-portal are
+intentionally rejected in the Stage4 LOX workstation policy.
 
 ## Files
 
@@ -54,6 +63,31 @@ Package installation commands are gated by
 image builds still prefer package-list driven installation, while FreeBSD and
 Solaris-family hosts can opt into their native package-manager commands once
 their repository policy is defined.
+
+## Universal Xorg GPU Policy
+
+The active workstation package list now prebuilds the Xorg-capable GPU stack
+for expected workstation hardware families:
+
+- NVIDIA proprietary driver and CUDA toolkit remain pinned for the K1200 test
+  VM.
+- AMD includes Mesa/RADV, ROCm/OpenCL tooling, AMDGPU-PRO OpenCL/Vulkan/AMF
+  userland atoms where Gentoo provides them, and AMDGPU Xorg driver support.
+- Intel includes Mesa, Intel compute runtime, Level Zero, VAAPI, Vulkan, and
+  Intel Xorg driver support.
+
+The active package list is still curated. Captured host package lists are stored
+under `docs/workstation-package-capture/` for review and are not automatically
+converted into emerge targets.
+
+Workstation builds emit binpkgs by default under:
+
+```text
+/var/cache/binpkgs/stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg
+```
+
+On Hasslehoff this path can be backed by an NFS or bind mount from the binpkg
+repository VM so package rebuilds survive VM replacement cycles.
 
 ## NsCDE Source Policy
 
@@ -221,12 +255,16 @@ FEATURES="${FEATURES} buildpkg parallel-fetch"
 PORTAGE_TMPDIR="/dev/shm/portage-tmpfs"
 PKGDIR="/var/cache/binpkgs"
 USE="${USE} X dbus gtk qt5 spice truetype xinerama elogind udev -systemd -wayland"
-VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting fbdev nvidia"
+VIDEO_CARDS="${VIDEO_CARDS} intel amdgpu radeonsi fbdev vesa qxl modesetting nvidia"
 INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
+PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg"
 '
 STAGE3_PACKAGE_USE_APPEND='
 app-text/xmlto text
 app-emulation/spice-vdagent gtk -systemd
+media-libs/mesa X lm-sensors opencl opengl proprietary-codecs vaapi vulkan vulkan-overlay zstd -debug -selinux -test -wayland
+media-libs/libva X glx -wayland
+media-libs/vulkan-loader X -wayland
 media-libs/freetype harfbuzz png
 dev-python/pillow -truetype
 x11-base/xorg-server xorg elogind udev -systemd

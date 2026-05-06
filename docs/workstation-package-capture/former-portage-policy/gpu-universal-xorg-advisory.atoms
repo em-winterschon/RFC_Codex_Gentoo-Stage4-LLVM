@@ -1,0 +1,27 @@
+# Advisory atoms for Stage4 LOX universal Xorg GPU support.
+# This file is a review/reference input, not an active package list.
+dev-libs/amdgpu-pro-opencl
+dev-libs/intel-compute-runtime
+dev-libs/level-zero
+dev-libs/rocm-opencl-runtime
+dev-util/amdsmi
+dev-util/clinfo
+dev-util/intel-graphics-compiler
+dev-util/rocm-smi
+dev-util/rocminfo
+dev-util/vulkan-tools
+media-libs/amdgpu-pro-vulkan
+media-libs/gmmlib
+media-libs/libglvnd
+media-libs/libva
+media-libs/mesa
+media-libs/vulkan-layers
+media-libs/vulkan-loader
+media-video/amdgpu-pro-amf
+sys-apps/amdgpu_top
+sys-firmware/intel-microcode
+sys-kernel/linux-firmware
+x11-drivers/xf86-video-amdgpu
+x11-drivers/xf86-video-intel
+x11-libs/libdrm
+x11-libs/libvdpau

@@ -25,6 +25,14 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added `scripts/capture-gentoo-emerge-state.sh` and captured the current
   X12AGAIN Portage world, since-boot merge log, and workstation package
   candidate state under `docs/workstation-package-capture/`.
+- Added `scripts/generate-workstation-package-review.sh`, imported the microbox
+  Gentoo capture, and generated the combined Stage4 LOX workstation package
+  review set.
+- Added sanitized former LLVM/Clang Portage policy notes from the `legiongo`
+  and `susse` etc-keeper archives without importing raw GnuPG/private-key
+  material.
+- Added Stage4 LOX workstation package policy coverage for NVIDIA, AMDGPU,
+  ROCm/AMDGPU-PRO, Intel Xe/Level Zero/OpenCL/Vulkan, and Xorg-only operation.
 - Added CCR2004 RouterOS role coverage for LAN ICMP redirect suppression while
   legacy `/24` prefixes share the `br-lan` L2 domain.
 - Added a scoped CCR2004 management-compat DHCP definition for
@@ -39,6 +47,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   `vm-${VMID}-disk-0`.
 - Updated the workstation profile with explicit NVIDIA/CUDA keyword, license,
   and package-mask gates so the Maxwell K1200 stays on the R580 driver branch.
+- Normalized workstation profile naming to
+  `stage4-lox__stage5-workstation-nscde__<arch>__gpu-universal-xorg`, with the
+  active amd64 binpkg path using
+  `stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg`.
+- Added profile-level no-Wayland masks for Wayland, Plasma, SDDM, XWayland,
+  wlroots, and xdg-desktop-portal in the Stage4 LOX workstation profile.
 - Switched the workstation profile to disk-backed `PORTAGE_TMPDIR=/var/tmp/portage`
   for CUDA builds on smaller VMs.
 - Added `x11-misc/slim` and `workstation_session_stack` wiring to the NsCDE

@@ -19,6 +19,86 @@ world atoms: 236
 primary candidates: 247
 ```
 
+## Captured Microbox State
+
+The microbox capture imported from `/tmp/microbox.gentoo-state-capture.tar` is
+stored at:
+
+```text
+docs/workstation-package-capture/microbox-2026-05-06/
+```
+
+Current counts:
+
+```text
+completed merges since boot: 4
+world atoms: 247
+primary candidates: 247
+```
+
+Microbox was running the regular Gentoo `amd64/23.0/desktop/plasma` live ISO,
+not the LLVM/Clang profile. Its package list is therefore useful as user intent,
+but Plasma, SDDM, and Wayland-adjacent atoms are filtered before any Stage4 LOX
+workstation review list is accepted.
+
+## Combined Stage4 LOX Review
+
+The generated review set is stored at:
+
+```text
+docs/workstation-package-capture/stage4-lox-workstation-review-2026-05-06/
+```
+
+Canonical target ID:
+
+```text
+stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg
+```
+
+Current generated counts:
+
+```text
+shared primary candidates: 222
+X12AGAIN-only primary candidates: 25
+microbox-only primary candidates: 25
+union primary candidates: 272
+Wayland/Plasma rejects: 2
+review candidates after rejects: 270
+```
+
+`stage5-workstation-review-candidates.atoms` remains a review input, not an
+active emerge target. Active workstation package policy stays curated in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+```
+
+## Former LLVM/Clang Hosts
+
+Two former etc-keeper Portage archives were inspected for tuning references:
+
+- `/tmp/gentoo-portage-legiongo.tar`
+- `/tmp/gentoo-portage-susse.tar`
+
+Sanitized notes are tracked at:
+
+```text
+docs/workstation-package-capture/former-portage-policy/
+```
+
+The raw archives are not imported. The `susse` archive contains GnuPG/private
+key material under `/etc/portage/gnupg`, so only policy summaries and selected
+advisory atoms are committed.
+
+Useful policy carried forward:
+
+- LLVM/Clang toolchain, OpenRC, Xorg, `-systemd`, and explicit `-wayland`.
+- `VIDEO_CARDS` policy covering Intel, AMDGPU, radeonsi, fbdev, and vesa.
+- Mesa, QEMU, GTK, Chromium/libva, and media package policy that disables
+  Wayland where Gentoo exposes a USE flag.
+- Binpkg generation with `--buildpkg=y`, `--with-bdeps=y`,
+  `--complete-graph=y`, and `--binpkg-respect-use=y`.
+
 The important files are:
 
 - `world.atoms`: the best source for primary user-requested packages.
@@ -98,3 +178,14 @@ merged since boot", but that includes dependencies and rebuilds. For the
 workstation VM emerge party, use `primary-candidates.atoms` as the initial
 review list, then pull from `merged-since-boot.atoms` only when a dependency is
 clearly part of the desired workstation baseline.
+
+## Regeneration
+
+Regenerate the combined review set with:
+
+```bash
+bash scripts/generate-workstation-package-review.sh \
+  docs/workstation-package-capture/x12again-2026-05-06 \
+  docs/workstation-package-capture/microbox-2026-05-06 \
+  docs/workstation-package-capture/stage4-lox-workstation-review-2026-05-06
+```
