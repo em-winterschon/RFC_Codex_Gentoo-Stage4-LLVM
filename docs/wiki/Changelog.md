@@ -22,6 +22,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added an opt-in workstation GPU display policy for NVIDIA passthrough guests.
   It renders a deterministic Xorg config and `workstation-gpu-display-test`
   helper for PiKVM capture validation.
+- Added `scripts/capture-gentoo-emerge-state.sh` and captured the current
+  X12AGAIN Portage world, since-boot merge log, and workstation package
+  candidate state under `docs/workstation-package-capture/`.
 - Added CCR2004 RouterOS role coverage for LAN ICMP redirect suppression while
   legacy `/24` prefixes share the `br-lan` L2 domain.
 - Added a scoped CCR2004 management-compat DHCP definition for

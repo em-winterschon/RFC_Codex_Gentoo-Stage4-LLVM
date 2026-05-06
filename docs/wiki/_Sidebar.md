@@ -24,6 +24,7 @@
 - [Binpkg Repository](Binpkg-Repository)
 - [Nexus Repository](Nexus-Repository)
 - [Package Version Pinning](Package-Version-Pinning)
+- [Workstation Package Capture](Workstation-Package-Capture)
 - [Workstation NsCDE](Workstation-NsCDE)
 - [Container-Services Validation](Container-Services-Validation)
 - [Container Building](Container-Building)
