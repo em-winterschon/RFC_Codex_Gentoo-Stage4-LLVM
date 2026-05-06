@@ -101,10 +101,28 @@
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
 /ip settings set send-redirects={{ routeros_rfc99_gateway_send_redirects | ternary("yes", "no") }} accept-redirects={{ routeros_rfc99_gateway_accept_redirects | ternary("yes", "no") }} secure-redirects={{ routeros_rfc99_gateway_secure_redirects | ternary("yes", "no") }}
 
-# DHCP service is managed by future NetBox/IPAM-specific roles, not the gateway
-# baseline. Disable inherited defconf state so it cannot leak leases during
-# gateway cutover.
+# DHCP service. Keep this narrow until NetBox/IPAM owns additional scopes.
+{% if routeros_rfc99_gateway_dhcp_enabled | bool %}
+/ip pool remove [find name="{{ routeros_rfc99_gateway_dhcp_pool_name }}"]
+:if ([:len [/ip pool find where name="dhcp"]] > 0) do={
+    /ip pool set [find name="dhcp"] name="{{ routeros_rfc99_gateway_dhcp_pool_name }}" ranges={{ routeros_rfc99_gateway_dhcp_range }}
+} else={
+    /ip pool add name="{{ routeros_rfc99_gateway_dhcp_pool_name }}" ranges={{ routeros_rfc99_gateway_dhcp_range }}
+}
+/ip dhcp-server network remove [find address="{{ routeros_rfc99_gateway_dhcp_network }}"]
+/ip dhcp-server network add address={{ routeros_rfc99_gateway_dhcp_network }} gateway={{ routeros_rfc99_gateway_dhcp_gateway }} netmask={{ routeros_rfc99_gateway_dhcp_netmask }} dns-server={{ routeros_rfc99_gateway_dhcp_dns_servers | join(',') }} comment="RFC99 management compatibility DHCP"
+:if ([:len [/ip dhcp-server find where name="{{ routeros_rfc99_gateway_dhcp_name }}"]] > 0) do={
+    /ip dhcp-server set [find name="{{ routeros_rfc99_gateway_dhcp_name }}"] interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
+} else={
+    :if ([:len [/ip dhcp-server find where name="dhcp1"]] > 0) do={
+        /ip dhcp-server set [find name="dhcp1"] name="{{ routeros_rfc99_gateway_dhcp_name }}" interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
+    } else={
+        /ip dhcp-server add name="{{ routeros_rfc99_gateway_dhcp_name }}" interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
+    }
+}
+{% else %}
 /ip dhcp-server disable [find]
+{% endif %}
 
 # Management services: SSH, HTTPS, and API-SSL only.
 /ip service set telnet disabled=yes

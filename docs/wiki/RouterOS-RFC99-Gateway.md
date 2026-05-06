@@ -78,6 +78,24 @@ The role encodes current VLAN intent:
 The CRS309 WIP declared overlapping `172.16.228.0/22` gateway entries. The
 CCR2004 render normalizes that to only `172.16.228.1/22`.
 
+## DHCP Scope
+
+The active gateway provides a narrow DHCP scope for the management-compat
+subnet:
+
+| Field | Value |
+| --- | --- |
+| Server | `rfc99-management-compat` |
+| Interface | `br-lan` |
+| Network | `172.16.99.0/24` |
+| Pool | `172.16.99.150-172.16.99.158` |
+| Gateway | `172.16.99.1` |
+| DNS | `172.16.99.1` |
+| Lease time | `1h` |
+
+Additional DHCP scopes should move to NetBox/IPAM-backed automation before
+being enabled.
+
 ## Live Apply Gate
 
 No live apply task exists in this role yet. Before adding one, keep serial

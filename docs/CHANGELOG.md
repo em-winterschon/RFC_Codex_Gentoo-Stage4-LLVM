@@ -21,6 +21,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   OpenIndiana task families.
 - Added CCR2004 RouterOS role coverage for LAN ICMP redirect suppression while
   legacy `/24` prefixes share the `br-lan` L2 domain.
+- Added a scoped CCR2004 management-compat DHCP definition for
+  `172.16.99.150-172.16.99.158` with `1h` leases.
 
 ### Changed
 
@@ -38,6 +40,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Updated the live CCR2004 gateway to disable IPv4 redirects and drop generated
   LAN ICMP redirect packets so `172.16.99.0/24` hosts can consistently transit
   to `172.16.199.0/24` through the router.
+- Enabled the live CCR2004 DHCP server `rfc99-management-compat` on `br-lan`
+  for `172.16.99.0/24`, gateway/DNS `172.16.99.1`, pool
+  `172.16.99.150-172.16.99.158`, and `1h` leases.
 
 ### Operational Notes
 

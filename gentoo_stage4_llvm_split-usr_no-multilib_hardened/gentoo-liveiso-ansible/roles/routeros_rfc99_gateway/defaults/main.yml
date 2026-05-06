@@ -30,6 +30,18 @@ routeros_rfc99_gateway_dns_servers:
   - 8.8.8.8
 routeros_rfc99_gateway_dns_allow_remote_requests: true
 
+routeros_rfc99_gateway_dhcp_enabled: true
+routeros_rfc99_gateway_dhcp_name: rfc99-management-compat
+routeros_rfc99_gateway_dhcp_pool_name: rfc99-management-compat-dhcp
+routeros_rfc99_gateway_dhcp_interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
+routeros_rfc99_gateway_dhcp_network: 172.16.99.0/24
+routeros_rfc99_gateway_dhcp_gateway: 172.16.99.1
+routeros_rfc99_gateway_dhcp_netmask: 24
+routeros_rfc99_gateway_dhcp_range: 172.16.99.150-172.16.99.158
+routeros_rfc99_gateway_dhcp_lease_time: 1h
+routeros_rfc99_gateway_dhcp_dns_servers:
+  - 172.16.99.1
+
 routeros_rfc99_gateway_management_cidrs:
   - 172.16.99.0/24
   - 10.9.8.0/24
