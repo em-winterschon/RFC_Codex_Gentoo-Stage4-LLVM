@@ -312,6 +312,18 @@ clusters:
       - svc_container_services_safe_move_01
 
 service_vips:
+  - name: msg-sun99-ntfysys
+    site: local-rfc1918-lab
+    address: 172.16.99.96
+    fqdn: msg-sun99-ntfysys-099096.rfc1918.host
+    aliases:
+      - msg-sun99-ntfysys.rfc1918.host
+    owners:
+      - container-services
+      - notifications
+    listeners:
+      - protocol: http
+        port: 80
   - name: netbox-http
     site: local-rfc1918-lab
     address: 172.16.99.62

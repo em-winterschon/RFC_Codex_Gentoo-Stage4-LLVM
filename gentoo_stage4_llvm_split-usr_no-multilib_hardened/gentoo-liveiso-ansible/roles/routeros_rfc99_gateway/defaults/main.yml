@@ -29,6 +29,7 @@ routeros_rfc99_gateway_dns_servers:
   - 9.9.9.9
   - 8.8.8.8
 routeros_rfc99_gateway_dns_allow_remote_requests: true
+routeros_rfc99_gateway_dns_static_records: []
 
 routeros_rfc99_gateway_dhcp_enabled: true
 routeros_rfc99_gateway_dhcp_name: rfc99-management-compat

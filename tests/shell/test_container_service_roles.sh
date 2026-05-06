@@ -74,6 +74,9 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/etc/haproxy/haproxy.cfg'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'user haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'group haproxy'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'backend_port'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'msg-sun99-ntfysys-099096.rfc1918.host'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'listen_http: ":8080"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/usr/sbin/rsyslogd'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
@@ -115,13 +118,29 @@ rendered = template.render(
     ],
     container_runtime_applications=[
         {"name": "nginx", "ip_address": "10.77.1.30"},
-        {"name": "ntfy", "ip_address": "10.77.1.20"},
+        {
+            "name": "ntfy",
+            "ip_address": "10.77.1.20",
+            "backend_port": 8080,
+            "hostnames": [
+                "ntfy.local",
+                "msg-sun99-ntfysys-099096.rfc1918.host",
+                "msg-sun99-ntfysys.rfc1918.host",
+            ],
+        },
     ],
 )
 
 for expected in ("frontend fe_syslog_tcp", "frontend fe_http", "backend be_nginx", "backend be_ntfy"):
     if expected not in rendered:
         raise SystemExit(f"missing rendered HAProxy section: {expected}")
+for expected in (
+    "msg-sun99-ntfysys-099096.rfc1918.host",
+    "msg-sun99-ntfysys.rfc1918.host",
+    "server ntfy 10.77.1.20:8080 check",
+):
+    if expected not in rendered:
+        raise SystemExit(f"missing rendered HAProxy ntfy detail: {expected}")
 
 nft_template_path = ansible_root / "roles/container_net_policy/templates/nftables.conf.j2"
 nft_template = env.from_string(

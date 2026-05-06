@@ -63,14 +63,21 @@ gentoo_profile_definition:
       interface_name: podman-apps0
   container_app_profiles:
     ntfy:
-      enabled: false
+      enabled: true
       image: docker.io/binwiederhier/ntfy:v2.14.0
       pull_policy: missing
       network: apps
       ip_address: 10.77.1.20
+      backend_port: 8080
+      listen_http: ":8080"
+      base_url: http://msg-sun99-ntfysys-099096.rfc1918.host
+      hostnames:
+        - ntfy.local
+        - msg-sun99-ntfysys-099096.rfc1918.host
+        - msg-sun99-ntfysys.rfc1918.host
       published_ports: []
       env:
-        NTFY_BASE_URL: http://127.0.0.1
+        NTFY_BASE_URL: http://msg-sun99-ntfysys-099096.rfc1918.host
     nginx:
       enabled: false
       image: ghcr.io/em-winterschon/gentoo-stage5-nginx:latest

@@ -41,30 +41,35 @@ backend {{ service_type.backend_name }}
 {% endfor %}
 {% endif %}
 
+{% set ntfy_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list %}
+{% set nginx_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list %}
 frontend fe_http
   mode http
   option httplog
   bind *:80
-{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list | length) > 0 %}
-  acl host_ntfy hdr(host) -i ntfy.local
+{% if ntfy_apps | length > 0 %}
+{% set ntfy_app = ntfy_apps | first %}
+  acl host_ntfy hdr(host) -i {{ ntfy_app.hostnames | default(['ntfy.local']) | join(' ') }}
   use_backend be_ntfy if host_ntfy
 {% endif %}
-{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list | length) > 0 %}
+{% if nginx_apps | length > 0 %}
   default_backend be_nginx
 {% else %}
   default_backend be_fallback
 {% endif %}
 
-{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list | length) > 0 %}
+{% if nginx_apps | length > 0 %}
+{% set nginx_app = nginx_apps | first %}
 backend be_nginx
   mode http
-  server nginx {{ (container_runtime_applications | selectattr('name', 'equalto', 'nginx') | first).ip_address | default('10.77.1.30') }}:80 check
+  server nginx {{ nginx_app.ip_address | default('10.77.1.30') }}:80 check
 {% endif %}
 
-{% if (container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list | length) > 0 %}
+{% if ntfy_apps | length > 0 %}
+{% set ntfy_app = ntfy_apps | first %}
 backend be_ntfy
   mode http
-  server ntfy {{ (container_runtime_applications | selectattr('name', 'equalto', 'ntfy') | first).ip_address | default('10.77.1.20') }}:80 check
+  server ntfy {{ ntfy_app.ip_address | default('10.77.1.20') }}:{{ ntfy_app.backend_port | default(8080) }} check
 {% endif %}
 
 backend be_fallback

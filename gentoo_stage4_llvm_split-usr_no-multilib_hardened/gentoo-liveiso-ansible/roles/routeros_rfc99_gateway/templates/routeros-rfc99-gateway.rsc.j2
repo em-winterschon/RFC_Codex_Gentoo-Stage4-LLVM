@@ -99,6 +99,15 @@
 :error ("[" . $cfgTag . "] invalid WAN mode {{ routeros_rfc99_gateway_wan_mode }}")
 {% endif %}
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
+{% for dns_record in routeros_rfc99_gateway_dns_static_records %}
+{% set record_type = dns_record.type | default('A') | upper %}
+/ip dns static remove [find name="{{ dns_record.name }}"]
+{% if record_type == 'CNAME' %}
+/ip dns static add name="{{ dns_record.name }}" type=CNAME cname="{{ dns_record.cname }}" ttl={{ dns_record.ttl | default('5m') }} comment="{{ dns_record.comment | default('RFC99 static DNS') }}"
+{% else %}
+/ip dns static add name="{{ dns_record.name }}" type={{ record_type }} address={{ dns_record.address }} ttl={{ dns_record.ttl | default('5m') }} comment="{{ dns_record.comment | default('RFC99 static DNS') }}"
+{% endif %}
+{% endfor %}
 /ip settings set send-redirects={{ routeros_rfc99_gateway_send_redirects | ternary("yes", "no") }} accept-redirects={{ routeros_rfc99_gateway_accept_redirects | ternary("yes", "no") }} secure-redirects={{ routeros_rfc99_gateway_secure_redirects | ternary("yes", "no") }}
 
 # DHCP service. Keep this narrow until NetBox/IPAM owns additional scopes.

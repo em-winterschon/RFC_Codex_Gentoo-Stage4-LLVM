@@ -152,8 +152,10 @@ Live Path B validation on `10.9.8.89` currently confirms:
 - HAProxy routes default HTTP traffic to nginx on `10.9.8.89:80`.
 - rsyslog collector receives TCP messages on `10.9.8.89:514`.
 - HAProxy exposes the Elasticsearch test VIP on `10.9.8.92:9200`.
-- `ntfy` is currently stopped because the upstream Docker Hub image pull
-  stalled after the site outage.
+- ntfy is live on Hasslehoff VM `1089` behind HAProxy at
+  `172.16.99.96:80`, with service names
+  `msg-sun99-ntfysys-099096.rfc1918.host` and
+  `msg-sun99-ntfysys.rfc1918.host`.
 
 Live Elasticsearch validation on `10.9.8.91` currently confirms:
 

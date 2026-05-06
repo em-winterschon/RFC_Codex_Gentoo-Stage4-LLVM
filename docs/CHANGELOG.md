@@ -37,6 +37,10 @@ infrastructure work. It is intentionally higher level than `git log`.
   legacy `/24` prefixes share the `br-lan` L2 domain.
 - Added a scoped CCR2004 management-compat DHCP definition for
   `172.16.99.150-172.16.99.158` with `1h` leases.
+- Added live ntfy service DNS tracking for
+  `msg-sun99-ntfysys-099096.rfc1918.host` / `msg-sun99-ntfysys.rfc1918.host`
+  on `172.16.99.96`, including RouterOS static DNS render data, Hetzner
+  managed RRset inventory data, and NetBox service VIP intake metadata.
 
 ### Changed
 
@@ -63,6 +67,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Enabled the live CCR2004 DHCP server `rfc99-management-compat` on `br-lan`
   for `172.16.99.0/24`, gateway/DNS `172.16.99.1`, pool
   `172.16.99.150-172.16.99.158`, and `1h` leases.
+- Enabled ntfy in the `vm-container-services` profile and moved its internal
+  listener to unprivileged port `8080` so the container can keep `--cap-drop
+  all` while HAProxy publishes LAN HTTP on port `80`.
 
 ### Operational Notes
 
@@ -78,6 +85,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   merge. After blacklisting `nouveau` and `nvidiafb` in the guest and rebooting,
   `nvidia-smi` reports Quadro K1200 on driver `580.159.03`, and
   `/opt/cuda/bin/nvcc --version` reports CUDA `12.9`.
+- Hasslehoff VM `1089`, `svc-container-services-safe-move-01`, now serves ntfy
+  through HAProxy on `172.16.99.96:80`; health and publish validation passed
+  through both the long hostname and CNAME alias.
 - Xorg and `startx` are present in VM `1094`; `/opt/NsCDE/bin/nscde` and SLiM
   are still pending live application of the workstation session-stack role.
 - PiKVM raw uStreamer snapshots showed the original corruption before browser
