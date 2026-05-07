@@ -67,6 +67,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   Level Zero, `intel-compute-runtime`, `intel-metrics-library`, and `gmmlib`
   from the base package path because Gentoo's current IGC hard-locks to
   `llvm:16`.
+- Completed the display-only Intel workstation package run on VM `1094` and
+  depcleaned stale Intel compute packages from the live validation VM.
 - Extended the generic Proxmox Stage4 service VM creator with configurable
   serial, VGA, extra `netN`, and `hostpciN` settings.
 - Fixed the Proxmox VM creator to attach the disk reported by `qm config` after
