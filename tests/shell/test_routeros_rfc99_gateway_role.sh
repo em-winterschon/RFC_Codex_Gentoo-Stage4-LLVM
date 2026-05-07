@@ -47,7 +47,7 @@ test_routeros_rfc99_gateway_playbook_syntax() {
   (
     cd "${ANSIBLE_ROOT}"
     ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
-      ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-rfc99-gateway.yml --syntax-check >/dev/null
+      ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-rfc99-gateway.yml --syntax-check > /dev/null
   )
 }
 
@@ -56,7 +56,7 @@ test_routeros_rfc99_gateway_rendered_config() {
     cd "${ANSIBLE_ROOT}"
     ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
       ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-rfc99-gateway.yml \
-        -e "routeros_rfc99_gateway_render_root=${RENDER_ROOT}" >/dev/null
+      -e "routeros_rfc99_gateway_render_root=${RENDER_ROOT}" > /dev/null
   )
 
   local rsc="${RENDER_ROOT}/gw_rfc99_mkccr2004_16g_example-rfc99-gateway.rsc"

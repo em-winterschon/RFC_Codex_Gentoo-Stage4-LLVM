@@ -13,7 +13,7 @@ fail() {
 [[ -x "${SERIAL_SCRIPT}" ]] || fail "missing executable ${SERIAL_SCRIPT}"
 python3 -m py_compile "${SERIAL_SCRIPT}"
 
-python3 - "${SERIAL_SCRIPT}" <<'PY'
+python3 - "${SERIAL_SCRIPT}" << 'PY'
 import importlib.util
 import sys
 from pathlib import Path

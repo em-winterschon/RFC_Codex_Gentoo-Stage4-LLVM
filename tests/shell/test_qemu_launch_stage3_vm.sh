@@ -283,7 +283,7 @@ test_build_qemu_cmd_supports_memory_drive_manifest() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   manifest="${temp_dir}/memory-drives.json"
-  cat > "${manifest}" <<EOF
+  cat > "${manifest}" << EOF
 {"drives":[{"path":"${temp_dir}/mem0.qcow2","format":"qcow2","serial":"mem-portage-cache","device_model":"virtio-blk-pci"}]}
 EOF
   QEMU_MEMORY_DRIVES_FILE="${manifest}"

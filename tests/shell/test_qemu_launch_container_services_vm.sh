@@ -27,14 +27,14 @@ test_dry_run_uses_pathb_container_services_defaults() {
 
   output="$(
     INSTANCE_NAME=container-services-unit \
-    QEMU_VM_DIR="${temp_dir}" \
-    QEMU_ROOTDISK="${temp_dir}/container-services-root.qcow2" \
-    QEMU_DIRECT_KERNEL="${temp_dir}/vmlinuz" \
-    QEMU_DIRECT_INITRD="${temp_dir}/initramfs.img" \
-    QEMU_MEMORY_DRIVES_FILE="${temp_dir}/missing-memory-drives.json" \
-    QEMU_LAUNCH_DRY_RUN=1 \
-    LAUNCHER_LOG_ENABLE=0 \
-    bash "${LAUNCH_SCRIPT}"
+      QEMU_VM_DIR="${temp_dir}" \
+      QEMU_ROOTDISK="${temp_dir}/container-services-root.qcow2" \
+      QEMU_DIRECT_KERNEL="${temp_dir}/vmlinuz" \
+      QEMU_DIRECT_INITRD="${temp_dir}/initramfs.img" \
+      QEMU_MEMORY_DRIVES_FILE="${temp_dir}/missing-memory-drives.json" \
+      QEMU_LAUNCH_DRY_RUN=1 \
+      LAUNCHER_LOG_ENABLE=0 \
+      bash "${LAUNCH_SCRIPT}"
   )"
 
   assert_contains "${output}" 'container-services-root.qcow2'

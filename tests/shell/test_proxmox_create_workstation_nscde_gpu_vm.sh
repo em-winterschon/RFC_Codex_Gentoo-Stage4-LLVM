@@ -17,7 +17,7 @@ assert_contains() {
 
 output="$(
   SSH_PUBKEY_FILE=/tmp/missing-test-key.pub \
-  bash "${WORKSTATION_SCRIPT}" --dry-run
+    bash "${WORKSTATION_SCRIPT}" --dry-run
 )"
 
 assert_contains "${output}" "qm create 1094"

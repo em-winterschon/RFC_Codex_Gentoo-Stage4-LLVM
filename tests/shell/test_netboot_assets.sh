@@ -39,7 +39,7 @@ test_netboot_assets_exist() {
 test_netboot_playbook_syntax() {
   (
     cd "${ANSIBLE_ROOT}"
-    ansible-playbook -i inventories/examples/hosts.yml playbooks/netboot-path-b.yml --syntax-check >/dev/null
+    ansible-playbook -i inventories/examples/hosts.yml playbooks/netboot-path-b.yml --syntax-check > /dev/null
   )
 }
 

@@ -39,7 +39,7 @@ test_routeros_playbook_syntax() {
   (
     cd "${ANSIBLE_ROOT}"
     ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
-      ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-path-b.yml --syntax-check >/dev/null
+      ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-path-b.yml --syntax-check > /dev/null
   )
 }
 

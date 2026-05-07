@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: capture-gentoo-emerge-state.sh [OUTPUT_DIR]
 
 Captures Gentoo Portage state useful for rebuilding a workstation profile:
@@ -21,10 +21,10 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 timestamp="$(date +%Y%m%d-%H%M%S)"
-host_short="$(hostname -s 2>/dev/null || hostname)"
+host_short="$(hostname -s 2> /dev/null || hostname)"
 output_dir="${1:-gentoo-emerge-state-${host_short}-${timestamp}}"
 boot_epoch="$(stat -c %Y /proc/1)"
-boot_time="$(uptime -s 2>/dev/null || date -d "@${boot_epoch}" '+%F %T')"
+boot_time="$(uptime -s 2> /dev/null || date -d "@${boot_epoch}" '+%F %T')"
 
 mkdir -p "${output_dir}"
 
@@ -34,10 +34,10 @@ read_emerge_logs() {
   for log in /var/log/emerge.log /var/log/emerge.log.*; do
     [[ -e "${log}" ]] || continue
     case "${log}" in
-      *.gz) gzip -cd -- "${log}" ;;
-      *.bz2) bzip2 -cd -- "${log}" ;;
-      *.xz) xz -cd -- "${log}" ;;
-      *) sed -n '1,$p' "${log}" ;;
+    *.gz) gzip -cd -- "${log}" ;;
+    *.bz2) bzip2 -cd -- "${log}" ;;
+    *.xz) xz -cd -- "${log}" ;;
+    *) sed -n '1,$p' "${log}" ;;
     esac
   done
   shopt -u nullglob
@@ -45,10 +45,10 @@ read_emerge_logs() {
 
 normalize_versioned_atom() {
   local atom="$1"
-  if command -v qatom >/dev/null 2>&1; then
-    qatom -F '%{CATEGORY}/%{PN}' "${atom}" 2>/dev/null && return 0
+  if command -v qatom > /dev/null 2>&1; then
+    qatom -F '%{CATEGORY}/%{PN}' "${atom}" 2> /dev/null && return 0
   fi
-  sed -E 's/-[0-9][^-]*(-r[0-9]+)?$//' <<<"${atom}"
+  sed -E 's/-[0-9][^-]*(-r[0-9]+)?$//' <<< "${atom}"
 }
 
 resolve_target_atom() {
@@ -60,9 +60,9 @@ resolve_target_atom() {
     return 0
   fi
 
-  if command -v qlist >/dev/null 2>&1; then
-    matches="$(qlist -IC 2>/dev/null | awk -F/ -v pn="${target}" '$2 == pn { print }')"
-    if [[ "$(wc -l <<<"${matches}")" -eq 1 && -n "${matches}" ]]; then
+  if command -v qlist > /dev/null 2>&1; then
+    matches="$(qlist -IC 2> /dev/null | awk -F/ -v pn="${target}" '$2 == pn { print }')"
+    if [[ "$(wc -l <<< "${matches}")" -eq 1 && -n "${matches}" ]]; then
       printf '%s\n' "${matches}"
       return 0
     fi
@@ -72,7 +72,7 @@ resolve_target_atom() {
 }
 
 {
-  printf 'host=%s\n' "$(hostname -f 2>/dev/null || hostname)"
+  printf 'host=%s\n' "$(hostname -f 2> /dev/null || hostname)"
   printf 'captured_at=%s\n' "$(date -Is)"
   printf 'boot_time=%s\n' "${boot_time}"
   printf 'boot_epoch=%s\n' "${boot_epoch}"
@@ -81,12 +81,12 @@ resolve_target_atom() {
   printf 'qlist=%s\n' "$(command -v qlist || true)"
   printf 'qatom=%s\n' "$(command -v qatom || true)"
   printf 'emerge=%s\n' "$(command -v emerge || true)"
-} >"${output_dir}/metadata.env"
+} > "${output_dir}/metadata.env"
 
 if [[ -f /var/lib/portage/world ]]; then
-  sort -u /var/lib/portage/world >"${output_dir}/world.atoms"
+  sort -u /var/lib/portage/world > "${output_dir}/world.atoms"
 else
-  : >"${output_dir}/world.atoms"
+  : > "${output_dir}/world.atoms"
 fi
 
 read_emerge_logs | awk -v boot="${boot_epoch}" '
@@ -96,13 +96,13 @@ read_emerge_logs | awk -v boot="${boot_epoch}" '
     sub(/ to \/.*/, "", atom)
     print atom
   }
-' | sort -u >"${output_dir}/merged-since-boot.versioned"
+' | sort -u > "${output_dir}/merged-since-boot.versioned"
 
-: >"${output_dir}/merged-since-boot.atoms"
+: > "${output_dir}/merged-since-boot.atoms"
 while IFS= read -r atom; do
   [[ -n "${atom}" ]] || continue
-  normalize_versioned_atom "${atom}" >>"${output_dir}/merged-since-boot.atoms"
-done <"${output_dir}/merged-since-boot.versioned"
+  normalize_versioned_atom "${atom}" >> "${output_dir}/merged-since-boot.atoms"
+done < "${output_dir}/merged-since-boot.versioned"
 sort -u -o "${output_dir}/merged-since-boot.atoms" "${output_dir}/merged-since-boot.atoms"
 
 read_emerge_logs | awk -v boot="${boot_epoch}" '
@@ -111,7 +111,7 @@ read_emerge_logs | awk -v boot="${boot_epoch}" '
     sub(/^[0-9]+:[[:space:]]+\*\*\* emerge[[:space:]]+/, "", line)
     print line
   }
-' | sort -u >"${output_dir}/emerge-commands-since-boot.raw"
+' | sort -u > "${output_dir}/emerge-commands-since-boot.raw"
 
 awk '
   {
@@ -121,28 +121,28 @@ awk '
       }
     }
   }
-' "${output_dir}/emerge-commands-since-boot.raw" | sort -u >"${output_dir}/requested-targets-since-boot.raw"
+' "${output_dir}/emerge-commands-since-boot.raw" | sort -u > "${output_dir}/requested-targets-since-boot.raw"
 
-: >"${output_dir}/requested-targets-since-boot.resolved"
+: > "${output_dir}/requested-targets-since-boot.resolved"
 while IFS= read -r target; do
   [[ -n "${target}" ]] || continue
-  resolve_target_atom "${target}" >>"${output_dir}/requested-targets-since-boot.resolved"
-done <"${output_dir}/requested-targets-since-boot.raw"
+  resolve_target_atom "${target}" >> "${output_dir}/requested-targets-since-boot.resolved"
+done < "${output_dir}/requested-targets-since-boot.raw"
 sort -u -o "${output_dir}/requested-targets-since-boot.resolved" "${output_dir}/requested-targets-since-boot.resolved"
 
 {
   sed -n '1,$p' "${output_dir}/world.atoms"
   awk '/^[[:alnum:]_.+-]+\/[[:alnum:]_.+-]+/ { print }' "${output_dir}/requested-targets-since-boot.resolved"
-} | sort -u >"${output_dir}/primary-candidates.atoms"
+} | sort -u > "${output_dir}/primary-candidates.atoms"
 
 {
   printf '# Gentoo Emerge State Capture\n\n'
-  printf '%s\n' "- Host: \`$(hostname -f 2>/dev/null || hostname)\`"
+  printf '%s\n' "- Host: \`$(hostname -f 2> /dev/null || hostname)\`"
   printf '%s\n' "- Captured at: \`$(date -Is)\`"
   printf '%s\n' "- Boot time: \`${boot_time}\`"
-  printf '%s\n' "- Completed merges since boot: \`$(wc -l <"${output_dir}/merged-since-boot.versioned")\`"
-  printf '%s\n' "- World atoms: \`$(wc -l <"${output_dir}/world.atoms")\`"
-  printf '%s\n' "- Primary candidates: \`$(wc -l <"${output_dir}/primary-candidates.atoms")\`"
+  printf '%s\n' "- Completed merges since boot: \`$(wc -l < "${output_dir}/merged-since-boot.versioned")\`"
+  printf '%s\n' "- World atoms: \`$(wc -l < "${output_dir}/world.atoms")\`"
+  printf '%s\n' "- Primary candidates: \`$(wc -l < "${output_dir}/primary-candidates.atoms")\`"
   printf '\n## Files\n\n'
   printf '%s\n' '- `metadata.env`'
   printf '%s\n' '- `world.atoms`'
@@ -152,6 +152,6 @@ sort -u -o "${output_dir}/requested-targets-since-boot.resolved" "${output_dir}/
   printf '%s\n' '- `requested-targets-since-boot.raw`'
   printf '%s\n' '- `requested-targets-since-boot.resolved`'
   printf '%s\n' '- `primary-candidates.atoms`'
-} >"${output_dir}/README.md"
+} > "${output_dir}/README.md"
 
 printf 'Captured Gentoo emerge state in %s\n' "${output_dir}"

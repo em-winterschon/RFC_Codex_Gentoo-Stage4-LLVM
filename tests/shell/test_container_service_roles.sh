@@ -17,8 +17,7 @@ for role_dir in \
   container_app_nginx \
   container_app_haproxy \
   container_net_policy \
-  container_service_segments
-do
+  container_service_segments; do
   test -d "${ANSIBLE_ROOT}/roles/${role_dir}"
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
@@ -82,7 +81,7 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/task
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'pull_policy: never'
 
-ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - <<'PY'
+ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - << 'PY'
 import os
 import shlex
 from pathlib import Path

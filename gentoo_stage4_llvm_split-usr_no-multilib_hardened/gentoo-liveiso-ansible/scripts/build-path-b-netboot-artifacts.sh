@@ -76,7 +76,7 @@ render_pathb_bootstrap_script() {
   stage3_profile_repositories="$(stage3_profile_repository_enable_list | tr '\n' ' ')"
 
   mkdir -p "$(dirname "${WORK_BOOTSTRAP_SCRIPT}")"
-  cat > "${WORK_BOOTSTRAP_SCRIPT}" <<EOF
+  cat > "${WORK_BOOTSTRAP_SCRIPT}" << EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -177,7 +177,7 @@ cat > /etc/local.d/pathb-network-handoff.start <<'LOCALNET'
 #!/usr/bin/env bash
 set +e
 
-boot_iface="$(ip route show default 2>/dev/null | awk 'NR==1 { print $5 }')"
+boot_iface="$(ip route show default 2> /dev/null | awk 'NR==1 { print $5 }')"
 
 if [[ -n "${boot_iface}" ]]; then
   mapfile -t boot_ipv4_addrs < <(ip -o -4 addr show dev "${boot_iface}" scope global 2>/dev/null | awk '{ print $4 }')

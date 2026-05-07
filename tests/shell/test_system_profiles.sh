@@ -45,8 +45,7 @@ for profile in \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml \
-  zerotier-managed-access.yml
-do
+  zerotier-managed-access.yml; do
   test -f "${PROFILE_DIR}/${profile}"
   assert_file_contains "${PROFILE_DIR}/${profile}" '^gentoo_profile_definition:'
 done
@@ -71,8 +70,7 @@ for metadata in \
   vm-observability-prometheus.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
-  vm-nexus-repository.metadata.yml
-do
+  vm-nexus-repository.metadata.yml; do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
 done
@@ -98,8 +96,7 @@ for host_var in \
   vm-observability-prometheus.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
-  vm-nexus-repository.yml
-do
+  vm-nexus-repository.yml; do
   test -f "${HOST_VARS_DIR}/${host_var}"
   assert_file_contains "${HOST_VARS_DIR}/${host_var}" '^profile_definition_files:'
 done
@@ -126,8 +123,7 @@ for package_list in \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
   stage5-virtual-host-workstation-nscde.packages \
-  stage5-virtual-host-container-services.packages
-do
+  stage5-virtual-host-container-services.packages; do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"
 done
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: with-ansible-vault-env.sh [command...]
 
 Sources the local Ansible Vault environment and executes command. If no command
@@ -39,15 +39,15 @@ set +a
 expand_home_path() {
   local path="$1"
   case "${path}" in
-    '~')
-      printf '%s\n' "${HOME}"
-      ;;
-    '~/'*)
-      printf '%s/%s\n' "${HOME}" "${path#\~/}"
-      ;;
-    *)
-      printf '%s\n' "${path}"
-      ;;
+  '~')
+    printf '%s\n' "${HOME}"
+    ;;
+  '~/'*)
+    printf '%s/%s\n' "${HOME}" "${path#\~/}"
+    ;;
+  *)
+    printf '%s\n' "${path}"
+    ;;
   esac
 }
 

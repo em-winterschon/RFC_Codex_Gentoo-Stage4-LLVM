@@ -57,20 +57,20 @@ token_cfg="${tmpdir}/dns-api-info.cfg"
 printf 'test-vault-password\n' > "${vault_password_file}"
 chmod 600 "${vault_password_file}"
 
-cat > "${vault_env_file}" <<EOF
+cat > "${vault_env_file}" << EOF
 export ANSIBLE_VAULT_PASSWORD_FILE=${vault_password_file}
 export ANSIBLE_VAULT_IDENTITY_LIST=test@${vault_password_file}
 EOF
 
-cat > "${plain_vault}" <<'EOF'
+cat > "${plain_vault}" << 'EOF'
 ---
 vault_existing_secret: keep-me
 EOF
 
 ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" \
-  "${WITH_ENV}" ansible-vault encrypt --encrypt-vault-id test "${plain_vault}" --output "${vault_file}" >/dev/null
+  "${WITH_ENV}" ansible-vault encrypt --encrypt-vault-id test "${plain_vault}" --output "${vault_file}" > /dev/null
 
-cat > "${token_cfg}" <<'EOF'
+cat > "${token_cfg}" << 'EOF'
 RFC1918_DOMAINS_TLD_LIST="rfc1918.io rfc1918.host"
 RFC1918_DOMAINS_TLD_DNS_API_TOKEN_NAME="rfc1918-token"
 RFC1918_DOMAINS_TLD_DNS_API_TOKEN_KEY="rfc1918-secret"
@@ -83,7 +83,7 @@ YUKON_DOMAINS_TLD_DNS_API_TOKEN_KEY="yukon-secret"
 EOF
 chmod 600 "${token_cfg}"
 
-ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${IMPORTER}" "${token_cfg}" "${vault_file}" >/tmp/hetzner-dns-import.out
+ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${IMPORTER}" "${token_cfg}" "${vault_file}" > /tmp/hetzner-dns-import.out
 
 grep -Fq 'updated_vault=' /tmp/hetzner-dns-import.out || fail "importer did not report updated vault"
 head -n 1 "${vault_file}" | grep -q '^\$ANSIBLE_VAULT;' || fail "updated vault is not encrypted"
@@ -91,24 +91,24 @@ if grep -Fq 'rfc1918-secret' "${vault_file}"; then
   fail "updated vault contains plaintext token"
 fi
 
-ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${VALIDATE}" "${vault_file}" >/dev/null
+ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${VALIDATE}" "${vault_file}" > /dev/null
 ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${WITH_ENV}" ansible-vault view "${vault_file}" > "${tmpdir}/view.yml"
 assert_file_contains "${tmpdir}/view.yml" "vault_existing_secret: keep-me"
 assert_file_contains "${tmpdir}/view.yml" "vault_hetzner_dns_rfc1918_api_token: rfc1918-secret"
 assert_file_contains "${tmpdir}/view.yml" "vault_hetzner_dns_vernetzen_token_name: vernetzen-token"
 assert_file_contains "${tmpdir}/view.yml" "vault_hetzner_dns_yukon_zones:"
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -rf "${tmpdir}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:
     localhost:
       ansible_connection: local
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${validate_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${validate_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

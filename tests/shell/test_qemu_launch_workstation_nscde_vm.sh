@@ -20,7 +20,7 @@ temp_dir="$(mktemp -d)"
 trap 'rm -rf "${temp_dir}"' EXIT
 
 qemu_bin="${temp_dir}/qemu-system-x86_64"
-cat > "${qemu_bin}" <<'EOF'
+cat > "${qemu_bin}" << 'EOF'
 #!/usr/bin/env bash
 case "$*" in
   *"-netdev help"*)
@@ -53,17 +53,17 @@ touch \
 
 output="$(
   QEMU_LAUNCH_DRY_RUN=1 \
-  WAIT_FOR_SSH=0 \
-  LAUNCHER_LOG_ENABLE=0 \
-  QEMU_BIN="${qemu_bin}" \
-  STAGE3_IMAGE_DIR="${stage3_dir}" \
-  EFI_FIRM="${stage3_dir}/OVMF_CODE.fd" \
-  EFI_VARS_TEMPLATE="${stage3_dir}/OVMF_VARS.fd" \
-  BPOOL_DISK0="${stage3_dir}/bpool0.img" \
-  BPOOL_DISK1="${stage3_dir}/bpool1.img" \
-  RPOOL_DISK0="${stage3_dir}/rpool0.img" \
-  RPOOL_DISK1="${stage3_dir}/rpool1.img" \
-  bash "${LAUNCH_SCRIPT}" 2>&1
+    WAIT_FOR_SSH=0 \
+    LAUNCHER_LOG_ENABLE=0 \
+    QEMU_BIN="${qemu_bin}" \
+    STAGE3_IMAGE_DIR="${stage3_dir}" \
+    EFI_FIRM="${stage3_dir}/OVMF_CODE.fd" \
+    EFI_VARS_TEMPLATE="${stage3_dir}/OVMF_VARS.fd" \
+    BPOOL_DISK0="${stage3_dir}/bpool0.img" \
+    BPOOL_DISK1="${stage3_dir}/bpool1.img" \
+    RPOOL_DISK0="${stage3_dir}/rpool0.img" \
+    RPOOL_DISK1="${stage3_dir}/rpool1.img" \
+    bash "${LAUNCH_SCRIPT}" 2>&1
 )"
 
 assert_contains "${output}" 'Display mode: spice (video: qxl-vga)'

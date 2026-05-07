@@ -43,7 +43,7 @@ ssh "${PVE_HOST}" bash -s -- \
   "${PVE_MACADDR}" \
   "${ROCKY_CLOUD_IMAGE_URL}" \
   "${ROCKY_CLOUD_IMAGE_PATH}" \
-  "${tmp_key}" <<'REMOTE'
+  "${tmp_key}" << 'REMOTE'
 set -euo pipefail
 
 vmid="$1"

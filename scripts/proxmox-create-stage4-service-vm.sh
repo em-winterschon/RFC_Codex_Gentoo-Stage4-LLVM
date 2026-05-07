@@ -40,7 +40,7 @@ PROXMOX_START_AFTER_CREATE="${PROXMOX_START_AFTER_CREATE:-0}"
 DRY_RUN=1
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: proxmox-create-stage4-service-vm.sh [--dry-run|--apply]
 
 Creates a Proxmox VM from an existing Stage4/Stage5 QCOW image. Default mode is
@@ -123,19 +123,19 @@ validate_extra_qm_lines() {
 parse_args() {
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
-      --dry-run)
-        DRY_RUN=1
-        ;;
-      --apply)
-        DRY_RUN=0
-        ;;
-      --help|-h)
-        usage
-        exit 0
-        ;;
-      *)
-        fail "unknown argument: $1"
-        ;;
+    --dry-run)
+      DRY_RUN=1
+      ;;
+    --apply)
+      DRY_RUN=0
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unknown argument: $1"
+      ;;
     esac
     shift
   done
@@ -221,11 +221,11 @@ build_remote_script() {
   stop_cmd=(qm stop "${VMID}")
   destroy_cmd=(qm destroy "${VMID}" --purge 1)
 
-  if [[ "${VM_ENABLE_EFIDISK}" == '1' || ( "${VM_ENABLE_EFIDISK}" == 'auto' && "${VM_BIOS}" == 'ovmf' ) ]]; then
+  if [[ "${VM_ENABLE_EFIDISK}" == '1' || ("${VM_ENABLE_EFIDISK}" == 'auto' && "${VM_BIOS}" == 'ovmf') ]]; then
     should_create_efidisk=1
   fi
 
-  cat <<EOF
+  cat << EOF
 set -euo pipefail
 
 vmid=$(shell_quote "${VMID}")
@@ -276,7 +276,7 @@ EOF
   fi
 
   if [[ "${VM_ENABLE_CLOUDINIT}" == '1' ]]; then
-    cat <<EOF
+    cat << EOF
 $(remote_line set_ide2_cmd)
 $(remote_line set_citype_cmd)
 $(remote_line set_ciuser_cmd)

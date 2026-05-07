@@ -219,7 +219,7 @@ append_memory_drives() {
     fi
     index=$((index + 1))
   done < <(
-    python3 - "${QEMU_MEMORY_DRIVES_FILE}" <<'PY'
+    python3 - "${QEMU_MEMORY_DRIVES_FILE}" << 'PY'
 import json
 import sys
 

@@ -55,9 +55,9 @@ prepare_rootdisk() {
       log "Dry-run: would create root disk ${QEMU_ROOTDISK} (${QEMU_ROOTDISK_SIZE})"
       return 0
     fi
-    command -v qemu-img >/dev/null 2>&1 || fail 'missing required command: qemu-img'
+    command -v qemu-img > /dev/null 2>&1 || fail 'missing required command: qemu-img'
     log "Creating root disk ${QEMU_ROOTDISK} (${QEMU_ROOTDISK_SIZE})"
-    qemu-img create -f qcow2 "${QEMU_ROOTDISK}" "${QEMU_ROOTDISK_SIZE}" >/dev/null
+    qemu-img create -f qcow2 "${QEMU_ROOTDISK}" "${QEMU_ROOTDISK_SIZE}" > /dev/null
   fi
 }
 

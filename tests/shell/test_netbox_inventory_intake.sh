@@ -71,10 +71,10 @@ assert_file_contains "${run_tests}" "test_netbox_inventory_intake.sh"
 
 python3 -m py_compile "${validator}"
 python3 -m py_compile "${apply_script}"
-python3 "${validator}" "${example}" --format json >/dev/null
-python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json >/tmp/netbox-intake-all-sites-validation.json
+python3 "${validator}" "${example}" --format json > /dev/null
+python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json > /tmp/netbox-intake-all-sites-validation.json
 grep -Fq '"devices": 15' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
-python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json >/tmp/netbox-intake-apply-plan.json
+python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json > /tmp/netbox-intake-apply-plan.json
 grep -Fq '"dry_run": true' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not default to dry-run"
 grep -Fq 'dcim/sites:local-rfc1918-lab' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include site"
 grep -Fq 'virtualization/clusters:hasslehoff-proxmox' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include cluster"
@@ -82,7 +82,7 @@ grep -Fq 'ipam/ip-addresses:10.9.8.20/24' /tmp/netbox-intake-apply-plan.json || 
 
 invalid_fixture="$(mktemp --suffix=.yml)"
 trap 'rm -f "${invalid_fixture}"' EXIT
-cat > "${invalid_fixture}" <<'EOF'
+cat > "${invalid_fixture}" << 'EOF'
 ---
 inventory_intake_version: 1
 datacenters:
@@ -101,24 +101,24 @@ prefixes:
     site: broken-site
 EOF
 
-if python3 "${validator}" "${invalid_fixture}" >/tmp/netbox-intake-invalid.out 2>&1; then
+if python3 "${validator}" "${invalid_fixture}" > /tmp/netbox-intake-invalid.out 2>&1; then
   fail "invalid intake fixture unexpectedly passed"
 fi
 grep -Fq "missing-site" /tmp/netbox-intake-invalid.out || fail "invalid fixture did not report missing site"
 grep -Fq "not-a-prefix" /tmp/netbox-intake-invalid.out || fail "invalid fixture did not report invalid prefix"
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -f "${invalid_fixture}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:
     localhost:
       ansible_connection: local
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${apply_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${apply_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

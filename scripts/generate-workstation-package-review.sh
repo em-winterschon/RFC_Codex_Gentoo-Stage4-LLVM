@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Usage:
   generate-workstation-package-review.sh X12_CAPTURE MICROBOX_CAPTURE OUTPUT_DIR
 
