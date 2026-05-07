@@ -33,6 +33,7 @@
 - [BMC Management](BMC-Management)
 - [Identity AAA](Identity-AAA)
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
+- [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
 - [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)

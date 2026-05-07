@@ -3,6 +3,22 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-07
+
+### Added
+
+- Added `docs/FMT2-INFRA-UPGRADE-PLANNING.md` and wiki mirror to capture the
+  legacy SFO-200/FMT2 wiki as traceable evidence for future transport,
+  NetBox/IPAM/DCIM, OOB, monitoring, and rack-inventory work.
+- Added FMT2 roadmap tasks for evidence consolidation, live validation, NetBox
+  intake promotion, transport validation, and Check_MK integration.
+
+### Changed
+
+- Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
+  and live validation before importing Check_MK targets or alerting
+  dependencies.
+
 ## 2026-05-06
 
 ### Added

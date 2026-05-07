@@ -5,6 +5,22 @@
 Bring the existing FMT2 Check_MK VM into the managed observability plan after a
 stable RFC99/SUN99 to FMT2 transport path exists.
 
+## Legacy Evidence Dependency
+
+Use `docs/FMT2-INFRA-UPGRADE-PLANNING.md` as the evidence index before making
+FMT2 Check_MK or transport changes. The old SFO-200 wiki contains useful
+references for Check_MK, Prometheus, HA routers, VLANs, OOB access, and rack
+serial paths, but it is not authoritative until live validation confirms each
+item.
+
+Minimum evidence to confirm before Check_MK integration:
+
+- selected transport path reaches at least one FMT2 management prefix
+- DNS resolves `app-sfo200-monitoring-9927.vernetzen.io`
+- Check_MK HTTPS endpoint answers on the expected `/vernetzen/` path
+- Check_MK API endpoint and agent-download path are reachable
+- return routing from FMT2 to RFC99/SUN99 works for management checks
+
 ## Preferred Path
 
 Primary path: enable the BigNetwork SDN route to the FMT2 SDN device.
@@ -34,7 +50,8 @@ legacy VPN compatibility shim.
 5. Run targeted nmap checks against Check_MK web/API and agent ports.
 6. Add Check_MK VM/service records to NetBox after connectivity is stable.
 7. Add route/firewall state to the managed inventory.
-8. Only then add Check_MK targets and alerting dependencies.
+8. Compare live results against the legacy SFO-200 evidence map.
+9. Only then add Check_MK targets and alerting dependencies.
 
 ## Backout
 
