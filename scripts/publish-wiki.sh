@@ -71,6 +71,14 @@ else
   git -C "${WIKI_WORKTREE}" pull --ff-only origin "${CURRENT_BRANCH}"
 fi
 
+if ! git -C "${WIKI_WORKTREE}" config user.email >/dev/null; then
+  git -C "${WIKI_WORKTREE}" config user.email "codex@example.invalid"
+fi
+
+if ! git -C "${WIKI_WORKTREE}" config user.name >/dev/null; then
+  git -C "${WIKI_WORKTREE}" config user.name "Codex Automation"
+fi
+
 find "${WIKI_WORKTREE}" -maxdepth 1 -type f -name '*.md' -delete
 
 while IFS= read -r src_file; do
