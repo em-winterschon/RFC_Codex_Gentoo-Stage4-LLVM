@@ -21,6 +21,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Changed
 
+- Moved GMKtek K10 Stage5 validation from MAC-discovery blocked to active
+  iPXE validation tracking after observing DHCP requests from NIC slot
+  `04:00:00`, MAC `84:47:09:5F:21:64`.
 - Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
   and live validation before importing Check_MK targets or alerting
   dependencies.
