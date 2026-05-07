@@ -32,7 +32,7 @@ gentoo_profile_definition:
       media-libs/amdgpu-pro-vulkan abi_x86_64 video_cards_amdgpu -abi_x86_32
       media-libs/libglvnd X
       media-libs/libva X glx -wayland
-      media-libs/mesa X lm-sensors opencl opengl proprietary-codecs vaapi vulkan vulkan-overlay zstd -debug -selinux -test -wayland
+      media-libs/mesa X lm-sensors opengl proprietary-codecs vaapi vulkan vulkan-overlay zstd -debug -opencl -selinux -test -wayland
       media-libs/vulkan-loader X -wayland
       media-video/amdgpu-pro-amf video_cards_amdgpu
       x11-libs/libdrm video_cards_amdgpu video_cards_intel tools udev
@@ -45,9 +45,11 @@ gentoo_profile_definition:
       dev-libs/intel-compute-runtime ~amd64
       dev-libs/rocm-opencl-runtime ~amd64
       dev-util/amdsmi ~amd64
+      dev-util/clinfo ~amd64
       dev-util/intel-graphics-compiler ~amd64
       dev-util/rocm-smi ~amd64
       dev-util/rocminfo ~amd64
+      dev-libs/intel-metrics-library ~amd64
       sys-apps/amdgpu_top ~amd64
   package_license_files:
     40-workstation-nscde-gpu: |

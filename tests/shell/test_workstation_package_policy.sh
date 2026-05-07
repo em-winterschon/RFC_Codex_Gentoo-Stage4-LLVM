@@ -8,6 +8,7 @@ METADATA_FILE="${ANSIBLE_ROOT}/profile-definitions/vm-workstation-nscde.metadata
 PACKAGE_LIST="${ANSIBLE_ROOT}/profile-package-lists/stage5-virtual-host-workstation-nscde.packages"
 REVIEW_DIR="${REPO_ROOT}/docs/workstation-package-capture/stage4-lox-workstation-review-2026-05-06"
 FORMER_POLICY_DIR="${REPO_ROOT}/docs/workstation-package-capture/former-portage-policy"
+GPU_ADVISORY="${FORMER_POLICY_DIR}/gpu-universal-xorg-advisory.atoms"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -38,7 +39,7 @@ require_file "${PACKAGE_LIST}"
 require_file "${REVIEW_DIR}/stage5-workstation-review-candidates.atoms"
 require_file "${REVIEW_DIR}/wayland-plasma-rejects.atoms"
 require_file "${FORMER_POLICY_DIR}/README.md"
-require_file "${FORMER_POLICY_DIR}/gpu-universal-xorg-advisory.atoms"
+require_file "${GPU_ADVISORY}"
 
 require_grep 'stage4-lox__stage5-workstation-nscde__<arch>__gpu-universal-xorg' "${METADATA_FILE}"
 require_grep 'stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg' "${PROFILE_FILE}"
@@ -54,7 +55,6 @@ require_grep 'x11-base/xwayland' "${PROFILE_FILE}"
 require_grep 'x11-misc/sddm' "${PROFILE_FILE}"
 
 for atom in \
-  dev-libs/amdgpu-pro-opencl \
   dev-libs/intel-compute-runtime \
   dev-libs/rocm-opencl-runtime \
   dev-util/clinfo \
@@ -69,6 +69,9 @@ for atom in \
   x11-drivers/nvidia-drivers; do
   require_grep "^=?${atom}([[:space:]]|$|=|-[0-9])" "${PACKAGE_LIST}"
 done
+
+require_grep '^dev-libs/amdgpu-pro-opencl$' "${GPU_ADVISORY}"
+reject_grep '^dev-libs/amdgpu-pro-opencl$' "${PACKAGE_LIST}"
 
 require_grep '^kde-plasma/plasma-meta$' "${REVIEW_DIR}/wayland-plasma-rejects.atoms"
 require_grep '^x11-misc/sddm$' "${REVIEW_DIR}/wayland-plasma-rejects.atoms"

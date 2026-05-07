@@ -71,8 +71,11 @@ for expected workstation hardware families:
 
 - NVIDIA proprietary driver and CUDA toolkit remain pinned for the K1200 test
   VM.
-- AMD includes Mesa/RADV, ROCm/OpenCL tooling, AMDGPU-PRO OpenCL/Vulkan/AMF
-  userland atoms where Gentoo provides them, and AMDGPU Xorg driver support.
+- AMD includes Mesa/RADV, ROCm/OpenCL tooling, AMDGPU-PRO Vulkan/AMF userland
+  atoms where Gentoo provides them, and AMDGPU Xorg driver support.
+- AMDGPU-PRO OpenCL is advisory-only by default because Gentoo's ebuild is
+  fetch-restricted and conflicts with the Mesa OpenCL path. Enable it only after
+  the required upstream distfile and USE-policy tradeoff are explicit.
 - Intel includes Mesa, Intel compute runtime, Level Zero, VAAPI, Vulkan, and
   Intel Xorg driver support.
 
@@ -88,6 +91,12 @@ Workstation builds emit binpkgs by default under:
 
 On Hasslehoff this path can be backed by an NFS or bind mount from the binpkg
 repository VM so package rebuilds survive VM replacement cycles.
+
+The live Hasslehoff binpkg sink currently exports:
+
+```text
+/srv/stage5-binpkgs/stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg
+```
 
 ## NsCDE Source Policy
 
