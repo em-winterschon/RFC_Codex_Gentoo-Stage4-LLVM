@@ -7,6 +7,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added a repeatable BigNetwork vault importer, repo-safe local-network
+  BigNetwork variable wiring, and docs for the Forge/Codexian token plus NanoPi
+  R6S Edge Lite bridge path.
 - Added BigNetwork FMT2 smoke-test scaffolding: a disposable Devuan iPXE/preseed
   asset role, a `bignetwork_edge` service role for the extracted `bn` binary,
   regression coverage, and operator documentation.

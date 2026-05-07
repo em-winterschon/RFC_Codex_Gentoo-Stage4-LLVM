@@ -32,6 +32,12 @@ Rationale:
 - avoids RouterOS OpenVPN feature mismatch with the old cert/static-key profile
 - should be easier to validate with simple route and service checks
 
+Preferred steady-state endpoint: re-onboard the local BigNetwork NanoPi R6S beta
+hardware as an Edge Lite transparent L2 bridge to FMT2/SFO200. The Devuan
+`bn` client path is still the first safe smoke-test because it validates the
+portal token, routes, DNS, and Check_MK reachability without changing production
+edge hardware.
+
 ## BigNetwork Smoke-Test Path
 
 Use `docs/BIGNETWORK-FMT2-SMOKETEST.md` as the implementation guide for the

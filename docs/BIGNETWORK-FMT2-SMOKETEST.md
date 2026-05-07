@@ -78,6 +78,31 @@ resolved_profile_bignetwork_edge:
 Secrets such as BigNetwork auth tokens must come from Ansible Vault. Do not
 commit token material or generated `/var/lib/bn/*.secret` files.
 
+The Forge/Codexian portal token is operator-local at:
+
+```text
+/root/.ssh/codex.d/tokens/BIGNETWORK_TOKEN_CODEXIAN
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-bignetwork-vault.sh
+scripts/validate-ansible-vaults.sh
+```
+
+The local-network inventory exposes the token to `bignetwork_edge` through
+`vault_bignetwork_codexian_api_token`; role tasks write the runtime token file
+with `no_log` enabled.
+
+### Preferred Permanent Edge
+
+The preferred long-term path is to re-onboard the local NanoPi R6S beta system
+as a BigNetwork Edge Lite endpoint and use it as a transparent L2 bridge to
+FMT2/SFO200. That avoids running per-host/per-user `bn` clients once the bridge
+is validated. The Devuan VM remains useful as an interim smoke-test and as a
+safe place to validate portal token behavior before touching the bridge device.
+
 ### Phase 2: Transport Validation
 
 Run:

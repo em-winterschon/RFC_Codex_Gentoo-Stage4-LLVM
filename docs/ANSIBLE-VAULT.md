@@ -120,6 +120,37 @@ Use `GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" gh ...` for
 operator-local GitHub CLI calls. Do not commit the token file or print token
 contents to logs.
 
+## BigNetwork Token
+
+The operator-private BigNetwork API/client token for the Forge/Codexian portal
+account is sourced from:
+
+```bash
+/root/.ssh/codex.d/tokens/BIGNETWORK_TOKEN_CODEXIAN
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-bignetwork-vault.sh
+```
+
+The encrypted local-network vault stores the token and repo-safe metadata under:
+
+```text
+vault_bignetwork_codexian_api_token
+vault_bignetwork_codexian_token_name
+vault_bignetwork_codexian_account_name
+vault_bignetwork_codexian_token_owner
+vault_bignetwork_codexian_purpose
+```
+
+Repo-safe transport intent and role wiring live in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/bignetwork.yml
+```
+
 ## Safety Rules
 
 - Commit only encrypted vault files.
