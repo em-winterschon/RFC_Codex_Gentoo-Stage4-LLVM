@@ -7,6 +7,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added BigNetwork FMT2 smoke-test scaffolding: a disposable Devuan iPXE/preseed
+  asset role, a `bignetwork_edge` service role for the extracted `bn` binary,
+  regression coverage, and operator documentation.
 - Added `docs/FMT2-INFRA-UPGRADE-PLANNING.md` and wiki mirror to capture the
   legacy SFO-200/FMT2 wiki as traceable evidence for future transport,
   NetBox/IPAM/DCIM, OOB, monitoring, and rack-inventory work.

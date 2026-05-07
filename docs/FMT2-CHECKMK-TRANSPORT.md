@@ -32,6 +32,19 @@ Rationale:
 - avoids RouterOS OpenVPN feature mismatch with the old cert/static-key profile
 - should be easier to validate with simple route and service checks
 
+## BigNetwork Smoke-Test Path
+
+Use `docs/BIGNETWORK-FMT2-SMOKETEST.md` as the implementation guide for the
+first transport validation pass. The smoke-test must run in a disposable Devuan
+VM first because the available BigNetwork artifact is a Debian package and the
+first objective is reachability evidence, not a permanent service image.
+
+The repo now includes:
+
+- `devuan_netboot_assets` for rendering Devuan iPXE and preseed assets.
+- `bignetwork_edge` for installing the extracted `bn` binary, rendering
+  OpenRC/sysvinit service files, and installing a targeted smoke-test helper.
+
 ## Fallback Path
 
 Fallback path: run a compatibility OpenVPN endpoint in a dedicated VyOS VM or

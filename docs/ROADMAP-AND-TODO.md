@@ -176,7 +176,7 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `FMT2-001` | completed | Capture legacy FMT2/SFO-200 wiki as evidence | old wiki clone available | Evidence index lives in `docs/FMT2-INFRA-UPGRADE-PLANNING.md`; source repo is `/opt/repos/remote/blumens/wikis-mkdocs/blumen-arch.wiki` at observed commit `bd5b71b`. |
-| `FMT2-002` | pending | Validate FMT2 transport path from RFC99/SUN99 | BigNetwork SDN or compatibility OpenVPN VM | Removal condition is repeatable bidirectional reachability to one FMT2 management prefix plus DNS resolution for legacy monitoring names. |
+| `FMT2-002` | active | Validate FMT2 transport path from RFC99/SUN99 | BigNetwork SDN or compatibility OpenVPN VM | BigNetwork is the first implementation path. Devuan smoke-test netboot assets and `bignetwork_edge` role scaffolding exist; removal condition is repeatable bidirectional reachability to one FMT2 management prefix plus DNS resolution for legacy monitoring names. |
 | `FMT2-003` | pending | Promote verified FMT2 prefixes, racks, and devices into NetBox | `FMT2-001`, `FMT2-002` | Import prefixes and racks first, then routers/switches, then hosts/BMCs, then services. All records should be tagged to the old wiki source commit until independently verified. |
 | `FMT2-004` | pending | Reconnect FMT2 Check_MK to managed observability | `FMT2-002`, `FMT2-003` | Confirm `app-sfo200-monitoring-9927.vernetzen.io`, `/vernetzen/`, API endpoint, agents path, and return routing before adding targets or alert dependencies. |
 

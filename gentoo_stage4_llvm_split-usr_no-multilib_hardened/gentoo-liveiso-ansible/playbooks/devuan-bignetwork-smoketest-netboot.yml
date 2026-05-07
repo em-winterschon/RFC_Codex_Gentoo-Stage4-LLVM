@@ -1,0 +1,8 @@
+---
+- name: Build and publish Devuan BigNetwork smoke-test netboot assets
+  hosts: netboot_publishers
+  gather_facts: true
+  become: true
+
+  roles:
+    - devuan_netboot_assets

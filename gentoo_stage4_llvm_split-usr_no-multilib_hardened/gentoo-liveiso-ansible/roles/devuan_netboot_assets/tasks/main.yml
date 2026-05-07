@@ -1,0 +1,49 @@
+---
+- name: Resolve Devuan BigNetwork netboot settings
+  ansible.builtin.set_fact:
+    resolved_devuan_netboot:
+      release: "{{ devuan_netboot_release | default(devuan_netboot_default_release) }}"
+      arch: "{{ devuan_netboot_arch | default(devuan_netboot_default_arch) }}"
+      mirror_host: "{{ devuan_netboot_mirror_host | default(devuan_netboot_default_mirror_host) }}"
+      mirror_directory: "{{ devuan_netboot_mirror_directory | default(devuan_netboot_default_mirror_directory) }}"
+      publish_root: "{{ devuan_netboot_publish_root | default(devuan_netboot_default_publish_root) }}"
+      base_url: "{{ devuan_netboot_base_url | default(devuan_netboot_default_base_url) }}"
+      console: "{{ devuan_netboot_console | default(devuan_netboot_default_console) }}"
+      hostname: "{{ devuan_netboot_hostname | default(devuan_netboot_default_hostname) }}"
+      domain: "{{ devuan_netboot_domain | default(devuan_netboot_default_domain) }}"
+      timezone: "{{ devuan_netboot_timezone | default(devuan_netboot_default_timezone) }}"
+      locale: "{{ devuan_netboot_locale | default(devuan_netboot_default_locale) }}"
+      keymap: "{{ devuan_netboot_keymap | default(devuan_netboot_default_keymap) }}"
+      autoinstall_enabled: "{{ devuan_netboot_autoinstall_enabled | default(devuan_netboot_default_autoinstall_enabled) | bool }}"
+      disk: "{{ devuan_netboot_disk | default(devuan_netboot_default_disk) }}"
+      root_password_hash: "{{ devuan_netboot_root_password_hash | default(devuan_netboot_default_root_password_hash) }}"
+      codex_user: "{{ devuan_netboot_codex_user | default(devuan_netboot_default_codex_user) }}"
+      codex_password_hash: "{{ devuan_netboot_codex_password_hash | default(devuan_netboot_default_codex_password_hash) }}"
+      codex_ssh_authorized_key: "{{ devuan_netboot_codex_ssh_authorized_key | default(devuan_netboot_default_codex_ssh_authorized_key) }}"
+      extra_packages: "{{ devuan_netboot_extra_packages | default(devuan_netboot_default_extra_packages) }}"
+      kernel_url: "{{ devuan_netboot_kernel_url | default(devuan_netboot_default_kernel_url) }}"
+      initrd_url: "{{ devuan_netboot_initrd_url | default(devuan_netboot_default_initrd_url) }}"
+
+- name: Ensure Devuan BigNetwork netboot publish directory exists
+  ansible.builtin.file:
+    path: "{{ resolved_devuan_netboot.publish_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Render Devuan BigNetwork smoke-test iPXE script
+  ansible.builtin.template:
+    src: devuan-bignetwork-smoketest.ipxe.j2
+    dest: "{{ resolved_devuan_netboot.publish_root }}/devuan-bignetwork-smoketest.ipxe"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Render Devuan BigNetwork smoke-test preseed
+  ansible.builtin.template:
+    src: devuan-bignetwork-smoketest.preseed.j2
+    dest: "{{ resolved_devuan_netboot.publish_root }}/devuan-bignetwork-smoketest.preseed"
+    owner: root
+    group: root
+    mode: "0644"
