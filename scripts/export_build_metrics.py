@@ -8,6 +8,8 @@ time without needing external plotting dependencies.
 
 from __future__ import annotations
 
+# ruff: noqa: E501
+
 import argparse
 import csv
 import datetime as dt
@@ -16,8 +18,8 @@ import json
 import math
 import pathlib
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 EMERGE_START_RE = re.compile(
     r"^(?P<ts>\d+):\s+>>> emerge \((?P<index>\d+) of (?P<total>\d+)\) "
@@ -70,7 +72,7 @@ class BuilderSample:
 
 
 def iso8601(ts: int) -> str:
-    return dt.datetime.fromtimestamp(ts, dt.timezone.utc).isoformat()
+    return dt.datetime.fromtimestamp(ts, dt.UTC).isoformat()
 
 
 def parse_emerge_log(path: pathlib.Path) -> list[EmergeEvent]:
