@@ -64,7 +64,9 @@ def load_zone_groups(args: argparse.Namespace) -> list[dict[str, Any]]:
     elif os.getenv("HETZNER_DNS_ZONE_GROUPS_JSON"):
         payload = json.loads(os.environ["HETZNER_DNS_ZONE_GROUPS_JSON"])
     else:
-        raise RuntimeError("zone groups are required via --zone-groups-json, --zone-groups-file, or env")
+        raise RuntimeError(
+            "zone groups are required via --zone-groups-json, --zone-groups-file, or env"
+        )
 
     if not isinstance(payload, list):
         raise RuntimeError("zone groups must be a list")
@@ -158,7 +160,9 @@ def generate_dns_plan(
         }
 
     records: list[dict[str, Any]] = []
-    for key, record in sorted(rrsets.items(), key=lambda item: (item[1]["zone"], item[1]["fqdn"], item[1]["type"])):
+    for key, record in sorted(
+        rrsets.items(), key=lambda item: (item[1]["zone"], item[1]["fqdn"], item[1]["type"])
+    ):
         records.append({**record, "values": sorted(grouped_values[key])})
 
     return {
@@ -178,15 +182,23 @@ def generate_dns_plan(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--netbox-api-url", default=os.getenv("NETBOX_API_URL", "http://172.16.99.62"))
+    parser.add_argument(
+        "--netbox-api-url", default=os.getenv("NETBOX_API_URL", "http://172.16.99.62")
+    )
     parser.add_argument("--netbox-token", default=os.getenv("NETBOX_TOKEN", ""))
     parser.add_argument("--netbox-token-file", default=os.getenv("NETBOX_TOKEN_FILE", ""))
     parser.add_argument("--netbox-ip-addresses-file", default="")
     parser.add_argument("--zone-groups-json", default="")
     parser.add_argument("--zone-groups-file", default="")
     parser.add_argument("--default-ttl", type=int, default=300)
-    parser.add_argument("--apply", action="store_true", help="Reserved for future write path; plan output remains non-mutating.")
-    parser.add_argument("--allow-delete", action="store_true", help="Reserved for future delete plans.")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Reserved for future write path; plan output remains non-mutating.",
+    )
+    parser.add_argument(
+        "--allow-delete", action="store_true", help="Reserved for future delete plans."
+    )
     parser.add_argument("--format", choices=("json", "text"), default="json")
     parser.add_argument("--output", default="")
     return parser.parse_args()

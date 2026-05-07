@@ -108,16 +108,24 @@ class RouterOSSerialSession:
         transcript = b""
         self.send("\x03\r")
         transcript += self.read_until_any((b"Login:", b"Password:", PROMPT_MARKER), login_timeout)
-        if b"Login:" not in transcript and b"Password:" not in transcript and PROMPT_MARKER not in transcript:
+        if (
+            b"Login:" not in transcript
+            and b"Password:" not in transcript
+            and PROMPT_MARKER not in transcript
+        ):
             self.send_line("")
-            transcript += self.read_until_any((b"Login:", b"Password:", PROMPT_MARKER), login_timeout)
+            transcript += self.read_until_any(
+                (b"Login:", b"Password:", PROMPT_MARKER), login_timeout
+            )
 
         if b"Login:" in transcript:
             self.send_line(username)
             transcript += self.read_until_any((b"Password:",), login_timeout)
         if b"Password:" in transcript and PROMPT_MARKER not in transcript:
             self.send_line(self.password)
-            transcript += self.read_until_any((PROMPT_MARKER, b"Login failed", b"Login:"), login_timeout)
+            transcript += self.read_until_any(
+                (PROMPT_MARKER, b"Login failed", b"Login:"), login_timeout
+            )
 
         if b"Login failed" in transcript or PROMPT_MARKER not in transcript:
             raise RuntimeError("RouterOS serial login failed or prompt was not reached")

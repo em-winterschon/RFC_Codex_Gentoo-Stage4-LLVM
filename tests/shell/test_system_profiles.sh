@@ -6,6 +6,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PROFILE_DIR="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions"
 PACKAGE_LIST_DIR="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-package-lists"
 HOST_VARS_DIR="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/host_vars"
+PORTAGE_ROLE="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/portage/tasks/main.yml"
+PREFLIGHT_ROLE="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/preflight/tasks/load_profile_definition.yml"
 
 assert_file_contains() {
   local file=$1
@@ -134,6 +136,8 @@ assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'VIDEO_CARDS=.*nvidia'
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=x11-drivers/nvidia-drivers-580\.159\.03-r1 ~amd64'
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1 NVIDIA-CUDA'
+assert_file_contains "${PREFLIGHT_ROLE}" 'resolved_portage_patch_files'
+assert_file_contains "${PORTAGE_ROLE}" '/etc/portage/patches'
 
 test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 

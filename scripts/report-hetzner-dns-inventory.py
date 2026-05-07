@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
-
 CONNECTIVITY_TYPES = {"A", "AAAA"}
 
 
@@ -51,7 +50,9 @@ def load_token_groups(args: argparse.Namespace) -> list[dict[str, Any]]:
     elif os.getenv("HETZNER_DNS_TOKEN_GROUPS_JSON"):
         payload = json.loads(os.environ["HETZNER_DNS_TOKEN_GROUPS_JSON"])
     else:
-        raise RuntimeError("token groups are required via --token-groups-json, --token-groups-file, or env")
+        raise RuntimeError(
+            "token groups are required via --token-groups-json, --token-groups-file, or env"
+        )
 
     if not isinstance(payload, list):
         raise RuntimeError("token groups must be a list")
@@ -79,7 +80,9 @@ def load_token_groups(args: argparse.Namespace) -> list[dict[str, Any]]:
     return groups
 
 
-def extract_list(payload: dict[str, Any], keys: tuple[str, ...], context: str) -> list[dict[str, Any]]:
+def extract_list(
+    payload: dict[str, Any], keys: tuple[str, ...], context: str
+) -> list[dict[str, Any]]:
     for key in keys:
         value = payload.get(key)
         if isinstance(value, list):
@@ -161,7 +164,9 @@ def fixture_zones(fixture: dict[str, Any], token_group_name: str) -> list[dict[s
     return [zone for zone in zones if isinstance(zone, dict)]
 
 
-def fixture_records(fixture: dict[str, Any], token_group_name: str, zone_id: str) -> list[dict[str, Any]]:
+def fixture_records(
+    fixture: dict[str, Any], token_group_name: str, zone_id: str
+) -> list[dict[str, Any]]:
     group = fixture_group(fixture, token_group_name)
     if not group:
         return []
@@ -230,9 +235,20 @@ def generate_dns_inventory_report(
         configured_zones = set(group["zones"])
         zones_configured += len(configured_zones)
         try:
-            provider_zones = fixture_zones(fixture, group_name) if fixture is not None else fetch_zones(api_endpoint, group["api_token"])
+            provider_zones = (
+                fixture_zones(fixture, group_name)
+                if fixture is not None
+                else fetch_zones(api_endpoint, group["api_token"])
+            )
         except RuntimeError as exc:
-            errors.append({"token_group": group_name, "zone": "", "reason": "zone_list_failed", "detail": str(exc)})
+            errors.append(
+                {
+                    "token_group": group_name,
+                    "zone": "",
+                    "reason": "zone_list_failed",
+                    "detail": str(exc),
+                }
+            )
             continue
 
         zones_by_name = {
@@ -240,14 +256,18 @@ def generate_dns_inventory_report(
             for zone in provider_zones
             if str(zone.get("name", "")).strip()
         }
-        selected_zone_names = sorted(configured_zones) if configured_zones else sorted(zones_by_name)
+        selected_zone_names = (
+            sorted(configured_zones) if configured_zones else sorted(zones_by_name)
+        )
         if not configured_zones:
             zones_configured += len(selected_zone_names)
 
         for zone_name in selected_zone_names:
             provider_zone = zones_by_name.get(zone_name)
             if not provider_zone:
-                errors.append({"token_group": group_name, "zone": zone_name, "reason": "zone_not_found"})
+                errors.append(
+                    {"token_group": group_name, "zone": zone_name, "reason": "zone_not_found"}
+                )
                 zones_report.append(
                     {
                         "token_group": group_name,
@@ -262,7 +282,9 @@ def generate_dns_inventory_report(
 
             zone_id = str(provider_zone.get("id", "")).strip()
             if not zone_id:
-                errors.append({"token_group": group_name, "zone": zone_name, "reason": "missing_zone_id"})
+                errors.append(
+                    {"token_group": group_name, "zone": zone_name, "reason": "missing_zone_id"}
+                )
                 zones_report.append(
                     {
                         "token_group": group_name,
@@ -282,7 +304,14 @@ def generate_dns_inventory_report(
                     else fetch_zone_records(api_endpoint, group["api_token"], zone_id)
                 )
             except RuntimeError as exc:
-                errors.append({"token_group": group_name, "zone": zone_name, "reason": "records_fetch_failed", "detail": str(exc)})
+                errors.append(
+                    {
+                        "token_group": group_name,
+                        "zone": zone_name,
+                        "reason": "records_fetch_failed",
+                        "detail": str(exc),
+                    }
+                )
                 zones_report.append(
                     {
                         "token_group": group_name,
@@ -302,7 +331,14 @@ def generate_dns_inventory_report(
                 record_name = str(record.get("name", "")).strip()
                 record_value = str(record.get("value", "")).strip()
                 if not record_type:
-                    skipped_records.append({"token_group": group_name, "zone": zone_name, "name": record_name, "reason": "missing_record_type"})
+                    skipped_records.append(
+                        {
+                            "token_group": group_name,
+                            "zone": zone_name,
+                            "name": record_name,
+                            "reason": "missing_record_type",
+                        }
+                    )
                     continue
                 zone_records_by_type[record_type] += 1
                 summary_records_by_type[record_type] += 1
@@ -310,15 +346,39 @@ def generate_dns_inventory_report(
 
                 fqdn = record_fqdn(record_name, zone_name)
                 if record_type not in CONNECTIVITY_TYPES:
-                    skipped_records.append({"token_group": group_name, "zone": zone_name, "name": fqdn, "type": record_type, "reason": "non_connectivity_record_type"})
+                    skipped_records.append(
+                        {
+                            "token_group": group_name,
+                            "zone": zone_name,
+                            "name": fqdn,
+                            "type": record_type,
+                            "reason": "non_connectivity_record_type",
+                        }
+                    )
                     continue
                 if fqdn.startswith("*."):
-                    skipped_records.append({"token_group": group_name, "zone": zone_name, "name": fqdn, "type": record_type, "reason": "wildcard_connectivity_record"})
+                    skipped_records.append(
+                        {
+                            "token_group": group_name,
+                            "zone": zone_name,
+                            "name": fqdn,
+                            "type": record_type,
+                            "reason": "wildcard_connectivity_record",
+                        }
+                    )
                     continue
                 try:
                     ip_value = str(ipaddress.ip_address(record_value))
                 except ValueError:
-                    skipped_records.append({"token_group": group_name, "zone": zone_name, "name": fqdn, "type": record_type, "reason": "invalid_ip_value"})
+                    skipped_records.append(
+                        {
+                            "token_group": group_name,
+                            "zone": zone_name,
+                            "name": fqdn,
+                            "type": record_type,
+                            "reason": "invalid_ip_value",
+                        }
+                    )
                     continue
 
                 host_key = (zone_name, fqdn)
@@ -367,14 +427,27 @@ def generate_dns_inventory_report(
             "hosts_by_zone": {zone: hosts for zone, hosts in sorted(hosts_by_zone.items())},
             "flat_hosts": flat_hosts,
         },
-        "skipped_records": sorted(skipped_records, key=lambda item: (item.get("zone", ""), item.get("name", ""), item.get("reason", ""))),
-        "errors": sorted(errors, key=lambda item: (item.get("token_group", ""), item.get("zone", ""), item.get("reason", ""))),
+        "skipped_records": sorted(
+            skipped_records,
+            key=lambda item: (item.get("zone", ""), item.get("name", ""), item.get("reason", "")),
+        ),
+        "errors": sorted(
+            errors,
+            key=lambda item: (
+                item.get("token_group", ""),
+                item.get("zone", ""),
+                item.get("reason", ""),
+            ),
+        ),
     }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--api-endpoint", default=os.getenv("HETZNER_DNS_API_ENDPOINT", "https://api.hetzner.cloud/v1"))
+    parser.add_argument(
+        "--api-endpoint",
+        default=os.getenv("HETZNER_DNS_API_ENDPOINT", "https://api.hetzner.cloud/v1"),
+    )
     parser.add_argument("--token-groups-json", default="")
     parser.add_argument("--token-groups-file", default="")
     parser.add_argument("--fixture-file", default="")

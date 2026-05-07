@@ -60,6 +60,18 @@ gentoo_profile_definition:
       media-libs/amdgpu-pro-vulkan AMD-GPU-PRO-EULA
       media-video/amdgpu-pro-amf AMD-GPU-PRO-EULA
       sys-kernel/linux-firmware linux-fw-redistributable no-source-code
+  patch_files:
+    dev-libs/intel-metrics-library/01-disable-upstream-release-lto.patch: |
+      --- a/CMakeLists.txt
+      +++ b/CMakeLists.txt
+      @@ -642,7 +642,6 @@
+           if ("${CMAKE_BUILD_TYPE}" STREQUAL "release" OR
+               "${CMAKE_BUILD_TYPE}" STREQUAL "release-internal" OR
+               "${CMAKE_BUILD_TYPE}" STREQUAL "releaseinternal")
+      -        add_definitions (-flto)                   # enables Link-Time Optimization (LTO)
+               add_definitions (-fvisibility=hidden)     # hide non-exported symbols
+               add_definitions (-fPIC)                   # generates position-independent code during the compilation phase
+               add_definitions (-fPIE)                   # generates position-independent executables during the compilation phase
   package_mask_files:
     40-workstation-nscde-gpu: |
       >x11-drivers/nvidia-drivers-580.159.03-r1

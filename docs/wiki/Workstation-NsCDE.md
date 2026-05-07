@@ -79,6 +79,15 @@ for expected workstation hardware families:
 - Intel includes Mesa, Intel compute runtime, Level Zero, VAAPI, Vulkan, and
   Intel Xorg driver support.
 
+`dev-libs/intel-metrics-library` currently needs a workstation-scoped Portage
+user patch to remove upstream's release-mode `-flto` injection. Without that
+patch, clang/lld can fail the shared-library link with a non-PIC relocation
+from the generated LTO object. The profile renders the patch to:
+
+```text
+/etc/portage/patches/dev-libs/intel-metrics-library/01-disable-upstream-release-lto.patch
+```
+
 The active package list is still curated. Captured host package lists are stored
 under `docs/workstation-package-capture/` for review and are not automatically
 converted into emerge targets.

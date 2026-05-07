@@ -169,7 +169,9 @@ def http_probe(
     timeout_seconds: float,
     latency_budget_ms: float | None,
 ) -> ProbeResult:
-    connection_cls = http.client.HTTPSConnection if protocol == "https" else http.client.HTTPConnection
+    connection_cls = (
+        http.client.HTTPSConnection if protocol == "https" else http.client.HTTPConnection
+    )
     context = ssl._create_unverified_context() if protocol == "https" else None
     start = time.perf_counter()
     try:

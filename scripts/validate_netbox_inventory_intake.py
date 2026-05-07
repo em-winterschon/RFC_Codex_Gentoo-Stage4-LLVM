@@ -70,7 +70,9 @@ def intake_paths(inputs: list[str]) -> list[Path]:
     return sorted(dict.fromkeys(paths))
 
 
-def expect_list(payload: dict[str, Any], key: str, path: Path, result: ValidationResult) -> list[dict[str, Any]]:
+def expect_list(
+    payload: dict[str, Any], key: str, path: Path, result: ValidationResult
+) -> list[dict[str, Any]]:
     value = payload.get(key, [])
     if value is None:
         return []
@@ -94,7 +96,9 @@ def required_string(row: dict[str, Any], key: str, label: str, result: Validatio
     return value.strip()
 
 
-def parse_network(value: Any, label: str, result: ValidationResult) -> ipaddress._BaseNetwork | None:
+def parse_network(
+    value: Any, label: str, result: ValidationResult
+) -> ipaddress._BaseNetwork | None:
     if not isinstance(value, str) or not value.strip():
         result.errors.append(f"{label}: prefix must be a non-empty string")
         return None
@@ -105,7 +109,9 @@ def parse_network(value: Any, label: str, result: ValidationResult) -> ipaddress
         return None
 
 
-def parse_address(value: Any, label: str, result: ValidationResult) -> ipaddress._BaseAddress | None:
+def parse_address(
+    value: Any, label: str, result: ValidationResult
+) -> ipaddress._BaseAddress | None:
     if not isinstance(value, str) or not value.strip():
         result.errors.append(f"{label}: IP address must be a non-empty string")
         return None
@@ -123,7 +129,9 @@ def validate_version(payload: dict[str, Any], path: Path, result: ValidationResu
         result.errors.append(f"{path}: inventory_intake_version must be 1")
 
 
-def validate_sites(datacenters: list[dict[str, Any]], path: Path, result: ValidationResult) -> dict[str, dict[str, Any]]:
+def validate_sites(
+    datacenters: list[dict[str, Any]], path: Path, result: ValidationResult
+) -> dict[str, dict[str, Any]]:
     sites: dict[str, dict[str, Any]] = {}
     for index, site in enumerate(datacenters):
         label = f"{path}: datacenters[{index}]"
@@ -138,13 +146,18 @@ def validate_sites(datacenters: list[dict[str, Any]], path: Path, result: Valida
         for prefix_index, prefix in enumerate(site.get("management_prefixes", []) or []):
             parse_network(prefix, f"{label}: management_prefixes[{prefix_index}]", result)
         if name and slug and name.strip().lower().replace(" ", "-") != slug:
-            result.warnings.append(f"{label}: site name {name} does not normalize exactly to slug {slug}")
+            result.warnings.append(
+                f"{label}: site name {name} does not normalize exactly to slug {slug}"
+            )
     result.counts["datacenters"] += len(datacenters)
     return sites
 
 
 def validate_prefixes(
-    prefixes: list[dict[str, Any]], path: Path, sites: dict[str, dict[str, Any]], result: ValidationResult
+    prefixes: list[dict[str, Any]],
+    path: Path,
+    sites: dict[str, dict[str, Any]],
+    result: ValidationResult,
 ) -> dict[str, ipaddress._BaseNetwork]:
     networks: dict[str, ipaddress._BaseNetwork] = {}
     seen_vlans: set[tuple[str, int]] = set()
@@ -170,14 +183,20 @@ def validate_prefixes(
                 elif site_slug:
                     vlan_key = (site_slug, vlan_id)
                     if vlan_key in seen_vlans:
-                        result.errors.append(f"{label}: duplicate VLAN {vlan_id} for site {site_slug}")
+                        result.errors.append(
+                            f"{label}: duplicate VLAN {vlan_id} for site {site_slug}"
+                        )
                     seen_vlans.add(vlan_key)
     result.counts["prefixes"] += len(prefixes)
     return networks
 
 
-def address_in_any_prefix(address: ipaddress._BaseAddress, networks: dict[str, ipaddress._BaseNetwork]) -> bool:
-    return any(address.version == network.version and address in network for network in networks.values())
+def address_in_any_prefix(
+    address: ipaddress._BaseAddress, networks: dict[str, ipaddress._BaseNetwork]
+) -> bool:
+    return any(
+        address.version == network.version and address in network for network in networks.values()
+    )
 
 
 def validate_devices(
@@ -203,7 +222,9 @@ def validate_devices(
         if management_ip:
             address = parse_address(management_ip, f"{label}: management_ip", result)
             if address and networks and not address_in_any_prefix(address, networks):
-                result.warnings.append(f"{label}: management_ip {management_ip} is outside declared prefixes")
+                result.warnings.append(
+                    f"{label}: management_ip {management_ip} is outside declared prefixes"
+                )
         interfaces = device.get("interfaces", []) or []
         if not isinstance(interfaces, list):
             result.errors.append(f"{label}: interfaces must be a list")
@@ -243,9 +264,13 @@ def validate_clusters(
         required_string(cluster, "role", label, result)
         for member_index, member in enumerate(cluster.get("members", []) or []):
             if not isinstance(member, str) or not member.strip():
-                result.errors.append(f"{label}: members[{member_index}] must be a device name string")
+                result.errors.append(
+                    f"{label}: members[{member_index}] must be a device name string"
+                )
             elif devices and member not in devices:
-                result.errors.append(f"{label}: members[{member_index}] references unknown device {member}")
+                result.errors.append(
+                    f"{label}: members[{member_index}] references unknown device {member}"
+                )
     result.counts["clusters"] += len(clusters)
 
 
@@ -278,7 +303,9 @@ def validate_service_vips(
             result.errors.append(f"{label}: unknown site {site_slug}")
         address = parse_address(vip.get("address"), f"{label}: address", result)
         if address and networks and not address_in_any_prefix(address, networks):
-            result.warnings.append(f"{label}: address {vip.get('address')} is outside declared prefixes")
+            result.warnings.append(
+                f"{label}: address {vip.get('address')} is outside declared prefixes"
+            )
         listeners = vip.get("listeners")
         if listeners is None and "protocol" in vip and "port" in vip:
             listeners = [{"protocol": vip["protocol"], "port": vip["port"]}]

@@ -130,7 +130,9 @@ class NetBoxClient:
                 raw = response.read().decode("utf-8")
         except error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"NetBox {method} {endpoint} failed: HTTP {exc.code}: {body}") from exc
+            raise RuntimeError(
+                f"NetBox {method} {endpoint} failed: HTTP {exc.code}: {body}"
+            ) from exc
         return json.loads(raw) if raw else {}
 
     def first(self, endpoint: str, lookup_key: str, lookup_value: str) -> dict[str, Any] | None:
@@ -162,7 +164,9 @@ class NetBoxClient:
         if existing:
             self.existing.append(obj.label)
             if self.update_existing:
-                updated = self.request_json("PATCH", f"{obj.endpoint}/{existing['id']}", obj.payload)
+                updated = self.request_json(
+                    "PATCH", f"{obj.endpoint}/{existing['id']}", obj.payload
+                )
                 self.updated.append(obj.label)
                 return updated
             return existing
@@ -231,7 +235,9 @@ def ensure_device_role(client: NetBoxClient, role: str) -> dict[str, Any]:
     )
 
 
-def ensure_device_type(client: NetBoxClient, manufacturer: dict[str, Any], model: str) -> dict[str, Any]:
+def ensure_device_type(
+    client: NetBoxClient, manufacturer: dict[str, Any], model: str
+) -> dict[str, Any]:
     slug = slugify(model)
     if client.dry_run:
         return client.ensure(
@@ -357,7 +363,9 @@ def apply_devices(
             )
 
 
-def apply_clusters(client: NetBoxClient, clusters: list[dict[str, Any]], sites: dict[str, dict[str, Any]]) -> None:
+def apply_clusters(
+    client: NetBoxClient, clusters: list[dict[str, Any]], sites: dict[str, dict[str, Any]]
+) -> None:
     for cluster in clusters:
         cluster_type = client.ensure(
             NetBoxObject(
@@ -390,7 +398,9 @@ def apply_service_vips(
     for vip in service_vips:
         address = matching_address(str(vip["address"]), networks)
         listeners = vip.get("listeners", []) or []
-        listener_text = ", ".join(f"{item['protocol']}/{item['port']}" for item in listeners if isinstance(item, dict))
+        listener_text = ", ".join(
+            f"{item['protocol']}/{item['port']}" for item in listeners if isinstance(item, dict)
+        )
         client.ensure(
             NetBoxObject(
                 "ipam/ip-addresses",
@@ -433,7 +443,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--token", default=os.getenv("NETBOX_TOKEN", ""))
     parser.add_argument("--token-file", default=os.getenv("NETBOX_TOKEN_FILE", ""))
     parser.add_argument("--auth-scheme", choices=("auto", "Token", "Bearer"), default="auto")
-    parser.add_argument("--apply", action="store_true", help="Perform NetBox API writes. Default is offline dry-run.")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Perform NetBox API writes. Default is offline dry-run.",
+    )
     parser.add_argument("--update-existing", action="store_true")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     return parser.parse_args()

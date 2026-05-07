@@ -10,7 +10,6 @@ import subprocess
 import time
 from pathlib import Path
 
-
 DEFAULT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("identity", "/system identity print"),
     ("resource", "/system resource print"),

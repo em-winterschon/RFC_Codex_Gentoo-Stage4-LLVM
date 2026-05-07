@@ -87,6 +87,14 @@
             recursive=True
           )
       }}
+    resolved_portage_patch_files: >-
+      {{
+        resolved_portage_patch_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.patch_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_mask_symlinks: >-
       {{
         resolved_portage_package_mask_symlinks

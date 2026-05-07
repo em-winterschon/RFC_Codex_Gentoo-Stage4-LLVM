@@ -15,7 +15,6 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-
 DEFAULT_ENDPOINTS = (
     "sys.b",
     "link.b",
@@ -142,13 +141,13 @@ def summarize(raw: dict[str, bytes]) -> dict[str, Any]:
             lacp.append(
                 {
                     "port": ports[idx]["name"] if idx < len(ports) else idx + 1,
-                    "mode": ["passive", "active", "static"][int(lacp_modes[idx])]
-                    if int(lacp_modes[idx]) in (0, 1, 2)
-                    else int(lacp_modes[idx]),
+                    "mode": (
+                        ["passive", "active", "static"][int(lacp_modes[idx])]
+                        if int(lacp_modes[idx]) in (0, 1, 2)
+                        else int(lacp_modes[idx])
+                    ),
                     "group": int(lacp_groups[idx]) if idx < len(lacp_groups) else 0,
-                    "partner": decode_mac(lacp_partners[idx])
-                    if idx < len(lacp_partners)
-                    else "",
+                    "partner": decode_mac(lacp_partners[idx]) if idx < len(lacp_partners) else "",
                 }
             )
 
@@ -175,7 +174,9 @@ def summarize(raw: dict[str, bytes]) -> dict[str, Any]:
         "host_identity": decode_hex_text(str(sys_b.get("id", ""))),
         "model": decode_hex_text(str(sys_b.get("brd", ""))),
         "serial_number": decode_hex_text(str(sys_b.get("sid", ""))),
-        "version": f"{decode_hex_text(str(sys_b.get('ver', '')))}.{sys_b.get('bld', '')}".rstrip("."),
+        "version": f"{decode_hex_text(str(sys_b.get('ver', '')))}.{sys_b.get('bld', '')}".rstrip(
+            "."
+        ),
         "management_ip": decode_ipv4_little_endian(int(sys_b["ip"])) if "ip" in sys_b else None,
         "current_ip": decode_ipv4_little_endian(int(sys_b["cip"])) if "cip" in sys_b else None,
         "mac": decode_mac(str(sys_b.get("mac", ""))),
@@ -219,7 +220,9 @@ def main() -> int:
         (args.output_dir / endpoint).write_bytes(body)
 
     summary = summarize(raw)
-    (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    (args.output_dir / "summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n"
+    )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
