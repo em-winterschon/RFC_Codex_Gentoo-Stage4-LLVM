@@ -62,6 +62,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Changed
 
+- Switched the Stage5 workstation Intel policy to display-only by default:
+  retained Intel Xorg/Mesa/libdrm/libva/firmware support and removed IGC,
+  Level Zero, `intel-compute-runtime`, `intel-metrics-library`, and `gmmlib`
+  from the base package path because Gentoo's current IGC hard-locks to
+  `llvm:16`.
 - Extended the generic Proxmox Stage4 service VM creator with configurable
   serial, VGA, extra `netN`, and `hostpciN` settings.
 - Fixed the Proxmox VM creator to attach the disk reported by `qm config` after

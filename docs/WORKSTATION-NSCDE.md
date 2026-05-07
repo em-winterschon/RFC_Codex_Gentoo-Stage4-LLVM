@@ -76,17 +76,13 @@ for expected workstation hardware families:
 - AMDGPU-PRO OpenCL is advisory-only by default because Gentoo's ebuild is
   fetch-restricted and conflicts with the Mesa OpenCL path. Enable it only after
   the required upstream distfile and USE-policy tradeoff are explicit.
-- Intel includes Mesa, Intel compute runtime, Level Zero, VAAPI, Vulkan, and
-  Intel Xorg driver support.
-
-`dev-libs/intel-metrics-library` currently needs a workstation-scoped Portage
-user patch to remove upstream's release-mode `-flto` injection. Without that
-patch, clang/lld can fail the shared-library link with a non-PIC relocation
-from the generated LTO object. The profile renders the patch to:
-
-```text
-/etc/portage/patches/dev-libs/intel-metrics-library/01-disable-upstream-release-lto.patch
-```
+- Intel support is display-only by default: Mesa, libdrm, libva, firmware, and
+  `x11-drivers/xf86-video-intel` are retained for connected monitors.
+- Intel compute/runtime atoms are intentionally excluded from the base
+  workstation profile. `dev-util/intel-graphics-compiler` currently hard-locks
+  to `LLVM_COMPAT=( 16 )`, which pulls old LLVM slot `16`; keep IGC, Level Zero,
+  `intel-compute-runtime`, `intel-metrics-library`, and `gmmlib` in an optional
+  hardware-specific overlay if they are ever needed.
 
 The active package list is still curated. Captured host package lists are stored
 under `docs/workstation-package-capture/` for review and are not automatically

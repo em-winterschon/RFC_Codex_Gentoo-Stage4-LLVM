@@ -50,15 +50,11 @@ require_grep 'media-libs/libva .* -wayland' "${PROFILE_FILE}"
 require_grep 'media-libs/vulkan-loader .* -wayland' "${PROFILE_FILE}"
 require_grep 'gui-libs/gtk .* -wayland' "${PROFILE_FILE}"
 require_grep 'app-emulation/qemu .* -wayland' "${PROFILE_FILE}"
-require_grep 'patch_files:' "${PROFILE_FILE}"
-require_grep 'dev-libs/intel-metrics-library/01-disable-upstream-release-lto.patch' "${PROFILE_FILE}"
-require_grep 'add_definitions \(-flto\)' "${PROFILE_FILE}"
 require_grep 'dev-qt/qtwayland' "${PROFILE_FILE}"
 require_grep 'x11-base/xwayland' "${PROFILE_FILE}"
 require_grep 'x11-misc/sddm' "${PROFILE_FILE}"
 
 for atom in \
-  dev-libs/intel-compute-runtime \
   dev-libs/rocm-opencl-runtime \
   dev-util/clinfo \
   dev-util/vulkan-tools \
@@ -71,6 +67,16 @@ for atom in \
   x11-drivers/xf86-video-intel \
   x11-drivers/nvidia-drivers; do
   require_grep "^=?${atom}([[:space:]]|$|=|-[0-9])" "${PACKAGE_LIST}"
+done
+
+for atom in \
+  dev-libs/intel-compute-runtime \
+  dev-libs/intel-metrics-library \
+  dev-libs/level-zero \
+  dev-util/intel-graphics-compiler \
+  media-libs/gmmlib; do
+  reject_grep "^=?${atom}([[:space:]]|$|=|-[0-9])" "${PACKAGE_LIST}"
+  reject_grep "${atom}" "${PROFILE_FILE}"
 done
 
 require_grep '^dev-libs/amdgpu-pro-opencl$' "${GPU_ADVISORY}"

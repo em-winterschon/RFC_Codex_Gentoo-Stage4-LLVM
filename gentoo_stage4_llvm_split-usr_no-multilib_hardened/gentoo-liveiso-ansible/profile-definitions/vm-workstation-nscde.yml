@@ -26,7 +26,6 @@ gentoo_profile_definition:
     41-workstation-gpu-universal-xorg: |
       */* VIDEO_CARDS: -* intel amdgpu radeonsi fbdev vesa qxl modesetting nvidia
       app-emulation/qemu X accessibility aio bpf bzip2 capstone curl fdt filecaps fuse infiniband io-uring iscsi jemalloc jpeg keyutils lzo multipath ncurses nfs nls numa opengl pam plugins png python rbd sasl sdl sdl-image seccomp slirp smartcard snappy spice ssh static static-user systemtap udev usb usbredir vde vhost-net virgl virtfs vnc vte xattr xdp zstd -alsa -debug -glusterfs -gnutls -gtk -jack -oss -pipewire -pulseaudio -selinux -test -wayland -xen
-      dev-libs/intel-compute-runtime l0 vaapi -disable-mitigations
       dev-libs/rocm-opencl-runtime -debug -test
       gui-libs/gtk X -wayland -gtk-doc -examples -cloudproviders -test
       media-libs/amdgpu-pro-vulkan abi_x86_64 video_cards_amdgpu -abi_x86_32
@@ -42,14 +41,11 @@ gentoo_profile_definition:
       =x11-drivers/nvidia-drivers-580.159.03-r1 ~amd64
     41-workstation-gpu-universal-xorg: |
       dev-libs/amdgpu-pro-opencl ~amd64
-      dev-libs/intel-compute-runtime ~amd64
       dev-libs/rocm-opencl-runtime ~amd64
       dev-util/amdsmi ~amd64
       dev-util/clinfo ~amd64
-      dev-util/intel-graphics-compiler ~amd64
       dev-util/rocm-smi ~amd64
       dev-util/rocminfo ~amd64
-      dev-libs/intel-metrics-library ~amd64
       sys-apps/amdgpu_top ~amd64
   package_license_files:
     40-workstation-nscde-gpu: |
@@ -60,22 +56,6 @@ gentoo_profile_definition:
       media-libs/amdgpu-pro-vulkan AMD-GPU-PRO-EULA
       media-video/amdgpu-pro-amf AMD-GPU-PRO-EULA
       sys-kernel/linux-firmware linux-fw-redistributable no-source-code
-  patch_files:
-    dev-libs/intel-metrics-library/01-disable-upstream-release-lto.patch: |
-      --- a/CMakeLists.txt
-      +++ b/CMakeLists.txt
-      @@ -642,11 +642,8 @@
-           if ("${CMAKE_BUILD_TYPE}" STREQUAL "release" OR
-               "${CMAKE_BUILD_TYPE}" STREQUAL "release-internal" OR
-               "${CMAKE_BUILD_TYPE}" STREQUAL "releaseinternal")
-      -        add_definitions (-flto)                   # enables Link-Time Optimization (LTO)
-               add_definitions (-fvisibility=hidden)     # hide non-exported symbols
-               add_definitions (-fPIC)                   # generates position-independent code during the compilation phase
-      -        add_definitions (-fPIE)                   # generates position-independent executables during the compilation phase
-      -        add_definitions (-pie)                    # produces position-independent executables during the linking phase
-           endif ()
-       else()
-           message("-- Using platform is ${PLATFORM}")
   package_mask_files:
     40-workstation-nscde-gpu: |
       >x11-drivers/nvidia-drivers-580.159.03-r1
