@@ -96,6 +96,21 @@ subnet:
 Additional DHCP scopes should move to NetBox/IPAM-backed automation before
 being enabled.
 
+The DHCP renderer supports scoped RouterOS DHCP options and static leases for
+UEFI/EFI handoff paths. x86/amd64 netboot definitions must use UEFI/EFI assets;
+legacy BIOS PXE is not supported for normal host, VM, or workstation install
+paths.
+
+Current K10 validation lease:
+
+| Field | Value |
+| --- | --- |
+| Host | `gmktek-k10-stage5-ipxe` |
+| MAC | `84:47:09:5F:21:64` |
+| Address | `172.16.99.156` |
+| DHCP option | `k10-http-bootfile` |
+| Option 67 | `http://172.16.99.108:8080/k10-ipxe.efi` |
+
 ## Live Apply Gate
 
 No live apply task exists in this role yet. Before adding one, keep serial

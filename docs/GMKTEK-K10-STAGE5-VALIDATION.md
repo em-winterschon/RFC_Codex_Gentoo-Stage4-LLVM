@@ -16,8 +16,18 @@ before reimaging X12AGAIN with the LOX Stage4 plus Stage5 workstation profile.
 - iPXE NIC slot: `04:00:00`
 - iPXE NIC MAC: `84:47:09:5F:21:64`
 - Firmware target: UEFI iPXE
+- DHCP lease: static RouterOS lease `172.16.99.156`
+- DHCP client class: `HTTPClient:Arch:00016:UNDI:003016`
+- EFI handoff URL: `http://172.16.99.108:8080/k10-ipxe.efi`
 - Optional console: rear DB9 RS232, pending validation for pre/post-bootloader
   redirection
+
+## Firmware Policy
+
+Use UEFI/EFI netboot paths only for x86/amd64 hosts. Do not add legacy BIOS
+PXE support for K10, X12AGAIN, Hasslehoff, workstation, or server-class hosts.
+U-Boot embedded systems are a separate future class and are not part of the
+default network-boot design.
 
 ## Intake State
 
@@ -32,9 +42,12 @@ Current physical discovery state:
 - Connected test port: CSS326 `ge16`
 - Expected boot path: UEFI PXE/iPXE
 - Observed status: DHCP requests from `84:47:09:5F:21:64` reached `eno1`, and
-  `172.16.99.1` sent DHCP replies during the 2026-05-07 reboot window
-- Blocker: no confirmed lease IP or successful iPXE asset fetch has been
-  observed yet
+  `172.16.99.1` offered `172.16.99.156` during the 2026-05-07 reboot window
+- DHCP handoff: RouterOS static lease scoped option 67 to
+  `http://172.16.99.108:8080/k10-ipxe.efi`
+- HTTP handoff: on-host listener is serving `/var/lib/netboot/path-b` on
+  `172.16.99.108:8080`
+- Blocker: no successful EFI handoff or iPXE asset fetch has been observed yet
 - Exclusion: `172.16.99.160` is not accepted as K10 evidence because it showed
   conflicting ARP/MAC data and an existing OpenSSH/rpcbind host
 
@@ -46,17 +59,18 @@ Once the host requests DHCP, record:
 
 ## Validation Gates
 
-1. Confirm DHCP lease IP for MAC `84:47:09:5F:21:64`.
-2. Create NetBox device, interface, MAC, IPAM, and DNS records.
-3. Add a RouterOS DHCP reservation for the iPXE validation address.
-4. Boot iPXE and confirm kernel/initramfs delivery.
-5. Install LOX Stage4 plus Stage5 workstation profile using binpkgs where
+1. Reboot K10 and confirm DHCP offer includes option 67 URL.
+2. Confirm firmware fetches `k10-ipxe.efi` over HTTP.
+3. Confirm embedded iPXE fetches `hosts/gmktek-k10-stage5.ipxe`.
+4. Create NetBox device, interface, MAC, IPAM, and DNS records.
+5. Boot iPXE and confirm kernel/initramfs delivery.
+6. Install LOX Stage4 plus Stage5 workstation profile using binpkgs where
    possible.
-6. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
-7. Validate Intel GPU stack: Mesa, Vulkan loader/tools, Level Zero, OpenCL, and
+7. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
+8. Validate Intel GPU stack: Mesa, Vulkan loader/tools, Level Zero, OpenCL, and
    `clinfo` where supported.
-8. Validate SSH, rsyslog, telemetry, and optional SSSD client enrollment.
-9. Snapshot/capture final package and Portage state before considering X12AGAIN.
+9. Validate SSH, rsyslog, telemetry, and optional SSSD client enrollment.
+10. Snapshot/capture final package and Portage state before considering X12AGAIN.
 
 ## Backout
 

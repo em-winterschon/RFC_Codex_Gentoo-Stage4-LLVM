@@ -42,6 +42,8 @@ routeros_rfc99_gateway_dhcp_range: 172.16.99.150-172.16.99.158
 routeros_rfc99_gateway_dhcp_lease_time: 1h
 routeros_rfc99_gateway_dhcp_dns_servers:
   - 172.16.99.1
+routeros_rfc99_gateway_dhcp_options: []
+routeros_rfc99_gateway_dhcp_static_leases: []
 
 routeros_rfc99_gateway_management_cidrs:
   - 172.16.99.0/24

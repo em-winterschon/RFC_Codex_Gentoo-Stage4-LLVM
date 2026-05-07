@@ -23,3 +23,14 @@ routeros_rfc99_gateway_dns_static_records:
     ttl: 5m
     comment: codex ntfy service cname
 routeros_rfc99_gateway_syslog_remote_host: 172.16.99.89
+routeros_rfc99_gateway_dhcp_options:
+  - name: k10-http-bootfile
+    code: 67
+    value: http://172.16.99.108:8080/k10-ipxe.efi
+    purpose: UEFI HTTP handoff for GMKtek K10 Stage5 validation
+routeros_rfc99_gateway_dhcp_static_leases:
+  - comment: gmktek-k10-stage5-ipxe
+    address: 172.16.99.156
+    mac_address: "84:47:09:5F:21:64"
+    dhcp_options:
+      - k10-http-bootfile

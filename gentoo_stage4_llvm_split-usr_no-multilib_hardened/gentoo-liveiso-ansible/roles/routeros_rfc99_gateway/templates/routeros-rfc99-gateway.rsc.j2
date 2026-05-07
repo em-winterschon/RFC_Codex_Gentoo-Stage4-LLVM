@@ -129,6 +129,20 @@
         /ip dhcp-server add name="{{ routeros_rfc99_gateway_dhcp_name }}" interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
     }
 }
+{% for routeros_dhcp_option in routeros_rfc99_gateway_dhcp_options %}
+/ip dhcp-server option remove [find name="{{ routeros_dhcp_option.name }}"]
+/ip dhcp-server option add name="{{ routeros_dhcp_option.name }}" code={{ routeros_dhcp_option.code }} value="'{{ routeros_dhcp_option.value }}'"
+{% endfor %}
+{% for routeros_dhcp_lease in routeros_rfc99_gateway_dhcp_static_leases %}
+{% set routeros_dhcp_lease_server = routeros_dhcp_lease.server | default(routeros_rfc99_gateway_dhcp_name) %}
+{% set routeros_dhcp_lease_comment = routeros_dhcp_lease.comment | default('RFC99 static DHCP lease') %}
+{% set routeros_dhcp_lease_options = routeros_dhcp_lease.dhcp_options | default([]) %}
+:if ([:len [/ip dhcp-server lease find where mac-address="{{ routeros_dhcp_lease.mac_address }}"]] > 0) do={
+    /ip dhcp-server lease set [find where mac-address="{{ routeros_dhcp_lease.mac_address }}"] address={{ routeros_dhcp_lease.address }} server={{ routeros_dhcp_lease_server }} comment="{{ routeros_dhcp_lease_comment }}"{% if routeros_dhcp_lease_options | length > 0 %} dhcp-option={{ routeros_dhcp_lease_options | join(',') }}{% endif %}
+} else={
+    /ip dhcp-server lease add address={{ routeros_dhcp_lease.address }} mac-address={{ routeros_dhcp_lease.mac_address }} server={{ routeros_dhcp_lease_server }} comment="{{ routeros_dhcp_lease_comment }}"{% if routeros_dhcp_lease_options | length > 0 %} dhcp-option={{ routeros_dhcp_lease_options | join(',') }}{% endif %}
+}
+{% endfor %}
 {% else %}
 /ip dhcp-server disable [find]
 {% endif %}

@@ -24,6 +24,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Moved GMKtek K10 Stage5 validation from MAC-discovery blocked to active
   iPXE validation tracking after observing DHCP requests from NIC slot
   `04:00:00`, MAC `84:47:09:5F:21:64`.
+- Recorded the x86/amd64 netboot policy as UEFI/EFI-only, scoped the K10
+  RouterOS DHCP lease to `172.16.99.156`, and set its EFI handoff URL to
+  `http://172.16.99.108:8080/k10-ipxe.efi`; the RouterOS gateway role now
+  renders DHCP options and static leases for this class of UEFI handoff.
 - Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
   and live validation before importing Check_MK targets or alerting
   dependencies.
