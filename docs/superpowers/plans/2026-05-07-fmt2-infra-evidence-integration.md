@@ -47,4 +47,4 @@
 - [x] **Step 1:** Run `git diff --check`.
 - [x] **Step 2:** Run `bash tests/shell/run-tests.sh`.
 - [x] **Step 3:** Commit the FMT2 planning changes.
-- [ ] **Step 4:** Push the branch and publish the wiki if checks pass.
+- [x] **Step 4:** Push the branch and publish the wiki if checks pass.
