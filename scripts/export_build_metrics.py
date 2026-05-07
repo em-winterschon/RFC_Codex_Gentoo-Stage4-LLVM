@@ -9,7 +9,6 @@ time without needing external plotting dependencies.
 from __future__ import annotations
 
 # ruff: noqa: E501
-
 import argparse
 import csv
 import datetime as dt
