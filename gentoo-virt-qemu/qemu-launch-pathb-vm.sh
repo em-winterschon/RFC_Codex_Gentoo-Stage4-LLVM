@@ -349,8 +349,18 @@ print_cmd() {
 }
 
 validate_inputs() {
-  require_file "${QEMU_BIN}" 'QEMU_BIN'
-  require_host_disk_ready "${QEMU_ROOTDISK}" 'QEMU_ROOTDISK'
+  if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && ! -f "${QEMU_BIN}" ]]; then
+    log "Dry-run: QEMU_BIN is not present on this host: ${QEMU_BIN}"
+  else
+    require_file "${QEMU_BIN}" 'QEMU_BIN'
+  fi
+
+  if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && ! -e "${QEMU_ROOTDISK}" ]]; then
+    log "Dry-run: root disk is not present on this host: ${QEMU_ROOTDISK}"
+  else
+    require_host_disk_ready "${QEMU_ROOTDISK}" 'QEMU_ROOTDISK'
+  fi
+
   case "${QEMU_PATHB_BOOT_MODE}" in
   ipxe)
     resolve_ovmf_paths

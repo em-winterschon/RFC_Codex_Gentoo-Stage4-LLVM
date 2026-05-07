@@ -29,6 +29,7 @@ QEMU_SERIAL_PORT="${QEMU_SERIAL_PORT:-5005}"
 QEMU_MEMORY_DRIVES_FILE="${QEMU_MEMORY_DRIVES_FILE:-}"
 QEMU_CREATE_ROOTDISK="${QEMU_CREATE_ROOTDISK:-1}"
 QEMU_RESET_ROOTDISK="${QEMU_RESET_ROOTDISK:-0}"
+QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
 
 log() {
   printf '[qemu-launch-elasticsearch-test-vm] %s\n' "$*"
@@ -42,12 +43,18 @@ fail() {
 prepare_rootdisk() {
   mkdir -p "$(dirname "${QEMU_ROOTDISK}")"
 
-  if [[ "${QEMU_RESET_ROOTDISK}" == '1' ]]; then
+  if [[ "${QEMU_RESET_ROOTDISK}" == '1' && "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
+    log "Dry-run: would remove root disk ${QEMU_ROOTDISK}"
+  elif [[ "${QEMU_RESET_ROOTDISK}" == '1' ]]; then
     rm -f "${QEMU_ROOTDISK}"
   fi
 
   if [[ ! -f "${QEMU_ROOTDISK}" ]]; then
     [[ "${QEMU_CREATE_ROOTDISK}" == '1' ]] || fail "QEMU_ROOTDISK is missing: ${QEMU_ROOTDISK}"
+    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
+      log "Dry-run: would create root disk ${QEMU_ROOTDISK} (${QEMU_ROOTDISK_SIZE})"
+      return 0
+    fi
     command -v qemu-img >/dev/null 2>&1 || fail 'missing required command: qemu-img'
     log "Creating root disk ${QEMU_ROOTDISK} (${QEMU_ROOTDISK_SIZE})"
     qemu-img create -f qcow2 "${QEMU_ROOTDISK}" "${QEMU_ROOTDISK_SIZE}" >/dev/null
@@ -75,7 +82,8 @@ main() {
     QEMU_SERIAL_MODE \
     QEMU_SERIAL_HOST \
     QEMU_SERIAL_PORT \
-    QEMU_MEMORY_DRIVES_FILE
+    QEMU_MEMORY_DRIVES_FILE \
+    QEMU_LAUNCH_DRY_RUN
 
   exec "${SCRIPT_DIR}/qemu-launch-pathb-vm.sh" "$@"
 }
