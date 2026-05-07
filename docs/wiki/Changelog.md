@@ -7,6 +7,8 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added the 2026-05-06 EOD report and wiki mirror covering workstation GPU
+  validation, ntfy topics, K10 discovery state, and active package-build gates.
 - Added `scripts/proxmox-create-workstation-nscde-gpu-vm.sh` for the
   Hasslehoff Stage5 workstation GPU VM path.
 - Added regression coverage for Proxmox workstation VM rendering, extra Proxmox
@@ -70,6 +72,12 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Enabled ntfy in the `vm-container-services` profile and moved its internal
   listener to unprivileged port `8080` so the container can keep `--cap-drop
   all` while HAProxy publishes LAN HTTP on port `80`.
+- Updated the `dev-libs/intel-metrics-library` user patch to match the current
+  upstream source context and remove upstream release-mode `-flto`, `-fPIE`,
+  and linker `-pie` flags.
+- Documented the GMKtek K10 discovery blocker: physical link moved to CSS326
+  `ge16`, no confirmed DHCP/iPXE lease observed, and `172.16.99.160` is a
+  duplicate/unknown host rather than safe K10 evidence.
 
 ### Operational Notes
 
@@ -94,6 +102,13 @@ infrastructure work. It is intentionally higher level than `git log`.
   transport, so WebRTC/Direct H.264/Legacy MJPEG were ruled out. The live VM now
   has a managed NVIDIA Xorg policy at `1280x720@60`; Direct H.264 displays the
   deterministic K1200 test pattern cleanly.
+- Workstation Intel/K10 package build remains active on VM `1094`. Near EOD,
+  Portage had an active `emerge --jobs=2 --load-average=10`, the binpkg cache
+  was `5.7G` / `437` files, and a second guarded rerun was queued to reuse
+  binpkgs after the fixed Intel metrics patch lands.
+- Draft PR `#20` was green at commit
+  `f61b75d8f0c686d4e82fcdaf6b72df88e580c973` before this EOD documentation
+  update.
 
 ## 2026-05-05
 

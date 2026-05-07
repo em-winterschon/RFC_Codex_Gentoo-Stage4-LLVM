@@ -25,6 +25,15 @@ The local Ansible inventory carries a placeholder host:
 - role: `ipxe-stage5-validation-host`
 - status: `pending-mac-discovery`
 
+Current physical discovery state:
+
+- Connected test port: CSS326 `ge16`
+- Expected boot path: UEFI PXE/iPXE
+- Observed status: no confirmed DHCP/iPXE lease after link and power bounce
+- Blocker: firmware/BIOS boot order needs local console or PiKVM access
+- Exclusion: `172.16.99.160` is not accepted as K10 evidence because it showed
+  conflicting ARP/MAC data and an existing OpenSSH/rpcbind host
+
 Once the host requests DHCP, record:
 
 - management MAC
