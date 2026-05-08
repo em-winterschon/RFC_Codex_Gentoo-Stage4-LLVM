@@ -1,0 +1,94 @@
+---
+- name: Resolve Trac server settings
+  ansible.builtin.set_fact:
+    trac_server_enabled: "{{ resolved_profile_trac_server.enabled | default(trac_server_default_enabled) | bool }}"
+    resolved_trac_server:
+      service_user: "{{ resolved_profile_trac_server.service_user | default(trac_server_default_service_user) }}"
+      service_group: "{{ resolved_profile_trac_server.service_group | default(trac_server_default_service_group) }}"
+      project_name: "{{ resolved_profile_trac_server.project_name | default(trac_server_default_project_name) }}"
+      project_path: "{{ resolved_profile_trac_server.project_path | default(trac_server_default_project_path) }}"
+      config_root: "{{ resolved_profile_trac_server.config_root | default(trac_server_default_config_root) }}"
+      log_root: "{{ resolved_profile_trac_server.log_root | default(trac_server_default_log_root) }}"
+      listen_host: "{{ resolved_profile_trac_server.listen_host | default(trac_server_default_listen_host) }}"
+      listen_port: "{{ resolved_profile_trac_server.listen_port | default(trac_server_default_listen_port) }}"
+      public_base_url: "{{ resolved_profile_trac_server.public_base_url | default(trac_server_default_public_base_url) }}"
+      database: "{{ trac_server_default_database | combine(resolved_profile_trac_server.database | default({}), recursive=True) }}"
+      auth: "{{ trac_server_default_auth | combine(resolved_profile_trac_server.auth | default({}), recursive=True) }}"
+      workflow_states: "{{ resolved_profile_trac_server.workflow_states | default(trac_server_default_workflow_states) }}"
+      ticket_custom_fields: "{{ resolved_profile_trac_server.ticket_custom_fields | default(trac_server_default_ticket_custom_fields) }}"
+      plugins: "{{ trac_server_default_plugins | combine(resolved_profile_trac_server.plugins | default({}), recursive=True) }}"
+
+- name: Ensure Trac service group exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('getent group ' ~ resolved_trac_server.service_group ~ ' >/dev/null || groupadd --system ' ~ resolved_trac_server.service_group) | quote }}
+  changed_when: true
+  when: trac_server_enabled
+
+- name: Ensure Trac service user exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('id -u ' ~ resolved_trac_server.service_user ~ ' >/dev/null 2>&1 || useradd --system --home-dir ' ~ resolved_trac_server.project_path ~ ' --shell /sbin/nologin --gid ' ~ resolved_trac_server.service_group ~ ' ' ~ resolved_trac_server.service_user) | quote }}
+  changed_when: true
+  when: trac_server_enabled
+
+- name: Ensure Trac directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ trac_server_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_trac_server.config_root }}"
+    - "{{ resolved_trac_server.log_root }}"
+    - "{{ resolved_trac_server.project_path }}"
+    - /etc/init.d
+    - /etc/conf.d
+  loop_control:
+    loop_var: trac_server_dir
+  when: trac_server_enabled
+
+- name: Render Trac main configuration
+  ansible.builtin.template:
+    src: trac.ini.j2
+    dest: "{{ install_target_root }}{{ resolved_trac_server.config_root }}/trac.ini"
+    mode: '0640'
+  when: trac_server_enabled
+
+- name: Render Trac workflow configuration
+  ansible.builtin.template:
+    src: trac-workflow.ini.j2
+    dest: "{{ install_target_root }}{{ resolved_trac_server.config_root }}/workflow.ini"
+    mode: '0644'
+  when: trac_server_enabled
+
+- name: Render Trac custom field configuration
+  ansible.builtin.template:
+    src: trac-custom-fields.ini.j2
+    dest: "{{ install_target_root }}{{ resolved_trac_server.config_root }}/custom-fields.ini"
+    mode: '0644'
+  when: trac_server_enabled
+
+- name: Render Trac OpenRC service
+  ansible.builtin.template:
+    src: trac.openrc.j2
+    dest: "{{ install_target_root }}/etc/init.d/tracd"
+    mode: '0755'
+  when: trac_server_enabled
+
+- name: Assign Trac runtime ownership in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('chown -R ' ~ resolved_trac_server.service_user ~ ':' ~ resolved_trac_server.service_group ~ ' ' ~ resolved_trac_server.project_path ~ ' ' ~ resolved_trac_server.config_root ~ ' ' ~ resolved_trac_server.log_root) | quote }}
+  changed_when: true
+  when: trac_server_enabled
+
+- name: Enable Trac OpenRC service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + ['tracd']
+        ) | unique
+      }}
+  when: trac_server_enabled

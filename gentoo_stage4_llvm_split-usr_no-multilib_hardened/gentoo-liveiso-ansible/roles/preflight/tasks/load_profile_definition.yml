@@ -267,6 +267,22 @@
             recursive=True
           )
       }}
+    resolved_profile_trac_server: >-
+      {{
+        resolved_profile_trac_server
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.trac_server | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_trac_mcp_bridge: >-
+      {{
+        resolved_profile_trac_mcp_bridge
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.trac_mcp_bridge | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_nscde_workstation: >-
       {{
         resolved_profile_nscde_workstation

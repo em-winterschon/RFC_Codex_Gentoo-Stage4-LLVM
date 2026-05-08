@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+name="Trac project management service"
+description="Trac project management control plane"
+command="/usr/bin/tracd"
+command_args="--single-env --hostname={{ resolved_trac_server.listen_host }} --port={{ resolved_trac_server.listen_port }} {{ resolved_trac_server.project_path }}"
+command_user="{{ resolved_trac_server.service_user }}:{{ resolved_trac_server.service_group }}"
+pidfile="/run/tracd.pid"
+command_background="yes"
+output_log="{{ resolved_trac_server.log_root }}/tracd.out"
+error_log="{{ resolved_trac_server.log_root }}/tracd.err"
+
+depend() {
+  need net
+  use postgresql rsyslog
+  after firewall
+}

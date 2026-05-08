@@ -45,6 +45,7 @@ for profile in \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
   vm-redfish-emulator.yml \
+  vm-trac-service.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml \
@@ -72,6 +73,7 @@ for metadata in \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
   vm-redfish-emulator.metadata.yml \
+  vm-trac-service.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
   vm-nexus-repository.metadata.yml; do
@@ -127,6 +129,7 @@ for package_list in \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
   stage5-virtual-host-redfish-emulator.packages \
+  stage5-virtual-host-trac-service.packages \
   stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages; do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"

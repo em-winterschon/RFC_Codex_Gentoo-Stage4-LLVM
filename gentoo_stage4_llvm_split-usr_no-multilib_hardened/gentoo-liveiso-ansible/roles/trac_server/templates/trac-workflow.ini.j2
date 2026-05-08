@@ -1,0 +1,21 @@
+[ticket-workflow]
+{% for state in resolved_trac_server.workflow_states %}
+{{ state }} = {{ state }}
+{% endfor %}
+
+intake_ready = intake -> ready
+intake_ready.label = Intake accepted
+ready_start = ready -> in_progress
+ready_start.label = Start work
+progress_block = in_progress -> blocked
+progress_block.label = Mark blocked
+blocked_resume = blocked -> in_progress
+blocked_resume.label = Resume work
+progress_review = in_progress -> review
+progress_review.label = Request review
+review_validate = review -> validation
+review_validate.label = Begin validation
+validation_done = validation -> done
+validation_done.label = Complete
+reopen = done -> ready
+reopen.label = Reopen

@@ -1,0 +1,45 @@
+---
+gentoo_system_profile_metadata:
+  profile_id: vm-trac-service
+  display_name: Trac Project Management Control Plane VM
+  stage: stage5
+  system_type: virtual-host
+  service_role: project-management-control-plane
+  inherits:
+    - stage4-lox
+    - aaa-domain-client
+    - logging-rsyslog-client
+    - telemetry-node-exporter-client
+  authority_model:
+    work_management_authority: trac
+    git_authorities:
+      - github
+      - codeberg
+    ipam_dcim_authority: netbox
+    identity_authority: freeipa
+  ticket_workflow:
+    - intake
+    - ready
+    - in_progress
+    - blocked
+    - review
+    - validation
+    - done
+  ticket_link_fields:
+    - github_pr
+    - codeberg_ref
+    - netbox_object
+    - change_window
+    - backout_plan
+    - slo_validation
+  plugin_policy:
+    mode: pinned-minimal
+    rationale: >-
+      Trac's plugin ecosystem is useful but unevenly maintained. Validate Git,
+      RPC/API, dependency, Jenkins, Buildbot, and LDAP plugins before adding
+      them to the default live deployment.
+  mcp_bridge:
+    status: scaffolded
+    default_exposure: local-management-only
+    token_source: Ansible Vault
+  repository_rename_recommendation: rfc1918-platform-fabric
