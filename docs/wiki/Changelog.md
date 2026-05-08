@@ -7,6 +7,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added the 2026-05-07 EOD report and wiki mirror covering K10 netboot
+  validation, AP7901 PDU vaulting, NetBox inventory gaps, ntfy topic state, and
+  the next netboot lifecycle/AAA automation block.
 - Added a repeatable BigNetwork vault importer, repo-safe local-network
   BigNetwork variable wiring, and docs for the Forge/Codexian token plus NanoPi
   R6S Edge Lite bridge path.
@@ -48,6 +51,11 @@ infrastructure work. It is intentionally higher level than `git log`.
   `initrd=initrd.magic`, patched RTL8125B firmware in the initramfs, and static
   dracut networking; it now fetches the HTTP rootfs and reaches the Gentoo live
   login prompt.
+- Confirmed live NetBox API reachability while identifying that K10 and AP7901
+  PDU records still need repo-safe inventory-intake promotion before live apply.
+- Confirmed the active shell does not currently load the LAN ntfy export file,
+  so helper defaults fall back to public `https://ntfy.sh` without topics until
+  local environment loading is normalized.
 - Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
   and live validation before importing Check_MK targets or alerting
   dependencies.
