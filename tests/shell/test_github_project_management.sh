@@ -36,6 +36,8 @@ assert_file_contains "${DOCS}" "GitHub Query URLs"
 assert_file_contains "${DOCS}" "read:project"
 assert_file_contains "${WIKI}" "GitHub Query URLs"
 assert_file_contains "${SEED}" "verify_project_scope"
+assert_file_contains "${SEED}" "Roadmap Status"
+assert_file_contains "${SEED}" "add_issues_to_project"
 
 python3 - <<'PY' "${REPO_ROOT}/.github/ISSUE_TEMPLATE" "${REPO_ROOT}/project-management"
 import pathlib

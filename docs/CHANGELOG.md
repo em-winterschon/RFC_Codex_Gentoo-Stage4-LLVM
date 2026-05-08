@@ -11,6 +11,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   structured issue forms, label catalog, milestone catalog, roadmap-derived
   issue seeding, query-parameter issue URLs, and a dry-run-first local seed
   script that avoids GitHub Actions.
+- Created the `RFC Codex Infrastructure Roadmap` GitHub Projects v2 board with
+  seeded roadmap items and repo-specific `Roadmap Status` / `Roadmap ID`
+  fields.
 
 ## 2026-05-07
 

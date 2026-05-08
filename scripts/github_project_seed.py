@@ -202,6 +202,13 @@ def gh_run(args: list[str]) -> None:
     subprocess.run(["gh", *args], check=True, text=True)
 
 
+def gh_json_optional(args: list[str]) -> Any | None:
+    try:
+        return gh_json(args)
+    except subprocess.CalledProcessError:
+        return None
+
+
 def url_quote(value: str) -> str:
     return urllib.parse.quote(value, safe="")
 
@@ -355,44 +362,94 @@ def apply_issues(repo: str, issues: list[PlannedIssue]) -> None:
         print(f"created issue: {issue.title}")
 
 
-def create_project(owner: str, title: str) -> None:
+def project_fields(project_number: str, owner: str) -> list[dict[str, Any]]:
+    data = gh_json(["project", "field-list", project_number, "--owner", owner, "--format", "json"])
+    return list(data.get("fields", []))
+
+
+def ensure_project_field(
+    project_number: str,
+    owner: str,
+    name: str,
+    data_type: str,
+    options: tuple[str, ...] = (),
+) -> None:
+    existing = {field["name"] for field in project_fields(project_number, owner)}
+    if name in existing:
+        print(f"skipped existing project field: {name}")
+        return
+
+    cmd = [
+        "project",
+        "field-create",
+        project_number,
+        "--owner",
+        owner,
+        "--name",
+        name,
+        "--data-type",
+        data_type,
+    ]
+    if options:
+        cmd.extend(["--single-select-options", ",".join(options)])
+    gh_run(cmd)
+    print(f"created project field: {name}")
+
+
+def repo_issues_by_title(repo: str) -> dict[str, str]:
+    data = gh_json(["issue", "list", "--repo", repo, "--state", "all", "--limit", "1000", "--json", "title,url"])
+    return {item["title"]: item["url"] for item in data}
+
+
+def project_item_titles(project_number: str, owner: str) -> set[str]:
+    data = gh_json(["project", "item-list", project_number, "--owner", owner, "--format", "json", "--limit", "1000"])
+    titles = set()
+    for item in data.get("items", []):
+        title = item.get("title") or item.get("content", {}).get("title")
+        if title:
+            titles.add(title)
+    return titles
+
+
+def add_issues_to_project(project_number: str, owner: str, repo: str, issues: list[PlannedIssue]) -> None:
+    urls = repo_issues_by_title(repo)
+    existing_titles = project_item_titles(project_number, owner)
+    for issue in issues:
+        if issue.title in existing_titles:
+            print(f"skipped existing project item: {issue.title}")
+            continue
+        url = urls.get(issue.title)
+        if not url:
+            print(f"skipped missing issue for project item: {issue.title}", file=sys.stderr)
+            continue
+        gh_run(["project", "item-add", project_number, "--owner", owner, "--url", url])
+        print(f"added project item: {issue.title}")
+
+
+def create_project(owner: str, title: str) -> str:
     projects = gh_json(["project", "list", "--owner", owner, "--format", "json", "--limit", "100"])
     for project in projects.get("projects", []):
         if project.get("title") == title:
-            print(f"skipped existing project: {title}")
-            return
+            print(f"skipped existing project: {title} #{project['number']}")
+            return str(project["number"])
 
     created = gh_json(["project", "create", "--owner", owner, "--title", title, "--format", "json"])
     number = str(created["number"])
     print(f"created project: {title} #{number}")
-    gh_run(
-        [
-            "project",
-            "field-create",
-            number,
-            "--owner",
-            owner,
-            "--name",
-            "Status",
-            "--data-type",
-            "SINGLE_SELECT",
-            "--single-select-options",
-            "Backlog,Ready,Active,Blocked,Review,Done",
-        ]
+    return number
+
+
+def ensure_project(owner: str, repo: str, title: str, issues: list[PlannedIssue]) -> None:
+    project_number = create_project(owner, title)
+    ensure_project_field(
+        project_number,
+        owner,
+        "Roadmap Status",
+        "SINGLE_SELECT",
+        ("Backlog", "Ready", "Active", "Blocked", "Review", "Done"),
     )
-    gh_run(
-        [
-            "project",
-            "field-create",
-            number,
-            "--owner",
-            owner,
-            "--name",
-            "Roadmap ID",
-            "--data-type",
-            "TEXT",
-        ]
-    )
+    ensure_project_field(project_number, owner, "Roadmap ID", "TEXT")
+    add_issues_to_project(project_number, owner, repo, issues)
 
 
 def verify_project_scope(owner: str) -> None:
@@ -413,7 +470,7 @@ def apply_catalogs(repo: str, catalogs: Catalogs, create_project_flag: bool) -> 
     apply_milestones(repo, catalogs.milestones)
     apply_issues(repo, catalogs.issues)
     if create_project_flag:
-        create_project(owner, catalogs.project_title)
+        ensure_project(owner, repo, catalogs.project_title, catalogs.issues)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:

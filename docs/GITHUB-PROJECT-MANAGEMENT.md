@@ -83,8 +83,10 @@ Current live seed status:
 
 - labels and milestones are applied
 - open roadmap/catalog issues are applied
-- Projects v2 board creation is blocked until the token includes
-  `project` / `read:project`
+- Projects v2 board `RFC Codex Infrastructure Roadmap` is created at
+  `https://github.com/users/em-winterschon/projects/1`
+- the board contains the seeded roadmap/catalog issues and the custom
+  `Roadmap Status` plus `Roadmap ID` fields
 
 ## Project Board
 
@@ -102,12 +104,12 @@ GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" \
 ```
 
 The project is named `RFC Codex Infrastructure Roadmap` unless overridden with
-`--project-title`. The script creates `Status` and `Roadmap ID` fields for
-Kanban and burn-down style tracking.
+`--project-title`. GitHub creates a reserved `Status` field automatically; the
+script creates `Roadmap Status` and `Roadmap ID` fields for repo-specific
+Kanban and burn-down style tracking, then adds seeded issues to the project.
 
 If the token is missing project permissions, the script exits before performing
-any project mutation and prints a scope-specific error. The existing Forge token
-is sufficient for labels, milestones, and issues, but not Projects v2 creation.
+any project mutation and prints a scope-specific error.
 
 ## Milestone Model
 
