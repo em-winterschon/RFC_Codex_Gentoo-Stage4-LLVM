@@ -3,6 +3,25 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-08
+
+### Added
+
+- Added MCP control-plane scaffolding for repo-managed MCP admission policy,
+  candidate registry, risk tiers, read-only defaults, and explicit
+  change-control gates before any mutation-capable MCP server receives
+  credentials.
+- Added the Stage5 `vm-mcp-control-plane` profile, package list, metadata, and
+  render-only `mcp_control_plane` Ansible role. The role writes
+  `/etc/mcp-control-plane/candidate-registry.yml`,
+  `/etc/mcp-control-plane/promotion-policy.yml`, and
+  `/etc/mcp-control-plane/mcp-control-plane.env`.
+- Added first-batch MCP candidate tracking for Hugging Face, Trac, NetBox,
+  Grafana, Jenkins, Proxmox, Context7, and Kubernetes/OpenShift MCP servers.
+- Added platform-service TODOs for single-node OpenShift and single-node
+  OpenStack VM profiles, including an explicit Gentoo/OpenRC feasibility gate
+  before assuming native service management.
+
 ## 2026-05-07
 
 ### Added

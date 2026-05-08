@@ -36,6 +36,7 @@
 - [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
 - [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
 - [BigNetwork FMT2 Smoke-Test](BigNetwork-FMT2-Smoke-Test)
+- [MCP Control Plane](MCP-Control-Plane)
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)
 - [Changelog](Changelog)

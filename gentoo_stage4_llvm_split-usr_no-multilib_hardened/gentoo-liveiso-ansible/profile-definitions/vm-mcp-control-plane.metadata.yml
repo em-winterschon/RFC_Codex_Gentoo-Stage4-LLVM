@@ -1,0 +1,27 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-mcp-control-plane
+  purpose: Stage5 virtual-host profile for MCP server admission control, candidate registry, and promotion policy.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: mcp-control-plane
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-mcp-control-plane.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - dev-python/pyyaml
+      - dev-python/requests
+      - net-misc/curl
+      - dev-vcs/git
+  deployment_notes:
+    - The first implementation is render-only and does not install third-party MCP services.
+    - Default mode is read-only; write-capable integrations require explicit change-control promotion.
+    - Secrets are referenced by vault variable name only and must not be rendered into repo-managed docs.

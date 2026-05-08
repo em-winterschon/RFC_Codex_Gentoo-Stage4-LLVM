@@ -201,6 +201,14 @@ Dependency:
 | `LLM-003` | pending | Scaffold OpenWebUI and Ollama service definitions | `LLM-001`, GPU service inventory access | Operator already has separate deployment automation; import only after Codex access is available. |
 | `LLM-004` | pending | Scaffold RAG ingestion, embedding, and retrieval pipeline roles | `LLM-002`, `LLM-003` | Keep metrics, logs, provider routing, and service VIPs explicit. |
 
+### Platform Service Profiles
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `PSP-001` | planned | Add single-node OpenShift VM profile and `openshift-service-profile` | Proxmox service VM factory, NetBox IPAM, storage/network plan | Treat Gentoo/OpenRC as the hypervisor and automation fabric. Use vendor-supported OpenShift/OKD node OS expectations inside the VM unless a supported Gentoo path is proven. Removal condition: profile, VM manifest, DNS/IPAM model, install plan, SLO checks, and backout plan exist. |
+| `PSP-002` | planned | Add single-node OpenStack VM profile and `openstack-service-profile` | Proxmox service VM factory, storage backend plan, identity and TLS policy | Review whether native Gentoo/OpenRC OpenStack service management is maintainable. If not, run OpenStack as an appliance VM while our fabric manages network, storage, DNS, TLS, auth, logs, metrics, and backups. Removal condition: feasibility decision, service inventory, VM profile, and install/backout plan exist. |
+| `PSP-003` | planned | Review Red Hat oriented platform assumptions against Gentoo/OpenRC policy | `PSP-001`, `PSP-002`, package and service research | Document required adaptations for systemd-heavy components, service supervision, SELinux/podman/cri-o expectations, kernel modules, networking, storage classes, TLS, AAA, and observability. Removal condition: design doc decides supported path for each platform. |
+
 ### Workstation VM Profiles
 
 | ID | Status | Task | Depends On | Notes |

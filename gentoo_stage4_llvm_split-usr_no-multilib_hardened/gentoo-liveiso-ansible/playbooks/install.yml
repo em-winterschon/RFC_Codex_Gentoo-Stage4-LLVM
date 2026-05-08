@@ -38,6 +38,7 @@
       - netbox_server
       - netbox_essentials
       - netbox_connector
+      - mcp_control_plane
       - zerotier_access
       - nscde_workstation
       - workstation_session_stack

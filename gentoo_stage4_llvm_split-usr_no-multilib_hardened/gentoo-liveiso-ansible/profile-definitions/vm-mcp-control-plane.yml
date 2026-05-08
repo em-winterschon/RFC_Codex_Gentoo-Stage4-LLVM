@@ -1,0 +1,28 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-mcp-control-plane
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-mcp-control-plane.packages
+  mcp_control_plane:
+    enabled: true
+    install_root: /etc/mcp-control-plane
+    default_mode: read-only
+    write_gate: explicit-change-control
+    audit_log_path: /var/log/mcp-control-plane/audit.log
+    registry_path: /etc/mcp-control-plane/candidate-registry.yml
+    promotion_policy_path: /etc/mcp-control-plane/promotion-policy.yml
+    env_path: /etc/mcp-control-plane/mcp-control-plane.env
+    owner: root
+    group: root
+    mode: "0640"
+  rsyslog:
+    enabled: true
+    forward_enabled: false
+  service_readiness:
+    checks:
+      - name: mcp-control-plane-registry
+        type: file
+        path: /etc/mcp-control-plane/candidate-registry.yml
+      - name: mcp-control-plane-policy
+        type: file
+        path: /etc/mcp-control-plane/promotion-policy.yml
