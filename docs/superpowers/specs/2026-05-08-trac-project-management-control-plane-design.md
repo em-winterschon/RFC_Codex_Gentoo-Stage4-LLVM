@@ -82,6 +82,16 @@ The MCP bridge depends on:
 - local network-only exposure by default
 - operator-controlled allowlists for batch ticket mutations
 
+MCP audit inputs:
+
+- `https://mcpmarket.com/server/trac`
+- `https://mcpmarket.com/server/trac-1`
+
+Both marketplace listings currently reference the `nerpatech/trac-mcp-server`
+project family. The marketplace pages are discovery evidence only. Source
+pinning, code review, vendoring, or local fork decisions should use the upstream
+source repository and local checks.
+
 ## Repository Naming
 
 The current repository name is too Gentoo-specific for the platform scope. The

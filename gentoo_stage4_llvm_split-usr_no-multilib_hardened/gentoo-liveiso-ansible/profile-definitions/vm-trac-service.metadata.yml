@@ -42,4 +42,8 @@ gentoo_system_profile_metadata:
     status: scaffolded
     default_exposure: local-management-only
     token_source: Ansible Vault
+    audit_inputs:
+      - https://mcpmarket.com/server/trac
+      - https://mcpmarket.com/server/trac-1
+    source_family: nerpatech/trac-mcp-server
   repository_rename_recommendation: rfc1918-platform-fabric

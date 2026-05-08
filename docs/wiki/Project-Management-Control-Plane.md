@@ -54,6 +54,17 @@ The MCP bridge is modeled separately as `trac_mcp_bridge` so a third-party Trac
 MCP server or local thin adapter can be swapped without changing Trac runtime
 state.
 
+## MCP Audit Inputs
+
+Track both MCP Market listings as discovery evidence:
+
+- `https://mcpmarket.com/server/trac`
+- `https://mcpmarket.com/server/trac-1`
+
+Both currently reference the `nerpatech/trac-mcp-server` project family. Use
+the upstream source repository, not the marketplace page, as the auditable
+source for pinning and patch review.
+
 ## Boundaries
 
 NetBox remains IPAM/DCIM authority. FreeIPA remains identity authority. GitHub

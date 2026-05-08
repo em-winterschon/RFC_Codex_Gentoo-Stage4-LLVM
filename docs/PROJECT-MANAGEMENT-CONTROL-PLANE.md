@@ -69,6 +69,19 @@ The MCP bridge is modeled separately as `trac_mcp_bridge`. It can wrap a
 third-party Trac MCP server or a local thin adapter without changing Trac's
 persistent runtime.
 
+## MCP Audit Inputs
+
+Two MCP Market listings should be treated as audit inputs for the same Trac MCP
+implementation family:
+
+- `https://mcpmarket.com/server/trac`
+- `https://mcpmarket.com/server/trac-1`
+
+Both listings currently reference the `nerpatech/trac-mcp-server` project
+family. The MCP Market pages are discovery evidence only; the auditable source
+for pinning, vendoring, or patch review should be the upstream source
+repository, plus any local fork if we need deterministic behavior.
+
 ## Integration Boundaries
 
 NetBox remains the IPAM/DCIM source of truth. Trac tickets reference NetBox

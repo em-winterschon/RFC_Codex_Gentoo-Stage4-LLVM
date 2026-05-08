@@ -58,6 +58,9 @@ require_grep 'slo_validation' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-servi
 require_grep 'work_management_authority: trac' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-service.metadata.yml"
 require_grep 'repository_rename_recommendation: rfc1918-platform-fabric' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-service.metadata.yml"
 require_grep 'default_exposure: local-management-only' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-service.metadata.yml"
+require_grep 'https://mcpmarket.com/server/trac$' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-service.metadata.yml"
+require_grep 'https://mcpmarket.com/server/trac-1$' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-service.metadata.yml"
+require_grep 'source_family: nerpatech/trac-mcp-server' "${ANSIBLE_ROOT}/profile-definitions/vm-trac-service.metadata.yml"
 
 require_grep 'intake -> ready' "${ANSIBLE_ROOT}/roles/trac_server/templates/trac-workflow.ini.j2"
 require_grep 'review -> validation' "${ANSIBLE_ROOT}/roles/trac_server/templates/trac-workflow.ini.j2"
@@ -79,5 +82,8 @@ require_file "${REPO_ROOT}/docs/PROJECT-MANAGEMENT-CONTROL-PLANE.md"
 require_file "${REPO_ROOT}/docs/wiki/Project-Management-Control-Plane.md"
 require_grep 'rfc1918-platform-fabric' "${REPO_ROOT}/docs/PROJECT-MANAGEMENT-CONTROL-PLANE.md"
 require_grep 'GitHub and Codeberg remain Git remotes' "${REPO_ROOT}/docs/PROJECT-MANAGEMENT-CONTROL-PLANE.md"
+require_grep 'https://mcpmarket.com/server/trac' "${REPO_ROOT}/docs/PROJECT-MANAGEMENT-CONTROL-PLANE.md"
+require_grep 'https://mcpmarket.com/server/trac-1' "${REPO_ROOT}/docs/PROJECT-MANAGEMENT-CONTROL-PLANE.md"
+require_grep 'nerpatech/trac-mcp-server' "${REPO_ROOT}/docs/PROJECT-MANAGEMENT-CONTROL-PLANE.md"
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"
