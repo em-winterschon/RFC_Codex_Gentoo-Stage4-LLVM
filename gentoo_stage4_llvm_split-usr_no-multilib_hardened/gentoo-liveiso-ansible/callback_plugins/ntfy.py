@@ -79,7 +79,9 @@ class CallbackModule(CallbackBase):
         return bool(self._url()) and (enabled or bool(self._topic_for_state("info")))
 
     def _url(self):
-        return os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", self.get_option("ntfy_url") or ""))
+        return os.getenv(
+            "ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", self.get_option("ntfy_url") or "")
+        )
 
     def _topic_for_state(self, state):
         env_key = f"ANSIBLE_NTFY_TOPIC_{state.strip().upper().replace('-', '_')}"

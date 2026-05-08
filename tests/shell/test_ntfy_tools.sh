@@ -78,10 +78,10 @@ test_ntfy_notify_requires_configured_url() {
   output="$(
     env -u NTFY_URL \
       python3 "${NTFY_NOTIFY}" \
-        --dry-run \
-        --topic codex-test \
-        --state info \
-        --message "validation complete" 2>&1
+      --dry-run \
+      --topic codex-test \
+      --state info \
+      --message "validation complete" 2>&1
   )"
   status=$?
   set -e
