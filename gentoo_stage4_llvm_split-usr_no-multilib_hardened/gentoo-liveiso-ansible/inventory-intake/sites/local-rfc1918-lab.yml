@@ -329,6 +329,13 @@ devices:
         type: 100base-tx
         purpose: pdu-management
         status: active
+    power_outlets:
+      - name: outlet6
+        label: host_gmktec_k10
+        outlet_index: 6
+        target_device: gmktek_nucbox_k10_stage5_candidate
+        target_power_port: power0
+        status: active
     notes:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.

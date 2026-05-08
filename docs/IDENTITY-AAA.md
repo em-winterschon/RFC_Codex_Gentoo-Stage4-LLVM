@@ -128,11 +128,12 @@ This keeps group and role naming stable while allowing vendor-specific RADIUS re
 ## Next Steps
 
 1. Move identity controller secrets into Ansible Vault and replace live helper scripts with role-driven operations.
-2. Enroll the Jenkins controller as the first `aaa-domain-client`.
-3. Enroll one builder-farm node.
-4. Validate network AAA against one switch or router before widening device rollout.
-5. Decide whether TACACS+ is needed for Cisco device coverage.
-6. Add power-management AAA coverage for APC PDUs, APC ATS, and UPS network
+2. Enroll the GMKtek K10 as the first bare-metal `aaa-domain-client`.
+3. Enroll the Jenkins controller.
+4. Enroll one builder-farm node.
+5. Validate network AAA against one switch or router before widening device rollout.
+6. Decide whether TACACS+ is needed for Cisco device coverage.
+7. Add power-management AAA coverage for APC PDUs, APC ATS, and UPS network
    management cards through FreeRADIUS, with local break-glass accounts retained.
 
 ## Enrollment Sequence
@@ -141,11 +142,15 @@ The active rollout sequence is deliberately conservative:
 
 1. Normalize FreeIPA and FreeRADIUS controller secrets into vault-backed
    role operations.
-2. Enroll one Linux VM or host through SSSD and validate non-root SSH key
-   login through the domain.
+2. Enroll the GMKtek K10 through SSSD and validate non-root SSH key login
+   through the domain. K10 is now live in NetBox as
+   `gmktek_nucbox_k10_stage5_candidate` with primary management IP
+   `172.16.99.156/24`.
 3. Enroll one network device through FreeRADIUS using a read-only operator role.
-4. Enroll the AP7901 PDU at `172.16.99.241` through FreeRADIUS after its
-   non-secret NetBox inventory exists.
+4. Enroll the AP7901 PDU at `172.16.99.241` through FreeRADIUS. Its non-secret
+   NetBox inventory now exists as `pdu_rfc99_corectrl_ap7901`, with management
+   interface `mgmt`, primary IP `172.16.99.241/24`, and outlet `outlet6`
+   labeled `host_gmktec_k10`.
 5. Expand to APC UPS, APC ATS, additional PDUs, switches, WAPs, routers, VPN
    endpoints, and HTTP applications.
 

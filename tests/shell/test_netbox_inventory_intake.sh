@@ -45,6 +45,9 @@ assert_file_contains "${apply_script}" "virtualization/clusters"
 assert_file_contains "${apply_script}" "ipam/ip-addresses"
 assert_file_contains "${apply_script}" "first_query"
 assert_file_contains "${apply_script}" "manufacturer_id"
+assert_file_contains "${apply_script}" "apply_device_interfaces"
+assert_file_contains "${apply_script}" "apply_power_outlets"
+assert_file_contains "${apply_script}" "normalize_interface_type"
 
 assert_file_contains "${example}" "inventory_intake_version: 1"
 assert_file_contains "${example}" "datacenters:"
@@ -56,6 +59,8 @@ assert_file_contains "${example}" "pdu_rfc99_corectrl_ap7901"
 assert_file_contains "${example}" "172.16.99.156"
 assert_file_contains "${example}" "172.16.99.241"
 assert_file_contains "${example}" "host_gmktec_k10"
+assert_file_contains "${example}" "power_outlets:"
+assert_file_contains "${example}" "outlet_index: 6"
 assert_file_contains "${rfc99}" "gw_rfc99_mkcrs309"
 assert_file_contains "${rfc99}" "gw_rfc99_mkccr2004_16g"
 assert_file_contains "${rfc99}" "CCR2004-16G-2S+PC"
@@ -93,6 +98,37 @@ grep -Fq 'dcim/devices:gmktek_nucbox_k10_stage5_candidate' /tmp/netbox-intake-ap
 grep -Fq 'dcim/devices:pdu_rfc99_corectrl_ap7901' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU device"
 grep -Fq 'ipam/ip-addresses:172.16.99.156/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 management IP"
 grep -Fq 'ipam/ip-addresses:172.16.99.241/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU management IP"
+grep -Fq 'dcim/interfaces:gmktek_nucbox_k10_stage5_candidate:eth0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 interface"
+grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 management interface"
+grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 6"
+
+python3 - <<'PY' "${apply_script}"
+import importlib.util
+import pathlib
+import sys
+
+script = pathlib.Path(sys.argv[1])
+sys.path.insert(0, str(script.parent))
+spec = importlib.util.spec_from_file_location("netbox_apply_inventory_intake", script)
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+
+assert module.normalize_interface_type({"type": "1gbase-t"}) == "1000base-t"
+assert module.normalize_interface_type({"type": "10gbase-x-sfpp", "media": "10G-SR"}) == "10gbase-sr"
+assert module.normalize_interface_type({"type": "10gbase-x-sfpp", "media": "10G-DAC"}) == "10gbase-cu"
+assert module.normalize_interface_type({"type": "40gbase-x-qsfpp"}) == "40gbase-sr4"
+assert module.normalize_interface_type({"name": "ge16"}) == "1000base-t"
+assert module.primary_ip_update_payload("172.16.99.6/24", 10, interface_bound=False) is None
+assert module.primary_ip_update_payload("172.16.99.156/24", 11, interface_bound=True) == {"primary_ip4": 11}
+assert module.primary_ip_update_payload("2001:db8::1/64", 12, interface_bound=True) == {"primary_ip6": 12}
+assert module.ip_host("172.16.99.96/24") == "172.16.99.96"
+assert module.ip_host("172.16.99.96/32") == "172.16.99.96"
+assert module.ip_host("2001:db8::1/64") == "2001:db8::1"
+assert module.ip_hosts_match("172.16.99.96/24", "172.16.99.96/32")
+assert not module.ip_hosts_match("172.16.99.96/24", "172.16.99.97/24")
+PY
 
 invalid_fixture="$(mktemp --suffix=.yml)"
 trap 'rm -f "${invalid_fixture}"' EXIT

@@ -116,7 +116,8 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
   -e netbox_seed_token_file=/root/operator-private/netbox/svc-netbox-stage4-admin-token
 ```
 
-The first supported object groups are `datacenters`, `prefixes`, `devices`,
+The supported object groups are `datacenters`, `prefixes`, `devices`, device
+`interfaces`, interface-bound management IPs, non-secret `power_outlets`,
 `clusters`, and `service_vips`. Keep credentials, device passwords, API tokens,
 and sensitive serial-console values out of these files; store secrets in
 Ansible Vault or operator-private paths.
@@ -157,3 +158,18 @@ The 2026-05-03 live apply sequence completed with:
 - first apply: `21` creates and `78` updates
 - idempotence apply: `0` creates and `0` updates
 - post-apply snapshot: `nb-post-ms-20260503`
+
+The 2026-05-08 local RFC1918 lab intake convergence pass completed with:
+
+- script: `scripts/netbox_apply_inventory_intake.py`
+- source: `inventory-intake/sites/local-rfc1918-lab.yml`
+- command mode: `--apply --update-existing`
+- summary: `0` creates, `98` updates, `109` existing object observations
+- K10 device: `gmktek_nucbox_k10_stage5_candidate`
+- K10 management IP: `172.16.99.156/24`, assigned to interface `eth0`, set as
+  primary IPv4
+- AP7901 device: `pdu_rfc99_corectrl_ap7901`
+- AP7901 management IP: `172.16.99.241/24`, assigned to interface `mgmt`, set
+  as primary IPv4
+- AP7901 power metadata: outlet `outlet6`, label `host_gmktec_k10`, target
+  `gmktek_nucbox_k10_stage5_candidate` power port `power0`

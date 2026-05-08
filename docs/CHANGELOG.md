@@ -3,6 +3,24 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-08
+
+### Added
+
+- Extended NetBox structured inventory intake apply support for device
+  interfaces, interface-bound management IP assignment, same-host IP convergence
+  across prefix-length drift, and non-secret PDU outlet to host power-port
+  mapping.
+- Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
+  NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
+  and K10 `power0` metadata.
+
+### Changed
+
+- Updated the AAA rollout sequence to use the now-inventoried K10 as the first
+  Linux SSSD/RBAC validation client and the AP7901 as the first power-device
+  RADIUS enrollment target after local break-glass checks.
+
 ## 2026-05-07
 
 ### Added
