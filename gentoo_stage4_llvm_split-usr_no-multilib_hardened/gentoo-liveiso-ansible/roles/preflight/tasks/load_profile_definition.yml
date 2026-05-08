@@ -227,6 +227,14 @@
             recursive=True
           )
       }}
+    resolved_profile_vm_redfish_emulator: >-
+      {{
+        resolved_profile_vm_redfish_emulator
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.vm_redfish_emulator | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_zerotier: >-
       {{
         resolved_profile_zerotier

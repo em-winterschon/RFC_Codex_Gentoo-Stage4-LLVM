@@ -39,6 +39,7 @@ gentoo_system_profile_metadata:
       - media-libs/mesa
       - media-libs/vulkan-loader
       - media-video/amdgpu-pro-amf
+      - sys-block/ndctl
       - x11-drivers/nvidia-drivers
       - x11-drivers/xf86-video-amdgpu
       - x11-drivers/xf86-video-intel
@@ -55,3 +56,17 @@ gentoo_system_profile_metadata:
     - NsCDE is source-installed from the pinned upstream tag until a local overlay ebuild is added.
     - Wayland, Plasma, SDDM, XWayland, wlroots, and xdg-desktop-portal are intentionally rejected for Stage4 LOX workstation builds.
     - Workstation builds emit binpkgs under the canonical Stage4 LOX repository ID; Hasslehoff can expose that path through NFS or a bind mount from the binpkg repository VM.
+    - AMD workstation support prefers Gentoo-packaged AMDGPU-PRO userspace where available and falls back to the upstream amdgpu kernel driver and Mesa/radeonsi stack.
+    - Intel Optane Persistent Memory 200-series support is handled through Linux libnvdimm/ACPI NFIT plus sys-block/ndctl; ipmctl is not in the Gentoo tree and should be handled later through a local overlay if needed.
+  kernel_modules:
+    nvdimm_optane_series_200:
+      - acpi_nfit
+      - libnvdimm
+      - nd_pmem
+      - dax_pmem
+      - device_dax
+    gpu_universal_xorg:
+      - amdgpu
+      - i915
+      - qxl
+      - nvidia

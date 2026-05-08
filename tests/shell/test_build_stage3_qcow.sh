@@ -236,6 +236,7 @@ EOF
   assert_contains "${bootstrap}" 'sys-kernel/installkernel dracut'
   assert_contains "${bootstrap}" 'sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod'
   assert_contains "${bootstrap}" 'root=LABEL=gentooroot rootfstype=ext4 console=tty0 console=ttyS0,115200'
+  assert_contains "${bootstrap}" 'keymap="us"'
   assert_contains "${bootstrap}" 'emerge --oneshot sys-apps/portage app-eselect/eselect-repository'
   assert_contains "${bootstrap}" 'rc-update add dhcpcd default'
   assert_contains "${bootstrap}" 'rc-update add sshd default'

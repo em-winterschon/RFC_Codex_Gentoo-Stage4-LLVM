@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+supervisor=supervise-daemon
+name="VM Redfish emulator"
+description="sushy-tools virtual Redfish BMC for libvirt VMs"
+
+command="{{ resolved_vm_redfish_emulator.venv }}/bin/gunicorn"
+command_args="--bind {{ resolved_vm_redfish_emulator.listen_host }}:{{ resolved_vm_redfish_emulator.listen_port }}{% if resolved_vm_redfish_emulator.tls.enabled | bool %} --certfile {{ resolved_vm_redfish_emulator.tls.cert }} --keyfile {{ resolved_vm_redfish_emulator.tls.key }}{% endif %} {{ resolved_vm_redfish_emulator.wsgi }}"
+command_user="{{ resolved_vm_redfish_emulator.user }}:{{ resolved_vm_redfish_emulator.group }}"
+directory="{{ resolved_vm_redfish_emulator.root }}"
+pidfile="/run/vm-redfish-emulator.pid"
+respawn_delay=5
+
+export SUSHY_EMULATOR_CONFIG="/etc/vm-redfish-emulator/sushy-emulator.conf"
+
+depend() {
+  need net
+  after libvirtd
+}

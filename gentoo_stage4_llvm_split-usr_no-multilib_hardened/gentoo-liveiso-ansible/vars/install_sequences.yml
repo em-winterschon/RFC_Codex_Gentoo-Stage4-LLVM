@@ -49,6 +49,7 @@ install_role_sequences:
           - elasticsearch_cluster
           - kibana_interface
           - netbox_connector
+          - vm_redfish_emulator
           - zerotier_access
           - nscde_workstation
           - workstation_session_stack
@@ -114,6 +115,7 @@ install_role_sequences:
           - elasticsearch_cluster
           - kibana_interface
           - netbox_connector
+          - vm_redfish_emulator
           - zerotier_access
           - nscde_workstation
           - workstation_session_stack

@@ -16,8 +16,11 @@ The current target is `Stage4 LOX` plus a Stage5 NsCDE workstation overlay:
 - Xorg, QXL, and SPICE guest integration
 - NsCDE source install pinned to upstream tag `2.3`
 - NVIDIA Quadro K1200 passthrough validation on Hasslehoff
-- AMDGPU/ROCm/AMDGPU-PRO and Intel Xe/Level Zero/OpenCL/Vulkan package
-  readiness for later workstation variants
+- AMDGPU/ROCm/AMDGPU-PRO package readiness for later workstation variants
+- Intel display-driver readiness without Intel GPU compute packages in the
+  base workstation profile
+- Intel Optane Persistent Memory 200-series kernel/module and `ndctl`
+  management-tool readiness
 - CUDA userland pinned to the newest locally available CUDA 12.9.1 ebuild
 - optional SLiM display-manager session integration
 - `startx` / `.xinitrc` starts `/opt/NsCDE/bin/nscde`
@@ -83,6 +86,12 @@ for expected workstation hardware families:
   to `LLVM_COMPAT=( 16 )`, which pulls old LLVM slot `16`; keep IGC, Level Zero,
   `intel-compute-runtime`, `intel-metrics-library`, and `gmmlib` in an optional
   hardware-specific overlay if they are ever needed.
+- Optane/NVDIMM readiness is tracked through the upstream Linux persistent
+  memory stack: `acpi_nfit`, `libnvdimm`, `nd_pmem`, `dax_pmem`, and
+  `device_dax`, with kernel config requirements recorded in the profile. Gentoo
+  provides `sys-block/ndctl`; `ipmctl` is not in the current Gentoo package
+  tree and should be handled by a local overlay only if platform validation
+  proves it is required.
 
 The active package list is still curated. Captured host package lists are stored
 under `docs/workstation-package-capture/` for review and are not automatically

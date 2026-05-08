@@ -34,6 +34,7 @@ gentoo_profile_definition:
       media-libs/mesa X lm-sensors opengl proprietary-codecs vaapi vulkan vulkan-overlay zstd -debug -opencl -selinux -test -wayland
       media-libs/vulkan-loader X -wayland
       media-video/amdgpu-pro-amf video_cards_amdgpu
+      sys-block/ndctl daxctl
       x11-libs/libdrm video_cards_amdgpu video_cards_intel tools udev
   package_accept_keywords_files:
     40-workstation-nscde-gpu: |
@@ -80,11 +81,31 @@ gentoo_profile_definition:
       >=dev-python/pyqt5-sip-12.18.0
   modules_load_files:
     vm-workstation-nscde.conf: |
+      acpi_nfit
+      dax_pmem
+      device_dax
+      libnvdimm
+      nd_pmem
       uinput
       virtio_blk
       virtio_console
       virtio_net
       virtio_pci
+  kernel_config_requirements:
+    nvdimm_optane_series_200:
+      - CONFIG_ACPI_NFIT
+      - CONFIG_LIBNVDIMM
+      - CONFIG_BLK_DEV_PMEM
+      - CONFIG_ND_BLK
+      - CONFIG_BTT
+      - CONFIG_NVDIMM_PFN
+      - CONFIG_NVDIMM_DAX
+      - CONFIG_DEV_DAX
+      - CONFIG_DEV_DAX_PMEM
+    gpu_universal_xorg:
+      - CONFIG_DRM_AMDGPU
+      - CONFIG_DRM_I915
+      - CONFIG_DRM_QXL
   openrc_services_enable:
     - dbus
     - spice-vdagent

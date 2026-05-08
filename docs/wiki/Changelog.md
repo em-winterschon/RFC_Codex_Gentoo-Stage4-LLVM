@@ -7,6 +7,13 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added Stage5 `vm-redfish-emulator` profile scaffolding using OpenStack
+  `sushy-tools` as the primary libvirt-backed VM Redfish path and DMTF Redfish
+  Interface Emulator as the static mockup fallback.
+- Added explicit Stage5 workstation AMDGPU/AMDGPU-PRO fallback policy and
+  Intel Optane Persistent Memory 200-series `libnvdimm`/`ndctl` readiness.
+- Expanded FMT2 NetBox intake from placeholders into a legacy-evidence based
+  SFO-200 discovery baseline for tomorrow's BigNetwork L2 validation.
 - Added private-CA vault import scaffolding for the RFC1918 certificate
   authority, including PEM/PKCS#12 source support and encrypted
   `vault_private_ca_rfc1918_*` variables.

@@ -44,6 +44,7 @@ for profile in \
   vm-guest-simple-ipxe.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-redfish-emulator.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml \
@@ -70,6 +71,7 @@ for metadata in \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
+  vm-redfish-emulator.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
   vm-nexus-repository.metadata.yml; do
@@ -124,6 +126,7 @@ for package_list in \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
+  stage5-virtual-host-redfish-emulator.packages \
   stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages; do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"
@@ -133,7 +136,10 @@ test -d "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-l
 test -f "${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-workstation-nscde-vm.sh"
 assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.packages" '^=x11-drivers/nvidia-drivers-580\.159\.03-r1$'
 assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.packages" '^=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1$'
+assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.packages" '^sys-block/ndctl$'
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'VIDEO_CARDS=.*nvidia'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'CONFIG_DEV_DAX_PMEM'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'nd_pmem'
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=x11-drivers/nvidia-drivers-580\.159\.03-r1 ~amd64'
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1 NVIDIA-CUDA'
 assert_file_contains "${PREFLIGHT_ROLE}" 'resolved_portage_patch_files'

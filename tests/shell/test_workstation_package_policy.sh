@@ -62,6 +62,7 @@ for atom in \
   media-libs/mesa \
   media-libs/vulkan-loader \
   media-video/amdgpu-pro-amf \
+  sys-block/ndctl \
   sys-kernel/linux-firmware \
   x11-drivers/xf86-video-amdgpu \
   x11-drivers/xf86-video-intel \
@@ -81,6 +82,13 @@ done
 
 require_grep '^dev-libs/amdgpu-pro-opencl$' "${GPU_ADVISORY}"
 reject_grep '^dev-libs/amdgpu-pro-opencl$' "${PACKAGE_LIST}"
+require_grep 'CONFIG_ACPI_NFIT' "${PROFILE_FILE}"
+require_grep 'CONFIG_LIBNVDIMM' "${PROFILE_FILE}"
+require_grep 'CONFIG_BLK_DEV_PMEM' "${PROFILE_FILE}"
+require_grep 'CONFIG_DEV_DAX_PMEM' "${PROFILE_FILE}"
+require_grep 'acpi_nfit' "${PROFILE_FILE}"
+require_grep 'libnvdimm' "${PROFILE_FILE}"
+require_grep 'nd_pmem' "${PROFILE_FILE}"
 
 require_grep '^kde-plasma/plasma-meta$' "${REVIEW_DIR}/wayland-plasma-rejects.atoms"
 require_grep '^x11-misc/sddm$' "${REVIEW_DIR}/wayland-plasma-rejects.atoms"

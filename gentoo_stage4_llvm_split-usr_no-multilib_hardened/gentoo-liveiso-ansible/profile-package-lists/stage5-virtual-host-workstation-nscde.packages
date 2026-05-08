@@ -27,6 +27,7 @@ media-video/amdgpu-pro-amf
 net-misc/wget
 sys-apps/amdgpu_top
 sys-apps/dbus
+sys-block/ndctl
 sys-kernel/linux-firmware
 virtual/opencl
 x11-apps/xauth

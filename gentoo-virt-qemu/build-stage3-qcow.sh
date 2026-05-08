@@ -538,7 +538,7 @@ CMDLINE
 
 printf '%s\n' 'hostname="${VM_HOSTNAME}"' > /etc/conf.d/hostname
 printf '%s\n' '${VM_TIMEZONE}' > /etc/timezone
-printf '%s\n' '${VM_KEYMAP}' > /etc/conf.d/keymaps
+printf '%s\n' 'keymap="${VM_KEYMAP}"' > /etc/conf.d/keymaps
 printf '%s\n' '${VM_LOCALE}' > /etc/locale.gen
 
 cat > /etc/hosts <<'HOSTS'

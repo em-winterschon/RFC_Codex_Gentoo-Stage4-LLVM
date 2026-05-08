@@ -108,6 +108,7 @@ resolve_ovmf_paths() {
     resolve_nonempty_file \
       "${EFI_FIRM}" \
       /usr/share/edk2/OvmfX64/OVMF_CODE.fd \
+      /opt/gentoo-netboot/path-b/firmware/OVMF_CODE_4M.fd \
       /usr/share/edk2/OvmfX64/OVMF_CODE.secboot.fd
   )" || fail "No usable OVMF code image found; checked ${EFI_FIRM} and standard edk2 paths"
 
@@ -115,6 +116,7 @@ resolve_ovmf_paths() {
     resolve_nonempty_file \
       "${EFI_VARS_TEMPLATE}" \
       /usr/share/edk2/OvmfX64/OVMF_VARS.fd \
+      /opt/gentoo-netboot/path-b/firmware/OVMF_VARS_4M.fd \
       /usr/share/edk2/OvmfX64/OVMF_VARS.secboot.fd
   )" || fail "No usable OVMF vars template found; checked ${EFI_VARS_TEMPLATE} and standard edk2 paths"
 }
@@ -534,8 +536,12 @@ append_serial_args() {
 
 prepare_ovmf_vars_file() {
   mkdir -p "$(dirname "${EFI_VARS_FILE}")"
-  if [[ ! -f "${EFI_VARS_FILE}" ]]; then
+  if [[ ! -f "${EFI_VARS_FILE}" || ! -s "${EFI_VARS_FILE}" ]]; then
     cp "${EFI_VARS_TEMPLATE}" "${EFI_VARS_FILE}"
+  fi
+
+  if [[ "${QEMU_LAUNCH_DRY_RUN}" != '1' && ! -s "${EFI_VARS_FILE}" ]]; then
+    fail "EFI_VARS_FILE is empty after preparation: ${EFI_VARS_FILE}"
   fi
 }
 

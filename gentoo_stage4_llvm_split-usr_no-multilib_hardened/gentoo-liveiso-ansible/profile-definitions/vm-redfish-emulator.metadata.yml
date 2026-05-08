@@ -1,0 +1,27 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-redfish-emulator
+  purpose: Stage5 VM profile for exposing VM lifecycle and inventory through a Redfish-compatible API.
+  canonical_ids:
+    default: stage4-lox__stage5-virtual-host-redfish-emulator__<arch>
+    amd64: stage4-lox__stage5-virtual-host-redfish-emulator__amd64
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: redfish-emulator
+    stage4_foundation: stage4-lox
+  upstreams:
+    primary:
+      name: sushy-tools
+      url: https://docs.openstack.org/sushy-tools
+      model: virtual Redfish BMC backed by libvirt or OpenStack
+      reason: Dynamic VM-backed Redfish is closer to baremetal BMC workflows than a static mockup.
+    fallback:
+      name: DMTF Redfish Interface Emulator
+      url: https://github.com/DMTF/Redfish-Interface-Emulator
+      model: static or custom dynamic Redfish resources
+      reason: Useful for schema development and canned mockups when libvirt-backed power control is not required.
+  deployment_notes:
+    - Do not expose this service outside management networks.
+    - VM Redfish should be treated as an automation compatibility shim, not a security boundary.
+    - Power mutations remain opt-in and should be protected by private CA TLS plus central RBAC once FreeIPA/SSSD/RADIUS is live.

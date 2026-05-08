@@ -1,0 +1,6 @@
+app-emulation/libvirt
+app-emulation/qemu
+dev-python/pip
+dev-python/virtualenv
+net-misc/curl
+www-servers/nginx
