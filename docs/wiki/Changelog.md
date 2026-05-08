@@ -21,6 +21,13 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added platform-service TODOs for single-node OpenShift and single-node
   OpenStack VM profiles, including an explicit Gentoo/OpenRC feasibility gate
   before assuming native service management.
+- Added MCP candidate audit and Trac MCP evaluation documents, including the
+  inspected `nerpatech/trac-mcp-server` commit, destructive tool inventory,
+  read-only wrapper requirement, and smoke-test promotion order.
+- Added a 2026-05-08 Morning SITREP next-step tracker covering NetBox-driven
+  provisioning, base system services, service-role overlays, centralized AAA,
+  Trac control plane, Codeberg mirroring, read-only MCP tests, and FMT2
+  discovery sequencing.
 
 ## 2026-05-07
 

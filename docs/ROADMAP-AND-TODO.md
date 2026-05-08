@@ -135,6 +135,29 @@ Dependency:
 
 ## Stage5 Service Tracks
 
+### MCP And Project Management Control Plane
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `MCP-001` | active | Audit MCP server/tool/plugin candidates before installation | MCP control-plane registry | First audit pass ranks Context7, NetBox, Grafana read-only, Hugging Face, Trac, Jenkins, Kubernetes/OpenShift, and Proxmox. Removal condition: first smoke-test candidates have pinned versions, read-only credentials, and recorded outputs. |
+| `MCP-002` | pending | Run read-only MCP smoke tests for low-risk candidates | `MCP-001`, vault token availability | Start with Context7, NetBox read-only token, Grafana `--disable-write`, and Hugging Face. Removal condition: smoke-test logs and allowed tool lists are stored in docs or Trac. |
+| `MCP-003` | pending | Build or fork-gate a read-only Trac MCP wrapper | `PM-001`, Trac service live | `nerpatech/trac-mcp-server` exposes delete and batch mutation tools. Removal condition: agent-visible Trac MCP tool list excludes `ticket_delete`, `ticket_batch_delete`, `wiki_delete`, `milestone_delete`, and all write tools until promoted. |
+| `PM-001` | active | Evaluate Trac as the Kanban, change-control, wiki, and issue plane | Trac service scaffold, MCP audit | Current decision: proceed with Trac service design but keep MCP read-only. Removal condition: Trac VM/container profile, HAProxy/TLS path, backup policy, workflow fields, and read-only MCP smoke-test plan exist. |
+| `PM-002` | pending | Define GitHub-to-Codeberg mirror and future repo rename plan | PR/branch state stable, vault tokens | Track candidate repo name such as `rfc1918-platform-fabric`, remote names, branch protections, wiki sync, token vaulting, and rollback. |
+
+### Morning SITREP 2026-05-08 Execution
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `MORN-001` | active | Promote NetBox-driven inventory as the provisioning source of truth | NetBox API, DNS report, inventory intake | Removal condition: NetBox export can generate host bootstrap inventory, DNS targets, and service validation targets without manual copy/paste. |
+| `MORN-002` | active | Define common base system services for all hosts, VMs, and containers | Stage5 profile taxonomy | Removal condition: base profile declares rsyslog, node exporter, ntfy alerting, SSSD/AAA client, NTP/chrony, TLS trust, package repo, and health-check policy. |
+| `MORN-003` | pending | Define service-role overlay service contracts | `MORN-002` | Removal condition: each service profile declares packages, ports, SLO checks, HAProxy entries, logs, metrics, backup policy, and dependencies. |
+| `MORN-004` | active | Advance centralized AAA to eliminate SSH key sprawl | FreeIPA/SSSD/RADIUS baseline | Removal condition: non-root SSH auth is centralized, network devices use RADIUS where possible, and TACACS+ is explicitly deferred or scoped. |
+| `MORN-005` | active | Evaluate Trac control-plane rollout | `PM-001`, `MCP-003` | Removal condition: Trac can receive MCP read-only context safely and hold Kanban/change-control state. |
+| `MORN-006` | pending | Plan GitHub-to-Codeberg mirror and repo rename | `PM-002` | Removal condition: mirror sync and rollback plan are documented with vaulted token references. |
+| `MORN-007` | active | Keep MCP tools read-only until promoted | `MCP-001` | Removal condition: control-plane registry, audit, and smoke-test results exist for each candidate before any write-capable credential is issued. |
+| `MORN-008` | pending | Prepare FMT2 discovery once BigNetwork L2 is active | BigNetwork transport | Removal condition: FMT2 devices and prefixes are discovered, evidence-tagged, and staged for NetBox apply. |
+
 ### Jenkins And Builder Farm
 
 | ID | Status | Task | Depends On | Notes |
