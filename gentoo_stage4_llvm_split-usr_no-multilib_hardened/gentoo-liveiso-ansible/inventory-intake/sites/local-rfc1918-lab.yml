@@ -289,6 +289,51 @@ devices:
     notes:
       - Temporary Hasslehoff staging VM for safe container-services migration.
       - Do not assign the production Path B service IP until cutover validation passes.
+  - name: gmktek_nucbox_k10_stage5_candidate
+    site: local-rfc1918-lab
+    role: baremetal-workstation-validation
+    manufacturer: GMKtek
+    model: NucBox K10
+    status: active
+    management_ip: 172.16.99.156
+    fqdn: gmktek-k10-stage5.rfc1918.host
+    serial_console: pikvm-video-only
+    interfaces:
+      - name: eth0
+        type: 2.5gbase-t
+        purpose: uefi-pxe-ipxe-netboot
+        mac_address: "84:47:09:5F:21:64"
+        connected_device: sw_mgmt_css326
+        connected_interface: ge16
+        netboot_type: static
+        netboot_protocol_flow: pxe-to-ipxe
+        status: active
+    notes:
+      - GMKtek NucBox K10 bare-metal Stage5 workstation validation host.
+      - CPU Intel Core i9-13900HK; GPU Intel Iris Xe for display-only workstation validation.
+      - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.108.
+      - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
+      - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
+  - name: pdu_rfc99_corectrl_ap7901
+    site: local-rfc1918-lab
+    role: power-distribution-unit
+    manufacturer: APC
+    model: AP7901
+    status: active
+    management_ip: 172.16.99.241
+    fqdn: pdu-rfc99-corectrl-p08-099241.rfc1918.host
+    serial_number: ZA0650003272
+    management_protocol: snmpv3
+    interfaces:
+      - name: mgmt
+        type: 100base-tx
+        purpose: pdu-management
+        status: active
+    notes:
+      - RFC99 core-control AP7901 switched PDU.
+      - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
+      - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
+      - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
 
 clusters:
   - name: hasslehoff-proxmox

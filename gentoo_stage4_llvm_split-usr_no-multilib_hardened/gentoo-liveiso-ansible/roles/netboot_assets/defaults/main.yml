@@ -21,6 +21,11 @@ netboot_boot_type_enum:
   - static
   - dhcp
   - bootp
+netboot_protocol_flow_enum:
+  - ipxe-direct
+  - pxe-to-ipxe
+  - uefi-httpboot
+  - disabled
 netboot_os_type_enum:
   - linux
   - bsd

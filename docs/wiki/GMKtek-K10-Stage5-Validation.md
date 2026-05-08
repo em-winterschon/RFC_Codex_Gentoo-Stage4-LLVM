@@ -63,6 +63,10 @@ Current physical discovery state:
   `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img` from
   `http://172.16.99.108:8080`, mounts `LiveOS_rootfs`, switches root, and
   reaches the Gentoo login prompt on the PiKVM video console.
+- Rebuild source of truth:
+  `gentoo-liveiso-ansible/netboot-image-manifests/k10-stage5-workstation.yml`
+  records the kernel, initramfs, rootfs, dracut firmware requirements, static
+  command line, and Jenkins rebuild inputs for this K10 boot image.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.

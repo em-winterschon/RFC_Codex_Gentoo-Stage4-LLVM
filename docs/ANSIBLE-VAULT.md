@@ -170,6 +170,11 @@ local-network vault and never prints secret values. Keep the source file outside
 git. K10 power-cycle automation must validate the AP7901 outlet label
 `host_gmktec_k10` before setting outlet control OIDs.
 
+NetBox inventory for the AP7901 must remain non-secret. It may contain the
+device model, management IP, serial number, SNMPv3 capability marker, and outlet
+labels, but it must not contain SNMPv3 usernames, authentication secrets,
+privacy secrets, or local break-glass passwords.
+
 ## Safety Rules
 
 - Commit only encrypted vault files.

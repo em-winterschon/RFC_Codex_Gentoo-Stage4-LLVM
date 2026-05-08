@@ -21,6 +21,12 @@ infrastructure work. It is intentionally higher level than `git log`.
   NetBox/IPAM/DCIM, OOB, monitoring, and rack-inventory work.
 - Added FMT2 roadmap tasks for evidence consolidation, live validation, NetBox
   intake promotion, transport validation, and Check_MK integration.
+- Added explicit `netboot_protocol_flow` modeling for Path B hosts, separating
+  IP assignment mode from firmware/handoff behavior.
+- Added a reproducible K10 netboot-image manifest for Jenkins-driven future
+  dracut/kernel/rootfs artifact rebuilds.
+- Added repo-safe local NetBox intake rows for the GMKtek K10 validation host
+  and AP7901 PDU, including management IPs and non-secret operational metadata.
 
 ### Changed
 
@@ -53,6 +59,8 @@ infrastructure work. It is intentionally higher level than `git log`.
   login prompt.
 - Confirmed live NetBox API reachability while identifying that K10 and AP7901
   PDU records still need repo-safe inventory-intake promotion before live apply.
+- Updated RouterOS and netboot manifests so managed host entries expose
+  protocol-flow intent such as `pxe-to-ipxe`.
 - Confirmed the active shell does not currently load the LAN ntfy export file,
   so helper defaults fall back to public `https://ntfy.sh` without topics until
   local environment loading is normalized.

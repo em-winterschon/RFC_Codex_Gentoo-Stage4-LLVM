@@ -153,6 +153,11 @@ routeros_pathb_netboot_type_enum:
   - static
   - dhcp
   - bootp
+routeros_pathb_netboot_protocol_flow_enum:
+  - ipxe-direct
+  - pxe-to-ipxe
+  - uefi-httpboot
+  - disabled
 routeros_pathb_platform_enum:
   - uefi
 routeros_pathb_render_manifest_name: "{{ inventory_hostname }}-pathb.json"

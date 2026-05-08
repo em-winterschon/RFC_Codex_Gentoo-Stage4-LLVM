@@ -134,3 +134,23 @@ This keeps group and role naming stable while allowing vendor-specific RADIUS re
 5. Decide whether TACACS+ is needed for Cisco device coverage.
 6. Add power-management AAA coverage for APC PDUs, APC ATS, and UPS network
    management cards through FreeRADIUS, with local break-glass accounts retained.
+
+## Enrollment Sequence
+
+The active rollout sequence is deliberately conservative:
+
+1. Normalize FreeIPA and FreeRADIUS controller secrets into vault-backed
+   role operations.
+2. Enroll one Linux VM or host through SSSD and validate non-root SSH key
+   login through the domain.
+3. Enroll one network device through FreeRADIUS using a read-only operator role.
+4. Enroll the AP7901 PDU at `172.16.99.241` through FreeRADIUS after its
+   non-secret NetBox inventory exists.
+5. Expand to APC UPS, APC ATS, additional PDUs, switches, WAPs, routers, VPN
+   endpoints, and HTTP applications.
+
+Power and network infrastructure must retain local break-glass credentials
+until RADIUS behavior is validated per device class. NetBox stores device
+identity, management IP, protocol capability, and outlet/port metadata only;
+AAA bind passwords, SNMPv3 secrets, and local fallback passwords remain in
+Ansible Vault or operator-private storage.

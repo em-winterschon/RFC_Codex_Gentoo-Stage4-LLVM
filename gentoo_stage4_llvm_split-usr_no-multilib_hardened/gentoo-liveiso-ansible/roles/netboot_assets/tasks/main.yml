@@ -20,6 +20,7 @@
       - hostvars[netboot_inventory_host].netboot_interface_name is defined
       - hostvars[netboot_inventory_host].netboot_mac_address is defined
       - (hostvars[netboot_inventory_host].netboot_type | lower) in netboot_boot_type_enum
+      - ((hostvars[netboot_inventory_host].netboot_protocol_flow | default('ipxe-direct')) | lower) in netboot_protocol_flow_enum
       - (hostvars[netboot_inventory_host].netboot_os_type | lower) in netboot_os_type_enum
       - (hostvars[netboot_inventory_host].netboot_os_name | lower) in netboot_os_name_enum
       - hostvars[netboot_inventory_host].netboot_os_version is defined
@@ -47,6 +48,7 @@
       script_name: "{{ hostvars[netboot_inventory_host].netboot_script_name | default(resolved_netboot_host_name ~ '.ipxe') }}"
       interface_name: "{{ hostvars[netboot_inventory_host].netboot_interface_name }}"
       boot_type: "{{ hostvars[netboot_inventory_host].netboot_type | lower }}"
+      protocol_flow: "{{ (hostvars[netboot_inventory_host].netboot_protocol_flow | default('ipxe-direct')) | lower }}"
       dhcp_client_options: "{{ hostvars[netboot_inventory_host].netboot_dhcp_client_options | default([]) }}"
       os_type: "{{ hostvars[netboot_inventory_host].netboot_os_type | lower }}"
       os_name: "{{ hostvars[netboot_inventory_host].netboot_os_name | lower }}"
