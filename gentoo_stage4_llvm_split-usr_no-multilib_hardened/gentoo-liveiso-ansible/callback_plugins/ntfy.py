@@ -19,9 +19,8 @@ options:
       - section: ntfy_callback
         key: enabled
   ntfy_url:
-    description: Base ntfy URL.
+    description: Base ntfy URL. Configure this explicitly; there is no public fallback.
     type: str
-    default: https://ntfy.sh
     env:
       - name: ANSIBLE_NTFY_URL
     ini:
@@ -77,10 +76,10 @@ class CallbackModule(CallbackBase):
 
     def _enabled(self):
         enabled = self.get_option("ntfy_enabled")
-        return enabled or bool(self._topic_for_state("info"))
+        return bool(self._url()) and (enabled or bool(self._topic_for_state("info")))
 
     def _url(self):
-        return os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", self.get_option("ntfy_url")))
+        return os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", self.get_option("ntfy_url") or ""))
 
     def _topic_for_state(self, state):
         env_key = f"ANSIBLE_NTFY_TOPIC_{state.strip().upper().replace('-', '_')}"

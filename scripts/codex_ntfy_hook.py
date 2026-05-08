@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
 def ntfy_base_url() -> str:
     return os.getenv(
         "CODEX_NTFY_URL",
-        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "https://ntfy.sh")),
+        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "")),
     ).rstrip("/")
 
 
@@ -90,7 +90,7 @@ def publish_message(
         output="json",
     )
     payload_data = ntfy_notify.build_payload(notify_args)
-    if not payload_data["topic"]:
+    if not payload_data["topic"] or not payload_data["url"]:
         return 0
     if dry_run:
         print(json.dumps(payload_data, indent=2, sort_keys=True))
@@ -111,7 +111,7 @@ def poll_replies(since_ts: int, wait_timeout: int) -> Iterator[str]:
         return
 
     topic = ntfy_reply_topic()
-    if not topic:
+    if not topic or not ntfy_base_url():
         return
 
     end_time = time.time() + wait_timeout
@@ -266,7 +266,7 @@ def main() -> int:
     except json.JSONDecodeError:
         return 0
     event = payload.get("hook_event_name")
-    if not ntfy_alert_topic():
+    if not ntfy_alert_topic() or not ntfy_base_url():
         return 0
     if event == "PermissionRequest":
         return handle_permission_request(payload, dry_run=args.dry_run)

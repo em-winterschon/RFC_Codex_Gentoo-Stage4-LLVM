@@ -70,14 +70,15 @@ gentoo_profile_definition:
       ip_address: 10.77.1.20
       backend_port: 8080
       listen_http: ":8080"
-      base_url: http://msg-sun99-ntfysys-099096.rfc1918.host
+      base_url: https://msg-sun99-ntfysys-099096.rfc1918.host
       hostnames:
         - ntfy.local
         - msg-sun99-ntfysys-099096.rfc1918.host
         - msg-sun99-ntfysys.rfc1918.host
+        - sg-sun99-ntfysys-099096.rfc1918.host
       published_ports: []
       env:
-        NTFY_BASE_URL: http://msg-sun99-ntfysys-099096.rfc1918.host
+        NTFY_BASE_URL: https://msg-sun99-ntfysys-099096.rfc1918.host
     nginx:
       enabled: false
       image: ghcr.io/em-winterschon/gentoo-stage5-nginx:latest
@@ -130,6 +131,19 @@ gentoo_profile_definition:
       published_ports:
         - 80:80/tcp
         - 443:443/tcp
+      tls:
+        enabled: true
+        bind: "*:443"
+        container_dir: /etc/haproxy/tls
+        cert_path: /etc/haproxy/tls/msg-sun99-ntfysys.pem
+        certificate_authority: rfc1918_private_ca
+        certificate_source: vault-or-runtime
+        cert_sans:
+          - DNS:ntfy.local
+          - DNS:msg-sun99-ntfysys-099096.rfc1918.host
+          - DNS:msg-sun99-ntfysys.rfc1918.host
+          - DNS:sg-sun99-ntfysys-099096.rfc1918.host
+          - IP:172.16.99.96
   site_security_profile:
     compliance_mode: standard
     rbac:

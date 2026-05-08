@@ -151,6 +151,58 @@ Repo-safe transport intent and role wiring live in:
 gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/bignetwork.yml
 ```
 
+## Private CA
+
+The shared RFC1918 private certificate authority should be imported from an
+operator-private source file, not generated in the repo. The default source path
+is:
+
+```bash
+/root/.ssh/vault/private-ca/RFC1918_PRIVATE_CA.env
+```
+
+Import or rotate the encrypted vault values with:
+
+```bash
+scripts/import-private-ca-vault.sh
+```
+
+The source file may provide PEM material, PKCS#12 material, or paths to
+operator-private files:
+
+```bash
+RFC1918_PRIVATE_CA_NAME="rfc1918_private_ca"
+RFC1918_PRIVATE_CA_CERT_PEM="-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----"
+RFC1918_PRIVATE_CA_KEY_PEM="-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----"
+RFC1918_PRIVATE_CA_CHAIN_PEM="-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----"
+RFC1918_PRIVATE_CA_PKCS12_BASE64="base64-encoded-pkcs12"
+RFC1918_PRIVATE_CA_PKCS12_PASSWORD="replace-me"
+```
+
+The encrypted local-network vault stores the material or references under:
+
+```text
+vault_private_ca_rfc1918_name
+vault_private_ca_rfc1918_cert_pem
+vault_private_ca_rfc1918_key_pem
+vault_private_ca_rfc1918_chain_pem
+vault_private_ca_rfc1918_pkcs12_base64
+vault_private_ca_rfc1918_pkcs12_password
+vault_private_ca_rfc1918_cert_path
+vault_private_ca_rfc1918_key_path
+vault_private_ca_rfc1918_chain_path
+vault_private_ca_rfc1918_pkcs12_path
+```
+
+Until this CA is imported and distributed to clients, service TLS may use
+runtime-generated self-signed certificates for transport testing only.
+
 ## APC PDU Credentials
 
 The operator-private AP7901 RFC99 core-control PDU credential source is:

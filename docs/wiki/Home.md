@@ -8,7 +8,7 @@ This repository is a Gentoo-focused operating-system imaging toolkit centered on
 - mirrored ZFS `bpool` and `rpool` layouts
 - unattended QEMU validation before bare-metal rollout
 - staged Ansible execution with structured control-flow logging
-- operator notifications through `ntfy.sh` and Codex-side helpers
+- operator notifications through the LAN ntfy-compatible service and Codex-side helpers
 
 It exists to turn the Gentoo install process into a repeatable, inspectable pipeline instead of a one-off interactive procedure.
 

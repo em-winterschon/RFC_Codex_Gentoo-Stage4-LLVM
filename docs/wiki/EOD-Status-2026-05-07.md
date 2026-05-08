@@ -37,8 +37,9 @@
   - endpoint: `http://msg-sun99-ntfysys.rfc1918.host`
   - alert topic: `codex-alerts-rfc99-sun99-3457621907`
   - reply topic: `codex-replies-rfc99-sun99-3457621907`
-- Identified a notification-environment gap: the active shell falls back to
-  `https://ntfy.sh` with no topics unless the local export file is sourced.
+- Identified a notification-environment gap: Codex-side helpers must source the
+  LAN ntfy export file or skip; public ntfy fallback is not acceptable for
+  routine operations.
 - Confirmed the central-auth direction remains FreeIPA, SSSD, and FreeRADIUS,
   with APC PDU/RADIUS enrollment dependent on non-secret power inventory first.
 

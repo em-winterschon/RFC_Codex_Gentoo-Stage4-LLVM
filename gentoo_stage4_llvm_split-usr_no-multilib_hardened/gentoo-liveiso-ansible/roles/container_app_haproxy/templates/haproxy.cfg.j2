@@ -43,6 +43,8 @@ backend {{ service_type.backend_name }}
 
 {% set ntfy_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list %}
 {% set nginx_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list %}
+{% set haproxy_tls = container_haproxy_profile.tls | default({}) %}
+{% set haproxy_tls_enabled = haproxy_tls.enabled | default(false) | bool %}
 frontend fe_http
   mode http
   option httplog
@@ -56,6 +58,24 @@ frontend fe_http
   default_backend be_nginx
 {% else %}
   default_backend be_fallback
+{% endif %}
+
+{% if haproxy_tls_enabled %}
+frontend fe_https
+  mode http
+  option httplog
+  bind {{ haproxy_tls.bind | default('*:443') }} ssl crt {{ haproxy_tls.cert_path | default('/etc/haproxy/tls/haproxy.pem') }}
+{% if ntfy_apps | length > 0 %}
+{% set ntfy_app = ntfy_apps | first %}
+  acl host_ntfy hdr(host) -i {{ ntfy_app.hostnames | default(['ntfy.local']) | join(' ') }}
+  use_backend be_ntfy if host_ntfy
+{% endif %}
+{% if nginx_apps | length > 0 %}
+  default_backend be_nginx
+{% else %}
+  default_backend be_fallback
+{% endif %}
+
 {% endif %}
 
 {% if nginx_apps | length > 0 %}

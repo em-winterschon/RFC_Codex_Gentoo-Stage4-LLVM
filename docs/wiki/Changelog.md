@@ -7,6 +7,13 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added private-CA vault import scaffolding for the RFC1918 certificate
+  authority, including PEM/PKCS#12 source support and encrypted
+  `vault_private_ca_rfc1918_*` variables.
+- Enabled profile-driven HAProxy TLS termination for the container-services
+  ntfy VIP while keeping HTTP available concurrently.
+- Removed implicit public ntfy fallback from Codex and Ansible notification
+  helpers; missing local URL configuration now skips or fails explicitly.
 - Added the 2026-05-07 EOD report and wiki mirror covering K10 netboot
   validation, AP7901 PDU vaulting, NetBox inventory gaps, ntfy topic state, and
   the next netboot lifecycle/AAA automation block.
@@ -61,9 +68,9 @@ infrastructure work. It is intentionally higher level than `git log`.
   PDU records still need repo-safe inventory-intake promotion before live apply.
 - Updated RouterOS and netboot manifests so managed host entries expose
   protocol-flow intent such as `pxe-to-ipxe`.
-- Confirmed the active shell does not currently load the LAN ntfy export file,
-  so helper defaults fall back to public `https://ntfy.sh` without topics until
-  local environment loading is normalized.
+- Confirmed the active shell does not currently load the LAN ntfy export file;
+  helper defaults now avoid public fallback and require explicit local URL
+  configuration.
 - Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
   and live validation before importing Check_MK targets or alerting
   dependencies.
