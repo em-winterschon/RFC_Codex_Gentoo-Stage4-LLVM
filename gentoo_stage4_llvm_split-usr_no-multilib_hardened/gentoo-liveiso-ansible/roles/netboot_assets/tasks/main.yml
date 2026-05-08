@@ -1,8 +1,12 @@
 ---
+- name: Build effective Path B role map
+  ansible.builtin.set_fact:
+    netboot_effective_roles: "{{ netboot_roles | combine(netboot_roles_extra, recursive=True) }}"
+
 - name: Assert default Path B role exists
   ansible.builtin.assert:
     that:
-      - netboot_default_role in netboot_roles
+      - netboot_default_role in netboot_effective_roles
     fail_msg: >-
       netboot_default_role={{ netboot_default_role }} is not defined in netboot_roles.
 
@@ -65,7 +69,7 @@
 - name: Assert all mapped Path B host roles exist
   ansible.builtin.assert:
     that:
-      - netboot_host_entry.role in netboot_roles
+      - netboot_host_entry.role in netboot_effective_roles
     fail_msg: >-
       netboot_resolved_host_map entry {{ netboot_host_entry.name }} references unknown role
       {{ netboot_host_entry.role }}.
@@ -120,18 +124,26 @@
     dest: "{{ netboot_publish_root }}/bootstrap.ipxe"
     mode: '0644'
 
+- name: Render Path B TFTP autoexec iPXE script
+  ansible.builtin.template:
+    src: autoexec.ipxe.j2
+    dest: "{{ netboot_publish_root }}/autoexec.ipxe"
+    mode: '0644'
+
 - name: Render Path B menu iPXE script
   ansible.builtin.template:
     src: menu.ipxe.j2
     dest: "{{ netboot_publish_root }}/menu.ipxe"
     mode: '0644'
+  vars:
+    netboot_roles: "{{ netboot_effective_roles }}"
 
 - name: Render Path B role iPXE scripts
   ansible.builtin.template:
     src: role.ipxe.j2
     dest: "{{ netboot_publish_root }}/roles/{{ netboot_role.key }}.ipxe"
     mode: '0644'
-  loop: "{{ netboot_roles | dict2items }}"
+  loop: "{{ netboot_effective_roles | dict2items }}"
   loop_control:
     loop_var: netboot_role
 
@@ -155,3 +167,5 @@
     src: netboot-manifest.json.j2
     dest: "{{ netboot_publish_root }}/manifests/path-b-netboot.json"
     mode: '0644'
+  vars:
+    netboot_roles: "{{ netboot_effective_roles }}"

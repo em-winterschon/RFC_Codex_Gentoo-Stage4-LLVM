@@ -119,7 +119,7 @@
     /ip pool add name="{{ routeros_rfc99_gateway_dhcp_pool_name }}" ranges={{ routeros_rfc99_gateway_dhcp_range }}
 }
 /ip dhcp-server network remove [find address="{{ routeros_rfc99_gateway_dhcp_network }}"]
-/ip dhcp-server network add address={{ routeros_rfc99_gateway_dhcp_network }} gateway={{ routeros_rfc99_gateway_dhcp_gateway }} netmask={{ routeros_rfc99_gateway_dhcp_netmask }} dns-server={{ routeros_rfc99_gateway_dhcp_dns_servers | join(',') }} comment="RFC99 management compatibility DHCP"
+/ip dhcp-server network add address={{ routeros_rfc99_gateway_dhcp_network }} gateway={{ routeros_rfc99_gateway_dhcp_gateway }} netmask={{ routeros_rfc99_gateway_dhcp_netmask }} dns-server={{ routeros_rfc99_gateway_dhcp_dns_servers | join(',') }}{% if routeros_rfc99_gateway_dhcp_next_server | length > 0 %} next-server={{ routeros_rfc99_gateway_dhcp_next_server }}{% endif %} comment="RFC99 management compatibility DHCP"
 :if ([:len [/ip dhcp-server find where name="{{ routeros_rfc99_gateway_dhcp_name }}"]] > 0) do={
     /ip dhcp-server set [find name="{{ routeros_rfc99_gateway_dhcp_name }}"] interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
 } else={

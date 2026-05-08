@@ -151,6 +151,25 @@ Repo-safe transport intent and role wiring live in:
 gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/bignetwork.yml
 ```
 
+## APC PDU Credentials
+
+The operator-private AP7901 RFC99 core-control PDU credential source is:
+
+```bash
+/root/.ssh/codex.d/tokens/PDU_RFC99_CORECTRL
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-pdu-rfc99-corectrl-vault.sh
+```
+
+The importer copies `vault_pdu_rfc99_corecontrol_*` keys into the encrypted
+local-network vault and never prints secret values. Keep the source file outside
+git. K10 power-cycle automation must validate the AP7901 outlet label
+`host_gmktec_k10` before setting outlet control OIDs.
+
 ## Safety Rules
 
 - Commit only encrypted vault files.

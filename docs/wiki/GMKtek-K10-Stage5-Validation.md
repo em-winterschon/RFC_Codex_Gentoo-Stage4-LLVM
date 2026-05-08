@@ -13,12 +13,16 @@ before reimaging X12AGAIN with the LOX Stage4 plus Stage5 workstation profile.
 - GPU: Intel Iris Xe
 - Memory: DDR5 SO-DIMM, operator-installed size to be observed
 - Network: 2.5GbE RJ45
-- iPXE NIC slot: `04:00:00`
+- iPXE/PXE NIC slot: `04:00:00`
 - iPXE NIC MAC: `84:47:09:5F:21:64`
-- Firmware target: UEFI iPXE
+- Firmware target: UEFI PXE to iPXE EFI
 - DHCP lease: static RouterOS lease `172.16.99.156`
-- DHCP client class: `HTTPClient:Arch:00016:UNDI:003016`
-- EFI handoff URL: `http://172.16.99.108:8080/k10-ipxe.efi`
+- Dracut network: static `172.16.99.156/24` via `172.16.99.1` during the
+  live-root fetch phase
+- DHCP client class: `PXEClient:Arch:00007:UNDI:003016`
+- HTTPBoot class observed: `HTTPClient:Arch:00016:UNDI:003016`
+- DHCP next-server: `172.16.99.108`
+- EFI handoff: TFTP `k10-ipxe.efi` from `172.16.99.108`
 - Optional console: rear DB9 RS232, pending validation for pre/post-bootloader
   redirection
 
@@ -40,14 +44,32 @@ The local Ansible inventory carries a placeholder host:
 Current physical discovery state:
 
 - Connected test port: CSS326 `ge16`
-- Expected boot path: UEFI PXE/iPXE
+- Expected boot path: UEFI PXE/TFTP to iPXE
 - Observed status: DHCP requests from `84:47:09:5F:21:64` reached `eno1`, and
   `172.16.99.1` offered `172.16.99.156` during the 2026-05-07 reboot window
-- DHCP handoff: RouterOS static lease scoped option 67 to
-  `http://172.16.99.108:8080/k10-ipxe.efi`
-- HTTP handoff: on-host listener is serving `/var/lib/netboot/path-b` on
-  `172.16.99.108:8080`
-- Blocker: no successful EFI handoff or iPXE asset fetch has been observed yet
+- DHCP handoff: RouterOS static lease now scopes option 67 `k10-ipxe.efi` and
+  network `next-server=172.16.99.108`
+- TFTP handoff: on-host listener serves `/var/lib/netboot/path-b` on
+  `172.16.99.108:69`; local TFTP fetch of `k10-ipxe.efi` has been validated
+- iPXE handoff: K10 fetched `hosts/gmktek-k10-stage5.ipxe`,
+  `roles/installer-k10.ipxe`, `g/vmlinuz`, and `g/initramfs-gz.img`
+- Kernel handoff: K10 requires iPXE UEFI Linux boot with
+  `initrd=initrd.magic`; direct `boot vmlinuz` or a non-magic initrd argument
+  causes the kernel to miss dracut and panic on `root=live:http://...`.
+- HTTPBoot note: native UEFI HTTPBoot accepted DHCP only after option 60
+  `HTTPClient`, but then failed to issue ARP/TCP toward `172.16.99.108`;
+  PXE IPv4 is the active fallback because it did ARP and attempt TFTP
+- Current status: K10 loads the patched initramfs, loads
+  `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img` from
+  `http://172.16.99.108:8080`, mounts `LiveOS_rootfs`, switches root, and
+  reaches the Gentoo login prompt on the PiKVM video console.
+- Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
+  working for firmware/iPXE. The active K10 installer role uses the reserved
+  static initramfs address instead.
+- PDU control: AP7901 outlet 6 is mapped to `host_gmktec_k10`; SNMPv3
+  credentials are staged in the Ansible vault from
+  `/root/.ssh/codex.d/tokens/PDU_RFC99_CORECTRL` and must not be committed in
+  plaintext.
 - Exclusion: `172.16.99.160` is not accepted as K10 evidence because it showed
   conflicting ARP/MAC data and an existing OpenSSH/rpcbind host
 
@@ -59,18 +81,22 @@ Once the host requests DHCP, record:
 
 ## Validation Gates
 
-1. Reboot K10 and confirm DHCP offer includes option 67 URL.
-2. Confirm firmware fetches `k10-ipxe.efi` over HTTP.
+1. Reboot K10 with UEFI PXE IPv4 and confirm DHCP offer includes option 67
+   `k10-ipxe.efi` and `next-server=172.16.99.108`.
+2. Confirm firmware fetches `k10-ipxe.efi` over TFTP.
 3. Confirm embedded iPXE fetches `hosts/gmktek-k10-stage5.ipxe`.
-4. Create NetBox device, interface, MAC, IPAM, and DNS records.
-5. Boot iPXE and confirm kernel/initramfs delivery.
-6. Install LOX Stage4 plus Stage5 workstation profile using binpkgs where
+4. Confirm EFI/iPXE attaches and executes `g/initramfs-gz.img`.
+5. Confirm patched initramfs loads Realtek 8125 firmware and fetches the rootfs
+   using the static dracut IP assignment.
+6. Create NetBox device, interface, MAC, IPAM, and DNS records.
+7. Boot iPXE and confirm kernel/initramfs/rootfs delivery.
+8. Install LOX Stage4 plus Stage5 workstation profile using binpkgs where
    possible.
-7. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
-8. Validate Intel GPU stack: Mesa, Vulkan loader/tools, Level Zero, OpenCL, and
-   `clinfo` where supported.
-9. Validate SSH, rsyslog, telemetry, and optional SSSD client enrollment.
-10. Snapshot/capture final package and Portage state before considering X12AGAIN.
+9. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
+10. Validate Intel display stack: Mesa, libdrm, libva, Vulkan loader/tools, and
+    Xorg driver behavior.
+11. Validate SSH, rsyslog, telemetry, and optional SSSD client enrollment.
+12. Snapshot/capture final package and Portage state before considering X12AGAIN.
 
 ## Backout
 

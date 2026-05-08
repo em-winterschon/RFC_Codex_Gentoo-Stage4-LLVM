@@ -132,3 +132,5 @@ This keeps group and role naming stable while allowing vendor-specific RADIUS re
 3. Enroll one builder-farm node.
 4. Validate network AAA against one switch or router before widening device rollout.
 5. Decide whether TACACS+ is needed for Cisco device coverage.
+6. Add power-management AAA coverage for APC PDUs, APC ATS, and UPS network
+   management cards through FreeRADIUS, with local break-glass accounts retained.

@@ -91,6 +91,7 @@ subnet:
 | Pool | `172.16.99.150-172.16.99.158` |
 | Gateway | `172.16.99.1` |
 | DNS | `172.16.99.1` |
+| Next server | optional, currently `172.16.99.108` for K10 UEFI PXE/TFTP |
 | Lease time | `1h` |
 
 Additional DHCP scopes should move to NetBox/IPAM-backed automation before
@@ -108,8 +109,15 @@ Current K10 validation lease:
 | Host | `gmktek-k10-stage5-ipxe` |
 | MAC | `84:47:09:5F:21:64` |
 | Address | `172.16.99.156` |
-| DHCP option | `k10-http-bootfile` |
-| Option 67 | `http://172.16.99.108:8080/k10-ipxe.efi` |
+| DHCP option | `k10-pxe-bootfile` |
+| Option 67 | `k10-ipxe.efi` |
+| Next server | `172.16.99.108` |
+| TFTP root | `/var/lib/netboot/path-b` |
+
+Native K10 UEFI HTTPBoot accepted DHCP only after option 60 echoed
+`HTTPClient`, but packet captures showed no subsequent ARP or TCP from the K10
+to `172.16.99.108`. UEFI PXE IPv4 did ARP and attempted TFTP, so the active
+path is now PXE/TFTP with filename `k10-ipxe.efi`.
 
 ## Live Apply Gate
 

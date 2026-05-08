@@ -12,8 +12,11 @@ netboot_artifact_base_url: "{{ netboot_public_base_url }}/artifacts"
 netboot_installer_short_path: g
 netboot_rescue_short_path: r
 netboot_initramfs_short_name: initramfs-gz.img
+netboot_initramfs_boot_name: "{{ netboot_initramfs_short_name }}"
+netboot_tftp_autoexec_chain_url: ""
 netboot_operator_notes_url: "{{ netboot_public_base_url }}/README.txt"
 netboot_host_map_extra: []
+netboot_roles_extra: {}
 netboot_boot_type_enum:
   - static
   - dhcp

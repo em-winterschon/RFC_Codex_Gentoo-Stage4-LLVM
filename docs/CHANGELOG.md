@@ -26,8 +26,28 @@ infrastructure work. It is intentionally higher level than `git log`.
   `04:00:00`, MAC `84:47:09:5F:21:64`.
 - Recorded the x86/amd64 netboot policy as UEFI/EFI-only, scoped the K10
   RouterOS DHCP lease to `172.16.99.156`, and set its EFI handoff URL to
-  `http://172.16.99.108:8080/k10-ipxe.efi`; the RouterOS gateway role now
-  renders DHCP options and static leases for this class of UEFI handoff.
+  `http://172.16.99.108/k10-ipxe.efi`; the RouterOS gateway role now renders
+  DHCP option 60, option 67, `next-server`, and static leases for this class of
+  UEFI handoff.
+- Captured the current K10 blocker: DHCP ACK is validated, but the firmware has
+  not issued ARP or TCP toward `172.16.99.108`, so the remaining work is BIOS or
+  UEFI HTTPBoot behavior rather than the on-host netboot address.
+- Switched the active K10 fallback to UEFI PXE/TFTP after PXE IPv4 issued ARP
+  and TFTP RRQ traffic. The current RouterOS lease renders option 67
+  `k10-ipxe.efi` with `next-server=172.16.99.108`; local TFTP fetch from
+  `/var/lib/netboot/path-b` validates.
+- Patched the live Path B installer initramfs with
+  `rtl_nic/rtl8125b-2.fw` after K10 dracut boot showed the Realtek 8125
+  firmware missing and DHCP failure. The Path B artifact builder now installs
+  `sys-kernel/linux-firmware` and forces the same firmware into future dracut
+  initramfs builds.
+- Updated the netboot iPXE role template and live K10 installer handoff to use
+  the served initramfs basename `initramfs-gz.img` directly, avoiding an
+  EFI/iPXE initrd name remap that reached the kernel but skipped dracut.
+- Validated K10 through the full UEFI PXE/TFTP to iPXE path using
+  `initrd=initrd.magic`, patched RTL8125B firmware in the initramfs, and static
+  dracut networking; it now fetches the HTTP rootfs and reaches the Gentoo live
+  login prompt.
 - Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
   and live validation before importing Check_MK targets or alerting
   dependencies.
