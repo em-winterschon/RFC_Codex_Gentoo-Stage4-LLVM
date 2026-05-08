@@ -14,6 +14,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Created the `RFC Codex Infrastructure Roadmap` GitHub Projects v2 board with
   seeded roadmap items and repo-specific `Roadmap Status` / `Roadmap ID`
   fields.
+- Added the GitHub issue relationship pass: 14 milestone epic issues,
+  relationship labels, roadmap dependency sections with live issue references,
+  and Projects v2 `Roadmap Status` / `Roadmap ID` field synchronization.
 
 ## 2026-05-07
 

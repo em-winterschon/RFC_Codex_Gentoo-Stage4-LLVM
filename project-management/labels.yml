@@ -83,12 +83,27 @@ labels:
   - name: type:change-control
     color: "D93F0B"
     description: ITIL-style change-control issue.
+  - name: type:epic
+    color: "0052CC"
+    description: Parent lane issue that groups related stories and tasks.
   - name: type:roadmap-task
     color: "1D76DB"
     description: Roadmap or TODO item.
   - name: type:service-role
     color: "5319E7"
     description: Service-role implementation or validation.
+  - name: type:story
+    color: "C2E0C6"
+    description: Mid-level delivery unit under an epic.
+  - name: type:task
+    color: "EDEDED"
+    description: Concrete implementation or validation task.
+  - name: rel:blocked-by
+    color: "B60205"
+    description: Issue has one or more blocking dependencies.
+  - name: rel:depends-on
+    color: "FBCA04"
+    description: Issue depends on another roadmap issue.
   - name: needs-validation
     color: "FBCA04"
     description: Requires validation evidence before closure.

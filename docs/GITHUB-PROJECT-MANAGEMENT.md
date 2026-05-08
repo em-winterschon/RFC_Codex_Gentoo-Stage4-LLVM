@@ -85,8 +85,43 @@ Current live seed status:
 - open roadmap/catalog issues are applied
 - Projects v2 board `RFC Codex Infrastructure Roadmap` is created at
   `https://github.com/users/em-winterschon/projects/1`
-- the board contains the seeded roadmap/catalog issues and the custom
+- the board contains `81` seeded roadmap/catalog/epic issues and the custom
   `Roadmap Status` plus `Roadmap ID` fields
+- relationship sync has created `14` milestone epic issues and dependency
+  sections with live issue references where the referenced roadmap issue exists
+
+## Relationship Sync
+
+Run the relationship pass after issues exist:
+
+```bash
+GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" \
+  python3 scripts/github_project_seed.py \
+  --repo em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
+  --apply \
+  --create-project \
+  --sync-relationships \
+  --sync-project-fields
+```
+
+This pass creates epic issues for each milestone, rewrites dependency sections
+with live `#issue` references, adds all seeded issues to the project, and fills
+`Roadmap ID` / `Roadmap Status` project fields.
+
+Native GitHub dependency and sub-issue API links are optional:
+
+```bash
+GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" \
+  python3 scripts/github_project_seed.py \
+  --repo em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM \
+  --apply \
+  --sync-relationships \
+  --native-issue-links
+```
+
+Native relationship calls are best-effort because GitHub's issue relationship
+API behavior can vary by repository feature availability. Body links and project
+fields remain the durable fallback.
 
 ## Project Board
 

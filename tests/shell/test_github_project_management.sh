@@ -29,6 +29,10 @@ assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/service_role.yml" "nam
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/blocker.yml" "name: Blocker"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/config.yml" "blank_issues_enabled: false"
 assert_file_contains "${LABELS}" "area:identity-aaa"
+assert_file_contains "${LABELS}" "type:epic"
+assert_file_contains "${LABELS}" "type:task"
+assert_file_contains "${LABELS}" "rel:depends-on"
+assert_file_contains "${LABELS}" "rel:blocked-by"
 assert_file_contains "${MILESTONES}" "Identity/RBAC/AAA"
 assert_file_contains "${ISSUES}" "roadmap_source: docs/ROADMAP-AND-TODO.md"
 assert_file_contains "${REPO_ROOT}/docs/ROADMAP-AND-TODO.md" "AAA-004"
@@ -38,6 +42,9 @@ assert_file_contains "${WIKI}" "GitHub Query URLs"
 assert_file_contains "${SEED}" "verify_project_scope"
 assert_file_contains "${SEED}" "Roadmap Status"
 assert_file_contains "${SEED}" "add_issues_to_project"
+assert_file_contains "${SEED}" "resolve_dependency_numbers"
+assert_file_contains "${SEED}" "apply_issue_relationships"
+assert_file_contains "${SEED}" "update_project_item_fields"
 
 python3 - <<'PY' "${REPO_ROOT}/.github/ISSUE_TEMPLATE" "${REPO_ROOT}/project-management"
 import pathlib
@@ -60,6 +67,10 @@ grep -Fq 'milestone: Identity/RBAC/AAA' <<< "${dry_run}" ||
   fail 'dry run did not include expected milestone'
 grep -Fq 'issue: [AAA-004]' <<< "${dry_run}" ||
   fail 'dry run did not include expected seeded issue'
+grep -Fq 'epic: [EPIC] Identity/RBAC/AAA' <<< "${dry_run}" ||
+  fail 'dry run did not include expected epic issue'
+grep -Fq 'relationship edges:' <<< "${dry_run}" ||
+  fail 'dry run did not summarize relationship edges'
 grep -Fq 'https://github.com/example/example/issues/new?template=roadmap_task.yml' <<< "${dry_run}" ||
   fail 'dry run did not include issue query URL'
 

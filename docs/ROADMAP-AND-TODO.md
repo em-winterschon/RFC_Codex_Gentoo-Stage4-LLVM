@@ -206,7 +206,8 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `PM-001` | completed | Bootstrap GitHub Issues, milestones, and project board from the roadmap | GitHub token with issue/project permissions | Issue forms, labels, milestones, roadmap-derived issues, and Projects v2 board are seeded. Project URL: `https://github.com/users/em-winterschon/projects/1`. |
-| `PM-002` | completed | Enable GitHub Projects v2 board creation scope | GitHub token with `project` / `read:project` scope | Scope updated and validated. Project board has `67` items plus `Roadmap Status` and `Roadmap ID` fields. |
+| `PM-002` | completed | Enable GitHub Projects v2 board creation scope | GitHub token with `project` / `read:project` scope | Scope updated and validated. Project board has `81` items plus `Roadmap Status` and `Roadmap ID` fields. |
+| `PM-003` | completed | Layer roadmap issues into milestone epics and dependency chains | `PM-001`, `PM-002` | Relationship pass created `14` milestone epic issues, added `type:epic` / `type:story` / `type:task` and dependency labels, rewrote issue dependency sections with live `#issue` references, and synced project fields. Native GitHub issue-link mutations remain optional/best-effort. |
 | `MCP-001` | ready | Evaluate self-hosted MCP runtime and safe Trac integration | `PM-001` | Keep Trac write access blocked until a custom allowlisted MCP wrapper or equivalent control plane exists. |
 
 ### Workstation VM Profiles
