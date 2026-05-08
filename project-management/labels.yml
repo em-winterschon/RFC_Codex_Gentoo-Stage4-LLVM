@@ -1,0 +1,94 @@
+labels:
+  - name: area:builder-farm
+    color: "0E8A16"
+    description: Jenkins, distcc, binpkg build fabric, and build metrics.
+  - name: area:container-services
+    color: "1D76DB"
+    description: Podman service-container images, runtime profiles, and service layers.
+  - name: area:critical-path
+    color: "B60205"
+    description: Immediate base image, build, publish, or unblock work.
+  - name: area:dns-automation
+    color: "5319E7"
+    description: Hetzner DNS, NetBox-driven RRsets, and DNS validation.
+  - name: area:fmt2-recovery
+    color: "006B75"
+    description: FMT2/SFO-200 transport, discovery, Check_MK, and DCIM recovery.
+  - name: area:identity-aaa
+    color: "D93F0B"
+    description: FreeIPA, SSSD, FreeRADIUS, TACACS, RBAC, and centralized auth.
+  - name: area:llm-rag-services
+    color: "7057FF"
+    description: LLM proxying, RAG pipeline, OpenWebUI, Ollama, vLLM, and GPU service paths.
+  - name: area:logging-search
+    color: "FBCA04"
+    description: rsyslog, Elasticsearch, Kibana, APM, and log ingestion.
+  - name: area:mcp-trac-control-plane
+    color: "BFDADC"
+    description: MCP server hosting, Trac integration, tool allowlists, and project control plane.
+  - name: area:netbox-ipam-dcim
+    color: "0052CC"
+    description: NetBox IPAM/DCIM inventory, cables, power chains, and source-of-truth workflows.
+  - name: area:observability
+    color: "C2E0C6"
+    description: Prometheus, Grafana, exporters, telemetry, and alerting.
+  - name: area:repository-proxy
+    color: "F9D0C4"
+    description: Nexus Repository, version locks, and upstream repository proxying.
+  - name: area:routeros-network
+    color: "006B75"
+    description: CCR2004, CRS309, CRS354, CSS326, VLANs, LACP, and routing.
+  - name: area:workstation
+    color: "D4C5F9"
+    description: Stage5 workstation, Xorg, NsCDE, GPU, K10, and desktop validation.
+  - name: priority:critical
+    color: "B60205"
+    description: Must be resolved immediately to keep critical-path work moving.
+  - name: priority:high
+    color: "D93F0B"
+    description: Important near-term work with material schedule impact.
+  - name: priority:normal
+    color: "0E8A16"
+    description: Normal planned work.
+  - name: priority:low
+    color: "C5DEF5"
+    description: Useful but not schedule-critical.
+  - name: stage4
+    color: "5319E7"
+    description: Stage4 profile, rootfs, or host baseline work.
+  - name: stage5
+    color: "7057FF"
+    description: Stage5 role/profile overlay work.
+  - name: status:active
+    color: "1D76DB"
+    description: Work is actively in progress.
+  - name: status:backlog
+    color: "EDEDED"
+    description: Accepted but not currently ready.
+  - name: status:blocked
+    color: "B60205"
+    description: Blocked by a dependency, access requirement, or failure.
+  - name: status:done
+    color: "0E8A16"
+    description: Completed or validated.
+  - name: status:ready
+    color: "C2E0C6"
+    description: Ready for execution.
+  - name: status:review
+    color: "FBCA04"
+    description: Needs review, validation, or acceptance.
+  - name: type:blocker
+    color: "B60205"
+    description: Operational blocker.
+  - name: type:change-control
+    color: "D93F0B"
+    description: ITIL-style change-control issue.
+  - name: type:roadmap-task
+    color: "1D76DB"
+    description: Roadmap or TODO item.
+  - name: type:service-role
+    color: "5319E7"
+    description: Service-role implementation or validation.
+  - name: needs-validation
+    color: "FBCA04"
+    description: Requires validation evidence before closure.

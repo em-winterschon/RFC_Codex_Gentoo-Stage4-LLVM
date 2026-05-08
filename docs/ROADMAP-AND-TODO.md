@@ -201,6 +201,14 @@ Dependency:
 | `LLM-003` | pending | Scaffold OpenWebUI and Ollama service definitions | `LLM-001`, GPU service inventory access | Operator already has separate deployment automation; import only after Codex access is available. |
 | `LLM-004` | pending | Scaffold RAG ingestion, embedding, and retrieval pipeline roles | `LLM-002`, `LLM-003` | Keep metrics, logs, provider routing, and service VIPs explicit. |
 
+### Project Management And Control Plane
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `PM-001` | active | Bootstrap GitHub Issues, milestones, and project board from the roadmap | GitHub token with issue/project permissions | Issue forms, labels, milestones, and roadmap-derived issues are seeded. Projects v2 board creation remains blocked until the token has `project` / `read:project` scope. |
+| `PM-002` | blocked | Enable GitHub Projects v2 board creation scope | GitHub token with `project` / `read:project` scope | Current Forge token manages issues, labels, and milestones but cannot create or inspect Projects v2 boards. |
+| `MCP-001` | ready | Evaluate self-hosted MCP runtime and safe Trac integration | `PM-001` | Keep Trac write access blocked until a custom allowlisted MCP wrapper or equivalent control plane exists. |
+
 ### Workstation VM Profiles
 
 | ID | Status | Task | Depends On | Notes |

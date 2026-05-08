@@ -1,0 +1,77 @@
+name: Roadmap task
+description: Track a roadmap or TODO item with dependency and removal-condition metadata.
+title: "[ROADMAP] "
+labels:
+  - type:roadmap-task
+  - status:ready
+body:
+  - type: input
+    id: roadmap_id
+    attributes:
+      label: Roadmap ID
+      description: Existing roadmap ID such as WS-006, AAA-004, or PNR-030.
+      placeholder: WS-006
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - critical-path
+        - container-services
+        - netbox-ipam-dcim
+        - routeros-network
+        - identity-aaa
+        - observability
+        - logging-search
+        - builder-farm
+        - workstation
+        - fmt2-recovery
+        - dns-automation
+        - mcp-trac-control-plane
+        - llm-rag-services
+        - repository-proxy
+    validations:
+      required: true
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      options:
+        - backlog
+        - ready
+        - active
+        - blocked
+        - review
+        - done
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: One operationally testable outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+      description: List upstream tasks, access requirements, credentials, physical cabling, or service dependencies.
+    validations:
+      required: true
+  - type: textarea
+    id: removal_condition
+    attributes:
+      label: Removal condition
+      description: State exactly what makes the issue complete or no longer relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation evidence
+      description: Commands, API checks, health checks, or SLO checks that prove completion.
+    validations:
+      required: false

@@ -3,6 +3,15 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-08
+
+### Added
+
+- Added GitHub project-management scaffolding for the interim NOW() tracker:
+  structured issue forms, label catalog, milestone catalog, roadmap-derived
+  issue seeding, query-parameter issue URLs, and a dry-run-first local seed
+  script that avoids GitHub Actions.
+
 ## 2026-05-07
 
 ### Added
