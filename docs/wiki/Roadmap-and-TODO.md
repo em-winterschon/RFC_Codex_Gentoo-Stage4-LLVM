@@ -119,8 +119,8 @@ Dependency:
 | `PNR-027` | scaffolded | Add gated NVIDIA DOCA/OFED host-driver workflow | `PNR-026`, RoCE fabric | `nvidia_doca_ofed` requires explicit repo package input, matching kernel headers, and a custom-kernel acknowledgement before installing on a Proxmox kernel. |
 | `PNR-028` | active | Bring up Hasslehoff QLogic LACP and workstation VM high-speed network test | `PNR-020`, `PNR-025` | CRS309 `bond-hasslehoff-qlogic`, Hasslehoff `bond-qlogic0`, and `vmbr-qlogic0` are live. SR-IOV is blocked because the QLogic functions expose no SR-IOV capability; workstation VM `1094` uses tagged virtio NICs on `vmbr-qlogic0` as the fallback. |
 | `PNR-029` | completed | Normalize RouterOS serial command automation for CRS309 | `PNR-020` | Added `scripts/routeros-serial-command.py` with VT100/ANSI answerback handling for RouterOS `ESC Z` terminal-identification probes; live read-only CRS309 identity command validated. |
-| `PNR-030` | active | Promote K10 and AP7901 PDU operational discoveries into NetBox | `PNR-010`, `WS-006`, PDU vault import | Live NetBox API is reachable at `172.16.99.62`, but K10 `172.16.99.156` and AP7901 `172.16.99.241` returned zero device/IP matches before this intake update. Repo-safe local intake now includes K10 device/interface/IPAM/switchport metadata and AP7901 non-secret inventory/outlet mapping; live NetBox apply remains intentionally pending. |
-| `PNR-031` | pending | Add NetBox power-chain modeling for PDU outlet to host relationships | `PNR-030`, power-device model support confirmed | Track AP7901 outlet 6 label `host_gmktec_k10` to the K10 power target without storing SNMP secrets in NetBox. |
+| `PNR-030` | completed | Promote K10, AP7901 PDU, and Chonkers operational discoveries into NetBox intake | `PNR-010`, `WS-006`, PDU vault import | Repo-safe intake now covers K10 device/interface/IPAM/switchport metadata, AP7901 non-secret inventory/outlet mapping, and Chonkers laptop LOM/switch/power metadata. PR `#103` carries the stacked first-enrollment intake. |
+| `PNR-031` | active | Add NetBox power-chain modeling for PDU outlet to host relationships | `PNR-030`, power-device model support confirmed | Track AP7901 outlet 6 label `host_gmktec_k10` to the K10 power target and AP7901 outlet 4 to `lap-sun99-chonkers` without storing SNMP secrets in NetBox. |
 | `PNR-016` | active | Capture Hasslehoff host backups before gateway and VM changes | `PNR-001` | `scripts/backup-hasslehoff-config.sh` now captures `/etc/pve`, network/sysctl state, Proxmox JSON, and host summaries to `/root/operator-private/hasslehoff/backups`. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
@@ -151,8 +151,10 @@ Dependency:
 | `AAA-001` | completed | Validate FreeIPA server/client roles on fresh VMs | basic VM provisioning stable | Rocky 9 controller VM `1063` / `svc_identity_ipa01` is live at `172.16.99.63`; FreeIPA, SSSD, and central SSH key identity are validated. |
 | `AAA-002` | completed | Validate FreeRADIUS against LDAP/FreeIPA backend | `AAA-001` | FreeRADIUS LDAP bind and `radtest` validation passed; UDP `1812`/`1813` are listening. |
 | `AAA-003` | pending | Define optional TACACS+ bridge | `AAA-002` | Only needed for Cisco devices if RADIUS is insufficient. |
-| `AAA-004` | active | Map RBAC policy to SSH keys, VPN users, switches, smartcards | `AAA-001` | Initial `codex-admin`, `linux-admin`, `network-readonly`, and RADIUS validation mappings exist; next step is enrolling real devices and hosts. |
+| `AAA-004` | active | Map RBAC policy to SSH keys, VPN users, switches, smartcards | `AAA-001` | Initial `codex-admin`, `linux-admin`, `network-readonly`, and RADIUS validation mappings exist. The non-secret identity source-of-truth scaffold now records first users, groups, service account, K10 host enrollment, and AP7901 RADIUS client intent. |
 | `AAA-005` | active | Enroll APC PDUs, APC ATS, and UPS management cards into central RADIUS auth | `AAA-002`, `OBS-004`, power-device inventory | Scope includes APC AP7901/AP7902 PDUs, AP4450 ATS, AP9631/AP9641 UPS cards, and any compatible CyberPower/Eaton management modules. First target is the AP7901 at `172.16.99.241` after non-secret NetBox inventory exists. Preserve local break-glass accounts, test one low-risk device first, and document vendor-specific RADIUS attributes before bulk rollout. |
+| `AAA-006` | active | Convert AAA source-of-truth render output into gated FreeIPA/FreeRADIUS apply automation | `AAA-001`, `AAA-002`, `AAA-004` | PR `#105` adds validation and render-only sync planning. Next removal condition is an idempotent apply playbook with dry-run delta output, vault-variable resolution, audit logging, and an explicit mutation gate. |
+| `AAA-007` | pending | Enroll K10 as the first SSSD/RBAC workstation client | `AAA-006`, `WS-006`, `PNR-030` | Validate SSH key lookup, sudo policy, primary/supplemental groups, offline SSSD cache behavior, and local break-glass before widening to other Linux hosts. |
 
 ### Observability, Logs, And Telemetry
 
@@ -201,6 +203,17 @@ Dependency:
 | `LLM-003` | pending | Scaffold OpenWebUI and Ollama service definitions | `LLM-001`, GPU service inventory access | Operator already has separate deployment automation; import only after Codex access is available. |
 | `LLM-004` | pending | Scaffold RAG ingestion, embedding, and retrieval pipeline roles | `LLM-002`, `LLM-003` | Keep metrics, logs, provider routing, and service VIPs explicit. |
 
+### Project Management And MCP Control Plane
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `PM-001` | completed | Bootstrap GitHub Issues, milestones, and project board from the roadmap | GitHub token with issue/project permissions | Issue forms, labels, milestones, roadmap-derived issues, and Projects v2 board are seeded. Project URL: `https://github.com/users/em-winterschon/projects/1`. |
+| `PM-002` | completed | Enable GitHub Projects v2 board creation scope | GitHub token with `project` / `read:project` scope | Scope updated and validated. Project board has `81` items plus `Roadmap Status` and `Roadmap ID` fields. |
+| `PM-003` | completed | Layer roadmap issues into milestone epics and dependency chains | `PM-001`, `PM-002` | Relationship pass created `14` milestone epic issues, added `type:epic` / `type:story` / `type:task` and dependency labels, rewrote issue dependency sections with live `#issue` references, and synced project fields. Native GitHub issue-link mutations remain optional/best-effort. |
+| `MCP-001` | active | Add generic MCP and Nginx-UI control-plane services behind HAProxy | container-services stable, private CA, vault workflow | `vm-mcp-control-plane` scaffolds Nginx-UI MCP routing, OpenAI-compatible env references, and a disabled-by-default generic MCP backend. Live deployment waits for vaulted Nginx-UI secrets, DNS/IPAM records, and TLS certificate material. |
+| `MCP-002` | pending | Validate live Nginx-UI MCP service on LAN | `MCP-001`, AAA apply path | Validate HTTPS, `/mcp` SSE behavior, `node_secret` auth, no Docker socket mount, and OpenAI-compatible config without exposing tokens in logs. |
+| `MCP-003` | ready | Evaluate self-hosted MCP runtime and safe Trac integration | `PM-001`, `MCP-001` | Keep Trac write access blocked until a custom allowlisted MCP wrapper or equivalent control plane exists. |
+
 ### Workstation VM Profiles
 
 | ID | Status | Task | Depends On | Notes |
@@ -212,6 +225,7 @@ Dependency:
 | `WS-005` | scaffolded | Normalize cross-OS workstation session stack | `WS-001`, `WS-002` | `workstation_session_stack` models display managers, desktop environments, and window managers with OS-family task aliases for Gentoo, Debian/Devuan, FreeBSD, and Solaris-family systems. Package mutation is gated until each OS repository policy is finalized. |
 | `WS-006` | active | Validate GMKtek K10 bare-metal Stage5 install before X12AGAIN | `WS-004`, K10 EFI handoff validation | K10 is on CSS326 `ge16`; PXE NIC slot `04:00:00`, MAC `84:47:09:5F:21:64`, static lease `172.16.99.156`. Native HTTPBoot stalled after DHCP, but PXE IPv4 with option 67 `k10-ipxe.efi`, `next-server=172.16.99.108`, and TFTP root `/var/lib/netboot/path-b` now reaches iPXE, loads the kernel and patched RTL8125B initramfs via `initrd=initrd.magic`, fetches `g/rootfs.img` using static dracut IP, mounts `LiveOS_rootfs`, and reaches the Gentoo login prompt. Next removal condition is running the Stage5 workstation installer workflow and recording final Portage/binpkg state. Do not treat `172.16.99.160` as K10 until the duplicate/unknown host state is resolved. |
 | `WS-007` | active | Add netboot protocol-flow and boot-image manifest automation | `WS-006`, Jenkins build lane | Split netboot IP assignment mode from protocol flow. Model `ipxe-direct`, `pxe-to-ipxe`, `uefi-httpboot`, and `disabled`, with K10 set to `pxe-to-ipxe`. K10 now has a Jenkins-consumable boot-image manifest for kernel, dracut modules, firmware, command-line, rootfs URL, and future artifact hashes. |
+| `WS-008` | pending | Resume Chonkers laptop iPXE/HTTPv4 validation after boot-media correction | `WS-007`, `PNR-030` | Chonkers is inventoried as `lap-sun99-chonkers.rfc1918.dev` on CSS326 `ge15`, AP7901 outlet 4, Realtek MAC `84:5C:31:A5:CF:51`. Current blocker is the installed NVMe hijacking boot; retry after blank/replacement NVMe or boot-order correction. |
 
 ## Medium-Term Work
 

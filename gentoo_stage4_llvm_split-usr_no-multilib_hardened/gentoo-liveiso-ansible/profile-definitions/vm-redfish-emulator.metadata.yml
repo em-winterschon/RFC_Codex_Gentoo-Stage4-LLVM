@@ -10,6 +10,19 @@ gentoo_system_profile_metadata:
     role_class: virtual-host
     role_name: redfish-emulator
     stage4_foundation: stage4-lox
+  package_pins:
+    tracked_atoms:
+      - app-emulation/libvirt
+      - app-emulation/qemu
+      - dev-python/pip
+      - dev-python/virtualenv
+      - net-misc/curl
+      - www-servers/nginx
+    upstream_app_version: sushy-tools-libvirt
+    python_packages:
+      - gunicorn
+      - libvirt-python
+      - sushy-tools
   upstreams:
     primary:
       name: sushy-tools
@@ -25,3 +38,17 @@ gentoo_system_profile_metadata:
     - Do not expose this service outside management networks.
     - VM Redfish should be treated as an automation compatibility shim, not a security boundary.
     - Power mutations remain opt-in and should be protected by private CA TLS plus central RBAC once FreeIPA/SSSD/RADIUS is live.
+  package_pins:
+    tracked_atoms:
+      - app-emulation/libvirt
+      - dev-python/pip
+      - dev-python/virtualenv
+      - net-misc/curl
+    upstream_apps:
+      - name: sushy-tools
+        pin_status: python-venv-requirements-pending
+      - name: Redfish-Interface-Emulator
+        pin_status: fallback-source-pin-pending
+    pin_gaps:
+      - The exact sushy-tools package version must be pinned when the live VM Redfish emulator is deployed.
+      - The DMTF fallback source revision must be pinned before any static emulator is promoted beyond testing.
