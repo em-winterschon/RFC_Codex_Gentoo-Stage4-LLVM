@@ -58,8 +58,8 @@ grep -Fq 'IDENTITY_SYNC_APPLY=1 is required' /tmp/identity-apply-no-global.out |
 
 if IDENTITY_SYNC_APPLY=1 \
   python3 "${apply_script}" "${source_file}" --apply --provider freeradius \
-    --freeradius-output /tmp/identity-radius-no-provider.conf \
-    > /tmp/identity-apply-no-provider.out 2>&1; then
+  --freeradius-output /tmp/identity-radius-no-provider.conf \
+  > /tmp/identity-apply-no-provider.out 2>&1; then
   fail "FreeRADIUS apply without provider gate unexpectedly passed"
 fi
 grep -Fq 'IDENTITY_SYNC_APPLY_FREERADIUS=1 is required' /tmp/identity-apply-no-provider.out ||
@@ -74,12 +74,12 @@ radius_stdout="$(
   IDENTITY_SYNC_APPLY=1 \
   IDENTITY_SYNC_APPLY_FREERADIUS=1 \
   vault_radius_client_pdu_rfc99_corectrl_ap7901_secret="${radius_secret}" \
-    python3 "${apply_script}" "${source_file}" \
-      --apply \
-      --provider freeradius \
-      --freeradius-output "${radius_output}" \
-      --audit-log "${audit_log}" \
-      --format json
+  python3 "${apply_script}" "${source_file}" \
+    --apply \
+    --provider freeradius \
+    --freeradius-output "${radius_output}" \
+    --audit-log "${audit_log}" \
+    --format json
 )"
 grep -Fq '"applied": true' <<< "${radius_stdout}" || fail "FreeRADIUS apply did not report applied"
 grep -Fq 'pdu-rfc99-corectrl-099241' "${radius_output}" || fail "FreeRADIUS output missing client shortname"
@@ -89,7 +89,7 @@ assert_not_contains "$(cat "${audit_log}")" "${radius_secret}"
 
 fake_ipa="${tmpdir}/fake-ipa"
 fake_log="${tmpdir}/fake-ipa.log"
-cat > "${fake_ipa}" <<'EOF'
+cat > "${fake_ipa}" << 'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${FAKE_IPA_LOG}"
 case "$1" in
@@ -106,11 +106,11 @@ freeipa_stdout="$(
   IDENTITY_SYNC_APPLY_FREEIPA=1 \
   FAKE_IPA_LOG="${fake_log}" \
   vault_identity_codex_admin_ssh_public_keys='ssh-ed25519 AAAATEST codex-admin' \
-    python3 "${apply_script}" "${source_file}" \
-      --apply \
-      --provider freeipa \
-      --freeipa-command "${fake_ipa}" \
-      --format json
+  python3 "${apply_script}" "${source_file}" \
+    --apply \
+    --provider freeipa \
+    --freeipa-command "${fake_ipa}" \
+    --format json
 )"
 grep -Fq '"applied": true' <<< "${freeipa_stdout}" || fail "FreeIPA apply did not report applied"
 grep -Fq 'group-add linux-admin' "${fake_log}" || fail "FreeIPA fake log missing group-add"
@@ -121,7 +121,7 @@ assert_not_contains "${freeipa_stdout}" 'ssh-ed25519 AAAATEST'
 
 if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="${tmpdir}/hosts.yml"
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:

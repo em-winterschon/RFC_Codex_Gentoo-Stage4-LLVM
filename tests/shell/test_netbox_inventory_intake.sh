@@ -111,7 +111,7 @@ grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' /tmp/netbox-intake-app
 grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet4' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 4"
 grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 6"
 
-python3 - <<'PY' "${apply_script}"
+python3 - "${apply_script}" << 'PY'
 import importlib.util
 import pathlib
 import sys

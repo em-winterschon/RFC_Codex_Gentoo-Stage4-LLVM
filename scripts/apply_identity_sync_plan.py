@@ -52,10 +52,16 @@ def gate_enabled(name: str) -> bool:
 def require_apply_gates(provider: str) -> None:
     if not gate_enabled("IDENTITY_SYNC_APPLY"):
         raise IdentityApplyError("IDENTITY_SYNC_APPLY=1 is required for live --apply mode")
-    if "freeipa" in selected_providers(provider) and not gate_enabled("IDENTITY_SYNC_APPLY_FREEIPA"):
+    if "freeipa" in selected_providers(provider) and not gate_enabled(
+        "IDENTITY_SYNC_APPLY_FREEIPA"
+    ):
         raise IdentityApplyError("IDENTITY_SYNC_APPLY_FREEIPA=1 is required for FreeIPA apply")
-    if "freeradius" in selected_providers(provider) and not gate_enabled("IDENTITY_SYNC_APPLY_FREERADIUS"):
-        raise IdentityApplyError("IDENTITY_SYNC_APPLY_FREERADIUS=1 is required for FreeRADIUS apply")
+    if "freeradius" in selected_providers(provider) and not gate_enabled(
+        "IDENTITY_SYNC_APPLY_FREERADIUS"
+    ):
+        raise IdentityApplyError(
+            "IDENTITY_SYNC_APPLY_FREERADIUS=1 is required for FreeRADIUS apply"
+        )
 
 
 def resolve_env_var(name: str, *, required: bool) -> str:
@@ -78,7 +84,9 @@ def resolve_list_var(name: str, *, required: bool) -> list[str]:
         try:
             parsed = json.loads(stripped)
         except json.JSONDecodeError as exc:
-            raise IdentityApplyError(f"{name}: expected JSON list or newline-separated values") from exc
+            raise IdentityApplyError(
+                f"{name}: expected JSON list or newline-separated values"
+            ) from exc
         if not isinstance(parsed, list) or not all(isinstance(item, str) for item in parsed):
             raise IdentityApplyError(f"{name}: expected JSON list of strings")
         return [item.strip() for item in parsed if item.strip()]
@@ -118,9 +126,7 @@ def run_command(
         if allow_already_member and "already a member" in combined:
             return result
         raise IdentityApplyError(
-            "command failed: "
-            + " ".join(redacted_argv(argv))
-            + f" (rc={result.returncode})"
+            "command failed: " + " ".join(redacted_argv(argv)) + f" (rc={result.returncode})"
         )
     return result
 
@@ -270,9 +276,14 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
     for host in plan["freeipa_host_enrollments"]:
         fqdn = host["fqdn"]
         if ipa_exists(ipa_command, "host", fqdn, audit_log):
-            run_command([ipa_command, "host-mod", fqdn, f"--desc={host['name']}"], audit_log=audit_log)
+            run_command(
+                [ipa_command, "host-mod", fqdn, f"--desc={host['name']}"], audit_log=audit_log
+            )
         else:
-            run_command([ipa_command, "host-add", fqdn, "--force", f"--desc={host['name']}"], audit_log=audit_log)
+            run_command(
+                [ipa_command, "host-add", fqdn, "--force", f"--desc={host['name']}"],
+                audit_log=audit_log,
+            )
         commands += 1
 
         for hostgroup in host.get("hostgroups", []) or []:
@@ -314,7 +325,9 @@ def render_freeradius_clients(plan: dict[str, Any]) -> str:
 def apply_freeradius(plan: dict[str, Any], *, output: Path, audit_log: Path | None) -> None:
     content = render_freeradius_clients(plan)
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=output.parent, delete=False) as handle:
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=output.parent, delete=False
+    ) as handle:
         handle.write(content)
         temp_path = Path(handle.name)
     temp_path.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)

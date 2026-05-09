@@ -155,14 +155,19 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
                 seen_users.add(name)
             if uid is not None:
                 if uid in seen_uids:
-                    result.errors.append(f"{label}: duplicate uid {uid} also used by {seen_uids[uid]}")
+                    result.errors.append(
+                        f"{label}: duplicate uid {uid} also used by {seen_uids[uid]}"
+                    )
                 seen_uids[uid] = name or label
             if primary_group and primary_group not in known_groups:
                 result.errors.append(f"{label}: unknown primary_group {primary_group}")
-            validate_group_refs(account.get("groups", []) or [], known_groups, "groups", label, result)
+            validate_group_refs(
+                account.get("groups", []) or [], known_groups, "groups", label, result
+            )
             for var_key in ("password_var", "bind_password_var"):
                 if var_key in account and (
-                    not isinstance(account[var_key], str) or not account[var_key].startswith("vault_")
+                    not isinstance(account[var_key], str)
+                    or not account[var_key].startswith("vault_")
                 ):
                     result.errors.append(f"{label}: {var_key} must reference a vault_* variable")
 
@@ -174,12 +179,20 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
         required_string(host, "name", label, result)
         required_string(host, "fqdn", label, result)
         required_string(host, "netbox_device", label, result)
-        validate_group_refs(host.get("hostgroups", []) or [], known_groups | {"linux-workstations", "aaa-first-linux-client"}, "hostgroups", label, result)
+        validate_group_refs(
+            host.get("hostgroups", []) or [],
+            known_groups | {"linux-workstations", "aaa-first-linux-client"},
+            "hostgroups",
+            label,
+            result,
+        )
         if "enrollment_secret_var" in host and (
             not isinstance(host["enrollment_secret_var"], str)
             or not host["enrollment_secret_var"].startswith("vault_")
         ):
-            result.errors.append(f"{label}: enrollment_secret_var must reference a vault_* variable")
+            result.errors.append(
+                f"{label}: enrollment_secret_var must reference a vault_* variable"
+            )
         reject_secret_values(host, label, result)
 
     for index, client in enumerate(radius_clients):
@@ -196,7 +209,9 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
             except ValueError:
                 result.errors.append(f"{label}: invalid ipaddr {ipaddr}")
         if "shared_secret" in client:
-            result.errors.append(f"{label}: RADIUS clients must use shared_secret_var, not shared_secret")
+            result.errors.append(
+                f"{label}: RADIUS clients must use shared_secret_var, not shared_secret"
+            )
         secret_var = client.get("shared_secret_var")
         if not isinstance(secret_var, str) or not secret_var.startswith("vault_"):
             result.errors.append(f"{label}: shared_secret_var must reference a vault_* variable")
@@ -204,7 +219,9 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
             role = client.get(role_key)
             if role is not None and role not in known_groups:
                 result.errors.append(f"{label}: unknown {role_key} group {role}")
-        reject_secret_values({k: v for k, v in client.items() if k != "shared_secret"}, label, result)
+        reject_secret_values(
+            {k: v for k, v in client.items() if k != "shared_secret"}, label, result
+        )
 
     result.counts.update(
         {
