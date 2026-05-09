@@ -1,0 +1,49 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          {{ resolved_bignetwork_edge.service_name }}
+# Required-Start:    $remote_fs $syslog $network
+# Required-Stop:     $remote_fs $syslog $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: BigNetwork virtualization service
+### END INIT INFO
+
+set -e
+
+DAEMON="{{ resolved_bignetwork_edge.binary_path }}"
+NAME="{{ resolved_bignetwork_edge.service_name }}"
+HOME_DIR="{{ resolved_bignetwork_edge.home }}"
+PIDFILE="${HOME_DIR}/bn.pid"
+ARGS="-d -p{{ resolved_bignetwork_edge.daemon_port }} {{ resolved_bignetwork_edge.daemon_extra_args | join(' ') }} ${HOME_DIR}"
+
+case "$1" in
+  start)
+    printf 'Starting %s\n' "${NAME}"
+    start-stop-daemon --start --quiet --background --make-pidfile --pidfile "${PIDFILE}" \
+      --chuid "{{ resolved_bignetwork_edge.user }}:{{ resolved_bignetwork_edge.group }}" \
+      --exec "${DAEMON}" -- ${ARGS}
+    ;;
+  stop)
+    printf 'Stopping %s\n' "${NAME}"
+    start-stop-daemon --stop --quiet --pidfile "${PIDFILE}" --retry TERM/10/KILL/5 || true
+    rm -f "${PIDFILE}"
+    ;;
+  restart|force-reload)
+    "$0" stop
+    "$0" start
+    ;;
+  status)
+    if [ -f "${PIDFILE}" ] && kill -0 "$(cat "${PIDFILE}")" 2>/dev/null; then
+      printf '%s is running\n' "${NAME}"
+      exit 0
+    fi
+    printf '%s is stopped\n' "${NAME}"
+    exit 3
+    ;;
+  *)
+    printf 'Usage: %s {start|stop|status|restart|force-reload}\n' "$0" >&2
+    exit 2
+    ;;
+esac
+
+exit 0

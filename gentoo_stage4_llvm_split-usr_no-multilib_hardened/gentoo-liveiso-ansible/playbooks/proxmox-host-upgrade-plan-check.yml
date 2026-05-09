@@ -1,0 +1,13 @@
+---
+- name: Validate Proxmox host upgrade role remains plan-only by default
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    proxmox_host_upgrade_apply: false
+  tasks:
+    - name: Assert Proxmox upgrade defaults are safe
+      ansible.builtin.assert:
+        that:
+          - not (proxmox_host_upgrade_apply | bool)
+        fail_msg: proxmox_host_upgrade_apply must default to false.

@@ -64,6 +64,13 @@ The rendered management plane disables:
 Management services are restricted to configured management CIDRs. The default
 CIDRs are `172.16.99.0/24`, `10.9.8.0/24`, and `10.128.128.0/24`.
 
+The gateway also disables IPv4 redirect acceptance/sending and installs an
+output-chain suppressor for ICMP redirect type `5` toward LAN interfaces. This
+is required while multiple legacy `/24` prefixes, including `172.16.99.0/24`
+and `172.16.199.0/24`, share `br-lan`; hosts must consistently use the
+CCR2004 as their L3 transit point instead of learning direct same-L2 host
+redirects.
+
 ## Network Plan
 
 The role encodes current VLAN intent:
@@ -84,6 +91,47 @@ The role encodes current VLAN intent:
 The CRS309 WIP declared overlapping `172.16.228.0/22` gateway entries. The
 CCR2004 render normalizes that to only `172.16.228.1/22` and intentionally omits
 the duplicate `172.16.229.1/22` and `172.16.230.1/22` entries.
+
+## DHCP Scope
+
+The active gateway provides a narrow DHCP scope for the management-compat
+subnet:
+
+| Field | Value |
+| --- | --- |
+| Server | `rfc99-management-compat` |
+| Interface | `br-lan` |
+| Network | `172.16.99.0/24` |
+| Pool | `172.16.99.150-172.16.99.158` |
+| Gateway | `172.16.99.1` |
+| DNS | `172.16.99.1` |
+| Next server | optional, currently `172.16.99.108` for K10 UEFI PXE/TFTP |
+| Lease time | `1h` |
+
+Additional DHCP scopes should move to NetBox/IPAM-backed automation before
+being enabled.
+
+The DHCP renderer supports scoped RouterOS DHCP options and static leases for
+UEFI/EFI handoff paths. x86/amd64 netboot definitions must use UEFI/EFI assets;
+legacy BIOS PXE is not supported for normal host, VM, or workstation install
+paths.
+
+Current K10 validation lease:
+
+| Field | Value |
+| --- | --- |
+| Host | `gmktek-k10-stage5-ipxe` |
+| MAC | `84:47:09:5F:21:64` |
+| Address | `172.16.99.156` |
+| DHCP option | `k10-pxe-bootfile` |
+| Option 67 | `k10-ipxe.efi` |
+| Next server | `172.16.99.108` |
+| TFTP root | `/var/lib/netboot/path-b` |
+
+Native K10 UEFI HTTPBoot accepted DHCP only after option 60 echoed
+`HTTPClient`, but packet captures showed no subsequent ARP or TCP from the K10
+to `172.16.99.108`. UEFI PXE IPv4 did ARP and attempted TFTP, so the active
+path is now PXE/TFTP with filename `k10-ipxe.efi`.
 
 ## Live Apply Gate
 

@@ -1,0 +1,24 @@
+---
+nfs_storage_client_default_enabled: false
+nfs_storage_client_protocol_default: nfsv3_tcp
+nfs_storage_client_idmap_domain: rfc1918.host
+nfs_storage_client_require_aaa_for_nfsv4: true
+nfs_storage_client_enable_nfsv3: true
+nfs_storage_client_enable_nfsv4: true
+nfs_storage_client_enable_rdma: false
+nfs_storage_client_enable_multipath: false
+nfs_storage_client_rdma_port: 20049
+nfs_storage_client_nconnect: 4
+nfs_storage_client_exports: []
+nfs_storage_client_mounts: []
+nfs_storage_client_openrc_services:
+  - rpcbind
+  - nfsmount
+nfs_storage_client_kernel_modules:
+  - nfs
+  - nfsv3
+  - nfsv4
+  - sunrpc
+  - rpcrdma
+  - xprtrdma
+  - rdma_ucm

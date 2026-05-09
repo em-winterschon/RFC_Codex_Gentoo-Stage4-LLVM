@@ -19,6 +19,15 @@ routeros_spine_distribution_spine:
       - sfp-sfpplus2
       - sfp-sfpplus3
     peer_system_id: 04:F4:1C:4B:9F:7A
+  hasslehoff_qlogic_bond:
+    name: bond-hasslehoff-qlogic
+    slaves:
+      - sfp-sfpplus4
+      - sfp-sfpplus5
+    lacp_rate: 1sec
+    transmit_hash_policy: layer-3-and-4
+    bridge_port: true
+    comment: Hasslehoff QLogic QL41232HOCU LACP
   uplinks:
     - interface: sfp-sfpplus1
       comment: CCR2004 gateway uplink, 10G-SR MMF
@@ -27,9 +36,9 @@ routeros_spine_distribution_spine:
     - interface: sfp-sfpplus3
       comment: CRS354 LACP member 2, 10G-SR MMF
     - interface: sfp-sfpplus4
-      comment: Future Hasslehoff CCR-PCI DAC member 1
+      comment: Hasslehoff QLogic QL41232HOCU LACP member 1
     - interface: sfp-sfpplus5
-      comment: Future Hasslehoff CCR-PCI DAC member 2
+      comment: Hasslehoff QLogic QL41232HOCU LACP member 2
     - interface: sfp-sfpplus8
       comment: Future CSS326 aggregation uplink, 10G-SR MMF
 

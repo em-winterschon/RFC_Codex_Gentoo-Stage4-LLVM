@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: watch-container-base-build.sh --launch-script FILE --build-log FILE [options]
 
 Watch a detached base-container build. If the build exits before the rootfs is
@@ -48,53 +48,53 @@ WATCH_LOG=/root/container-base-watchdog.log
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --launch-script)
-      LAUNCH_SCRIPT=${2-}
-      shift 2
-      ;;
-    --build-log)
-      BUILD_LOG=${2-}
-      shift 2
-      ;;
-    --watch-pattern)
-      WATCH_PATTERN=${2-}
-      shift 2
-      ;;
-    --pkgdir)
-      PKGDIR=${2-}
-      shift 2
-      ;;
-    --repo-id)
-      REPO_ID=${2-}
-      shift 2
-      ;;
-    --sync-remote)
-      SYNC_REMOTE=${2-}
-      shift 2
-      ;;
-    --sync-root)
-      SYNC_ROOT=${2-}
-      shift 2
-      ;;
-    --interval)
-      INTERVAL=${2-}
-      shift 2
-      ;;
-    --max-restarts)
-      MAX_RESTARTS=${2-}
-      shift 2
-      ;;
-    --watch-log)
-      WATCH_LOG=${2-}
-      shift 2
-      ;;
-    --help|-h)
-      usage
-      exit 0
-      ;;
-    *)
-      die "unknown argument: $1"
-      ;;
+  --launch-script)
+    LAUNCH_SCRIPT=${2-}
+    shift 2
+    ;;
+  --build-log)
+    BUILD_LOG=${2-}
+    shift 2
+    ;;
+  --watch-pattern)
+    WATCH_PATTERN=${2-}
+    shift 2
+    ;;
+  --pkgdir)
+    PKGDIR=${2-}
+    shift 2
+    ;;
+  --repo-id)
+    REPO_ID=${2-}
+    shift 2
+    ;;
+  --sync-remote)
+    SYNC_REMOTE=${2-}
+    shift 2
+    ;;
+  --sync-root)
+    SYNC_ROOT=${2-}
+    shift 2
+    ;;
+  --interval)
+    INTERVAL=${2-}
+    shift 2
+    ;;
+  --max-restarts)
+    MAX_RESTARTS=${2-}
+    shift 2
+    ;;
+  --watch-log)
+    WATCH_LOG=${2-}
+    shift 2
+    ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    die "unknown argument: $1"
+    ;;
   esac
 done
 
@@ -112,8 +112,8 @@ fi
 touch "${WATCH_LOG}"
 
 build_is_running() {
-  pgrep -af -- "${WATCH_PATTERN}" \
-    | awk -v self="$$" '
+  pgrep -af -- "${WATCH_PATTERN}" |
+    awk -v self="$$" '
       $1 == self { next }
       /watch-container-base-build/ { next }
       /pgrep -af/ { next }
@@ -139,10 +139,10 @@ sync_binpkgs() {
 
 snapshot_status() {
   if [[ -f "${BUILD_LOG}" ]]; then
-    grep -E '>>> Jobs:|Failed to emerge|failed|completed rootfs build|sys-apps/coreutils' "${BUILD_LOG}" \
-      | tail -n 12 \
-      | sed 's/^/[watch-container-base-build] build-log: /' \
-      | tee -a "${WATCH_LOG}" >/dev/null || true
+    grep -E '>>> Jobs:|Failed to emerge|failed|completed rootfs build|sys-apps/coreutils' "${BUILD_LOG}" |
+      tail -n 12 |
+      sed 's/^/[watch-container-base-build] build-log: /' |
+      tee -a "${WATCH_LOG}" > /dev/null || true
   fi
 }
 
@@ -174,7 +174,7 @@ while true; do
     exit 0
   fi
 
-  if (( restarts >= MAX_RESTARTS )); then
+  if ((restarts >= MAX_RESTARTS)); then
     log "build is stopped and restart budget is exhausted"
     exit 1
   fi

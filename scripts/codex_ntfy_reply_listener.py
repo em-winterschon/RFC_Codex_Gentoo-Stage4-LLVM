@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
 def ntfy_base_url() -> str:
     return os.getenv(
         "CODEX_NTFY_URL",
-        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "https://ntfy.sh")),
+        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "")),
     ).rstrip("/")
 
 
@@ -143,6 +143,9 @@ def main() -> int:
     args = parse_args()
     if not ntfy_reply_topic():
         print("ERROR: CODEX_NTFY_REPLY_TOPIC/NTFY_REPLY_TOPIC is not configured", file=sys.stderr)
+        return 2
+    if not ntfy_base_url() and not os.getenv("CODEX_NTFY_REPLY_LISTENER_TEST_MESSAGES"):
+        print("ERROR: CODEX_NTFY_URL/NTFY_URL/NTFY_SERVER is not configured", file=sys.stderr)
         return 2
 
     state_path = Path(args.state_file)

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: run-container-service-layer-build-pathb.sh --service NAME [--dry-run]
 
 Supported service layers:
@@ -38,21 +38,21 @@ DRY_RUN='0'
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --service)
-      SERVICE="${2:-}"
-      shift 2
-      ;;
-    --dry-run)
-      DRY_RUN='1'
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      fail "Unknown argument: $1"
-      ;;
+  --service)
+    SERVICE="${2:-}"
+    shift 2
+    ;;
+  --dry-run)
+    DRY_RUN='1'
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    fail "Unknown argument: $1"
+    ;;
   esac
 done
 
@@ -62,34 +62,34 @@ SERVICE_MAIN_ENV=()
 SERVICE_BOOTSTRAP_PACKAGE_LIST=''
 
 case "${SERVICE}" in
-  nginx)
-    IMAGE_NAME='gentoo-stage5-nginx'
-    PACKAGE_LIST='container-image-definitions/gentoo-stage5-nginx.packages'
-    DESCRIPTION='Gentoo Stage5 nginx service container'
-    ;;
-  haproxy)
-    IMAGE_NAME='gentoo-stage5-haproxy'
-    PACKAGE_LIST='container-image-definitions/gentoo-stage5-haproxy.packages'
-    DESCRIPTION='Gentoo Stage5 HAProxy service container'
-    SERVICE_MAIN_ENV=(
-      'CC=gcc'
-      'CXX=g++'
-      'CPP=cpp'
-      'AR=gcc-ar'
-      'NM=gcc-nm'
-      'RANLIB=gcc-ranlib'
-      'LDFLAGS=-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd'
-    )
-    ;;
-  rsyslog_collector)
-    IMAGE_NAME='gentoo-stage5-rsyslog-collector'
-    PACKAGE_LIST='container-image-definitions/gentoo-stage5-rsyslog-collector.packages'
-    SERVICE_BOOTSTRAP_PACKAGE_LIST='container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages'
-    DESCRIPTION='Gentoo Stage5 rsyslog collector service container'
-    ;;
-  *)
-    fail "Unsupported service layer: ${SERVICE}"
-    ;;
+nginx)
+  IMAGE_NAME='gentoo-stage5-nginx'
+  PACKAGE_LIST='container-image-definitions/gentoo-stage5-nginx.packages'
+  DESCRIPTION='Gentoo Stage5 nginx service container'
+  ;;
+haproxy)
+  IMAGE_NAME='gentoo-stage5-haproxy'
+  PACKAGE_LIST='container-image-definitions/gentoo-stage5-haproxy.packages'
+  DESCRIPTION='Gentoo Stage5 HAProxy service container'
+  SERVICE_MAIN_ENV=(
+    'CC=gcc'
+    'CXX=g++'
+    'CPP=cpp'
+    'AR=gcc-ar'
+    'NM=gcc-nm'
+    'RANLIB=gcc-ranlib'
+    'LDFLAGS=-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd'
+  )
+  ;;
+rsyslog_collector)
+  IMAGE_NAME='gentoo-stage5-rsyslog-collector'
+  PACKAGE_LIST='container-image-definitions/gentoo-stage5-rsyslog-collector.packages'
+  SERVICE_BOOTSTRAP_PACKAGE_LIST='container-image-definitions/gentoo-stage5-rsyslog-collector.bootstrap.packages'
+  DESCRIPTION='Gentoo Stage5 rsyslog collector service container'
+  ;;
+*)
+  fail "Unsupported service layer: ${SERVICE}"
+  ;;
 esac
 
 cd "${REPO_ROOT}"

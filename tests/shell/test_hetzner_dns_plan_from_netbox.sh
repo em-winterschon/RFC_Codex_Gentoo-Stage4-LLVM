@@ -33,7 +33,7 @@ assert_file_contains "${run_tests}" "test_hetzner_dns_plan_from_netbox.sh"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
-cat > "${tmpdir}/netbox-ip-addresses.json" <<'EOF'
+cat > "${tmpdir}/netbox-ip-addresses.json" << 'EOF'
 {
   "results": [
     {
@@ -64,7 +64,7 @@ cat > "${tmpdir}/netbox-ip-addresses.json" <<'EOF'
 }
 EOF
 
-cat > "${tmpdir}/zone-groups.json" <<'EOF'
+cat > "${tmpdir}/zone-groups.json" << 'EOF'
 [
   {
     "name": "rfc1918",
@@ -84,7 +84,7 @@ python3 "${PLANNER}" \
   --default-ttl 300 \
   --format json > "${tmpdir}/plan.json"
 
-python3 - "${tmpdir}/plan.json" <<'PY'
+python3 - "${tmpdir}/plan.json" << 'PY'
 import json
 import sys
 from pathlib import Path
@@ -106,17 +106,17 @@ serialized = json.dumps(plan)
 assert "api_token" not in serialized
 PY
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -rf "${tmpdir}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:
     localhost:
       ansible_connection: local
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${plan_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${plan_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

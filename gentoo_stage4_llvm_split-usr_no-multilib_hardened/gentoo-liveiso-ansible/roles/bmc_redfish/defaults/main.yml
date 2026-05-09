@@ -1,0 +1,44 @@
+---
+bmc_redfish_enabled: false
+bmc_redfish_hide_sensitive_logs: true
+
+bmc_redfish_scheme: https
+bmc_redfish_host: ""
+bmc_redfish_port: 443
+bmc_redfish_base_url: >-
+  {{ bmc_redfish_scheme }}://{{ bmc_redfish_host }}{% if (bmc_redfish_port | int) not in [80, 443] %}:{{ bmc_redfish_port }}{% endif %}
+bmc_redfish_validate_certs: false
+bmc_redfish_timeout: 30
+bmc_redfish_username: ""
+bmc_redfish_password: ""
+
+bmc_redfish_system_id: ""
+bmc_redfish_systems_collection_path: ""
+bmc_redfish_managers_collection_path: ""
+bmc_redfish_chassis_collection_path: ""
+
+bmc_redfish_allow_mutation: false
+bmc_redfish_power_action: ""
+bmc_redfish_power_action_allowed_values:
+  - "On"
+  - ForceOff
+  - GracefulShutdown
+  - GracefulRestart
+  - ForceRestart
+  - Nmi
+  - PushPowerButton
+
+bmc_redfish_boot_override:
+  enabled: false
+  target: Pxe
+  mode: UEFI
+  override_enabled: Once
+
+bmc_redfish_virtual_media:
+  enabled: false
+  insert_endpoint: ""
+  image_url: ""
+  inserted: true
+  write_protected: true
+
+bmc_redfish_extra_headers: {}

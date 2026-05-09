@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
 
 def load_config() -> Config:
     return Config(
-        server=os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "https://ntfy.sh")).rstrip("/"),
+        server=os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "")).rstrip("/"),
         alert_topic=os.getenv("NTFY_ALERT_TOPIC", os.getenv("NTFY_TOPIC", "")),
         reply_topic=os.getenv("NTFY_REPLY_TOPIC", ""),
         token=os.getenv("NTFY_TOKEN", ""),

@@ -8,7 +8,7 @@ DEST="${BACKUP_ROOT}/${STAMP}"
 DRY_RUN="${HASSLEHOFF_BACKUP_DRY_RUN:-0}"
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Usage: backup-hasslehoff-config.sh
 
 Environment:
@@ -47,7 +47,7 @@ fi
 install -d -m 0700 "${DEST}"
 
 log "collecting remote config from ${REMOTE}"
-"${ssh_base[@]}" "${REMOTE}" "BACKUP_TMP='${remote_tmp}' BACKUP_BUNDLE='${remote_bundle}' bash -s" <<'REMOTE_SCRIPT'
+"${ssh_base[@]}" "${REMOTE}" "BACKUP_TMP='${remote_tmp}' BACKUP_BUNDLE='${remote_bundle}' bash -s" << 'REMOTE_SCRIPT'
 set -euo pipefail
 
 rm -rf "${BACKUP_TMP}" "${BACKUP_BUNDLE}"

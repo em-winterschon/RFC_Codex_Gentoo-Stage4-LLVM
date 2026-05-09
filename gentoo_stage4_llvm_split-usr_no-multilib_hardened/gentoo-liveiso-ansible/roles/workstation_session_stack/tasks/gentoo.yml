@@ -1,0 +1,58 @@
+---
+- name: Record Gentoo workstation session package intent
+  ansible.builtin.set_fact:
+    workstation_session_stack_package_manager: emerge
+    workstation_session_stack_display_manager_packages:
+      slim: x11-misc/slim
+    workstation_session_stack_desktop_environment_packages:
+      nscde: source-install
+    workstation_session_stack_window_manager_packages:
+      fvwm3: x11-wm/fvwm3
+
+- name: Initialize Gentoo workstation session package list
+  ansible.builtin.set_fact:
+    workstation_session_stack_resolved_packages: []
+
+- name: Resolve Gentoo display manager packages
+  ansible.builtin.set_fact:
+    workstation_session_stack_resolved_packages: "{{ workstation_session_stack_resolved_packages + [workstation_session_stack_package_atom] }}"
+  vars:
+    workstation_session_stack_package_atom: "{{ workstation_session_stack_display_manager_packages[workstation_session_component.id] | default('') }}"
+  loop: "{{ resolved_workstation_session_stack.display_managers }}"
+  loop_control:
+    loop_var: workstation_session_component
+  when:
+    - workstation_session_stack_package_atom | length > 0
+    - workstation_session_stack_package_atom != 'source-install'
+
+- name: Resolve Gentoo desktop environment packages
+  ansible.builtin.set_fact:
+    workstation_session_stack_resolved_packages: "{{ workstation_session_stack_resolved_packages + [workstation_session_stack_package_atom] }}"
+  vars:
+    workstation_session_stack_package_atom: "{{ workstation_session_stack_desktop_environment_packages[workstation_session_component.id] | default('') }}"
+  loop: "{{ resolved_workstation_session_stack.desktop_environments }}"
+  loop_control:
+    loop_var: workstation_session_component
+  when:
+    - workstation_session_stack_package_atom | length > 0
+    - workstation_session_stack_package_atom != 'source-install'
+
+- name: Resolve Gentoo window manager packages
+  ansible.builtin.set_fact:
+    workstation_session_stack_resolved_packages: "{{ workstation_session_stack_resolved_packages + [workstation_session_stack_package_atom] }}"
+  vars:
+    workstation_session_stack_package_atom: "{{ workstation_session_stack_window_manager_packages[workstation_session_component.id] | default('') }}"
+  loop: "{{ resolved_workstation_session_stack.window_managers }}"
+  loop_control:
+    loop_var: workstation_session_component
+  when:
+    - workstation_session_stack_package_atom | length > 0
+    - workstation_session_stack_package_atom != 'source-install'
+
+- name: Install Gentoo workstation session packages when requested
+  ansible.builtin.command:
+    argv: "{{ (['chroot', install_target_root] if install_target_root | default('/') != '/' else []) + ['emerge', '--noreplace'] + (workstation_session_stack_resolved_packages | unique | list) }}"
+  changed_when: true
+  when:
+    - workstation_session_stack_package_install_enabled | bool
+    - workstation_session_stack_resolved_packages | length > 0

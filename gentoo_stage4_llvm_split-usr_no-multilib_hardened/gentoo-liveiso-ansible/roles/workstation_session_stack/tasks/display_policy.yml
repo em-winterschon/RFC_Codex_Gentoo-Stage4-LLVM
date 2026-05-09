@@ -1,0 +1,31 @@
+---
+- name: Assert NVIDIA display policy has an explicit PCI bus ID
+  ansible.builtin.assert:
+    that:
+      - resolved_workstation_session_stack.display_policy.bus_id | length > 0
+    fail_msg: workstation_session_stack.display_policy.bus_id is required when the GPU display policy is enabled.
+  when: resolved_workstation_session_stack.display_policy.renderer == 'nvidia'
+
+- name: Ensure workstation GPU display policy directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ workstation_display_policy_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_workstation_session_stack.display_policy.xorg_conf_path | dirname }}"
+    - "{{ resolved_workstation_session_stack.display_policy.validation_script_path | dirname }}"
+  loop_control:
+    loop_var: workstation_display_policy_dir
+
+- name: Install workstation NVIDIA Xorg display policy
+  ansible.builtin.template:
+    src: xorg-nvidia-display.conf.j2
+    dest: "{{ install_target_root }}{{ resolved_workstation_session_stack.display_policy.xorg_conf_path }}"
+    mode: '0644'
+  when: resolved_workstation_session_stack.display_policy.renderer == 'nvidia'
+
+- name: Install workstation GPU display validation helper
+  ansible.builtin.template:
+    src: workstation-gpu-display-test.j2
+    dest: "{{ install_target_root }}{{ resolved_workstation_session_stack.display_policy.validation_script_path }}"
+    mode: '0755'

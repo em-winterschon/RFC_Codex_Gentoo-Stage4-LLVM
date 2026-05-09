@@ -99,11 +99,53 @@
 :error ("[" . $cfgTag . "] invalid WAN mode {{ routeros_rfc99_gateway_wan_mode }}")
 {% endif %}
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
+{% for dns_record in routeros_rfc99_gateway_dns_static_records %}
+{% set record_type = dns_record.type | default('A') | upper %}
+/ip dns static remove [find name="{{ dns_record.name }}"]
+{% if record_type == 'CNAME' %}
+/ip dns static add name="{{ dns_record.name }}" type=CNAME cname="{{ dns_record.cname }}" ttl={{ dns_record.ttl | default('5m') }} comment="{{ dns_record.comment | default('RFC99 static DNS') }}"
+{% else %}
+/ip dns static add name="{{ dns_record.name }}" type={{ record_type }} address={{ dns_record.address }} ttl={{ dns_record.ttl | default('5m') }} comment="{{ dns_record.comment | default('RFC99 static DNS') }}"
+{% endif %}
+{% endfor %}
+/ip settings set send-redirects={{ routeros_rfc99_gateway_send_redirects | ternary("yes", "no") }} accept-redirects={{ routeros_rfc99_gateway_accept_redirects | ternary("yes", "no") }} secure-redirects={{ routeros_rfc99_gateway_secure_redirects | ternary("yes", "no") }}
 
-# DHCP service is managed by future NetBox/IPAM-specific roles, not the gateway
-# baseline. Disable inherited defconf state so it cannot leak leases during
-# gateway cutover.
+# DHCP service. Keep this narrow until NetBox/IPAM owns additional scopes.
+{% if routeros_rfc99_gateway_dhcp_enabled | bool %}
+/ip pool remove [find name="{{ routeros_rfc99_gateway_dhcp_pool_name }}"]
+:if ([:len [/ip pool find where name="dhcp"]] > 0) do={
+    /ip pool set [find name="dhcp"] name="{{ routeros_rfc99_gateway_dhcp_pool_name }}" ranges={{ routeros_rfc99_gateway_dhcp_range }}
+} else={
+    /ip pool add name="{{ routeros_rfc99_gateway_dhcp_pool_name }}" ranges={{ routeros_rfc99_gateway_dhcp_range }}
+}
+/ip dhcp-server network remove [find address="{{ routeros_rfc99_gateway_dhcp_network }}"]
+/ip dhcp-server network add address={{ routeros_rfc99_gateway_dhcp_network }} gateway={{ routeros_rfc99_gateway_dhcp_gateway }} netmask={{ routeros_rfc99_gateway_dhcp_netmask }} dns-server={{ routeros_rfc99_gateway_dhcp_dns_servers | join(',') }}{% if routeros_rfc99_gateway_dhcp_next_server | length > 0 %} next-server={{ routeros_rfc99_gateway_dhcp_next_server }}{% endif %} comment="RFC99 management compatibility DHCP"
+:if ([:len [/ip dhcp-server find where name="{{ routeros_rfc99_gateway_dhcp_name }}"]] > 0) do={
+    /ip dhcp-server set [find name="{{ routeros_rfc99_gateway_dhcp_name }}"] interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
+} else={
+    :if ([:len [/ip dhcp-server find where name="dhcp1"]] > 0) do={
+        /ip dhcp-server set [find name="dhcp1"] name="{{ routeros_rfc99_gateway_dhcp_name }}" interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
+    } else={
+        /ip dhcp-server add name="{{ routeros_rfc99_gateway_dhcp_name }}" interface={{ routeros_rfc99_gateway_dhcp_interface }} address-pool={{ routeros_rfc99_gateway_dhcp_pool_name }} lease-time={{ routeros_rfc99_gateway_dhcp_lease_time }} disabled=no
+    }
+}
+{% for routeros_dhcp_option in routeros_rfc99_gateway_dhcp_options %}
+/ip dhcp-server option remove [find name="{{ routeros_dhcp_option.name }}"]
+/ip dhcp-server option add name="{{ routeros_dhcp_option.name }}" code={{ routeros_dhcp_option.code }} value="'{{ routeros_dhcp_option.value }}'"
+{% endfor %}
+{% for routeros_dhcp_lease in routeros_rfc99_gateway_dhcp_static_leases %}
+{% set routeros_dhcp_lease_server = routeros_dhcp_lease.server | default(routeros_rfc99_gateway_dhcp_name) %}
+{% set routeros_dhcp_lease_comment = routeros_dhcp_lease.comment | default('RFC99 static DHCP lease') %}
+{% set routeros_dhcp_lease_options = routeros_dhcp_lease.dhcp_options | default([]) %}
+:if ([:len [/ip dhcp-server lease find where mac-address="{{ routeros_dhcp_lease.mac_address }}"]] > 0) do={
+    /ip dhcp-server lease set [find where mac-address="{{ routeros_dhcp_lease.mac_address }}"] address={{ routeros_dhcp_lease.address }} server={{ routeros_dhcp_lease_server }} comment="{{ routeros_dhcp_lease_comment }}"{% if routeros_dhcp_lease_options | length > 0 %} dhcp-option={{ routeros_dhcp_lease_options | join(',') }}{% endif %}
+} else={
+    /ip dhcp-server lease add address={{ routeros_dhcp_lease.address }} mac-address={{ routeros_dhcp_lease.mac_address }} server={{ routeros_dhcp_lease_server }} comment="{{ routeros_dhcp_lease_comment }}"{% if routeros_dhcp_lease_options | length > 0 %} dhcp-option={{ routeros_dhcp_lease_options | join(',') }}{% endif %}
+}
+{% endfor %}
+{% else %}
 /ip dhcp-server disable [find]
+{% endif %}
 
 # Management services: SSH, HTTPS, and API-SSL only.
 /ip service set telnet disabled=yes
@@ -182,6 +224,9 @@
 /ip firewall filter add chain=input action=accept in-interface-list=WAN protocol=udp dst-port=67,68 comment="RFC99 input dhcp-client"
 /ip firewall filter add chain=input action=accept in-interface-list=WAN protocol=udp dst-port={{ routeros_rfc99_gateway_wireguard_listen_port }} comment="RFC99 input wireguard"
 /ip firewall filter add chain=input action=drop in-interface-list=WAN comment="RFC99 input drop wan"
+{% if routeros_rfc99_gateway_suppress_lan_icmp_redirects | bool %}
+/ip firewall filter add chain=output action=drop protocol=icmp icmp-options=5:0-255 out-interface-list=LAN comment="RFC99 output suppress LAN ICMP redirects"
+{% endif %}
 /ip firewall filter add chain=forward action=fasttrack-connection connection-state=established,related in-interface-list=LAN out-interface-list=WAN hw-offload=yes comment="RFC99 fasttrack lan-wan"
 /ip firewall filter add chain=forward action=accept connection-state=established,related,untracked comment="RFC99 forward established"
 /ip firewall filter add chain=forward action=drop connection-state=invalid comment="RFC99 forward invalid"

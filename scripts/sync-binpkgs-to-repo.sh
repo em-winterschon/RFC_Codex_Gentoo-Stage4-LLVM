@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: sync-binpkgs-to-repo.sh --pkgdir DIR --repo-id ID --remote HOST [options]
 
 Sync a local Portage PKGDIR to a Stage4/Stage5 binpkg repository host.
@@ -32,37 +32,37 @@ DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --pkgdir)
-      PKGDIR=${2-}
-      shift 2
-      ;;
-    --repo-id)
-      REPO_ID=${2-}
-      shift 2
-      ;;
-    --remote)
-      REMOTE=${2-}
-      shift 2
-      ;;
-    --remote-root)
-      REMOTE_ROOT=${2-}
-      shift 2
-      ;;
-    --index-command)
-      INDEX_COMMAND=${2-}
-      shift 2
-      ;;
-    --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
-    --help|-h)
-      usage
-      exit 0
-      ;;
-    *)
-      die "unknown argument: $1"
-      ;;
+  --pkgdir)
+    PKGDIR=${2-}
+    shift 2
+    ;;
+  --repo-id)
+    REPO_ID=${2-}
+    shift 2
+    ;;
+  --remote)
+    REMOTE=${2-}
+    shift 2
+    ;;
+  --remote-root)
+    REMOTE_ROOT=${2-}
+    shift 2
+    ;;
+  --index-command)
+    INDEX_COMMAND=${2-}
+    shift 2
+    ;;
+  --dry-run)
+    DRY_RUN=true
+    shift
+    ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    die "unknown argument: $1"
+    ;;
   esac
 done
 

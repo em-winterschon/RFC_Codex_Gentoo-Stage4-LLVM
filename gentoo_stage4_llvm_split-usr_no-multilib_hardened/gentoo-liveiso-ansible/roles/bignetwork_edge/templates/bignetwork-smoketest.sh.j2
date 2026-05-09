@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bn_bin="{{ resolved_bignetwork_edge.binary_path }}"
+bn_home="{{ resolved_bignetwork_edge.home }}"
+
+printf 'BigNetwork binary: '
+"${bn_bin}" -v | head -1
+
+printf '\nBigNetwork API query:\n'
+# Equivalent to: bn -q "${bn_home}"
+"${bn_bin}" -q "${bn_home}" || true
+
+{% for target in resolved_bignetwork_edge.smoketest_targets %}
+printf '\nTarget {{ target.name }} ({{ target.address }}):\n'
+getent hosts {{ target.address | quote }} || true
+ping -c 2 -W 2 {{ target.address | quote }} || true
+{% for port in target.ports | default([]) %}
+timeout 5 bash -c '</dev/tcp/{{ target.address }}/{{ port }}' \
+  && printf 'tcp/{{ port }} open on {{ target.address }}\n' \
+  || printf 'tcp/{{ port }} not reachable on {{ target.address }}\n'
+{% endfor %}
+{% endfor %}

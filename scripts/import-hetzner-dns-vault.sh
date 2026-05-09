@@ -8,7 +8,7 @@ DEFAULT_VAULT_FILE="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_harden
 WITH_ENV="${REPO_ROOT}/scripts/with-ansible-vault-env.sh"
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: import-hetzner-dns-vault.sh TOKEN_CFG [VAULT_FILE]
 
 Imports Hetzner Cloud DNS token metadata from an operator-private shell config
@@ -74,7 +74,7 @@ set +a
 export PLAIN_VAULT_FILE="${plain_vault}"
 export MERGED_VAULT_FILE="${merged_vault}"
 
-python3 - <<'PY'
+python3 - << 'PY'
 from __future__ import annotations
 
 import os
@@ -131,7 +131,7 @@ encrypt_args=()
 if [[ -n "${encrypt_vault_id}" ]]; then
   encrypt_args+=(--encrypt-vault-id "${encrypt_vault_id}")
 fi
-"${WITH_ENV}" ansible-vault encrypt "${encrypt_args[@]}" "${merged_vault}" --output "${encrypted_vault}" >/dev/null
+"${WITH_ENV}" ansible-vault encrypt "${encrypt_args[@]}" "${merged_vault}" --output "${encrypted_vault}" > /dev/null
 chmod 600 "${encrypted_vault}"
 mv "${encrypted_vault}" "${vault_file}"
 printf 'updated_vault=%s\n' "${vault_file}"

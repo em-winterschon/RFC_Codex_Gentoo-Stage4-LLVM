@@ -1,0 +1,12 @@
+---
+- name: Validate vendor-neutral Redfish BMC access
+  hosts: bmc_managed
+  gather_facts: false
+  roles:
+    - role: bmc_redfish
+
+- name: Validate Dell iDRAC BMC access
+  hosts: dell_idrac
+  gather_facts: false
+  roles:
+    - role: bmc_idrac

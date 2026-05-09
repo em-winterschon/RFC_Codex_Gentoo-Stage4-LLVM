@@ -7,9 +7,9 @@ import argparse
 import json
 import os
 import subprocess
+import sys
 import time
 from pathlib import Path
-
 
 DEFAULT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("identity", "/system identity print"),

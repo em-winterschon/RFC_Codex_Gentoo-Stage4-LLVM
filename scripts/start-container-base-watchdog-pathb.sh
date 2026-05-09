@@ -29,4 +29,4 @@ cmd=(
   --watch-log "${WATCH_LOG}"
 )
 
-setsid -f "${cmd[@]}" >>"${RUNNER_LOG}" 2>&1
+setsid -f "${cmd[@]}" >> "${RUNNER_LOG}" 2>&1

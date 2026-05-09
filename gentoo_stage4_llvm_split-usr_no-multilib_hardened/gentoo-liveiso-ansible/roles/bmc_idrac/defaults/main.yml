@@ -1,0 +1,20 @@
+---
+bmc_idrac_enabled: false
+bmc_idrac_allow_mutation: false
+bmc_idrac_validate_vendor: true
+
+bmc_idrac_host: "{{ bmc_redfish_host | default('') }}"
+bmc_idrac_port: 443
+bmc_idrac_username: "{{ bmc_redfish_username | default('') }}"
+bmc_idrac_password: "{{ bmc_redfish_password | default('') }}"
+bmc_idrac_validate_certs: "{{ bmc_redfish_validate_certs | default(false) }}"
+bmc_idrac_timeout: "{{ bmc_redfish_timeout | default(30) }}"
+
+bmc_idrac_system_id: System.Embedded.1
+bmc_idrac_manager_id: iDRAC.Embedded.1
+bmc_idrac_virtual_media_device: CD
+bmc_idrac_virtual_media_insert_endpoint: "/redfish/v1/Managers/{{ bmc_idrac_manager_id }}/VirtualMedia/{{ bmc_idrac_virtual_media_device }}"
+
+bmc_idrac_boot_to_pxe_once: false
+bmc_idrac_virtual_media_image_url: ""
+bmc_idrac_power_action: ""

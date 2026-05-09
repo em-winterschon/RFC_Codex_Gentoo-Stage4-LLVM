@@ -1,0 +1,259 @@
+---
+- name: Manage Redfish BMC endpoint
+  when: bmc_redfish_enabled | bool
+  block:
+    - name: Assert Redfish connection inputs are present
+      ansible.builtin.assert:
+        that:
+          - bmc_redfish_host | length > 0
+          - bmc_redfish_username | length > 0
+          - bmc_redfish_password | length > 0
+        fail_msg: Redfish host, username, and password must be supplied through inventory or Ansible Vault.
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Resolve Redfish service URL
+      ansible.builtin.set_fact:
+        bmc_redfish_service_url: "{{ bmc_redfish_base_url | regex_replace('/+$', '') }}"
+
+    - name: Read Redfish service root
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}/redfish/v1/"
+        method: GET
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        return_content: true
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+      register: bmc_redfish_root
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Resolve Redfish collection paths
+      ansible.builtin.set_fact:
+        bmc_redfish_root_json: "{{ bmc_redfish_root.json | default({}) }}"
+        bmc_redfish_systems_path: >-
+          {{
+            bmc_redfish_systems_collection_path
+            | default((bmc_redfish_root.json | default({})).get('Systems', {}).get('@odata.id', '/redfish/v1/Systems'), true)
+          }}
+        bmc_redfish_managers_path: >-
+          {{
+            bmc_redfish_managers_collection_path
+            | default((bmc_redfish_root.json | default({})).get('Managers', {}).get('@odata.id', '/redfish/v1/Managers'), true)
+          }}
+        bmc_redfish_chassis_path: >-
+          {{
+            bmc_redfish_chassis_collection_path
+            | default((bmc_redfish_root.json | default({})).get('Chassis', {}).get('@odata.id', '/redfish/v1/Chassis'), true)
+          }}
+
+    - name: Read Redfish systems collection
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_systems_path }}"
+        method: GET
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        return_content: true
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+      register: bmc_redfish_systems
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Resolve selected Redfish system path
+      ansible.builtin.set_fact:
+        bmc_redfish_system_members: "{{ bmc_redfish_systems.json.Members | default([]) }}"
+        bmc_redfish_selected_system_path: >-
+          {% if bmc_redfish_system_id | length > 0 -%}
+          /redfish/v1/Systems/{{ bmc_redfish_system_id }}
+          {%- else -%}
+          {{ ((bmc_redfish_systems.json.Members | default([]) | first | default({})).get('@odata.id', '')) }}
+          {%- endif %}
+
+    - name: Assert a Redfish system was discovered
+      ansible.builtin.assert:
+        that:
+          - bmc_redfish_selected_system_path | length > 0
+        fail_msg: No Redfish system endpoint was discovered.
+
+    - name: Read selected Redfish system
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_selected_system_path }}"
+        method: GET
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        return_content: true
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+      register: bmc_redfish_system
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Read Redfish managers collection
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_managers_path }}"
+        method: GET
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        return_content: true
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+          - 404
+      register: bmc_redfish_managers
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Read Redfish chassis collection
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_chassis_path }}"
+        method: GET
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        return_content: true
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+          - 404
+      register: bmc_redfish_chassis
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Publish Redfish facts
+      ansible.builtin.set_fact:
+        bmc_redfish_facts:
+          service:
+            url: "{{ bmc_redfish_service_url }}"
+            product: "{{ bmc_redfish_root_json.get('Product', '') }}"
+            vendor: "{{ bmc_redfish_root_json.get('Vendor', '') }}"
+            redfish_version: "{{ bmc_redfish_root_json.get('RedfishVersion', '') }}"
+            uuid: "{{ bmc_redfish_root_json.get('UUID', '') }}"
+          system:
+            path: "{{ bmc_redfish_selected_system_path }}"
+            id: "{{ bmc_redfish_system.json.Id | default('') }}"
+            name: "{{ bmc_redfish_system.json.Name | default('') }}"
+            manufacturer: "{{ bmc_redfish_system.json.Manufacturer | default('') }}"
+            model: "{{ bmc_redfish_system.json.Model | default('') }}"
+            serial_number: "{{ bmc_redfish_system.json.SerialNumber | default('') }}"
+            sku: "{{ bmc_redfish_system.json.SKU | default('') }}"
+            bios_version: "{{ bmc_redfish_system.json.BiosVersion | default('') }}"
+            power_state: "{{ bmc_redfish_system.json.PowerState | default('') }}"
+            health: "{{ bmc_redfish_system.json.Status.Health | default('') }}"
+            state: "{{ bmc_redfish_system.json.Status.State | default('') }}"
+          managers:
+            path: "{{ bmc_redfish_managers_path }}"
+            members: "{{ bmc_redfish_managers.json.Members | default([]) }}"
+          chassis:
+            path: "{{ bmc_redfish_chassis_path }}"
+            members: "{{ bmc_redfish_chassis.json.Members | default([]) }}"
+
+    - name: Resolve requested Redfish mutations
+      ansible.builtin.set_fact:
+        bmc_redfish_requested_mutations: >-
+          {{
+            []
+            + (['power_action'] if (bmc_redfish_power_action | length > 0) else [])
+            + (['boot_override'] if (bmc_redfish_boot_override.enabled | default(false) | bool) else [])
+            + (['virtual_media'] if (bmc_redfish_virtual_media.enabled | default(false) | bool) else [])
+          }}
+
+    - name: Refuse Redfish mutations unless explicitly allowed
+      ansible.builtin.assert:
+        that:
+          - bmc_redfish_allow_mutation | bool
+        fail_msg: >-
+          Refusing Redfish mutation request(s) {{ bmc_redfish_requested_mutations | join(', ') }}
+          because bmc_redfish_allow_mutation is not true.
+      when: bmc_redfish_requested_mutations | length > 0
+
+    - name: Assert Redfish power action is supported
+      ansible.builtin.assert:
+        that:
+          - bmc_redfish_power_action in bmc_redfish_power_action_allowed_values
+        fail_msg: "Unsupported Redfish power action {{ bmc_redfish_power_action }}."
+      when: bmc_redfish_power_action | length > 0
+
+    - name: Apply Redfish boot override
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_selected_system_path }}"
+        method: PATCH
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        body_format: json
+        body:
+          Boot:
+            BootSourceOverrideEnabled: "{{ bmc_redfish_boot_override.override_enabled }}"
+            BootSourceOverrideTarget: "{{ bmc_redfish_boot_override.target }}"
+            BootSourceOverrideMode: "{{ bmc_redfish_boot_override.mode }}"
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+          - 204
+      when: bmc_redfish_boot_override.enabled | default(false) | bool
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Assert virtual media insertion inputs are present
+      ansible.builtin.assert:
+        that:
+          - bmc_redfish_virtual_media.insert_endpoint | length > 0
+          - bmc_redfish_virtual_media.image_url | length > 0
+        fail_msg: Redfish virtual media insertion requires insert_endpoint and image_url.
+      when: bmc_redfish_virtual_media.enabled | default(false) | bool
+
+    - name: Insert Redfish virtual media
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_virtual_media.insert_endpoint }}/Actions/VirtualMedia.InsertMedia"
+        method: POST
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        body_format: json
+        body:
+          Image: "{{ bmc_redfish_virtual_media.image_url }}"
+          Inserted: "{{ bmc_redfish_virtual_media.inserted | bool }}"
+          WriteProtected: "{{ bmc_redfish_virtual_media.write_protected | bool }}"
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+          - 202
+          - 204
+      when: bmc_redfish_virtual_media.enabled | default(false) | bool
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"
+
+    - name: Apply Redfish power action
+      ansible.builtin.uri:
+        url: "{{ bmc_redfish_service_url }}{{ bmc_redfish_selected_system_path }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_redfish_username }}"
+        password: "{{ bmc_redfish_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ bmc_redfish_validate_certs }}"
+        headers: "{{ bmc_redfish_extra_headers }}"
+        body_format: json
+        body:
+          ResetType: "{{ bmc_redfish_power_action }}"
+        timeout: "{{ bmc_redfish_timeout }}"
+        status_code:
+          - 200
+          - 202
+          - 204
+      when: bmc_redfish_power_action | length > 0
+      no_log: "{{ bmc_redfish_hide_sensitive_logs }}"

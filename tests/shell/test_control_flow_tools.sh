@@ -39,7 +39,7 @@ assert_contains "${dry_run_output}" 'install_sequence=repair-boot'
 assert_contains "${dry_run_output}" 'install_debug_checkpoints=true'
 assert_contains "${dry_run_output}" 'watch-control-flow.py --path'
 
-cat > "${tmp_dir}/events.jsonl" <<'EOF'
+cat > "${tmp_dir}/events.jsonl" << 'EOF'
 {"event":"playbook_start","play":"install","task":"-","host":"-","ts":"2026-04-24T20:00:00Z"}
 {"event":"task_ok","play":"install","task":"Checkpoint start | full-default | preflight","host":"stage4-vm","ts":"2026-04-24T20:00:01Z","checkpoint":{"checkpoint":"start","stage_id":"preflight"}}
 EOF

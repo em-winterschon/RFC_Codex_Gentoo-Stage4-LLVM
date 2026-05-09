@@ -33,7 +33,7 @@ assert_file_contains "${run_tests}" "test_hetzner_dns_inventory_report.sh"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
-cat > "${tmpdir}/token-groups.json" <<'EOF'
+cat > "${tmpdir}/token-groups.json" << 'EOF'
 [
   {
     "name": "rfc1918",
@@ -44,7 +44,7 @@ cat > "${tmpdir}/token-groups.json" <<'EOF'
 ]
 EOF
 
-cat > "${tmpdir}/hetzner-fixture.json" <<'EOF'
+cat > "${tmpdir}/hetzner-fixture.json" << 'EOF'
 {
   "token_groups": [
     {
@@ -80,7 +80,7 @@ python3 "${REPORTER}" \
   --fixture-file "${tmpdir}/hetzner-fixture.json" \
   --format json > "${tmpdir}/report.json"
 
-python3 - "${tmpdir}/report.json" <<'PY'
+python3 - "${tmpdir}/report.json" << 'PY'
 import json
 import sys
 from pathlib import Path
@@ -118,17 +118,17 @@ assert "fixture-secret" not in serialized
 assert "api_token" not in serialized
 PY
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -rf "${tmpdir}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:
     localhost:
       ansible_connection: local
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${report_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${report_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

@@ -1,0 +1,54 @@
+name: Service role
+description: Define or change an Ansible service role for a machine, VM, or container.
+title: "[SERVICE] "
+labels:
+  - type:service-role
+  - status:ready
+body:
+  - type: input
+    id: service_name
+    attributes:
+      label: Service name
+      placeholder: freeipa-controller
+    validations:
+      required: true
+  - type: dropdown
+    id: target_type
+    attributes:
+      label: Target type
+      options:
+        - metal-host
+        - virtual-host
+        - service-container
+        - network-device
+        - bmc-oob-device
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: What this role provides and why it belongs in the platform.
+    validations:
+      required: true
+  - type: textarea
+    id: packages
+    attributes:
+      label: Package and version requirements
+      description: Portage atoms, upstream archives, pinned versions, and known exclusions.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration model
+      description: Variables, templates, secrets, ports, VIPs, storage, and TLS expectations.
+    validations:
+      required: true
+  - type: textarea
+    id: readiness
+    attributes:
+      label: Readiness and SLO checks
+      description: Service-specific health checks, nmap checks, API checks, and rollback expectations.
+    validations:
+      required: true

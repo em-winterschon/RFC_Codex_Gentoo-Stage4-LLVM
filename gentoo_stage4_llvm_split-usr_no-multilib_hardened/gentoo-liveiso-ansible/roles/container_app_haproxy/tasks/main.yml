@@ -5,6 +5,28 @@
     container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
     resolved_haproxy_service_types_local: "{{ resolved_profile_haproxy_service_types | default([]) }}"
 
+- name: Resolve haproxy TLS mount settings
+  ansible.builtin.set_fact:
+    container_haproxy_tls_enabled: "{{ container_haproxy_profile.tls.enabled | default(false) | bool }}"
+    container_haproxy_tls_container_dir: >-
+      {{
+        container_haproxy_profile.tls.container_dir
+        | default(container_haproxy_container_tls_dir)
+      }}
+    container_haproxy_runtime_volumes: >-
+      {{
+        [
+          container_haproxy_config_dir + '/haproxy.cfg:' + (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')) + ':ro'
+        ]
+        + (
+          [
+            container_haproxy_tls_dir + ':' + (container_haproxy_profile.tls.container_dir | default(container_haproxy_container_tls_dir)) + ':ro'
+          ]
+          if (container_haproxy_profile.tls.enabled | default(false) | bool)
+          else []
+        )
+      }}
+
 - name: Ensure haproxy configuration directory exists
   ansible.builtin.file:
     path: "{{ install_target_root }}{{ container_haproxy_config_dir }}"
@@ -13,6 +35,16 @@
   when:
     - container_services_enabled
     - container_haproxy_profile.enabled | default(false) | bool
+
+- name: Ensure haproxy TLS directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ container_haproxy_tls_dir }}"
+    state: directory
+    mode: '0750'
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool
+    - container_haproxy_tls_enabled | bool
 
 - name: Render haproxy configuration
   ansible.builtin.template:
@@ -41,9 +73,7 @@
               'cap_add': container_haproxy_profile.cap_add | default([]),
               'environment': container_haproxy_profile.env | default({}),
               'tmpfs': container_haproxy_profile.tmpfs | default(['/tmp:rw,noexec,nosuid,size=64m', '/run:rw,noexec,nosuid,size=16m']),
-              'volumes': [
-                container_haproxy_config_dir + '/haproxy.cfg:' + (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')) + ':ro'
-              ],
+              'volumes': container_haproxy_runtime_volumes,
               'command': container_haproxy_profile.command | default(['/usr/sbin/haproxy', '-f', (container_haproxy_profile.config_path | default('/etc/haproxy/haproxy.cfg')), '-db']),
               'enabled': true
             }

@@ -52,6 +52,8 @@
               'pull_policy': container_ntfy_profile.pull_policy | default('missing'),
               'network': container_ntfy_profile.network | default('apps'),
               'ip_address': container_ntfy_profile.ip_address | default(''),
+              'backend_port': container_ntfy_profile.backend_port | default(8080),
+              'hostnames': container_ntfy_profile.hostnames | default(['ntfy.local']),
               'published_ports': container_ntfy_profile.published_ports | default(['80:80/tcp']),
               'cap_add': container_ntfy_profile.cap_add | default([]),
               'environment': container_ntfy_profile.env | default({}),

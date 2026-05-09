@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
-
 DEFAULT_FABRIC = (
     "gentoo_stage4_llvm_split-usr_no-multilib_hardened/"
     "gentoo-liveiso-ansible/inventories/local-network/group_vars/all/network_fabric.yml"
@@ -126,7 +125,9 @@ class NetBoxClient:
                 raw = response.read().decode("utf-8")
         except error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"NetBox {method} {endpoint} failed: HTTP {exc.code}: {body}") from exc
+            raise RuntimeError(
+                f"NetBox {method} {endpoint} failed: HTTP {exc.code}: {body}"
+            ) from exc
         return json.loads(raw) if raw else {}
 
     def first(self, endpoint: str, lookup_key: str, lookup_value: str) -> dict[str, Any] | None:
@@ -145,7 +146,9 @@ class NetBoxClient:
                 if self.dry_run:
                     print(f"update {label}")
                     return existing
-                updated = self.request_json("PATCH", f"{obj.endpoint}/{existing['id']}", obj.payload)
+                updated = self.request_json(
+                    "PATCH", f"{obj.endpoint}/{existing['id']}", obj.payload
+                )
                 self.updated.append(label)
                 return updated
             return existing
@@ -193,7 +196,12 @@ def seed_netbox(client: NetBoxClient, fabric: dict[str, Any], domain: str) -> No
             "ipam/vlan-groups",
             "slug",
             slugify(site_name),
-            {"name": site_name, "slug": slugify(site_name), "scope_type": "dcim.site", "scope_id": site["id"]},
+            {
+                "name": site_name,
+                "slug": slugify(site_name),
+                "scope_type": "dcim.site",
+                "scope_id": site["id"],
+            },
         )
     )
 

@@ -1,0 +1,49 @@
+---
+bignetwork_edge_default_enabled: false
+bignetwork_edge_default_manage_packages: true
+bignetwork_edge_default_extracted_root: /opt/repos/remote/bignetwork/APT/bignetwork_edge-linux-cli.amd64_extracted
+bignetwork_edge_default_binary_source: "{{ bignetwork_edge_default_extracted_root }}/usr/sbin/bn"
+bignetwork_edge_default_binary_path: /usr/sbin/bn
+bignetwork_edge_default_home: /var/lib/bn
+bignetwork_edge_default_user: bn
+bignetwork_edge_default_group: bn
+bignetwork_edge_default_shell: /usr/sbin/nologin
+bignetwork_edge_default_service_name: bn
+bignetwork_edge_default_service_manager: auto
+bignetwork_edge_default_service_enabled: false
+bignetwork_edge_default_service_started: false
+bignetwork_edge_default_daemon_port: 9995
+bignetwork_edge_default_daemon_extra_args: []
+bignetwork_edge_default_auth_token: ""
+bignetwork_edge_default_metrics_token: ""
+bignetwork_edge_default_token_mode: "0600"
+bignetwork_edge_default_install_smoketest: true
+bignetwork_edge_default_smoketest_path: /usr/local/sbin/bignetwork-smoketest
+bignetwork_edge_default_smoketest_targets:
+  - name: fmt2-lan-gateway-candidate
+    address: 10.200.99.1
+    ports:
+      - 22
+  - name: fmt2-checkmk-candidate
+    address: app-sfo200-monitoring-9927.vernetzen.io
+    ports:
+      - 443
+      - 6556
+bignetwork_edge_default_packages_by_os_family:
+  Debian:
+    - adduser
+    - ca-certificates
+    - curl
+    - iproute2
+    - iputils-ping
+    - nmap
+    - openssl
+    - tcpdump
+  Gentoo:
+    - app-admin/sudo
+    - net-analyzer/nmap
+    - net-analyzer/tcpdump
+    - net-misc/curl
+    - net-misc/iputils
+    - sys-apps/iproute2
+    - dev-libs/openssl

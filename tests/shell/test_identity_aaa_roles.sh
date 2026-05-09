@@ -14,8 +14,7 @@ assert_file_contains() {
 for role_dir in \
   freeipa_controller \
   ipa_client \
-  freeradius_bridge
-do
+  freeradius_bridge; do
   test -d "${ANSIBLE_ROOT}/roles/${role_dir}"
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
@@ -23,8 +22,7 @@ done
 for profile in \
   aaa-domain-client.yml \
   vm-identity-controller.yml \
-  metal-identity-controller.yml
-do
+  metal-identity-controller.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${profile}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${profile}" '^gentoo_profile_definition:'
 done
@@ -32,8 +30,7 @@ done
 for metadata in \
   aaa-domain-client.metadata.yml \
   vm-identity-controller.metadata.yml \
-  metal-identity-controller.metadata.yml
-do
+  metal-identity-controller.metadata.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${metadata}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${metadata}" '^gentoo_system_profile_metadata:'
 done
@@ -41,8 +38,7 @@ done
 for package_list in \
   stage5-domain-client.packages \
   stage5-virtual-host-identity-controller.packages \
-  stage5-metal-host-identity-controller.packages
-do
+  stage5-metal-host-identity-controller.packages; do
   test -f "${ANSIBLE_ROOT}/profile-package-lists/${package_list}"
 done
 

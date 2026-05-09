@@ -34,7 +34,64 @@ Summary:
 - Memory: `64121` MiB
 - Management path: `bond0` over `eno1` + `eno2`, bridged through `vmbr0`
 - RoCE-v2 reserved ports: `enp2s0f0np0`, `enp2s0f1np1`
-- CCR2004 PCIe-facing ports observed on host: `enp1s0f0` through `enp1s0f3`
+- CCR2004-PCIe card: removed on `2026-05-05` to free the CPU x8/x16 slot
+- QLogic QL41232HOCU CNA ports: `enp4s0f0`, `enp4s0f1`
+- NVIDIA Quadro K1200: PCIe `0000:01:00.0`, audio function `0000:01:00.1`
+
+## 2026-05-05 PCIe Maintenance Update
+
+Hasslehoff was shut down cleanly for PCIe maintenance. VMs `1062`, `1063`, and
+`1089` were stopped before host halt and restarted after the hardware swap.
+
+Installed hardware after maintenance:
+
+| Device | PCIe Address | Linux Interface | Driver | Notes |
+| --- | --- | --- | --- | --- |
+| NVIDIA Quadro K1200 VGA | `0000:01:00.0` | n/a | `nouveau` observed before reboot policy application | Intended for workstation VM passthrough through `vfio-pci`. |
+| NVIDIA Quadro K1200 audio | `0000:01:00.1` | n/a | n/a | Same IOMMU group as VGA function. |
+| QLogic QL41232HOCU port 0 | `0000:04:00.0` | `enp4s0f0` | `qede` | Firmware `mfw 8.30.18.0`, PCIe `8GT/s x4`, link down until cabled. |
+| QLogic QL41232HOCU port 1 | `0000:04:00.1` | `enp4s0f1` | `qede` | Firmware `mfw 8.30.18.0`, PCIe `8GT/s x4`, link down until cabled. |
+
+The QLogic card is x8-capable but is installed in an x4 electrical slot, so
+`8GT/s x4` is expected and is the slot limit. The removed MikroTik
+CCR2004-1G-2XS-PCIe card is no longer present in PCI inventory.
+
+Planned QLogic cabling:
+
+| Hasslehoff Port | CRS309 Port | Bundle |
+| --- | --- | --- |
+| `enp4s0f0` | `sfp-sfpplus4` | `bond-hasslehoff-qlogic` |
+| `enp4s0f1` | `sfp-sfpplus5` | `bond-hasslehoff-qlogic` |
+
+Hasslehoff is now a member of the `gpu_compute` inventory group. The
+`gpu_host_policy` role renders:
+
+- `/etc/modprobe.d/blacklist-nouveau.conf`
+- `/etc/default/grub.d/99-gpu-compute-blacklist.cfg`
+
+Default blacklisted modules:
+
+- `nouveau`
+- `nvidiafb`
+- `snd_hda_intel` on Hasslehoff only
+
+The role does not reboot the host and does not run `update-grub` or
+`update-initramfs` unless the corresponding explicit booleans are enabled.
+
+Hasslehoff-specific passthrough policy binds both K1200 functions to
+`vfio-pci` on next reboot:
+
+- `10de:13bc`
+- `10de:0fbc`
+
+Live post-reboot validation showed both K1200 functions bound to `vfio-pci`
+and available for Proxmox passthrough.
+
+The QLogic CNA is now cabled to CRS309 `sfp-sfpplus4/5` as
+`bond-hasslehoff-qlogic`. Hasslehoff runs host-side `bond-qlogic0` and
+VLAN-aware bridge `vmbr-qlogic0`. The requested SR-IOV VF design is blocked by
+hardware/firmware exposure: neither QLogic PCI function exposes
+`sriov_totalvfs`, and `lspci` shows no SR-IOV capability.
 
 ## Observed Proxmox VMs
 
@@ -45,6 +102,7 @@ Summary:
 | `1012` | `eph-sun99-sourcebot-099229` | stopped | `4` | `16384` | `64` | `linux`, `rocky`, `sourcebot`, `ephemeral` |
 | `1062` | `svc-netbox-stage4` | running | `4` | `16384` | `80` | `gentoo`, `stage4`, `netbox`; replacement NetBox VM |
 | `1063` | `svc-identity-ipa01` | running | `4` | `12288` | `80` | `rocky`, `freeipa`, `radius`, `identity`; central RBAC/AAA candidate |
+| `1094` | `vm-workstation-nscde-gpu01` | running | `8` | `24576` | `160` | `gentoo`, `stage4`, `workstation-nscde`, `gpu`; K1200 passthrough VM at `172.16.99.94` |
 
 ## Observed Proxmox Cluster
 

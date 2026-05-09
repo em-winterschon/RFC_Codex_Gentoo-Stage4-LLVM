@@ -22,7 +22,7 @@ fi
 append_secret_if_missing() {
   local name="$1"
   if ! grep -qE "^${name}=" "${IDENTITY_SECRET_FILE}"; then
-    printf '%s=%q\n' "${name}" "$(openssl rand -base64 30)" >>"${IDENTITY_SECRET_FILE}"
+    printf '%s=%q\n' "${name}" "$(openssl rand -base64 30)" >> "${IDENTITY_SECRET_FILE}"
     chmod 0600 "${IDENTITY_SECRET_FILE}"
   fi
 }
@@ -42,7 +42,7 @@ ssh -o BatchMode=yes -o ConnectTimeout=20 "${ssh_target}" \
 ssh -o BatchMode=yes -o ConnectTimeout=20 "${ssh_target}" sudo bash -s -- \
   "${IPA_REALM}" \
   "${IPA_DOMAIN}" \
-  "${IPA_BASE_DN}" <<'REMOTE'
+  "${IPA_BASE_DN}" << 'REMOTE'
 set -euo pipefail
 
 ipa_realm="$1"

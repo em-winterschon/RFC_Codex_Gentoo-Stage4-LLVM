@@ -1,0 +1,20 @@
+---
+proxmox_host_upgrade_apply: false
+proxmox_host_upgrade_reboot: false
+proxmox_host_upgrade_snapshot_enabled: true
+proxmox_host_upgrade_snapshot_dataset: rpool/ROOT/pve-1
+proxmox_host_upgrade_snapshot_recursive: true
+proxmox_host_upgrade_snapshot_prefix: pve8-maint
+proxmox_host_upgrade_apt_update: true
+proxmox_host_upgrade_dist_upgrade: true
+proxmox_host_upgrade_autoremove: false
+proxmox_host_upgrade_refresh_boot_tool: true
+proxmox_host_upgrade_validate_no_pve9_sources: true
+proxmox_host_upgrade_allowed_debian_codename: bookworm
+proxmox_host_upgrade_allowed_pve_major: "8"
+proxmox_host_upgrade_pre_snapshot_name: ""
+proxmox_host_upgrade_post_snapshot_name: ""
+proxmox_host_upgrade_apt_extra_args:
+  - -y
+proxmox_host_upgrade_apt_environment:
+  DEBIAN_FRONTEND: noninteractive
