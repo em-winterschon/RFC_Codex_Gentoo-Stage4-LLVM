@@ -55,6 +55,12 @@ Codex integration files:
   sources `CODEX_NTFY_ENV_FILE`, then `~/.codex/ntfy-pub-subs.export.sh`, then `/opt/codex/ntfy-pub-subs.export.sh` before invoking the notify handler
 - `scripts/codex_hook_with_env.sh`
   sources `CODEX_NTFY_ENV_FILE`, then `~/.codex/ntfy-pub-subs.export.sh`, then `/opt/codex/ntfy-pub-subs.export.sh` before invoking the hook handler
+- `scripts/codex_ntfy_reply_listener.py`
+  subscribes to the reply topic and persists normalized replies into a local pending/processed queue
+- `scripts/codex_ntfy_reply_listener_with_env.sh`
+  sources the ntfy export file before launching the reply listener
+- `config/codex-ntfy-policy.json`
+  default reply-handling policy that marks each normalized reply kind as `state-driven` or `advisory`
 - `.codex/hooks.json`
   repo-local example hook wiring for `PermissionRequest` and `Stop`
 
@@ -70,6 +76,27 @@ The hook handler accepts replies in these forms:
 - `allow <id>`
 - `deny <id>`
 - `<id>: <free-form answer>`
+
+Preferred reply-processing path:
+
+- run the persistent reply listener service
+- let it normalize ntfy reply messages into a local queue under `CODEX_NTFY_REPLY_QUEUE_DIR`
+- control whether each reply kind is `state-driven` or `advisory` through `CODEX_NTFY_POLICY_FILE`
+- let `scripts/codex_ntfy_hook.py` consume matching replies from that queue first
+- fall back to direct ntfy polling only when the queue path is absent or empty
+
+Reply policy defaults:
+
+- `permission_reply`: `state-driven`
+- `question_reply`: `state-driven`
+- `status_request`: `advisory`
+- `unrecognized_reply`: `advisory`
+
+Recommended policy handling:
+
+- keep `permission_reply` and `question_reply` as `state-driven` only if you trust the reply channel
+- keep `status_request` and unrecognized content as `advisory`
+- override with `CODEX_NTFY_POLICY_FILE=/path/to/ntfy-policy.json` if the host should use a site-local policy instead of the repo default
 
 Archive-derived local operator tools now included:
 
@@ -184,15 +211,19 @@ JSONL stream under `/tmp/ansible-control-flow` by default, or an explicit path s
 - `scripts/codex_approval_watcher_with_env.sh` tails `~/.codex/log/codex-tui.log` and sends ntfy alerts for `exec_approval` and `patch_approval` dialogs raised by the sandbox approval layer
 - the approval watcher notifies you to approve the action in the Codex UI; remote ntfy replies do not directly satisfy sandbox approval dialogs in this runtime
 - `scripts/install_codex_approval_watcher_service.sh` installs the watcher as a persistent OpenRC service
+- `scripts/install_codex_ntfy_reply_listener_service.sh` installs the reply listener as a persistent OpenRC service
 
 Persistent setup on Gentoo/OpenRC:
 ```bash
 bash scripts/install_codex_approval_watcher_service.sh
+bash scripts/install_codex_ntfy_reply_listener_service.sh
 rc-service codex-approval-watcher status
+rc-service codex-ntfy-reply-listener status
 ```
 
 Future-host workflow:
 ```bash
 . /opt/codex/ntfy-pub-subs.export.sh
 bash scripts/install_codex_approval_watcher_service.sh
+bash scripts/install_codex_ntfy_reply_listener_service.sh
 ```
