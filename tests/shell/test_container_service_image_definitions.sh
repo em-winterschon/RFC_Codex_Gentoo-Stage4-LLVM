@@ -35,5 +35,8 @@ assert_file_contains "${REPO_ROOT}/container-image-definitions/gentoo-stage5-rsy
 assert_file_contains "${MANIFEST}" '^    ntfy:'
 assert_file_contains "${MANIFEST}" 'build_mode: upstream-image'
 assert_file_contains "${MANIFEST}" 'runtime_pull_policy: never'
+assert_file_contains "${MANIFEST}" '^    nginx_ui:'
+assert_file_contains "${MANIFEST}" 'docker.io/uozi/nginx-ui:latest'
+assert_file_contains "${MANIFEST}" 'runtime_profile: vm-mcp-control-plane'
 
 printf 'PASS: %s\n' "$(basename "$0")"

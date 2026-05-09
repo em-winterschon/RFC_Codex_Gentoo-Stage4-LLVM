@@ -203,6 +203,13 @@ Dependency:
 | `LLM-003` | pending | Scaffold OpenWebUI and Ollama service definitions | `LLM-001`, GPU service inventory access | Operator already has separate deployment automation; import only after Codex access is available. |
 | `LLM-004` | pending | Scaffold RAG ingestion, embedding, and retrieval pipeline roles | `LLM-002`, `LLM-003` | Keep metrics, logs, provider routing, and service VIPs explicit. |
 
+### MCP Control Plane
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `MCP-001` | active | Add generic MCP and Nginx-UI control-plane services behind HAProxy | container-services stable, private CA, vault workflow | `vm-mcp-control-plane` scaffolds Nginx-UI MCP routing, OpenAI-compatible env references, and a disabled-by-default generic MCP backend. Live deployment waits for vaulted Nginx-UI secrets, DNS/IPAM records, and TLS certificate material. |
+| `MCP-002` | pending | Validate live Nginx-UI MCP service on LAN | `MCP-001`, AAA apply path | Validate HTTPS, `/mcp` SSE behavior, `node_secret` auth, no Docker socket mount, and OpenAI-compatible config without exposing tokens in logs. |
+
 ### Workstation VM Profiles
 
 | ID | Status | Task | Depends On | Notes |
