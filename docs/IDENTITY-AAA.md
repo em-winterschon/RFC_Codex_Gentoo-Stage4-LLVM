@@ -43,6 +43,8 @@ remain in Ansible Vault or operator-private paths.
 
 The local RFC1918 source currently models:
 
+- FreeIPA local ID range `RFC1918.HOST_low_id_range`, reserving POSIX IDs
+  `200000-399999` for repo-managed local identities
 - `codex-admin` as the first central non-root operator identity
 - `radius-test` as the redacted validation identity
 - `radiusd` as the FreeRADIUS LDAP bind service account
@@ -103,6 +105,8 @@ vault variable names but redact resolved secret values and SSH key material.
 
 Current apply scope:
 
+- FreeIPA local ID range creation and UID/GID guard checks before account
+  mutation.
 - FreeIPA groups, users, SSH public keys, supplemental group membership, hosts,
   and hostgroups through the `ipa` CLI.
 - FreeRADIUS `clients.d` rendering for managed client records, with shared
@@ -140,10 +144,35 @@ image, the first live controller is a dedicated Rocky 9 VM on Hasslehoff:
 Secrets for the controller are generated outside the repo under
 `/root/operator-private/identity/` and are copied to root-only state on the VM.
 
+## FreeIPA Online Gates
+
+For operational purposes, FreeIPA "domain online" means the SSSD IPA backend can
+bind to the domain provider, not merely that `ipa.service` is active. The
+minimum gates are:
+
+- the IPA server FQDN resolves to the canonical hostname used by
+  `/etc/ipa/default.conf`, `/etc/krb5.conf`, certificates, and keytabs
+- `/etc/krb5.keytab` can obtain a host ticket for the IPA host principal
+- Kerberos KDC and LDAP/LDAPS are reachable with acceptable time skew
+- LDAP GSSAPI bind succeeds against the canonical `ldap/<fqdn>` service
+  principal
+- SSSD can resolve the IPA provider and reports `Online status: Online`
+- NSS/PAM can resolve the target user and pass account checks
+
+The 2026-05-09 outage was caused by local `/etc/hosts` fallback ordering:
+`identity-ldap-radius.rfc1918.host` appeared before `ipa01.rfc1918.host` for
+`172.16.99.63`, so Kerberos looked for
+`ldap/identity-ldap-radius.rfc1918.host@RFC1918.HOST`. The DNS inventory
+planner now renders device canonical records before service VIP aliases on
+shared IPs.
+
 The initial live policy includes:
 
-- `codex-admin` as the central non-root SSH identity, in `linux-admin`
-- `radius-test` as the redacted validation identity, in `network-readonly`
+- `codex-admin` as the central non-root SSH identity: UID `200100`, primary GID
+  `201000` / `linux-admin`, with `ci-builder`, `network-admin`, and
+  `power-admin` supplemental groups
+- `radius-test` as the redacted validation identity: UID `200101`, primary GID
+  `201110` / `network-readonly`, with `power-readonly` supplemental group
 - `radiusd` LDAP bind account under `cn=sysaccounts,cn=etc`
 - local management RADIUS client scope: `172.16.99.0/24`
 

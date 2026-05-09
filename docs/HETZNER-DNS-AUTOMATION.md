@@ -114,14 +114,80 @@ Current live dry-run result:
 The first records are for `rfc1918.host` service VIPs and `rfc1918.io`
 switch/gateway management names.
 
+Generate a stricter DNS desired-state plan directly from inventory intake files.
+This is the preferred "new hostname" hook for freshly added hosts, containers,
+and VIPs before NetBox export catches up:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-plan-from-inventory.yml
+```
+
+The generated inventory plan and local resolver fallback are written to:
+
+```text
+/tmp/hetzner-dns-plan-from-inventory.json
+/tmp/rfc1918-etc-hosts.generated
+```
+
+The inventory planner manages only `dns_hetzner_cloud_inventory_managed_domains`
+by default, currently `rfc1918.host`. It also enforces
+`dns_hetzner_cloud_required_domains`, currently `rfc1918.host`, as fatal on
+missing zones, invalid addresses, or conflicting RRsets. It emits:
+
+- `A` or `AAAA` records for device `management_ip` plus `fqdn`
+- `A` or `AAAA` records for `service_vips.address` plus `fqdn`
+- `CNAME` records for `service_vips.aliases`
+- `/etc/hosts` fallback lines mapping IPs to canonical names and short aliases
+
+Diff the guarded DNS plan against the live provider without mutation:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-apply.yml
+```
+
+Apply the guarded DNS plan only after review by enabling
+`dns_hetzner_cloud_change_policy.apply=true`:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-apply.yml \
+  -e dns_hetzner_cloud_apply_enabled=true
+```
+
+Deletion remains blocked unless `dns_hetzner_cloud_allow_delete_enabled=true`
+is also set. Normal host/container creation should only need create and update
+operations.
+
+Install the generated local fallback records on managed hosts when authoritative
+or upstream recursive DNS is unreliable:
+
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/local-hosts-fallback.yml
+```
+
 ## Automation Contract
 
-The first supported contract is token validation and safe policy staging. Future
-DNS CRUD should consume NetBox DNS names/IPAM objects and generate desired RRset
-operations from that source of truth. The first dry-run planner is:
+The first supported contract is token validation and safe policy staging. DNS
+CRUD consumes NetBox DNS names/IPAM objects or inventory-intake host/VIP
+definitions and generates desired RRset operations from those sources of truth.
+The NetBox dry-run planner is:
 
 ```text
 scripts/plan-hetzner-dns-from-netbox.py
+```
+
+The inventory-intake planner and guarded apply script are:
+
+```text
+scripts/plan-hetzner-dns-from-inventory.py
+scripts/apply-hetzner-dns-plan.py
 ```
 
 The provider-side inventory reporter is:
@@ -147,6 +213,8 @@ Default safety posture:
 - `apply: false`
 - `allow_delete: false`
 - `default_ttl: 300`
+- `required_domains: [rfc1918.host]`
+- `inventory_managed_domains: [rfc1918.host]`
 
 Deletion must stay disabled until NetBox ownership tags, reverse zones, and
 stale-record detection are modeled explicitly.

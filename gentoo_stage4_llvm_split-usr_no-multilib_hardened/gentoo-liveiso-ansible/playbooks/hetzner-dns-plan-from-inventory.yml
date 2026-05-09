@@ -1,0 +1,66 @@
+---
+- name: Generate Hetzner DNS desired state from inventory intake
+  hosts: localhost
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+    hetzner_dns_plan_script: "{{ repo_root }}/scripts/plan-hetzner-dns-from-inventory.py"
+    hetzner_dns_inventory_intake_root: "{{ playbook_dir }}/../inventory-intake/sites"
+    hetzner_dns_plan_output: "/tmp/hetzner-dns-plan-from-inventory.json"
+    hetzner_dns_hosts_output: "/tmp/rfc1918-etc-hosts.generated"
+    hetzner_dns_zone_groups: "{{ dns_hetzner_cloud_zone_groups | default([]) }}"
+    hetzner_dns_default_domain: "{{ dns_hetzner_cloud_default_domain | default('rfc1918.host') }}"
+    hetzner_dns_required_domains: "{{ dns_hetzner_cloud_required_domains | default(['rfc1918.host']) }}"
+    hetzner_dns_managed_domains: "{{ dns_hetzner_cloud_inventory_managed_domains | default(hetzner_dns_required_domains) }}"
+    hetzner_dns_default_ttl: "{{ dns_hetzner_cloud_change_policy.default_ttl | default(300) }}"
+    hetzner_dns_apply_flag: "{{ dns_hetzner_cloud_change_policy.apply | default(false) }}"
+    hetzner_dns_allow_delete_flag: "{{ dns_hetzner_cloud_change_policy.allow_delete | default(false) }}"
+  tasks:
+    - name: Assert DNS zone groups are available
+      ansible.builtin.assert:
+        that:
+          - hetzner_dns_zone_groups | length > 0
+        fail_msg: "No Hetzner DNS zone groups are configured."
+
+    - name: Generate DNS desired state from inventory intake
+      ansible.builtin.command:
+        argv: >-
+          {{ [
+            'python3',
+            hetzner_dns_plan_script,
+            hetzner_dns_inventory_intake_root,
+            '--zone-groups-json',
+            hetzner_dns_zone_groups | to_json,
+            '--default-domain',
+            hetzner_dns_default_domain,
+            '--required-domains-json',
+            hetzner_dns_required_domains | to_json,
+            '--managed-domains-json',
+            hetzner_dns_managed_domains | to_json,
+            '--default-ttl',
+            hetzner_dns_default_ttl | string,
+            '--format',
+            'json',
+            '--hosts-output',
+            hetzner_dns_hosts_output,
+            '--output',
+            hetzner_dns_plan_output
+          ]
+          + (['--apply'] if hetzner_dns_apply_flag | bool else [])
+          + (['--allow-delete'] if hetzner_dns_allow_delete_flag | bool else []) }}
+      changed_when: false
+
+    - name: Read DNS desired state plan
+      ansible.builtin.slurp:
+        src: "{{ hetzner_dns_plan_output }}"
+      register: hetzner_dns_inventory_plan_raw
+
+    - name: Report DNS desired state summary
+      ansible.builtin.debug:
+        msg: >-
+          DNS inventory plan generated at {{ hetzner_dns_plan_output }};
+          hosts fallback at {{ hetzner_dns_hosts_output }};
+          records={{ (hetzner_dns_inventory_plan_raw.content | b64decode | from_json).summary.records }},
+          hosts_entries={{ (hetzner_dns_inventory_plan_raw.content | b64decode | from_json).summary.hosts_entries }},
+          skipped={{ (hetzner_dns_inventory_plan_raw.content | b64decode | from_json).summary.skipped }},
+          errors={{ (hetzner_dns_inventory_plan_raw.content | b64decode | from_json).summary.errors }}.

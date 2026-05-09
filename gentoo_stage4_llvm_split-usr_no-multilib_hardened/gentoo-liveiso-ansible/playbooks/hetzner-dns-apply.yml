@@ -1,0 +1,57 @@
+---
+- name: Apply guarded Hetzner DNS desired state
+  hosts: localhost
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/../../.."
+    hetzner_dns_apply_script: "{{ repo_root }}/scripts/apply-hetzner-dns-plan.py"
+    hetzner_dns_plan_file: "/tmp/hetzner-dns-plan-from-inventory.json"
+    hetzner_dns_apply_result_file: "/tmp/hetzner-dns-apply-result.json"
+    hetzner_dns_token_groups: "{{ dns_hetzner_cloud_token_groups | default([]) }}"
+    hetzner_dns_api_endpoint: "{{ dns_hetzner_cloud_api_endpoint | default('https://api.hetzner.cloud/v1') }}"
+    hetzner_dns_apply_enabled: "{{ dns_hetzner_cloud_apply_enabled | default(dns_hetzner_cloud_change_policy.apply | default(false)) }}"
+    hetzner_dns_allow_delete_enabled: "{{ dns_hetzner_cloud_allow_delete_enabled | default(dns_hetzner_cloud_change_policy.allow_delete | default(false)) }}"
+  tasks:
+    - name: Assert DNS token groups are available
+      ansible.builtin.assert:
+        that:
+          - hetzner_dns_token_groups | length > 0
+        fail_msg: "No Hetzner DNS token groups are configured."
+
+    - name: Diff or apply DNS desired state through Hetzner API
+      ansible.builtin.command:
+        argv: >-
+          {{ [
+            'python3',
+            hetzner_dns_apply_script,
+            '--plan-file',
+            hetzner_dns_plan_file,
+            '--token-groups-json',
+            hetzner_dns_token_groups | to_json,
+            '--api-endpoint',
+            hetzner_dns_api_endpoint,
+            '--format',
+            'json',
+            '--output',
+            hetzner_dns_apply_result_file
+          ]
+          + (['--apply'] if hetzner_dns_apply_enabled | bool else [])
+          + (['--allow-delete'] if hetzner_dns_allow_delete_enabled | bool else []) }}
+      changed_when: hetzner_dns_apply_enabled | bool
+      no_log: true
+
+    - name: Read DNS apply result
+      ansible.builtin.slurp:
+        src: "{{ hetzner_dns_apply_result_file }}"
+      register: hetzner_dns_apply_result_raw
+
+    - name: Report DNS apply summary
+      ansible.builtin.debug:
+        msg: >-
+          DNS {{ 'apply' if hetzner_dns_apply_enabled | bool else 'diff' }} completed at {{ hetzner_dns_apply_result_file }};
+          planned={{ (hetzner_dns_apply_result_raw.content | b64decode | from_json).summary.planned }},
+          created={{ (hetzner_dns_apply_result_raw.content | b64decode | from_json).summary.created }},
+          updated={{ (hetzner_dns_apply_result_raw.content | b64decode | from_json).summary.updated }},
+          deleted={{ (hetzner_dns_apply_result_raw.content | b64decode | from_json).summary.deleted }},
+          unchanged={{ (hetzner_dns_apply_result_raw.content | b64decode | from_json).summary.unchanged }},
+          errors={{ (hetzner_dns_apply_result_raw.content | b64decode | from_json).summary.errors }}.

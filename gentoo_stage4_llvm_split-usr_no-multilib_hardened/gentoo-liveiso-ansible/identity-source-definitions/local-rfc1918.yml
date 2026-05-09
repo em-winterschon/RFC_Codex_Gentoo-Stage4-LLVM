@@ -8,6 +8,13 @@ identity_source_definition:
     base_uid: 200000
     base_gid: 200000
     same_uid_gid_for_primary_users: true
+    freeipa_local_idrange:
+      name: RFC1918.HOST_low_id_range
+      base_id: 200000
+      range_size: 200000
+      rid_base: 200000000
+      secondary_rid_base: 200200000
+      type: ipa-local
     reserved_ranges:
       - name: human-users
         start: 200100

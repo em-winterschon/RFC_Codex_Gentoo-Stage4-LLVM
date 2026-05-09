@@ -33,6 +33,8 @@ assert_file_contains "${source_file}" "network-readonly"
 assert_file_contains "${source_file}" "pdu_rfc99_corectrl_ap7901"
 assert_file_contains "${source_file}" "gmktek_nucbox_k10_stage5_candidate"
 assert_file_contains "${source_file}" "vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"
+assert_file_contains "${source_file}" "freeipa_local_idrange"
+assert_file_contains "${source_file}" "RFC1918.HOST_low_id_range"
 
 assert_file_contains "${validator}" "class IdentitySourceValidationError"
 assert_file_contains "${validator}" "validate_identity_source"
@@ -51,6 +53,7 @@ grep -Fq '"host_enrollments": 1' /tmp/identity-source-validation.json || fail "i
 
 python3 "${renderer}" "${source_file}" --format json > /tmp/identity-sync-plan.json
 grep -Fq '"freeipa_groups"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeIPA groups"
+grep -Fq '"freeipa_local_idrange"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeIPA local ID range"
 grep -Fq '"freeipa_users"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeIPA users"
 grep -Fq '"freeradius_clients"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeRADIUS clients"
 grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' /tmp/identity-sync-plan.json || fail "sync plan missing PDU secret var reference"

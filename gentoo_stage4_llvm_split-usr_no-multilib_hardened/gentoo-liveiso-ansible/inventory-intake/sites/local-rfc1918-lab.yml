@@ -61,6 +61,9 @@ devices:
     model: Proxmox-8.4-host
     status: active
     management_ip: 172.16.99.9
+    fqdn: cls0-rfc99-hasslehoff-099009.rfc1918.host
+    dns_aliases:
+      - hasslehoff.rfc1918.host
     interfaces:
       - name: vmbr0
         type: bridge

@@ -7,6 +7,13 @@ dns_hetzner_cloud_change_policy:
   default_ttl: 300
   apply: false
   allow_delete: false
+  required_domain_errors_are_fatal: true
+
+dns_hetzner_cloud_default_domain: rfc1918.host
+dns_hetzner_cloud_required_domains:
+  - rfc1918.host
+dns_hetzner_cloud_inventory_managed_domains:
+  - rfc1918.host
 
 dns_hetzner_cloud_token_groups:
   - name: rfc1918

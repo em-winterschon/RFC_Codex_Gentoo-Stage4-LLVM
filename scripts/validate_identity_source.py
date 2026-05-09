@@ -107,6 +107,40 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
         result.errors.append("identity_source_definition.version must be 1")
     required_string(source, "realm", "identity_source_definition", result)
     required_string(source, "domain", "identity_source_definition", result)
+    uid_gid_policy = source.get("uid_gid_policy", {}) or {}
+    if not isinstance(uid_gid_policy, dict):
+        result.errors.append("identity_source_definition.uid_gid_policy must be a mapping")
+        uid_gid_policy = {}
+    freeipa_local_idrange = uid_gid_policy.get("freeipa_local_idrange", {}) or {}
+    if freeipa_local_idrange and not isinstance(freeipa_local_idrange, dict):
+        result.errors.append("uid_gid_policy.freeipa_local_idrange must be a mapping")
+        freeipa_local_idrange = {}
+    idrange_base = None
+    idrange_limit = None
+    if freeipa_local_idrange:
+        required_string(
+            freeipa_local_idrange,
+            "name",
+            "uid_gid_policy.freeipa_local_idrange",
+            result,
+        )
+        for key in ("base_id", "range_size", "rid_base", "secondary_rid_base"):
+            validate_uid_gid(
+                freeipa_local_idrange.get(key),
+                key,
+                "uid_gid_policy.freeipa_local_idrange",
+                result,
+            )
+        idrange_type = freeipa_local_idrange.get("type", "ipa-local")
+        if idrange_type != "ipa-local":
+            result.errors.append(
+                "uid_gid_policy.freeipa_local_idrange.type must be ipa-local"
+            )
+        base_id = freeipa_local_idrange.get("base_id")
+        range_size = freeipa_local_idrange.get("range_size")
+        if isinstance(base_id, int) and isinstance(range_size, int):
+            idrange_base = base_id
+            idrange_limit = base_id + range_size
 
     groups = source.get("groups", []) or []
     users = source.get("users", []) or []
@@ -129,10 +163,17 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
             if name in known_groups:
                 result.errors.append(f"{label}: duplicate group {name}")
             known_groups.add(name)
-        if gid is not None:
-            if gid in seen_gids:
-                result.errors.append(f"{label}: duplicate gid {gid} also used by {seen_gids[gid]}")
-            seen_gids[gid] = name or label
+            if gid is not None:
+                if gid in seen_gids:
+                    result.errors.append(f"{label}: duplicate gid {gid} also used by {seen_gids[gid]}")
+                seen_gids[gid] = name or label
+                if idrange_base is not None and idrange_limit is not None and not (
+                    idrange_base <= gid < idrange_limit
+                ):
+                    result.errors.append(
+                        f"{label}: gid {gid} is outside freeipa_local_idrange "
+                        f"{idrange_base}-{idrange_limit - 1}"
+                    )
 
     seen_users: set[str] = set()
     seen_uids: dict[int, str] = {}
@@ -159,6 +200,13 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
                         f"{label}: duplicate uid {uid} also used by {seen_uids[uid]}"
                     )
                 seen_uids[uid] = name or label
+                if idrange_base is not None and idrange_limit is not None and not (
+                    idrange_base <= uid < idrange_limit
+                ):
+                    result.errors.append(
+                        f"{label}: uid {uid} is outside freeipa_local_idrange "
+                        f"{idrange_base}-{idrange_limit - 1}"
+                    )
             if primary_group and primary_group not in known_groups:
                 result.errors.append(f"{label}: unknown primary_group {primary_group}")
             validate_group_refs(
