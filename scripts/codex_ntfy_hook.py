@@ -272,7 +272,10 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
                         {
                             "hookSpecificOutput": {
                                 "hookEventName": "PermissionRequest",
-                                "decision": {"behavior": "deny", "message": "Denied via ntfy reply"},
+                                "decision": {
+                                    "behavior": "deny",
+                                    "message": "Denied via ntfy reply",
+                                },
                             }
                         }
                     )
@@ -291,7 +294,11 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
         if normalized.get("policy_mode") == "advisory":
             maybe_publish_advisory(normalized, context="PermissionRequest", dry_run=dry_run)
             return 0
-        if normalized.get("kind") == "permission_reply" and normalized.get("request_id") == request_id and normalized.get("decision") == "allow":
+        if (
+            normalized.get("kind") == "permission_reply"
+            and normalized.get("request_id") == request_id
+            and normalized.get("decision") == "allow"
+        ):
             print(
                 json.dumps(
                     {
@@ -303,7 +310,11 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
                 )
             )
             return 0
-        if normalized.get("kind") == "permission_reply" and normalized.get("request_id") == request_id and normalized.get("decision") == "deny":
+        if (
+            normalized.get("kind") == "permission_reply"
+            and normalized.get("request_id") == request_id
+            and normalized.get("decision") == "deny"
+        ):
             print(
                 json.dumps(
                     {
@@ -369,10 +380,7 @@ def handle_stop(payload: dict, *, dry_run: bool) -> int:
         )
         if normalized:
             normalized["policy_mode"] = reply_policy.mode_for_kind(str(normalized.get("kind", "")))
-        if (
-            normalized
-            and normalized.get("policy_mode") == "advisory"
-        ):
+        if normalized and normalized.get("policy_mode") == "advisory":
             maybe_publish_advisory(normalized, context="Stop", dry_run=dry_run)
             return 0
         if (

@@ -316,7 +316,7 @@ EOF
   output="$(
     CODEX_NTFY_POLICY_FILE="${policy_file}" \
       PYTHONPATH="${REPO_ROOT}/scripts" \
-      python3 - <<'PY'
+      python3 - << 'PY'
 import codex_ntfy_policy as p
 print(p.mode_for_kind("permission_reply"))
 print(p.mode_for_kind("question_reply"))
