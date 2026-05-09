@@ -23,6 +23,9 @@ frontend fe_{{ service_type.name | replace('-', '_') }}
 {% else %}
   option tcplog
 {% endif %}
+{% if service_type.log_requests is defined and not (service_type.log_requests | bool) %}
+  option dontlog-normal
+{% endif %}
   bind {{ service_type.bind }}
 {% if service_type.mode | default('http') == 'http' and service_type.host_acl is defined and service_type.host_acl | length > 0 %}
   acl host_match hdr(host) -i {{ service_type.host_acl }}
@@ -43,12 +46,26 @@ backend {{ service_type.backend_name }}
 
 {% set ntfy_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'ntfy') | list %}
 {% set nginx_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx') | list %}
+{% set nginx_ui_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'nginx-ui') | list %}
+{% set mcp_generic_apps = container_runtime_applications | default([]) | selectattr('name', 'equalto', 'mcp-generic') | list %}
 {% set haproxy_tls = container_haproxy_profile.tls | default({}) %}
 {% set haproxy_tls_enabled = haproxy_tls.enabled | default(false) | bool %}
 frontend fe_http
   mode http
   option httplog
   bind *:80
+{% if nginx_ui_apps | length > 0 %}
+{% set nginx_ui_app = nginx_ui_apps | first %}
+  acl host_nginx_ui hdr(host) -i {{ nginx_ui_app.hostnames | default(['nginx-ui.local']) | join(' ') }}
+  acl path_nginx_ui_mcp path_beg /mcp
+  use_backend be_nginx_ui_mcp if host_nginx_ui path_nginx_ui_mcp
+  use_backend be_nginx_ui if host_nginx_ui
+{% endif %}
+{% if mcp_generic_apps | length > 0 %}
+{% set mcp_generic_app = mcp_generic_apps | first %}
+  acl host_mcp_generic hdr(host) -i {{ mcp_generic_app.hostnames | default(['mcp-generic.local']) | join(' ') }}
+  use_backend be_mcp_generic if host_mcp_generic
+{% endif %}
 {% if ntfy_apps | length > 0 %}
 {% set ntfy_app = ntfy_apps | first %}
   acl host_ntfy hdr(host) -i {{ ntfy_app.hostnames | default(['ntfy.local']) | join(' ') }}
@@ -65,6 +82,18 @@ frontend fe_https
   mode http
   option httplog
   bind {{ haproxy_tls.bind | default('*:443') }} ssl crt {{ haproxy_tls.cert_path | default('/etc/haproxy/tls/haproxy.pem') }}
+{% if nginx_ui_apps | length > 0 %}
+{% set nginx_ui_app = nginx_ui_apps | first %}
+  acl host_nginx_ui hdr(host) -i {{ nginx_ui_app.hostnames | default(['nginx-ui.local']) | join(' ') }}
+  acl path_nginx_ui_mcp path_beg /mcp
+  use_backend be_nginx_ui_mcp if host_nginx_ui path_nginx_ui_mcp
+  use_backend be_nginx_ui if host_nginx_ui
+{% endif %}
+{% if mcp_generic_apps | length > 0 %}
+{% set mcp_generic_app = mcp_generic_apps | first %}
+  acl host_mcp_generic hdr(host) -i {{ mcp_generic_app.hostnames | default(['mcp-generic.local']) | join(' ') }}
+  use_backend be_mcp_generic if host_mcp_generic
+{% endif %}
 {% if ntfy_apps | length > 0 %}
 {% set ntfy_app = ntfy_apps | first %}
   acl host_ntfy hdr(host) -i {{ ntfy_app.hostnames | default(['ntfy.local']) | join(' ') }}
@@ -76,6 +105,26 @@ frontend fe_https
   default_backend be_fallback
 {% endif %}
 
+{% endif %}
+
+{% if nginx_ui_apps | length > 0 %}
+{% set nginx_ui_app = nginx_ui_apps | first %}
+backend be_nginx_ui_mcp
+  mode http
+  option dontlog-normal
+  server nginx-ui {{ nginx_ui_app.ip_address | default('10.77.1.60') }}:{{ nginx_ui_app.backend_port | default(80) }} check
+
+backend be_nginx_ui
+  mode http
+  server nginx-ui {{ nginx_ui_app.ip_address | default('10.77.1.60') }}:{{ nginx_ui_app.backend_port | default(80) }} check
+{% endif %}
+
+{% if mcp_generic_apps | length > 0 %}
+{% set mcp_generic_app = mcp_generic_apps | first %}
+backend be_mcp_generic
+  mode http
+  option dontlog-normal
+  server mcp-generic {{ mcp_generic_app.ip_address | default('10.77.1.61') }}:{{ mcp_generic_app.backend_port | default(3000) }} check
 {% endif %}
 
 {% if nginx_apps | length > 0 %}

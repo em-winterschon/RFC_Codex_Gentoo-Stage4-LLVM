@@ -63,6 +63,8 @@ install_role_sequences:
           - container_app_elastic_apm
           - container_app_ipmi_exporter
           - container_app_redfish_exporter
+          - container_app_nginx_ui
+          - container_app_mcp_generic
           - container_app_ntfy
           - container_app_nginx
           - container_app_haproxy
@@ -198,6 +200,8 @@ install_role_sequences:
           - container_app_elastic_apm
           - container_app_ipmi_exporter
           - container_app_redfish_exporter
+          - container_app_nginx_ui
+          - container_app_mcp_generic
           - container_app_ntfy
           - container_app_nginx
           - container_app_haproxy
@@ -261,6 +265,8 @@ install_role_sequences:
           - container_app_elastic_apm
           - container_app_ipmi_exporter
           - container_app_redfish_exporter
+          - container_app_nginx_ui
+          - container_app_mcp_generic
           - container_app_ntfy
           - container_app_nginx
           - container_app_haproxy
