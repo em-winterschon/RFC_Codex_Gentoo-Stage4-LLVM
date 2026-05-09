@@ -1,0 +1,13 @@
+---
+nvidia_doca_ofed_enabled: false
+nvidia_doca_ofed_apply: false
+nvidia_doca_ofed_repo_deb_url: ""
+nvidia_doca_ofed_repo_deb_path: ""
+nvidia_doca_ofed_repo_deb_checksum: ""
+nvidia_doca_ofed_repo_deb_dest: /tmp/nvidia-doca-ofed-repo.deb
+nvidia_doca_ofed_install_packages:
+  - doca-ofed
+nvidia_doca_ofed_kernel_headers_required: true
+nvidia_doca_ofed_allow_custom_kernel: false
+nvidia_doca_ofed_custom_kernel_ack: ""
+nvidia_doca_ofed_apt_update_after_repo: true

@@ -1,0 +1,36 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-redfish-emulator
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-redfish-emulator.packages
+  make_conf_append: |
+    USE="${USE} python qemu virt-network -systemd"
+    FEATURES="${FEATURES} buildpkg parallel-install merge-sync"
+    EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --buildpkg=y --with-bdeps=y --complete-graph=y --binpkg-respect-use=y"
+    PKGDIR="${STAGE5_BINPKG_PKGDIR:-/var/cache/binpkgs/stage4-lox__stage5-virtual-host-redfish-emulator__amd64}"
+    PORTAGE_BINPKG_FORMAT="tar"
+    BINPKG_COMPRESS="zstd"
+    BINPKG_COMPRESS_FLAGS="-2"
+  vm_redfish_emulator:
+    enabled: true
+    backend: sushy-tools-libvirt
+    listen_host: 0.0.0.0
+    listen_port: 8000
+    virtual_bmc:
+      libvirt_uri: qemu:///system
+      system_name_prefix: vm-
+      system_uuid_source: libvirt-domain-uuid
+      power_control_enabled: true
+    static_fallback:
+      provider: dmtf-redfish-interface-emulator
+      listen_port: 5000
+      use_case: static mockups and schema compatibility tests
+  service_readiness:
+    enabled: true
+    checks:
+      - name: redfish-service-root
+        protocol: https
+        target: "{{ ansible_host | default('127.0.0.1') }}"
+        port: "{{ vm_redfish_emulator.listen_port | default(8000) }}"
+        path: /redfish/v1/
+        timeout_seconds: 5

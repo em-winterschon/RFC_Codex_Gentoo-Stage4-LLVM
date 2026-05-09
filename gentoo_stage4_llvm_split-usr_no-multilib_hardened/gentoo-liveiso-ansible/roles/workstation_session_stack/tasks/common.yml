@@ -1,0 +1,48 @@
+---
+- name: Ensure workstation session directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ workstation_session_stack_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/skel
+    - /root
+    - "{{ resolved_workstation_session_stack.session_dir }}"
+    - "{{ resolved_workstation_session_stack.slim_conf_path | dirname }}"
+  loop_control:
+    loop_var: workstation_session_stack_dir
+
+- name: Install root xinitrc for selected workstation session
+  ansible.builtin.template:
+    src: xinitrc.j2
+    dest: "{{ install_target_root }}/root/.xinitrc"
+    mode: '0755'
+  when: resolved_workstation_session_stack.create_root_xinitrc | bool
+
+- name: Install skel xinitrc for selected workstation session
+  ansible.builtin.template:
+    src: xinitrc.j2
+    dest: "{{ install_target_root }}/etc/skel/.xinitrc"
+    mode: '0755'
+  when: resolved_workstation_session_stack.create_skel_xinitrc | bool
+
+- name: Install X session entries for desktop environments
+  ansible.builtin.template:
+    src: xsession.desktop.j2
+    dest: "{{ install_target_root }}{{ resolved_workstation_session_stack.session_dir }}/{{ workstation_session_desktop.id }}.desktop"
+    mode: '0644'
+  loop: "{{ resolved_workstation_session_stack.desktop_environments }}"
+  loop_control:
+    loop_var: workstation_session_desktop
+  when: workstation_session_desktop.xsession_enabled | default(true) | bool
+
+- name: Install SLiM configuration when selected
+  ansible.builtin.template:
+    src: slim.conf.j2
+    dest: "{{ install_target_root }}{{ resolved_workstation_session_stack.slim_conf_path }}"
+    mode: '0644'
+  when: >-
+    (resolved_workstation_session_stack.display_managers
+    | selectattr('id', 'equalto', 'slim')
+    | list
+    | length) > 0

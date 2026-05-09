@@ -129,5 +129,5 @@
 
 # Inventory-backed Path B targets:
 {% for routeros_target_host in routeros_pathb_target_hosts %}
-:log info "Managed target {{ routeros_target_host.name }} mac={{ routeros_target_host.mac_address }} os={{ routeros_target_host.os_name }} {{ routeros_target_host.os_version }} machine={{ routeros_target_host.machine_type }} boot={{ routeros_target_host.boot_type }}"
+:log info "Managed target {{ routeros_target_host.name }} mac={{ routeros_target_host.mac_address }} os={{ routeros_target_host.os_name }} {{ routeros_target_host.os_version }} machine={{ routeros_target_host.machine_type }} boot={{ routeros_target_host.boot_type }} flow={{ routeros_target_host.protocol_flow }}"
 {% endfor %}

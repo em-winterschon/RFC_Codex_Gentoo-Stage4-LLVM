@@ -99,7 +99,7 @@ test_build_qemu_cmd_supports_memory_drives_manifest() {
   : > "${temp_dir}/extra.qcow2"
   : > "${EFI_FIRM}"
   : > "${EFI_VARS_TEMPLATE}"
-  cat > "${temp_dir}/memory.json" <<EOF
+  cat > "${temp_dir}/memory.json" << EOF
 {"drives":[{"path":"${temp_dir}/extra.qcow2","format":"qcow2","serial":"mem-extra","device_model":"virtio-blk-pci"}]}
 EOF
 

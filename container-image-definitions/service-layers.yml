@@ -67,3 +67,13 @@ container_service_layers:
       notes:
         - No Gentoo Portage atom was present in the current builder tree; keep upstream-image mode until an overlay ebuild exists.
         - Live Path B deployment disables ntfy and uses pull_policy=never until the image source is controlled.
+    nginx_ui:
+      build_mode: upstream-image
+      image_name: nginx-ui
+      upstream_image: docker.io/uozi/nginx-ui:latest
+      runtime_pull_policy: missing
+      config_role: container_app_nginx_ui
+      runtime_profile: vm-mcp-control-plane
+      notes:
+        - Nginx-UI is integrated first as an upstream image because it is operational control-plane tooling, not a Gentoo package-backed service yet.
+        - Docker socket mounting remains disabled by default; any future enablement requires a separate mutation-gated change.

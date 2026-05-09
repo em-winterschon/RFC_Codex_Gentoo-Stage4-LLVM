@@ -95,7 +95,7 @@ def resolve_topic(cli_topic: str | None, state: str) -> str:
 
 
 def resolve_url(cli_url: str | None) -> str:
-    return cli_url or os.getenv("NTFY_URL", "https://ntfy.sh")
+    return cli_url or os.getenv("NTFY_URL", "")
 
 
 def resolve_token(cli_token: str | None) -> str:
@@ -243,6 +243,23 @@ def main() -> int:
             )
             return 0
         print("ERROR: ntfy topic is not configured", file=sys.stderr)
+        return 2
+
+    if not payload["url"]:
+        if args.allow_missing_config:
+            print(
+                json.dumps(
+                    {
+                        "skipped": True,
+                        "reason": "missing URL configuration",
+                        "state": payload["state"],
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return 0
+        print("ERROR: ntfy URL is not configured", file=sys.stderr)
         return 2
 
     if args.dry_run:

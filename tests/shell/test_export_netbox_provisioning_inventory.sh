@@ -41,7 +41,7 @@ assert_file_contains "${plan}" "scripts/export-netbox-provisioning-inventory.py"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
-cat > "${tmpdir}/virtual-machines.json" <<'EOF'
+cat > "${tmpdir}/virtual-machines.json" << 'EOF'
 {
   "results": [
     {
@@ -72,7 +72,7 @@ cat > "${tmpdir}/virtual-machines.json" <<'EOF'
 }
 EOF
 
-cat > "${tmpdir}/devices.json" <<'EOF'
+cat > "${tmpdir}/devices.json" << 'EOF'
 {
   "results": [
     {
@@ -93,7 +93,7 @@ cat > "${tmpdir}/devices.json" <<'EOF'
 }
 EOF
 
-cat > "${tmpdir}/ip-addresses.json" <<'EOF'
+cat > "${tmpdir}/ip-addresses.json" << 'EOF'
 {
   "results": [
     {
@@ -158,7 +158,7 @@ assert_file_contains "${tmpdir}/hosts.yml" "stage5_role: netbox-service"
 assert_file_contains "${tmpdir}/hosts.yml" "sw_xgs_1250_pri:"
 assert_file_not_contains "${tmpdir}/hosts.yml" "manual-host"
 
-python3 - "${tmpdir}/ipam.json" "${tmpdir}/service-targets.json" <<'PY'
+python3 - "${tmpdir}/ipam.json" "${tmpdir}/service-targets.json" << 'PY'
 import json
 import sys
 from pathlib import Path
@@ -183,17 +183,17 @@ assert "api_token" not in serialized
 assert "Token " not in serialized
 PY
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -rf "${tmpdir}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:
     localhost:
       ansible_connection: local
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${export_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${export_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

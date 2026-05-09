@@ -1,0 +1,7 @@
+#!ipxe
+set base-url {{ netboot_public_base_url }}
+{% if netboot_tftp_autoexec_chain_url | length > 0 %}
+chain {{ netboot_tftp_autoexec_chain_url }} || chain ${base-url}/hosts/by-mac.ipxe || chain ${base-url}/menu.ipxe || shell
+{% else %}
+chain ${base-url}/hosts/by-mac.ipxe || chain ${base-url}/menu.ipxe || shell
+{% endif %}

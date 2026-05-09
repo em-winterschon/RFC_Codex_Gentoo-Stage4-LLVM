@@ -1,8 +1,9 @@
 # Managed by gentoo-liveiso-ansible
-base-url: {{ container_ntfy_profile.env.NTFY_BASE_URL | default('http://127.0.0.1') | quote }}
-listen-http: ":80"
+{% set ntfy_env = container_ntfy_profile.env | default({}) %}
+base-url: {{ container_ntfy_profile.base_url | default(ntfy_env.NTFY_BASE_URL | default('http://127.0.0.1')) | quote }}
+listen-http: {{ container_ntfy_profile.listen_http | default(':8080') | quote }}
 cache-file: "/var/cache/ntfy/cache.db"
 attachment-cache-dir: "/var/cache/ntfy/attachments"
 behind-proxy: true
 enable-signup: false
-enable-login: true
+enable-login: {{ container_ntfy_profile.enable_login | default(false) | bool | lower }}

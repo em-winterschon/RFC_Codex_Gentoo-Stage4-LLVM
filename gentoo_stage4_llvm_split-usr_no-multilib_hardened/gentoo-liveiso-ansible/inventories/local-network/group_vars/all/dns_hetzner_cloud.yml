@@ -30,4 +30,22 @@ dns_hetzner_cloud_zone_groups:
   - name: yukon
     zones: "{{ vault_hetzner_dns_yukon_zones | default([]) }}"
 
-dns_hetzner_cloud_managed_rrsets: []
+dns_hetzner_cloud_managed_rrsets:
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: msg-sun99-ntfysys-099096
+    fqdn: msg-sun99-ntfysys-099096.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.96
+    comment: codex ntfy service vip
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: msg-sun99-ntfysys
+    fqdn: msg-sun99-ntfysys.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - msg-sun99-ntfysys-099096.rfc1918.host.
+    comment: codex ntfy service cname

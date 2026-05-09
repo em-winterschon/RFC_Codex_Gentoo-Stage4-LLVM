@@ -17,6 +17,8 @@ REPO_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO_ROOT))
 
 import ntfy_notify  # noqa: E402
+import codex_ntfy_policy as reply_policy  # noqa: E402
+import codex_ntfy_reply_queue as reply_queue  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,7 +30,7 @@ def parse_args() -> argparse.Namespace:
 def ntfy_base_url() -> str:
     return os.getenv(
         "CODEX_NTFY_URL",
-        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "https://ntfy.sh")),
+        os.getenv("NTFY_URL", os.getenv("NTFY_SERVER", "")),
     ).rstrip("/")
 
 
@@ -90,7 +92,7 @@ def publish_message(
         output="json",
     )
     payload_data = ntfy_notify.build_payload(notify_args)
-    if not payload_data["topic"]:
+    if not payload_data["topic"] or not payload_data["url"]:
         return 0
     if dry_run:
         print(json.dumps(payload_data, indent=2, sort_keys=True))
@@ -111,7 +113,7 @@ def poll_replies(since_ts: int, wait_timeout: int) -> Iterator[str]:
         return
 
     topic = ntfy_reply_topic()
-    if not topic:
+    if not topic or not ntfy_base_url():
         return
 
     end_time = time.time() + wait_timeout
@@ -149,6 +151,58 @@ def poll_replies(since_ts: int, wait_timeout: int) -> Iterator[str]:
                 yield message
         current_since = newest_ts
         time.sleep(0.5)
+
+
+def poll_queue_reply(request_id: str, *, expected_kind: str, wait_timeout: int) -> dict | None:
+    if not reply_queue.queue_available():
+        return None
+    end_time = time.time() + wait_timeout
+    while time.time() < end_time:
+        found = reply_queue.find_reply(
+            request_id,
+            expected_kind=expected_kind,
+        )
+        if found:
+            path, payload = found
+            mode = reply_policy.mode_for_kind(str(payload.get("kind", expected_kind)))
+            reply_queue.mark_processed(path)
+            payload["policy_mode"] = mode
+            return payload
+        time.sleep(0.5)
+    return None
+
+
+def reply_queue_enabled() -> bool:
+    return reply_queue.queue_available()
+
+
+def advisory_message(reply_payload: dict, *, context: str) -> str:
+    return "\n".join(
+        [
+            f"context={context}",
+            f"request_id={reply_payload.get('request_id', '')}",
+            f"kind={reply_payload.get('kind', '')}",
+            f"mode={reply_payload.get('policy_mode', reply_policy.mode_for_kind(str(reply_payload.get('kind', ''))))}",
+            "",
+            "reply:",
+            str(reply_payload.get("raw_message", "")).strip(),
+            "",
+            "Policy marked this reply as advisory. No automatic state change was applied.",
+        ]
+    )
+
+
+def maybe_publish_advisory(reply_payload: dict, *, context: str, dry_run: bool) -> None:
+    if reply_payload.get("policy_mode") != "advisory":
+        return
+    publish_message(
+        "notice",
+        f"Codex advisory reply received: {context}",
+        advisory_message(reply_payload, context=context),
+        ["codex", "reply", "advisory"],
+        priority="3",
+        dry_run=dry_run,
+    )
 
 
 def permission_command(payload: dict) -> str:
@@ -190,9 +244,54 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
     )
     if dry_run or not ntfy_reply_topic():
         return 0
+    if reply_queue_enabled():
+        queued_reply = poll_queue_reply(
+            request_id,
+            expected_kind="permission_reply",
+            wait_timeout=min(wait_secs(), 5),
+        )
+        if queued_reply:
+            if queued_reply.get("policy_mode") == "advisory":
+                maybe_publish_advisory(queued_reply, context="PermissionRequest", dry_run=dry_run)
+                return 0
+            if queued_reply.get("decision") == "allow":
+                print(
+                    json.dumps(
+                        {
+                            "hookSpecificOutput": {
+                                "hookEventName": "PermissionRequest",
+                                "decision": {"behavior": "allow"},
+                            }
+                        }
+                    )
+                )
+                return 0
+            if queued_reply.get("decision") == "deny":
+                print(
+                    json.dumps(
+                        {
+                            "hookSpecificOutput": {
+                                "hookEventName": "PermissionRequest",
+                                "decision": {"behavior": "deny", "message": "Denied via ntfy reply"},
+                            }
+                        }
+                    )
+                )
+                return 0
     for reply in poll_replies(started, wait_secs()):
-        normalized = reply.strip().lower()
-        if normalized == f"allow {request_id}":
+        normalized = reply_queue.normalize_reply_message(
+            reply,
+            message_id=reply_queue.synthetic_message_id(),
+            timestamp=int(time.time()),
+            topic=ntfy_reply_topic(),
+        )
+        if not normalized:
+            continue
+        normalized["policy_mode"] = reply_policy.mode_for_kind(str(normalized.get("kind", "")))
+        if normalized.get("policy_mode") == "advisory":
+            maybe_publish_advisory(normalized, context="PermissionRequest", dry_run=dry_run)
+            return 0
+        if normalized.get("kind") == "permission_reply" and normalized.get("request_id") == request_id and normalized.get("decision") == "allow":
             print(
                 json.dumps(
                     {
@@ -204,7 +303,7 @@ def handle_permission_request(payload: dict, *, dry_run: bool) -> int:
                 )
             )
             return 0
-        if normalized == f"deny {request_id}":
+        if normalized.get("kind") == "permission_reply" and normalized.get("request_id") == request_id and normalized.get("decision") == "deny":
             print(
                 json.dumps(
                     {
@@ -249,13 +348,41 @@ def handle_stop(payload: dict, *, dry_run: bool) -> int:
     )
     if dry_run or not ntfy_reply_topic():
         return 0
+    if reply_queue_enabled():
+        queued_reply = poll_queue_reply(
+            request_id,
+            expected_kind="question_reply",
+            wait_timeout=min(wait_secs(), 5),
+        )
+        if queued_reply and queued_reply.get("policy_mode") == "advisory":
+            maybe_publish_advisory(queued_reply, context="Stop", dry_run=dry_run)
+            return 0
+        if queued_reply and queued_reply.get("answer"):
+            print(json.dumps({"decision": "block", "reason": queued_reply["answer"]}))
+            return 0
     for reply in poll_replies(started, wait_secs()):
-        prefix = f"{request_id}:"
-        if reply.startswith(prefix):
-            answer = reply[len(prefix) :].strip()
-            if answer:
-                print(json.dumps({"decision": "block", "reason": answer}))
-                return 0
+        normalized = reply_queue.normalize_reply_message(
+            reply,
+            message_id=reply_queue.synthetic_message_id(),
+            timestamp=int(time.time()),
+            topic=ntfy_reply_topic(),
+        )
+        if normalized:
+            normalized["policy_mode"] = reply_policy.mode_for_kind(str(normalized.get("kind", "")))
+        if (
+            normalized
+            and normalized.get("policy_mode") == "advisory"
+        ):
+            maybe_publish_advisory(normalized, context="Stop", dry_run=dry_run)
+            return 0
+        if (
+            normalized
+            and normalized.get("kind") == "question_reply"
+            and normalized.get("request_id") == request_id
+            and normalized.get("answer")
+        ):
+            print(json.dumps({"decision": "block", "reason": normalized["answer"]}))
+            return 0
     return 0
 
 
@@ -266,7 +393,8 @@ def main() -> int:
     except json.JSONDecodeError:
         return 0
     event = payload.get("hook_event_name")
-    if not ntfy_alert_topic():
+    direct_ntfy_configured = bool(ntfy_base_url() and (ntfy_alert_topic() or ntfy_reply_topic()))
+    if not (direct_ntfy_configured or reply_queue_enabled()):
         return 0
     if event == "PermissionRequest":
         return handle_permission_request(payload, dry_run=args.dry_run)

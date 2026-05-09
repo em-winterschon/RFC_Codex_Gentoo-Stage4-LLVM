@@ -1,0 +1,47 @@
+---
+- name: Apply Dell iDRAC Redfish defaults
+  ansible.builtin.include_role:
+    name: bmc_redfish
+  vars:
+    bmc_redfish_enabled: "{{ bmc_idrac_enabled }}"
+    bmc_redfish_scheme: https
+    bmc_redfish_host: "{{ bmc_idrac_host }}"
+    bmc_redfish_port: "{{ bmc_idrac_port }}"
+    bmc_redfish_username: "{{ bmc_idrac_username }}"
+    bmc_redfish_password: "{{ bmc_idrac_password }}"
+    bmc_redfish_validate_certs: "{{ bmc_idrac_validate_certs }}"
+    bmc_redfish_timeout: "{{ bmc_idrac_timeout }}"
+    bmc_redfish_system_id: "{{ bmc_idrac_system_id }}"
+    bmc_redfish_allow_mutation: "{{ bmc_idrac_allow_mutation }}"
+    bmc_redfish_power_action: "{{ bmc_idrac_power_action }}"
+    bmc_redfish_boot_override:
+      enabled: "{{ bmc_idrac_boot_to_pxe_once | bool }}"
+      target: Pxe
+      mode: UEFI
+      override_enabled: Once
+    bmc_redfish_virtual_media:
+      enabled: "{{ bmc_idrac_virtual_media_image_url | length > 0 }}"
+      insert_endpoint: "{{ bmc_idrac_virtual_media_insert_endpoint }}"
+      image_url: "{{ bmc_idrac_virtual_media_image_url }}"
+      inserted: true
+      write_protected: true
+
+- name: Validate Dell iDRAC manufacturer facts
+  ansible.builtin.assert:
+    that:
+      - >-
+        'dell' in (
+          (
+            bmc_redfish_facts.system.manufacturer
+            | default(bmc_redfish_facts.service.vendor | default(''))
+          )
+          | lower
+        )
+        or 'poweredge' in (bmc_redfish_facts.system.model | default('') | lower)
+    fail_msg: >-
+      Redfish endpoint did not report a Dell/iDRAC-like system:
+      {{ bmc_redfish_facts.system.manufacturer | default('unknown') }}
+      {{ bmc_redfish_facts.system.model | default('unknown') }}.
+  when:
+    - bmc_idrac_enabled | bool
+    - bmc_idrac_validate_vendor | bool

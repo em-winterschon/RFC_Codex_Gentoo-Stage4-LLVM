@@ -1,0 +1,98 @@
+---
+- name: Resolve VM Redfish emulator profile
+  ansible.builtin.set_fact:
+    resolved_vm_redfish_emulator: >-
+      {{
+        {
+          'enabled': vm_redfish_emulator_default_enabled,
+          'backend': vm_redfish_emulator_default_backend,
+          'user': vm_redfish_emulator_default_user,
+          'group': vm_redfish_emulator_default_group,
+          'root': vm_redfish_emulator_default_root,
+          'venv': vm_redfish_emulator_default_venv,
+          'listen_host': vm_redfish_emulator_default_listen_host,
+          'listen_port': vm_redfish_emulator_default_listen_port,
+          'wsgi': vm_redfish_emulator_default_wsgi,
+          'pip_packages': vm_redfish_emulator_default_pip_packages,
+          'virtual_bmc': {
+            'libvirt_uri': vm_redfish_emulator_default_libvirt_uri
+          },
+          'tls': {
+            'enabled': vm_redfish_emulator_default_tls_enabled,
+            'cert': vm_redfish_emulator_default_tls_cert,
+            'key': vm_redfish_emulator_default_tls_key
+          }
+        }
+        | combine(vm_redfish_emulator | default({}), recursive=True)
+        | combine(resolved_profile_vm_redfish_emulator | default({}), recursive=True)
+        | combine(profile_vm_redfish_emulator | default({}), recursive=True)
+      }}
+
+- name: Manage VM Redfish emulator
+  when: resolved_vm_redfish_emulator.enabled | bool
+  block:
+    - name: Ensure VM Redfish emulator group exists
+      ansible.builtin.group:
+        name: "{{ resolved_vm_redfish_emulator.group }}"
+        system: true
+
+    - name: Ensure VM Redfish emulator user exists
+      ansible.builtin.user:
+        name: "{{ resolved_vm_redfish_emulator.user }}"
+        group: "{{ resolved_vm_redfish_emulator.group }}"
+        home: "{{ resolved_vm_redfish_emulator.root }}"
+        shell: /sbin/nologin
+        system: true
+        create_home: false
+
+    - name: Ensure VM Redfish emulator directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ resolved_vm_redfish_emulator.user }}"
+        group: "{{ resolved_vm_redfish_emulator.group }}"
+        mode: "0750"
+      loop:
+        - "{{ resolved_vm_redfish_emulator.root }}"
+        - /etc/vm-redfish-emulator
+        - /etc/vm-redfish-emulator/tls
+
+    - name: Create VM Redfish emulator virtualenv
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -m
+          - venv
+          - "{{ resolved_vm_redfish_emulator.venv }}"
+        creates: "{{ resolved_vm_redfish_emulator.venv }}/bin/python"
+
+    - name: Install VM Redfish emulator Python packages
+      ansible.builtin.command:
+        argv: >-
+          {{
+            [resolved_vm_redfish_emulator.venv + '/bin/pip', 'install', '--upgrade']
+            + resolved_vm_redfish_emulator.pip_packages
+          }}
+      changed_when: true
+
+    - name: Render sushy-tools emulator config
+      ansible.builtin.template:
+        src: sushy-emulator.conf.j2
+        dest: /etc/vm-redfish-emulator/sushy-emulator.conf
+        owner: root
+        group: "{{ resolved_vm_redfish_emulator.group }}"
+        mode: "0640"
+
+    - name: Render VM Redfish emulator OpenRC service
+      ansible.builtin.template:
+        src: vm-redfish-emulator.initd.j2
+        dest: /etc/init.d/vm-redfish-emulator
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Enable VM Redfish emulator service
+      ansible.builtin.service:
+        name: vm-redfish-emulator
+        enabled: true
+      when: ansible_service_mgr | default('openrc') == 'openrc'

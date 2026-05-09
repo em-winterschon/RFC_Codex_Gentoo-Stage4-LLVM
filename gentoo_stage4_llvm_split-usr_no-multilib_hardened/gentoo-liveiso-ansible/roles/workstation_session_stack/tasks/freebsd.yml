@@ -1,0 +1,13 @@
+---
+- name: Record FreeBSD workstation session package intent
+  ansible.builtin.set_fact:
+    workstation_session_stack_package_manager: pkg
+    workstation_session_stack_install_command: pkg install -y slim nscde fvwm3
+    workstation_session_stack_default_paths:
+      session_dir: /usr/local/share/xsessions
+      slim_conf_path: /usr/local/etc/slim.conf
+
+- name: Install FreeBSD workstation session packages when requested
+  ansible.builtin.command: "{{ workstation_session_stack_install_command }}"
+  changed_when: true
+  when: workstation_session_stack_package_install_enabled | bool

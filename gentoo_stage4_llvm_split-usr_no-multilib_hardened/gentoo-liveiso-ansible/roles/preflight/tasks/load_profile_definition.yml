@@ -87,6 +87,14 @@
             recursive=True
           )
       }}
+    resolved_portage_patch_files: >-
+      {{
+        resolved_portage_patch_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.patch_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_package_mask_symlinks: >-
       {{
         resolved_portage_package_mask_symlinks
@@ -219,6 +227,14 @@
             recursive=True
           )
       }}
+    resolved_profile_vm_redfish_emulator: >-
+      {{
+        resolved_profile_vm_redfish_emulator
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.vm_redfish_emulator | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_zerotier: >-
       {{
         resolved_profile_zerotier
@@ -248,6 +264,22 @@
         resolved_profile_nexus_repo
         | combine(
             loaded_profile_definition_file.gentoo_profile_definition.nexus_repo | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_nscde_workstation: >-
+      {{
+        resolved_profile_nscde_workstation
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.nscde_workstation | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_workstation_session_stack: >-
+      {{
+        resolved_profile_workstation_session_stack
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.workstation_session_stack | default({}),
             recursive=True
           )
       }}

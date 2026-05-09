@@ -34,7 +34,7 @@ export BINPKG_COMPRESS_FLAGS="${BINPKG_COMPRESS_FLAGS:--2}"
 export RES_OPTIONS="${RES_OPTIONS:-attempts:2 timeout:2}"
 
 install -d -m 0700 /etc/portage/gnupg
-if command -v getuto >/dev/null 2>&1 && [[ ! -f /etc/portage/gnupg/pubring.kbx ]]; then
+if command -v getuto > /dev/null 2>&1 && [[ ! -f /etc/portage/gnupg/pubring.kbx ]]; then
   getuto
 fi
 install -d -m 0755 /etc/portage/binrepos.conf
@@ -44,7 +44,7 @@ for binrepo_conf in /etc/portage/binrepos.conf/*; do
   [[ "$(basename "${binrepo_conf}")" == "stage5-container.conf" ]] && continue
   mv "${binrepo_conf}" "/etc/portage/binrepos.conf.disabled-by-stage5-builder/$(basename "${binrepo_conf}")"
 done
-cat > /etc/portage/binrepos.conf/stage5-container.conf <<EOF
+cat > /etc/portage/binrepos.conf/stage5-container.conf << EOF
 [stage5-container]
 priority = 50
 sync-uri = ${REPO_URL}

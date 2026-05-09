@@ -23,9 +23,8 @@ options:
     type: str
   url:
     description:
-      - ntfy base URL.
+      - ntfy base URL. Configure this explicitly; there is no public fallback.
     type: str
-    default: https://ntfy.sh
   state:
     description:
       - Logical notification state.
@@ -117,9 +116,9 @@ class ActionModule(ActionBase):
         if not isinstance(msg, string_types) or not msg:
             raise AnsibleActionFail("msg must be a non-empty string")
 
-        url = self._task.args.get(
-            "url", os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh"))
-        )
+        url = self._task.args.get("url", os.getenv("ANSIBLE_NTFY_URL", os.getenv("NTFY_URL", "")))
+        if not url:
+            raise AnsibleActionFail("No ntfy URL configured")
         topic = _state_topic(
             self._task.args.get("state", "info"),
             self._task.args.get("topic", task_vars.get("topic")),

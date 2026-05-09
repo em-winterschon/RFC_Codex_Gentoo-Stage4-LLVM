@@ -1,0 +1,15 @@
+---
+private_certificate_authorities:
+  rfc1918_private_ca:
+    name: "{{ vault_private_ca_rfc1918_name | default('rfc1918_private_ca') }}"
+    cert_pem: "{{ vault_private_ca_rfc1918_cert_pem | default('') }}"
+    key_pem: "{{ vault_private_ca_rfc1918_key_pem | default('') }}"
+    chain_pem: "{{ vault_private_ca_rfc1918_chain_pem | default('') }}"
+    pkcs12_base64: "{{ vault_private_ca_rfc1918_pkcs12_base64 | default('') }}"
+    pkcs12_password: "{{ vault_private_ca_rfc1918_pkcs12_password | default('') }}"
+    cert_path: "{{ vault_private_ca_rfc1918_cert_path | default('/root/.ssh/vault/private-ca/rfc1918_private_ca.crt.pem') }}"
+    key_path: "{{ vault_private_ca_rfc1918_key_path | default('/root/.ssh/vault/private-ca/rfc1918_private_ca.key.pem') }}"
+    chain_path: "{{ vault_private_ca_rfc1918_chain_path | default('/root/.ssh/vault/private-ca/rfc1918_private_ca.chain.pem') }}"
+    pkcs12_path: "{{ vault_private_ca_rfc1918_pkcs12_path | default('/root/.ssh/vault/private-ca/rfc1918_private_ca.p12') }}"
+
+service_tls_certificate_authority_default: rfc1918_private_ca

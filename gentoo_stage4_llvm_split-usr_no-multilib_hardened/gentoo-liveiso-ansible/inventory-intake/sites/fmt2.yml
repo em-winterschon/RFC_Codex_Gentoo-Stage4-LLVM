@@ -7,14 +7,45 @@ datacenters:
     timezone: America/Los_Angeles
     facility: operator-confirmed
     management_prefixes:
+      - 10.200.99.0/24
+      - 172.18.20.0/24
       - 192.168.132.2/32
+      - 66.160.146.144/28
+      - 2001:470:1:43c::/64
     access_paths:
       - openvpn-site-to-site
+      - bignetwork-l2-bridge
       - future-rfc99-vpn-router-vm
     owners:
       - codex-ops
 
 prefixes:
+  - prefix: 10.200.99.0/24
+    site: fmt2
+    status: active
+    role: sfo200-server-management
+    vlan:
+      id: 99
+      name: sfo200-server-management
+  - prefix: 172.18.20.0/24
+    site: fmt2
+    status: active
+    role: sfo200-oob-management
+    vlan:
+      id: 20
+      name: sfo200-oob-management
+  - prefix: 192.168.132.0/24
+    site: fmt2
+    status: active
+    role: sfo200-openvpn-transport
+  - prefix: 66.160.146.144/28
+    site: fmt2
+    status: provider-assigned
+    role: he-net-ipv4-public
+  - prefix: 2001:470:1:43c::/64
+    site: fmt2
+    status: provider-assigned
+    role: he-net-ipv6-public
   - prefix: 66.160.146.148/32
     site: fmt2
     status: active
@@ -25,6 +56,123 @@ prefixes:
     role: rfc99-openvpn-tunnel-address
 
 devices:
+  - name: sw-border-sfo200-ein-2005
+    site: fmt2
+    role: border-switch
+    manufacturer: Aruba
+    model: 2530-24G
+    status: planned
+    management_ip: 172.18.20.5
+    notes:
+      - Imported from legacy SFO-200 switch access reference.
+  - name: sw-ipmi-sfo200-ein-2004
+    site: fmt2
+    role: oob-switch
+    manufacturer: Aruba
+    model: 2530-24G
+    status: planned
+    management_ip: 172.18.20.4
+    notes:
+      - Imported from legacy SFO-200 switch access reference.
+  - name: sw-sfo200-7060cx32s-2010
+    site: fmt2
+    role: data-center-switch
+    manufacturer: Arista
+    model: DCS-7060CX-32S
+    status: planned
+    management_ip: 172.16.40.10
+    notes:
+      - Legacy record uses 172.16.40.10; prefix validation should warn until FMT2 management routing is confirmed.
+  - name: gw-sfo200-pri
+    site: fmt2
+    role: ha-wan-router
+    manufacturer: Dell
+    model: PowerEdge R630
+    status: planned
+    management_ip: 10.200.99.2
+    serial: 86WS282
+    interfaces:
+      - name: wan-igb0
+        mac: e4:43:4b:5e:67:30
+      - name: idrac
+        mac: 64:00:6A:C1:EC:D4
+    notes:
+      - WAN address 66.160.146.146/28; public gateway 66.160.146.145.
+  - name: gw-sfo200-sec
+    site: fmt2
+    role: ha-wan-router
+    manufacturer: Dell
+    model: PowerEdge R630
+    status: planned
+    management_ip: 10.200.99.3
+    serial: 86XL282
+    interfaces:
+      - name: wan-igb0
+        mac: e4:43:4b:56:2b:90
+      - name: idrac
+        mac: 64:00:6A:C1:F3:C8
+    notes:
+      - WAN address 66.160.146.147/28; public gateway 66.160.146.145.
+  - name: kvm-sfo200-pri-9922
+    site: fmt2
+    role: virtualization-host
+    manufacturer: Dell
+    model: PowerEdge R630
+    status: planned
+    management_ip: 10.200.99.22
+    serial: 162DDH2
+    interfaces:
+      - name: mgmt
+        mac: 24:6e:96:42:65:d2
+      - name: idrac
+        mac: 84:7b:eb:f3:a9:2e
+  - name: kvm-sfo200-sec-9923
+    site: fmt2
+    role: virtualization-host
+    manufacturer: Dell
+    model: PowerEdge R630
+    status: planned
+    management_ip: 10.200.99.23
+    serial: 7Q25CH2
+    interfaces:
+      - name: mgmt
+        mac: 24:6e:96:42:83:b2
+      - name: idrac
+        mac: 84:7b:eb:d8:f3:c6
+  - name: kvm-sfo200-ter-9924
+    site: fmt2
+    role: virtualization-host
+    manufacturer: Dell
+    model: PowerEdge R630
+    status: planned
+    management_ip: 10.200.99.24
+    serial: JK9SDB2
+    interfaces:
+      - name: mgmt
+        mac: 24:6e:96:38:0a:d8
+      - name: idrac
+        mac: 64:00:6a:c3:82:2a
+  - name: kvm-sfo200-nasa-9918
+    site: fmt2
+    role: virtualization-storage-host
+    manufacturer: Dell
+    model: PowerEdge R730xd
+    status: planned
+    management_ip: 10.200.99.18
+    serial: H6XBRD2
+    interfaces:
+      - name: mgmt
+        mac: e4:43:4b:16:e9:c4
+      - name: idrac
+        mac: 18:66:da:67:18:d9
+  - name: tty-console-sfo200-ein-2011
+    site: fmt2
+    role: serial-console
+    manufacturer: Digi
+    model: console-server
+    status: planned
+    notes:
+      - Legacy references identify this as the SFO-200 IP-access serial console path.
   - name: vpn_rfc99_fmt2_openvpn_bridge
     site: fmt2
     role: vpn-bridge-vm
@@ -37,4 +185,22 @@ devices:
 
 clusters: []
 
-service_vips: []
+service_vips:
+  - name: fmt2-checkmk
+    site: fmt2
+    address: 10.200.99.27
+    listeners:
+      - protocol: https
+        port: 443
+    notes:
+      - Legacy URL app-sfo200-monitoring-9927.vernetzen.io.
+  - name: fmt2-prometheus
+    site: fmt2
+    address: 10.200.99.46
+    listeners:
+      - protocol: http
+        port: 9090
+      - protocol: http
+        port: 9093
+    notes:
+      - Legacy URL app-sfo200-prometheus-9946.vernetzen.io.

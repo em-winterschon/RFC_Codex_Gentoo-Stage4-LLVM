@@ -17,7 +17,7 @@ assert_contains() {
 }
 
 free_port() {
-  python3 - <<'PY'
+  python3 - << 'PY'
 import socket
 
 with socket.socket() as sock:
@@ -35,11 +35,11 @@ trap 'kill "${http_pid:-}" >/dev/null 2>&1 || true; rm -rf "${temp_dir}"' EXIT
 mkdir -p "${temp_dir}/www"
 printf 'ok\n' > "${temp_dir}/www/healthz"
 http_port="$(free_port)"
-python3 -m http.server "${http_port}" --bind 127.0.0.1 --directory "${temp_dir}/www" >/dev/null 2>&1 &
+python3 -m http.server "${http_port}" --bind 127.0.0.1 --directory "${temp_dir}/www" > /dev/null 2>&1 &
 http_pid=$!
 sleep 1
 
-cat > "${temp_dir}/slo.json" <<EOF
+cat > "${temp_dir}/slo.json" << EOF
 {
   "name": "test-slo",
   "services": [
@@ -75,7 +75,7 @@ assert_contains "${output}" '"manifest_name": "test-slo"'
 assert_contains "${output}" '"slo_met": true'
 assert_contains "${output}" '"checks_successful": 2'
 
-cat > "${temp_dir}/failed-slo.json" <<'EOF'
+cat > "${temp_dir}/failed-slo.json" << 'EOF'
 {
   "name": "failed-slo",
   "services": [
@@ -95,7 +95,7 @@ cat > "${temp_dir}/failed-slo.json" <<'EOF'
 }
 EOF
 
-if "${VALIDATOR}" --manifest "${temp_dir}/failed-slo.json" --json >/tmp/slo-validator-closed.out 2>&1; then
+if "${VALIDATOR}" --manifest "${temp_dir}/failed-slo.json" --json > /tmp/slo-validator-closed.out 2>&1; then
   fail 'closed TCP port unexpectedly passed SLO validation'
 fi
 assert_contains "$(cat /tmp/slo-validator-closed.out)" '"slo_met": false'

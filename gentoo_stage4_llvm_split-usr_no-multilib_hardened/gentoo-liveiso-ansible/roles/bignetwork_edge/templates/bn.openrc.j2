@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# Managed by gentoo-liveiso-ansible bignetwork_edge
+
+name="BigNetwork"
+description="BigNetwork virtualization service"
+command="/usr/sbin/bn"
+command_args="-p{{ resolved_bignetwork_edge.daemon_port }} {{ resolved_bignetwork_edge.daemon_extra_args | join(' ') }} {{ resolved_bignetwork_edge.home }}"
+command_user="{{ resolved_bignetwork_edge.user }}:{{ resolved_bignetwork_edge.group }}"
+pidfile="{{ resolved_bignetwork_edge.home }}/bn.pid"
+command_background="yes"
+output_log="/var/log/bn.log"
+error_log="/var/log/bn.log"
+
+depend() {
+  need net
+  after firewall
+}

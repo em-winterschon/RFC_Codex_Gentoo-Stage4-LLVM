@@ -1,0 +1,60 @@
+name: Change control
+description: Plan an ITIL-compatible infrastructure change with validation and backout.
+title: "[CHANGE] "
+labels:
+  - type:change-control
+  - status:ready
+body:
+  - type: input
+    id: change_id
+    attributes:
+      label: Change ID
+      placeholder: CHG-20260508-001
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk level
+      options:
+        - low
+        - medium
+        - high
+        - emergency
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: Why this change is necessary now.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Systems, networks, services, and users affected.
+    validations:
+      required: true
+  - type: textarea
+    id: execution
+    attributes:
+      label: Execution sequence
+      description: Step-by-step procedure, including operator handoffs.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation sequence
+      description: Specific checks required before declaring the change complete.
+    validations:
+      required: true
+  - type: textarea
+    id: backout
+    attributes:
+      label: Backout plan
+      description: Specific rollback steps and maximum tolerated outage window.
+    validations:
+      required: true

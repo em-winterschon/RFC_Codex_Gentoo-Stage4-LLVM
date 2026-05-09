@@ -1,0 +1,37 @@
+---
+gpu_compute_enabled: false
+gpu_host_policy_root: ""
+
+gpu_host_policy_detect_nvidia: true
+gpu_host_policy_blacklist_nvidia_when_present: true
+gpu_host_policy_blacklisted_modules:
+  - nouveau
+  - nvidiafb
+
+gpu_passthrough_enabled: false
+gpu_host_policy_vfio_ids: []
+gpu_host_policy_vfio_modules:
+  - vfio
+  - vfio_iommu_type1
+  - vfio_pci
+gpu_host_policy_vfio_disable_vga: true
+gpu_host_policy_vfio_modprobe_path: /etc/modprobe.d/vfio-pci-gpu.conf
+gpu_host_policy_vfio_modules_load_path: /etc/modules-load.d/vfio.conf
+
+gpu_host_policy_modprobe_blacklist_path: /etc/modprobe.d/blacklist-nouveau.conf
+gpu_host_policy_grub_dropin_path: /etc/default/grub.d/99-gpu-compute-blacklist.cfg
+gpu_host_policy_grub_cmdline_tokens:
+  - modprobe.blacklist=nouveau,nvidiafb
+  - nouveau.modeset=0
+
+gpu_host_policy_manage_kernel_cmdline: false
+gpu_host_policy_kernel_cmdline_path: /etc/kernel/cmdline
+gpu_host_policy_kernel_cmdline_base: ""
+gpu_host_policy_kernel_cmdline_tokens: "{{ gpu_host_policy_grub_cmdline_tokens }}"
+gpu_host_policy_proxmox_boot_tool_refresh: false
+
+gpu_host_policy_update_grub: false
+gpu_host_policy_update_initramfs: false
+gpu_host_policy_grub_update_command: update-grub
+gpu_host_policy_initramfs_update_command: update-initramfs -u
+gpu_host_policy_proxmox_boot_tool_command: proxmox-boot-tool refresh

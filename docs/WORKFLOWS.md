@@ -38,6 +38,8 @@ the calling automation layer.
 
 - [codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
   persistent ntfy approval-watcher installation and validation on a Gentoo/OpenRC host
+- [codex-ntfy-reply-listener-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-ntfy-reply-listener-service.json)
+  persistent ntfy reply-listener installation and validation with local pending/processed reply queue storage
 - [stage4-netboot-path-b.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-netboot-path-b.json)
   Path B iPXE asset publication and operator handoff flow for bare-metal and VM fleets
 - [stage4-routeros-pathb-deployment.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-routeros-pathb-deployment.json)

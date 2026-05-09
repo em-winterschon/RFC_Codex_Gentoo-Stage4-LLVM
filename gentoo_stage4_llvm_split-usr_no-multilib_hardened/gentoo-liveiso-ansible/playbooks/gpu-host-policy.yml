@@ -1,0 +1,6 @@
+---
+- name: Apply GPU host policy to compute and passthrough hosts
+  hosts: gpu_compute
+  gather_facts: false
+  roles:
+    - role: gpu_host_policy

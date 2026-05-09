@@ -1,0 +1,25 @@
+# NFS Storage Client
+
+The `nfs-storage-client` Stage5 overlay defines the baseline NFS client policy
+for bare-metal and VM systems. Containers do not inherit this profile by default.
+
+NFSv3 over TCP remains the default for compatibility and rescue workflows.
+NFSv4 requires centralized AAA, SSSD, and consistent UID/GID mapping from the
+`aaa-domain-client` overlay. NFS-RDMA is opt-in and requires validated RDMA/RoCE
+fabric readiness.
+
+Primary files:
+
+- `profile-definitions/nfs-storage-client.yml`
+- `profile-package-lists/stage5-storage-nfs-client.packages`
+- `roles/nfs_storage_client`
+
+Primary atoms:
+
+- `net-fs/nfs-utils`
+- `net-nds/rpcbind`
+- `sys-cluster/rdma-core`
+- `sys-fs/multipath-tools`
+
+Use `nconnect` or pNFS for NFS-side multi-path behavior where supported. Keep
+`multipath-tools` for block storage paths such as iSCSI, FC, and NVMe-oF.

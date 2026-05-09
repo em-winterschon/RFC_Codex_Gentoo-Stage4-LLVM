@@ -1,0 +1,29 @@
+milestones:
+  - title: Critical Path
+    description: Immediate base image, build, publish, and release-blocking work.
+  - title: Container Services
+    description: Podman service-container runtime, GHCR images, service layers, and safe moves.
+  - title: NetBox/IPAM/DCIM
+    description: NetBox source-of-truth, inventory intake, power-chain, and DCIM modeling.
+  - title: RouterOS Network
+    description: CCR2004, CRS309, CRS354, CSS326, VLAN, routing, and LACP work.
+  - title: Identity/RBAC/AAA
+    description: FreeIPA, SSSD, FreeRADIUS, device AAA, SSH, and access policy work.
+  - title: Observability
+    description: Prometheus, Grafana, exporters, telemetry, Check_MK, and alerting.
+  - title: Logging/Search
+    description: rsyslog, Elasticsearch, Kibana, APM, and log-routing work.
+  - title: Builder Farm
+    description: Jenkins, distcc, binpkg build workers, and build metrics.
+  - title: Workstation Stage5
+    description: Stage5 workstation, Xorg, NsCDE, GPU, K10, and X12AGAIN validation.
+  - title: FMT2 Recovery
+    description: FMT2/SFO-200 transport, inventory recovery, and datacenter reconnection.
+  - title: DNS Automation
+    description: Hetzner DNS automation, NetBox-driven RRsets, and health maps.
+  - title: MCP/Trac Control Plane
+    description: MCP service hosting, Trac integration, and project-management control plane.
+  - title: Repository Proxy
+    description: Nexus Repository, version locks, and repository proxying.
+  - title: LLM/RAG Services
+    description: LLM API proxy, RAG services, local model providers, and GPU service lanes.

@@ -24,7 +24,7 @@ fake_home="${tmpdir}/home"
 printf 'test-vault-password\n' > "${vault_password_file}"
 chmod 600 "${vault_password_file}"
 
-cat > "${vault_env_file}" <<EOF
+cat > "${vault_env_file}" << EOF
 export ANSIBLE_VAULT_PASSWORD_FILE=${vault_password_file}
 export ANSIBLE_VAULT_IDENTITY_LIST=test@${vault_password_file}
 export ANSIBLE_VAULT_ENCRYPT_IDENTITY=test
@@ -33,32 +33,32 @@ EOF
 
 mkdir -p "${fake_home}/.ssh/vault"
 cp "${vault_password_file}" "${fake_home}/.ssh/vault/test-vault-pass.txt"
-cat > "${tilde_vault_env_file}" <<'EOF'
+cat > "${tilde_vault_env_file}" << 'EOF'
 export ANSIBLE_VAULT_PASSWORD_FILE='~/.ssh/vault/test-vault-pass.txt'
 export ANSIBLE_VAULT_IDENTITY_LIST='test@~/.ssh/vault/test-vault-pass.txt'
 export ANSIBLE_VAULT_ENCRYPT_IDENTITY=test
 export ANSIBLE_VAULT_ID_MATCH=True
 EOF
 
-cat > "${plain_file}" <<'EOF'
+cat > "${plain_file}" << 'EOF'
 ---
 vault_test_secret: example
 EOF
 
 ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" \
-  "${WITH_ENV}" ansible-vault encrypt "${plain_file}" --output "${vault_file}" >/dev/null
+  "${WITH_ENV}" ansible-vault encrypt "${plain_file}" --output "${vault_file}" > /dev/null
 
 head -n 1 "${vault_file}" | grep -q '^\$ANSIBLE_VAULT;' ||
   fail "encrypted vault header missing"
 
 ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" \
-  "${VALIDATE}" "${vault_file}" >/dev/null
+  "${VALIDATE}" "${vault_file}" > /dev/null
 
-if ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${VALIDATE}" "${plain_file}" >/dev/null 2>&1; then
+if ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${VALIDATE}" "${plain_file}" > /dev/null 2>&1; then
   fail "plaintext vault validation unexpectedly passed"
 fi
 
 HOME="${fake_home}" ANSIBLE_VAULT_ENV_FILE="${tilde_vault_env_file}" \
-  "${WITH_ENV}" ansible-vault view "${vault_file}" >/dev/null
+  "${WITH_ENV}" ansible-vault view "${vault_file}" > /dev/null
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

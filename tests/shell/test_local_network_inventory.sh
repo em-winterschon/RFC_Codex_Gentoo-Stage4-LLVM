@@ -50,6 +50,13 @@ assert_file_contains "${inventory}" "routeros_state_snapshot_enabled: false"
 assert_file_contains "${inventory}" "rtr_mgmt_ccr2004:"
 assert_file_contains "${inventory}" "gw_rfc99_mkccr2004_16g:"
 assert_file_contains "${inventory}" "vault_rfc99_ccr2004_16g_admin_password"
+assert_file_contains "${inventory}" "gmktek_nucbox_k10_stage5_candidate:"
+assert_file_contains "${inventory}" "netboot_mac_address: \"84:47:09:5F:21:64\""
+assert_file_contains "${inventory}" "netboot_static_address: 172.16.99.156"
+assert_file_contains "${inventory}" "netboot_next_server: 172.16.99.108"
+assert_file_contains "${inventory}" "netboot_bootfile_name: k10-ipxe.efi"
+assert_file_contains "${inventory}" "netboot_tftp_root: /var/lib/netboot/path-b"
+assert_file_contains "${inventory}" "netboot_firmware_policy: uefi-pxe-efi-only"
 assert_file_contains "${inventory}" "sw_mgmt_css326:"
 assert_file_contains "${inventory}" "swos_identity: sw-mgmt-mkcss326"
 assert_file_contains "${inventory}" "swos_observed_version: 2.18.1751448030"
@@ -122,10 +129,10 @@ assert_file_contains "${netbox_api_playbook}" "netbox_api_token_file"
 assert_file_contains "${netbox_api_playbook}" "netbox_api_auth_header"
 assert_file_contains "${netbox_api_playbook}" "no_log: true"
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -f "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   children:
@@ -152,12 +159,12 @@ all:
           ansible_user: admin
           ansible_password: syntax-only
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${proxmox_api_playbook}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_api_playbook}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${swos_snapshot_playbook}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_snapshot_playbook}" >/dev/null
-  ANSIBLE_ROLES_PATH="${ANSIBLE_ROOT}/roles" ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_spine_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${proxmox_api_playbook}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_api_playbook}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${swos_snapshot_playbook}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_snapshot_playbook}" > /dev/null
+  ANSIBLE_ROLES_PATH="${ANSIBLE_ROOT}/roles" ansible-playbook --syntax-check -i "${tmp_inventory}" "${routeros_spine_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

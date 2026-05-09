@@ -1,0 +1,48 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-redfish-emulator
+  purpose: Stage5 VM profile for exposing VM lifecycle and inventory through a Redfish-compatible API.
+  canonical_ids:
+    default: stage4-lox__stage5-virtual-host-redfish-emulator__<arch>
+    amd64: stage4-lox__stage5-virtual-host-redfish-emulator__amd64
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: redfish-emulator
+    stage4_foundation: stage4-lox
+  package_pins:
+    tracked_atoms:
+      - app-emulation/libvirt
+      - app-emulation/qemu
+      - dev-python/pip
+      - dev-python/virtualenv
+      - net-misc/curl
+      - www-servers/nginx
+    upstream_app_version: sushy-tools-libvirt
+    python_packages:
+      - gunicorn
+      - libvirt-python
+      - sushy-tools
+    upstream_apps:
+      - name: sushy-tools
+        pin_status: python-venv-requirements-pending
+      - name: Redfish-Interface-Emulator
+        pin_status: fallback-source-pin-pending
+    pin_gaps:
+      - The exact sushy-tools package version must be pinned when the live VM Redfish emulator is deployed.
+      - The DMTF fallback source revision must be pinned before any static emulator is promoted beyond testing.
+  upstreams:
+    primary:
+      name: sushy-tools
+      url: https://docs.openstack.org/sushy-tools
+      model: virtual Redfish BMC backed by libvirt or OpenStack
+      reason: Dynamic VM-backed Redfish is closer to baremetal BMC workflows than a static mockup.
+    fallback:
+      name: DMTF Redfish Interface Emulator
+      url: https://github.com/DMTF/Redfish-Interface-Emulator
+      model: static or custom dynamic Redfish resources
+      reason: Useful for schema development and canned mockups when libvirt-backed power control is not required.
+  deployment_notes:
+    - Do not expose this service outside management networks.
+    - VM Redfish should be treated as an automation compatibility shim, not a security boundary.
+    - Power mutations remain opt-in and should be protected by private CA TLS plus central RBAC once FreeIPA/SSSD/RADIUS is live.

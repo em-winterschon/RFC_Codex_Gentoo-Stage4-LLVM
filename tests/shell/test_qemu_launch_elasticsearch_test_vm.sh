@@ -27,13 +27,13 @@ test_dry_run_uses_pathb_elasticsearch_defaults() {
 
   output="$(
     INSTANCE_NAME=elasticsearch-test-unit \
-    QEMU_VM_DIR="${temp_dir}" \
-    QEMU_ROOTDISK="${temp_dir}/elasticsearch-test-root.qcow2" \
-    QEMU_DIRECT_KERNEL="${temp_dir}/vmlinuz" \
-    QEMU_DIRECT_INITRD="${temp_dir}/initramfs.img" \
-    QEMU_LAUNCH_DRY_RUN=1 \
-    LAUNCHER_LOG_ENABLE=0 \
-    bash "${LAUNCH_SCRIPT}"
+      QEMU_VM_DIR="${temp_dir}" \
+      QEMU_ROOTDISK="${temp_dir}/elasticsearch-test-root.qcow2" \
+      QEMU_DIRECT_KERNEL="${temp_dir}/vmlinuz" \
+      QEMU_DIRECT_INITRD="${temp_dir}/initramfs.img" \
+      QEMU_LAUNCH_DRY_RUN=1 \
+      LAUNCHER_LOG_ENABLE=0 \
+      bash "${LAUNCH_SCRIPT}"
   )"
 
   assert_contains "${output}" 'elasticsearch-test-root.qcow2'

@@ -1,5 +1,5 @@
 #!ipxe
-dhcp
+isset ${net0/ip} || dhcp
 set menu-timeout {{ netboot_menu_timeout_ms }}
 set base-url {{ netboot_public_base_url }}
 

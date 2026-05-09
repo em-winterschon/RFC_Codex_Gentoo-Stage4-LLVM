@@ -8,7 +8,7 @@ START_SERVICES="${START_SERVICES:-0}"
 DRY_RUN=1
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: migrate-container-services-runtime.sh [--dry-run|--apply] [--start-services]
 
 Copies the validated container-services runtime layer from the current source
@@ -41,22 +41,22 @@ fail() {
 parse_args() {
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
-      --dry-run)
-        DRY_RUN=1
-        ;;
-      --apply)
-        DRY_RUN=0
-        ;;
-      --start-services)
-        START_SERVICES=1
-        ;;
-      --help|-h)
-        usage
-        exit 0
-        ;;
-      *)
-        fail "unknown argument: $1"
-        ;;
+    --dry-run)
+      DRY_RUN=1
+      ;;
+    --apply)
+      DRY_RUN=0
+      ;;
+    --start-services)
+      START_SERVICES=1
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unknown argument: $1"
+      ;;
     esac
     shift
   done
@@ -98,13 +98,13 @@ copy_runtime() {
     tar_args+=("${path#/}")
   done
 
-  ssh "${SOURCE_HOST}" "tar -C / -czf - ${tar_args[*]}" \
-    | ssh "${TARGET_HOST}" 'tar -C / -xzf -'
+  ssh "${SOURCE_HOST}" "tar -C / -czf - ${tar_args[*]}" |
+    ssh "${TARGET_HOST}" 'tar -C / -xzf -'
 }
 
 patch_staging_haproxy() {
   [[ "${STAGING_MODE}" == '1' ]] || return 0
-  ssh "${TARGET_HOST}" 'python3 -' <<'PY'
+  ssh "${TARGET_HOST}" 'python3 -' << 'PY'
 from pathlib import Path
 
 path = Path("/usr/local/libexec/container-services/run-haproxy.sh")

@@ -1,0 +1,28 @@
+---
+bignetwork_portal_accounts:
+  codexian:
+    provider: BigNetwork
+    account_name: "{{ vault_bignetwork_codexian_account_name | default('codexian') }}"
+    token_name: "{{ vault_bignetwork_codexian_token_name | default('BIGNETWORK_TOKEN_CODEXIAN') }}"
+    api_token: "{{ vault_bignetwork_codexian_api_token | default('') }}"
+    token_owner: "{{ vault_bignetwork_codexian_token_owner | default('Forge') }}"
+    purpose: "{{ vault_bignetwork_codexian_purpose | default('FMT2/SFO200 SD-WAN transport validation') }}"
+
+bignetwork_fmt2_transport:
+  preferred_path: nanopi-r6s-transparent-l2-bridge
+  interim_path: disposable-devuan-bn-client-smoketest
+  target_sites:
+    - FMT2
+    - SFO200
+  local_sites:
+    - RFC99
+    - SUN99
+  notes:
+    - Use the NanoPi R6S Edge Lite path when it has been re-onboarded in the BigNetwork portal.
+    - Use per-host bn client tests only as interim reachability evidence.
+
+resolved_profile_bignetwork_edge:
+  enabled: false
+  auth_token: "{{ vault_bignetwork_codexian_api_token | default('') }}"
+  service_enabled: false
+  service_started: false

@@ -1,0 +1,168 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-workstation-nscde
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+  make_conf_append: |
+    USE="${USE} X dbus gtk qt5 spice truetype xinerama elogind udev opengl opencl vaapi vdpau vulkan -gnome -kde -systemd -wayland"
+    VIDEO_CARDS="${VIDEO_CARDS} intel amdgpu radeonsi fbdev vesa qxl modesetting nvidia"
+    INPUT_DEVICES="${INPUT_DEVICES} libinput evdev"
+    PORTAGE_TMPDIR="/var/tmp/portage"
+    FEATURES="${FEATURES} buildpkg parallel-install merge-sync"
+    EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --buildpkg=y --with-bdeps=y --complete-graph=y --binpkg-respect-use=y"
+    PKGDIR="${STAGE5_BINPKG_PKGDIR:-/var/cache/binpkgs/stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg}"
+    PORTAGE_BINPKG_FORMAT="tar"
+    BINPKG_COMPRESS="zstd"
+    BINPKG_COMPRESS_FLAGS="-2"
+  package_use_files:
+    40-workstation-nscde: |
+      app-text/xmlto text
+      app-emulation/spice-vdagent gtk -systemd
+      =dev-util/nvidia-cuda-toolkit-12.9.1-r1 clang profiler -debugger -examples -nsight -rdma -sanitizer
+      media-libs/freetype harfbuzz png
+      dev-python/pillow -truetype
+      x11-base/xorg-server xorg elogind udev -systemd
+      =x11-drivers/nvidia-drivers-580.159.03-r1 X tools -kernel-open -persistenced -powerd -wayland
+    41-workstation-gpu-universal-xorg: |
+      */* VIDEO_CARDS: -* intel amdgpu radeonsi fbdev vesa qxl modesetting nvidia
+      app-emulation/qemu X accessibility aio bpf bzip2 capstone curl fdt filecaps fuse infiniband io-uring iscsi jemalloc jpeg keyutils lzo multipath ncurses nfs nls numa opengl pam plugins png python rbd sasl sdl sdl-image seccomp slirp smartcard snappy spice ssh static static-user systemtap udev usb usbredir vde vhost-net virgl virtfs vnc vte xattr xdp zstd -alsa -debug -glusterfs -gnutls -gtk -jack -oss -pipewire -pulseaudio -selinux -test -wayland -xen
+      dev-libs/rocm-opencl-runtime -debug -test
+      gui-libs/gtk X -wayland -gtk-doc -examples -cloudproviders -test
+      media-libs/amdgpu-pro-vulkan abi_x86_64 video_cards_amdgpu -abi_x86_32
+      media-libs/libglvnd X
+      media-libs/libva X glx -wayland
+      media-libs/mesa X lm-sensors opengl proprietary-codecs vaapi vulkan vulkan-overlay zstd -debug -opencl -selinux -test -wayland
+      media-libs/vulkan-loader X -wayland
+      media-video/amdgpu-pro-amf video_cards_amdgpu
+      sys-block/ndctl daxctl
+      x11-libs/libdrm video_cards_amdgpu video_cards_intel tools udev
+  package_accept_keywords_files:
+    40-workstation-nscde-gpu: |
+      =dev-util/nvidia-cuda-toolkit-12.9.1-r1 ~amd64
+      =x11-drivers/nvidia-drivers-580.159.03-r1 ~amd64
+    41-workstation-gpu-universal-xorg: |
+      dev-libs/amdgpu-pro-opencl ~amd64
+      dev-libs/rocm-opencl-runtime ~amd64
+      dev-util/amdsmi ~amd64
+      dev-util/clinfo ~amd64
+      dev-util/rocm-smi ~amd64
+      dev-util/rocminfo ~amd64
+      sys-apps/amdgpu_top ~amd64
+  package_license_files:
+    40-workstation-nscde-gpu: |
+      =dev-util/nvidia-cuda-toolkit-12.9.1-r1 NVIDIA-CUDA
+      =x11-drivers/nvidia-drivers-580.159.03-r1 NVIDIA-2025
+    41-workstation-gpu-universal-xorg: |
+      dev-libs/amdgpu-pro-opencl AMD-GPU-PRO-EULA
+      media-libs/amdgpu-pro-vulkan AMD-GPU-PRO-EULA
+      media-video/amdgpu-pro-amf AMD-GPU-PRO-EULA
+      sys-kernel/linux-firmware linux-fw-redistributable no-source-code
+  package_mask_files:
+    40-workstation-nscde-gpu: |
+      >x11-drivers/nvidia-drivers-580.159.03-r1
+    41-workstation-no-wayland: |
+      dev-libs/plasma-wayland-protocols
+      dev-libs/wayland
+      dev-libs/wayland-protocols
+      dev-qt/qtwayland
+      dev-util/wayland-scanner
+      gui-apps/xwaylandvideobridge
+      gui-libs/wlroots
+      kde-plasma/kwayland
+      kde-plasma/kwin
+      kde-plasma/plasma-meta
+      kde-plasma/plasma-workspace
+      sys-apps/xdg-desktop-portal
+      x11-base/xwayland
+      x11-misc/sddm
+  package_unmask_files:
+    40-workstation-nscde: |
+      >=dev-python/pyqt5-5.15.11
+      >=dev-python/pyqt5-sip-12.18.0
+  modules_load_files:
+    vm-workstation-nscde.conf: |
+      acpi_nfit
+      dax_pmem
+      device_dax
+      libnvdimm
+      nd_pmem
+      uinput
+      virtio_blk
+      virtio_console
+      virtio_net
+      virtio_pci
+  kernel_config_requirements:
+    nvdimm_optane_series_200:
+      - CONFIG_ACPI_NFIT
+      - CONFIG_LIBNVDIMM
+      - CONFIG_BLK_DEV_PMEM
+      - CONFIG_ND_BLK
+      - CONFIG_BTT
+      - CONFIG_NVDIMM_PFN
+      - CONFIG_NVDIMM_DAX
+      - CONFIG_DEV_DAX
+      - CONFIG_DEV_DAX_PMEM
+    gpu_universal_xorg:
+      - CONFIG_DRM_AMDGPU
+      - CONFIG_DRM_I915
+      - CONFIG_DRM_QXL
+  openrc_services_enable:
+    - dbus
+    - spice-vdagent
+    - rsyslog
+  nscde_workstation:
+    enabled: true
+    version: "2.3"
+    source_url: https://github.com/NsCDE/NsCDE/archive/refs/tags/2.3.tar.gz
+    source_sha256: fc4fd5f16b901b865f44b7483fa01a28189b5d5b95766375e026cc317456b297
+    source_dir_name: NsCDE-2.3
+    work_root: /var/tmp/nscde-workstation
+    install_prefix: /opt/NsCDE
+    build_jobs: 16
+    create_skel_xinitrc: true
+    create_root_xinitrc: true
+    xsession_desktop_path: /usr/share/xsessions/nscde.desktop
+    session_command: /opt/NsCDE/bin/nscde
+  workstation_session_stack:
+    enabled: true
+    os_family: gentoo
+    session_command: /opt/NsCDE/bin/nscde
+    create_skel_xinitrc: true
+    create_root_xinitrc: true
+    session_dir: /usr/share/xsessions
+    slim_conf_path: /etc/slim.conf
+    desktop_environments:
+      - id: nscde
+        name: NsCDE
+        comment: Not so Common Desktop Environment
+        session_command: /opt/NsCDE/bin/nscde
+        try_exec: /opt/NsCDE/bin/nscde
+        xsession_enabled: true
+    display_managers:
+      - id: slim
+        name: SLiM
+        default_session: nscde
+    window_managers:
+      - id: fvwm3
+        name: FVWM3
+    display_policy:
+      enabled: false
+      renderer: nvidia
+      preferred_mode: 1280x720
+      fallback_modes:
+        - 1024x768
+        - 1920x1080
+      validation_title: PiKVM K1200 deterministic test pattern
+  service_readiness:
+    enabled: true
+    checks:
+      - name: ssh
+        protocol: tcp
+        target: "{{ ansible_host | default('127.0.0.1') }}"
+        port: 22
+        timeout_seconds: 5
+      - name: spice
+        protocol: tcp
+        target: "{{ workstation_spice_listen_host | default('127.0.0.1') }}"
+        port: "{{ workstation_spice_port | default(5931) }}"
+        timeout_seconds: 5

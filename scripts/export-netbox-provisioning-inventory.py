@@ -296,7 +296,10 @@ def export_provisioning_inventory(
         for host in [standalone_ip_host_record(row, used_ips)]
         if host is not None
     ]
-    hosts = sorted(vm_hosts + device_hosts + standalone_ip_hosts, key=lambda item: (source_order.get(item["source_type"], 99), item["name"]))
+    hosts = sorted(
+        vm_hosts + device_hosts + standalone_ip_hosts,
+        key=lambda item: (source_order.get(item["source_type"], 99), item["name"]),
+    )
     ipam_records = sorted(
         [
             {
@@ -337,7 +340,9 @@ def export_provisioning_inventory(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--netbox-api-url", default=os.getenv("NETBOX_API_URL", "http://172.16.99.62"))
+    parser.add_argument(
+        "--netbox-api-url", default=os.getenv("NETBOX_API_URL", "http://172.16.99.62")
+    )
     parser.add_argument("--netbox-token", default=os.getenv("NETBOX_TOKEN", ""))
     parser.add_argument("--netbox-token-file", default=os.getenv("NETBOX_TOKEN_FILE", ""))
     parser.add_argument("--virtual-machines-file", default="")
@@ -365,7 +370,11 @@ def main() -> int:
         if args.virtual_machines_file
         else fetch_paginated(args.netbox_api_url, "virtualization/virtual-machines", token)
     )
-    devices = rows_from_file(args.devices_file) if args.devices_file else fetch_paginated(args.netbox_api_url, "dcim/devices", token)
+    devices = (
+        rows_from_file(args.devices_file)
+        if args.devices_file
+        else fetch_paginated(args.netbox_api_url, "dcim/devices", token)
+    )
     ip_addresses = (
         rows_from_file(args.ip_addresses_file)
         if args.ip_addresses_file

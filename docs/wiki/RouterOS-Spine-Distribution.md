@@ -72,6 +72,26 @@ Next steps:
   failure handling is scripted
 - push rendered desired state into NetBox interface and cable records
 
+## Serial Console Automation
+
+RouterOS emits an `ESC Z` terminal-identification probe after serial login.
+Plain raw scripts can appear stuck after password entry if they do not answer
+that probe. Use `scripts/routeros-serial-command.py` for serial command
+execution because it responds with a VT100/ANSI answerback before sending
+commands.
+
+Example read-only CRS309 serial check:
+
+```bash
+ROUTEROS_PASSWORD='...' scripts/routeros-serial-command.py \
+  --port /dev/ttyUSB0 \
+  --username admin \
+  --command '/system identity print'
+```
+
+The helper has been validated against CRS309 by returning
+`sw-spine-crs309-rfc99` from `/system identity print`.
+
 ## State Snapshot Workflow
 
 The live snapshot workflow intentionally separates read-only state collection

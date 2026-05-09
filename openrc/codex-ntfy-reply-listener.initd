@@ -1,0 +1,40 @@
+#!/sbin/openrc-run
+
+description="${codex_ntfy_reply_listener_description:-Codex ntfy reply listener}"
+pidfile="/run/${RC_SVCNAME}.pid"
+command="/usr/local/libexec/${RC_SVCNAME}"
+
+depend() {
+  use net
+}
+
+start_pre() {
+  checkpath --directory --mode 0755 /run
+  checkpath --directory --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0755 "$(dirname "${codex_ntfy_reply_listener_output_log}")"
+  checkpath --directory --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0755 "$(dirname "${codex_ntfy_reply_listener_error_log}")"
+  checkpath --directory --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0755 "${codex_ntfy_reply_listener_queue_dir}"
+  checkpath --directory --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0755 "${codex_ntfy_reply_listener_queue_dir}/pending"
+  checkpath --directory --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0755 "${codex_ntfy_reply_listener_queue_dir}/processed"
+  checkpath --file --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0644 "${codex_ntfy_reply_listener_output_log}"
+  checkpath --file --owner "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" --mode 0644 "${codex_ntfy_reply_listener_error_log}"
+}
+
+start() {
+  ebegin "Starting ${RC_SVCNAME}"
+  supervise-daemon "${RC_SVCNAME}" \
+    --start \
+    --pidfile "${pidfile}" \
+    --stdout "${codex_ntfy_reply_listener_output_log}" \
+    --stderr "${codex_ntfy_reply_listener_error_log}" \
+    --respawn-delay "${codex_ntfy_reply_listener_respawn_delay}" \
+    --respawn-max "${codex_ntfy_reply_listener_respawn_max}" \
+    --user "${codex_ntfy_reply_listener_user}:${codex_ntfy_reply_listener_group}" \
+    -- "${command}"
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping ${RC_SVCNAME}"
+  supervise-daemon "${RC_SVCNAME}" --stop --pidfile "${pidfile}" --retry "${codex_ntfy_reply_listener_retry}"
+  eend $?
+}
