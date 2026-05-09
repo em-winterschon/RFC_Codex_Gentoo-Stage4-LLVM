@@ -24,6 +24,7 @@
       - hostvars[routeros_target_host].netboot_interface_name is defined
       - hostvars[routeros_target_host].netboot_mac_address is defined
       - (hostvars[routeros_target_host].netboot_type | lower) in routeros_pathb_netboot_type_enum
+      - ((hostvars[routeros_target_host].netboot_protocol_flow | default('ipxe-direct')) | lower) in routeros_pathb_netboot_protocol_flow_enum
       - (hostvars[routeros_target_host].netboot_os_type | lower) in routeros_pathb_os_type_enum
       - (hostvars[routeros_target_host].netboot_os_name | lower) in routeros_pathb_os_name_enum
       - hostvars[routeros_target_host].netboot_os_version is defined
@@ -47,6 +48,7 @@
       interface_name: "{{ hostvars[routeros_target_host].netboot_interface_name }}"
       mac_address: "{{ hostvars[routeros_target_host].netboot_mac_address | lower }}"
       boot_type: "{{ hostvars[routeros_target_host].netboot_type | lower }}"
+      protocol_flow: "{{ (hostvars[routeros_target_host].netboot_protocol_flow | default('ipxe-direct')) | lower }}"
       dhcp_client_options: "{{ hostvars[routeros_target_host].netboot_dhcp_client_options | default([]) }}"
       os_type: "{{ hostvars[routeros_target_host].netboot_os_type | lower }}"
       os_name: "{{ hostvars[routeros_target_host].netboot_os_name | lower }}"

@@ -19,8 +19,7 @@ for role_dir in \
   netbox_connector \
   zerotier_access \
   container_app_rsyslog_collector \
-  container_app_elastic_apm
-do
+  container_app_elastic_apm; do
   test -d "${ANSIBLE_ROOT}/roles/${role_dir}"
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
@@ -35,16 +34,14 @@ for profile in \
   container-haproxy-elasticsearch-test-vip.yml \
   vm-elasticsearch-node.yml \
   vm-elasticsearch-test.yml \
-  vm-kibana-interface.yml
-do
+  vm-kibana-interface.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${profile}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${profile}" '^gentoo_profile_definition:'
 done
 
 for metadata in \
   vm-elasticsearch-node.metadata.yml \
-  vm-kibana-interface.metadata.yml
-do
+  vm-kibana-interface.metadata.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${metadata}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${metadata}" '^gentoo_system_profile_metadata:'
 done
@@ -53,8 +50,7 @@ for package_list in \
   stage5-observability-client.packages \
   stage5-managed-access-zerotier.packages \
   stage5-virtual-host-elasticsearch-node.packages \
-  stage5-virtual-host-kibana-interface.packages
-do
+  stage5-virtual-host-kibana-interface.packages; do
   test -f "${ANSIBLE_ROOT}/profile-package-lists/${package_list}"
 done
 

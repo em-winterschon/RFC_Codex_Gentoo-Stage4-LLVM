@@ -93,5 +93,6 @@
     "peer": "{{ routeros_pathb_ha_peer }}",
     "note": "{{ routeros_pathb_future_ha_note }}"
   },
-  "targets": {{ routeros_pathb_target_hosts | to_json }}
+  "targets": {{ routeros_pathb_target_hosts | to_json }},
+  "targetProtocolFlows": {{ routeros_pathb_target_hosts | map(attribute='protocol_flow') | list | to_json }}
 }

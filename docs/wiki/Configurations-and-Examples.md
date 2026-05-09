@@ -571,7 +571,7 @@ Or loaded from repo-managed definitions such as:
 
 ```bash
 export ANSIBLE_NTFY_ENABLED=true
-export ANSIBLE_NTFY_URL=https://ntfy.sh
+export ANSIBLE_NTFY_URL=http://msg-sun99-ntfysys.rfc1918.host
 export ANSIBLE_NTFY_TOPIC=replace-with-your-topic
 ```
 

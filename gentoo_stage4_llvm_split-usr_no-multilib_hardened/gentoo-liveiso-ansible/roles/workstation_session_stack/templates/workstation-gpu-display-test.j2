@@ -1,0 +1,32 @@
+#!/bin/sh
+# Managed by gentoo-liveiso-ansible workstation_session_stack
+set -eu
+
+display="${WORKSTATION_GPU_DISPLAY_TEST_DISPLAY:-{{ resolved_workstation_session_stack.display_policy.validation_display }}}"
+mode="${WORKSTATION_GPU_DISPLAY_TEST_MODE:-{{ resolved_workstation_session_stack.display_policy.preferred_mode }}}"
+background="${WORKSTATION_GPU_DISPLAY_TEST_BACKGROUND:-{{ resolved_workstation_session_stack.display_policy.validation_background }}}"
+title="${WORKSTATION_GPU_DISPLAY_TEST_TITLE:-{{ resolved_workstation_session_stack.display_policy.validation_title }}}"
+xorg_conf="{{ resolved_workstation_session_stack.display_policy.xorg_conf_path }}"
+log_path="/var/log/Xorg.workstation-gpu-display-test.log"
+
+if pgrep -f "Xorg ${display}" >/dev/null 2>&1; then
+    pkill -f "Xorg ${display}"
+    sleep 1
+fi
+
+rm -f "/tmp/.X${display#:}-lock" "/tmp/.X11-unix/X${display#:}"
+Xorg "${display}" -config "${xorg_conf}" -nolisten tcp -noreset > "${log_path}" 2>&1 &
+sleep 5
+
+output="$(DISPLAY="${display}" xrandr | awk '/ connected/{print $1; exit}')"
+if [ -n "${output}" ]; then
+    DISPLAY="${display}" xrandr --output "${output}" --mode "${mode}" || true
+fi
+
+DISPLAY="${display}" xsetroot -solid "${background}" || true
+if command -v xterm >/dev/null 2>&1; then
+    DISPLAY="${display}" xterm -geometry 80x12+40+40 -title "${title}" -bg black -fg lime -e sh -c \
+        "printf '%s\nmode: %s requested\ndate: %s\n' '${title}' '${mode}' \"$(date -Is)\"; sleep 3600" >/tmp/workstation-gpu-display-test.xterm.log 2>&1 &
+fi
+
+DISPLAY="${display}" xrandr

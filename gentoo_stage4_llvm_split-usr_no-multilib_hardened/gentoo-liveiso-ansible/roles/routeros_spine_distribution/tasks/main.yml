@@ -5,6 +5,7 @@
       - not (routeros_spine_distribution_apply | bool)
       - routeros_spine_distribution_target_version | length > 0
       - routeros_spine_distribution_spine.crs354_bond.slaves | length == 2
+      - routeros_spine_distribution_spine.hasslehoff_qlogic_bond.slaves | length == 2
       - routeros_spine_distribution_distribution.crs309_bond.slaves | length == 2
       - routeros_spine_distribution_distribution.stale_opnsense.address | length > 0
       - routeros_spine_distribution_distribution.stale_opnsense.gateway | length > 0

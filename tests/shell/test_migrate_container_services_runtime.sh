@@ -21,8 +21,8 @@ bash -n "${HELPER}"
 
 output="$(
   SOURCE_HOST=root@10.9.8.89 \
-  TARGET_HOST=root@172.16.99.89 \
-  bash "${HELPER}" --dry-run
+    TARGET_HOST=root@172.16.99.89 \
+    bash "${HELPER}" --dry-run
 )"
 
 assert_contains "${output}" "DRY RUN"

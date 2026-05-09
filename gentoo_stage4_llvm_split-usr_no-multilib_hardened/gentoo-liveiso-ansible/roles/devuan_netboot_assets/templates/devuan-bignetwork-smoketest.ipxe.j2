@@ -1,0 +1,10 @@
+#!ipxe
+
+set base-url {{ resolved_devuan_netboot.base_url }}
+set preseed-url ${base-url}/devuan-bignetwork-smoketest.preseed
+
+echo Booting Devuan {{ resolved_devuan_netboot.release }} {{ resolved_devuan_netboot.arch }} BigNetwork smoke-test installer
+# Default kernel path resolves below debian-installer/amd64/linux for amd64.
+kernel {{ resolved_devuan_netboot.kernel_url }} auto=true priority=critical preseed/url=${preseed-url} hostname={{ resolved_devuan_netboot.hostname }} domain={{ resolved_devuan_netboot.domain }} console={{ resolved_devuan_netboot.console }} ---
+initrd {{ resolved_devuan_netboot.initrd_url }}
+boot

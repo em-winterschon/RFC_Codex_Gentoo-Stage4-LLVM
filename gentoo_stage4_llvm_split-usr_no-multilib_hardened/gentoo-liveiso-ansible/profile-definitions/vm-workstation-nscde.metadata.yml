@@ -1,0 +1,72 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-workstation-nscde
+  purpose: Stage5 virtual-host workstation profile for Xorg, SPICE guest integration, and NsCDE desktop validation.
+  canonical_ids:
+    default: stage4-lox__stage5-workstation-nscde__<arch>__gpu-universal-xorg
+    amd64: stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg
+  stage4_lingua_franca:
+    short_name: Stage4 LOX
+    meaning: LLVM/Clang + OpenRC + Xorg
+    default_arch_axis:
+      - amd64
+      - arm64
+      - ppc64le
+      - riscv
+    cpu_tuning_axis: metadata-only unless two repos for the same architecture must coexist
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: workstation-nscde
+    stage4_foundation: stage4-lox
+    gpu_profile: gpu-universal-xorg
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-simple-ipxe
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-emulation/spice-vdagent
+      - dev-libs/amdgpu-pro-opencl
+      - dev-libs/intel-compute-runtime
+      - dev-libs/rocm-opencl-runtime
+      - media-libs/amdgpu-pro-vulkan
+      - media-libs/mesa
+      - media-libs/vulkan-loader
+      - media-video/amdgpu-pro-amf
+      - sys-block/ndctl
+      - x11-drivers/nvidia-drivers
+      - x11-drivers/xf86-video-amdgpu
+      - x11-drivers/xf86-video-intel
+      - x11-base/xorg-server
+      - x11-base/xorg-drivers
+      - x11-drivers/xf86-video-qxl
+      - x11-wm/fvwm3
+    app_version_lock_id: nscde
+    upstream_app_version: "2.3"
+    source_sha256: fc4fd5f16b901b865f44b7483fa01a28189b5d5b95766375e026cc317456b297
+  deployment_notes:
+    - This profile intentionally reverses the server VM default of disabling X, gtk, qt5, and spice.
+    - On-host QEMU validation should use SPICE/QXL before Hasslehoff GPU passthrough work starts.
+    - NsCDE is source-installed from the pinned upstream tag until a local overlay ebuild is added.
+    - Wayland, Plasma, SDDM, XWayland, wlroots, and xdg-desktop-portal are intentionally rejected for Stage4 LOX workstation builds.
+    - Workstation builds emit binpkgs under the canonical Stage4 LOX repository ID; Hasslehoff can expose that path through NFS or a bind mount from the binpkg repository VM.
+    - AMD workstation support prefers Gentoo-packaged AMDGPU-PRO userspace where available and falls back to the upstream amdgpu kernel driver and Mesa/radeonsi stack.
+    - Intel Optane Persistent Memory 200-series support is handled through Linux libnvdimm/ACPI NFIT plus sys-block/ndctl; ipmctl is not in the Gentoo tree and should be handled later through a local overlay if needed.
+  kernel_modules:
+    nvdimm_optane_series_200:
+      - acpi_nfit
+      - libnvdimm
+      - nd_pmem
+      - dax_pmem
+      - device_dax
+    gpu_universal_xorg:
+      - amdgpu
+      - i915
+      - qxl
+      - nvidia

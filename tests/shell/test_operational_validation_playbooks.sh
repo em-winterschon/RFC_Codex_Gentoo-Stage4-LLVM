@@ -41,10 +41,10 @@ assert_file_contains "${intake_doc}" "IPAM"
 assert_file_contains "${wiki_intake_doc}" "Required Intake Data"
 assert_file_contains "${run_tests}" "test_operational_validation_playbooks.sh"
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -f "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   children:
@@ -60,8 +60,8 @@ all:
           netbox_api_url: http://127.0.0.1
           netbox_api_token: syntax-token
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${identity_validate}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_seed}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${identity_validate}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${netbox_seed}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

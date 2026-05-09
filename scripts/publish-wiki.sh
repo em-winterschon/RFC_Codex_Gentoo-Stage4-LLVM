@@ -12,7 +12,7 @@ COMMIT_MESSAGE="${COMMIT_MESSAGE:-Sync wiki from docs/wiki}"
 PUSH=0
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: publish-wiki.sh [--push] [--source-dir PATH] [--wiki-worktree PATH] [--remote URL]
 
 Syncs ${SOURCE_DIR} into a local checkout of the GitHub wiki repository.
@@ -28,31 +28,31 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --push)
-      PUSH=1
-      shift
-      ;;
-    --source-dir)
-      SOURCE_DIR="$2"
-      shift 2
-      ;;
-    --wiki-worktree)
-      WIKI_WORKTREE="$2"
-      shift 2
-      ;;
-    --remote)
-      WIKI_REMOTE_URL="$2"
-      shift 2
-      ;;
-    --help)
-      usage
-      exit 0
-      ;;
-    *)
-      printf 'ERROR: Unknown argument: %s\n' "$1" >&2
-      usage >&2
-      exit 1
-      ;;
+  --push)
+    PUSH=1
+    shift
+    ;;
+  --source-dir)
+    SOURCE_DIR="$2"
+    shift 2
+    ;;
+  --wiki-worktree)
+    WIKI_WORKTREE="$2"
+    shift 2
+    ;;
+  --remote)
+    WIKI_REMOTE_URL="$2"
+    shift 2
+    ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: Unknown argument: %s\n' "$1" >&2
+    usage >&2
+    exit 1
+    ;;
   esac
 done
 
@@ -69,6 +69,14 @@ else
   git -C "${WIKI_WORKTREE}" fetch origin
   CURRENT_BRANCH="$(git -C "${WIKI_WORKTREE}" rev-parse --abbrev-ref HEAD)"
   git -C "${WIKI_WORKTREE}" pull --ff-only origin "${CURRENT_BRANCH}"
+fi
+
+if ! git -C "${WIKI_WORKTREE}" config user.email > /dev/null; then
+  git -C "${WIKI_WORKTREE}" config user.email "codex@example.invalid"
+fi
+
+if ! git -C "${WIKI_WORKTREE}" config user.name > /dev/null; then
+  git -C "${WIKI_WORKTREE}" config user.name "Codex Automation"
 fi
 
 find "${WIKI_WORKTREE}" -maxdepth 1 -type f -name '*.md' -delete

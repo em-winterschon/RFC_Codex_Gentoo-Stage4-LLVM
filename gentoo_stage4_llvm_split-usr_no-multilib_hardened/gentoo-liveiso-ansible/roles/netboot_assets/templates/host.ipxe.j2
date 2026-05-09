@@ -1,5 +1,5 @@
 #!ipxe
-dhcp
+isset ${net0/ip} || dhcp
 set host-name {{ netboot_host.name }}
 set host-mac {{ netboot_host.match_mac }}
 set base-url {{ netboot_public_base_url }}

@@ -1,0 +1,3 @@
+# Managed by Ansible role gpu_host_policy.
+# Debian/Proxmox update-grub sources /etc/default/grub.d/*.cfg.
+GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT} {{ gpu_host_policy_grub_cmdline_tokens | join(' ') }}"

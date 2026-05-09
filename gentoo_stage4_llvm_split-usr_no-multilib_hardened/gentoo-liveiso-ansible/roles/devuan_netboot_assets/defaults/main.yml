@@ -1,0 +1,33 @@
+---
+devuan_netboot_default_release: excalibur
+devuan_netboot_default_arch: amd64
+devuan_netboot_default_mirror_host: pkgmaster.devuan.org
+devuan_netboot_default_mirror_directory: /devuan
+devuan_netboot_default_publish_root: /srv/netboot/devuan-bignetwork-smoketest
+devuan_netboot_default_base_url: http://{{ ansible_default_ipv4.address | default('127.0.0.1') }}/netboot/devuan-bignetwork-smoketest
+devuan_netboot_default_console: ttyS0,115200n8
+devuan_netboot_default_hostname: devuan-bignetwork-smoketest
+devuan_netboot_default_domain: rfc1918.host
+devuan_netboot_default_timezone: Etc/UTC
+devuan_netboot_default_locale: en_US.UTF-8
+devuan_netboot_default_keymap: us
+devuan_netboot_default_autoinstall_enabled: false
+devuan_netboot_default_disk: /dev/vda
+devuan_netboot_default_root_password_hash: "!"
+devuan_netboot_default_codex_user: codex
+devuan_netboot_default_codex_password_hash: "!"
+devuan_netboot_default_codex_ssh_authorized_key: ""
+devuan_netboot_default_extra_packages:
+  - ca-certificates
+  - curl
+  - iproute2
+  - iputils-ping
+  - nmap
+  - openssh-server
+  - openssl
+  - sudo
+  - tcpdump
+devuan_netboot_default_kernel_url: >-
+  https://{{ devuan_netboot_default_mirror_host }}{{ devuan_netboot_default_mirror_directory }}/dists/{{ devuan_netboot_default_release }}/main/installer-{{ devuan_netboot_default_arch }}/current/images/netboot/debian-installer/{{ devuan_netboot_default_arch }}/linux
+devuan_netboot_default_initrd_url: >-
+  https://{{ devuan_netboot_default_mirror_host }}{{ devuan_netboot_default_mirror_directory }}/dists/{{ devuan_netboot_default_release }}/main/installer-{{ devuan_netboot_default_arch }}/current/images/netboot/debian-installer/{{ devuan_netboot_default_arch }}/initrd.gz

@@ -1,0 +1,176 @@
+---
+- name: Resolve BigNetwork edge settings
+  ansible.builtin.set_fact:
+    bignetwork_edge_enabled: >-
+      {{
+        resolved_profile_bignetwork_edge.enabled
+        | default(bignetwork_edge_default_enabled)
+        | bool
+      }}
+    resolved_bignetwork_edge: >-
+      {{
+        {
+          'manage_packages': resolved_profile_bignetwork_edge.manage_packages | default(bignetwork_edge_default_manage_packages),
+          'extracted_root': resolved_profile_bignetwork_edge.extracted_root | default(bignetwork_edge_default_extracted_root),
+          'binary_source': resolved_profile_bignetwork_edge.binary_source | default(bignetwork_edge_default_binary_source),
+          'binary_path': resolved_profile_bignetwork_edge.binary_path | default(bignetwork_edge_default_binary_path),
+          'home': resolved_profile_bignetwork_edge.home | default(bignetwork_edge_default_home),
+          'user': resolved_profile_bignetwork_edge.user | default(bignetwork_edge_default_user),
+          'group': resolved_profile_bignetwork_edge.group | default(bignetwork_edge_default_group),
+          'shell': resolved_profile_bignetwork_edge.shell | default(bignetwork_edge_default_shell),
+          'service_name': resolved_profile_bignetwork_edge.service_name | default(bignetwork_edge_default_service_name),
+          'service_manager': resolved_profile_bignetwork_edge.service_manager | default(bignetwork_edge_default_service_manager),
+          'service_enabled': resolved_profile_bignetwork_edge.service_enabled | default(bignetwork_edge_default_service_enabled),
+          'service_started': resolved_profile_bignetwork_edge.service_started | default(bignetwork_edge_default_service_started),
+          'daemon_port': resolved_profile_bignetwork_edge.daemon_port | default(bignetwork_edge_default_daemon_port),
+          'daemon_extra_args': resolved_profile_bignetwork_edge.daemon_extra_args | default(bignetwork_edge_default_daemon_extra_args),
+          'auth_token': resolved_profile_bignetwork_edge.auth_token | default(bignetwork_edge_default_auth_token),
+          'metrics_token': resolved_profile_bignetwork_edge.metrics_token | default(bignetwork_edge_default_metrics_token),
+          'token_mode': resolved_profile_bignetwork_edge.token_mode | default(bignetwork_edge_default_token_mode),
+          'install_smoketest': resolved_profile_bignetwork_edge.install_smoketest | default(bignetwork_edge_default_install_smoketest),
+          'smoketest_path': resolved_profile_bignetwork_edge.smoketest_path | default(bignetwork_edge_default_smoketest_path),
+          'smoketest_targets': resolved_profile_bignetwork_edge.smoketest_targets | default(bignetwork_edge_default_smoketest_targets)
+        }
+      }}
+
+- name: Resolve BigNetwork edge service manager
+  ansible.builtin.set_fact:
+    bignetwork_edge_service_manager: >-
+      {{
+        (
+          resolved_bignetwork_edge.service_manager
+          if resolved_bignetwork_edge.service_manager != 'auto'
+          else (
+            'openrc'
+            if ansible_service_mgr | default('') == 'openrc'
+            else 'sysvinit'
+          )
+        )
+      }}
+  when: bignetwork_edge_enabled
+
+- name: Install BigNetwork prerequisite packages on Debian-family systems
+  ansible.builtin.apt:
+    name: "{{ bignetwork_edge_default_packages_by_os_family.Debian }}"
+    state: present
+    update_cache: true
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.manage_packages | bool
+    - ansible_os_family | default('') == 'Debian'
+
+- name: Install BigNetwork prerequisite packages on Gentoo systems
+  community.general.portage:
+    package: "{{ bignetwork_edge_default_packages_by_os_family.Gentoo }}"
+    state: present
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.manage_packages | bool
+    - ansible_os_family | default('') == 'Gentoo'
+
+- name: Ensure BigNetwork group exists
+  ansible.builtin.group:
+    name: "{{ resolved_bignetwork_edge.group }}"
+    system: true
+  when: bignetwork_edge_enabled
+
+- name: Ensure BigNetwork user exists
+  ansible.builtin.user:
+    name: "{{ resolved_bignetwork_edge.user }}"
+    group: "{{ resolved_bignetwork_edge.group }}"
+    home: "{{ resolved_bignetwork_edge.home }}"
+    shell: "{{ resolved_bignetwork_edge.shell }}"
+    system: true
+    create_home: false
+  when: bignetwork_edge_enabled
+
+- name: Ensure BigNetwork directories exist
+  ansible.builtin.file:
+    path: "{{ bignetwork_edge_dir }}"
+    state: directory
+    owner: "{{ resolved_bignetwork_edge.user }}"
+    group: "{{ resolved_bignetwork_edge.group }}"
+    mode: "0750"
+  loop:
+    - "{{ resolved_bignetwork_edge.home }}"
+    - "{{ resolved_bignetwork_edge.home }}/networks.d"
+  loop_control:
+    loop_var: bignetwork_edge_dir
+  when: bignetwork_edge_enabled
+
+- name: Install BigNetwork edge binary
+  ansible.builtin.copy:
+    src: "{{ resolved_bignetwork_edge.binary_source }}"
+    dest: "{{ resolved_bignetwork_edge.binary_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: bignetwork_edge_enabled
+
+- name: Render BigNetwork auth token
+  ansible.builtin.copy:
+    content: "{{ resolved_bignetwork_edge.auth_token }}"
+    dest: "{{ resolved_bignetwork_edge.home }}/authtoken.secret"
+    owner: "{{ resolved_bignetwork_edge.user }}"
+    group: "{{ resolved_bignetwork_edge.group }}"
+    mode: "{{ resolved_bignetwork_edge.token_mode }}"
+  no_log: true
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.auth_token | length > 0
+
+- name: Render BigNetwork metrics token
+  ansible.builtin.copy:
+    content: "{{ resolved_bignetwork_edge.metrics_token }}"
+    dest: "{{ resolved_bignetwork_edge.home }}/metricstoken.secret"
+    owner: "{{ resolved_bignetwork_edge.user }}"
+    group: "{{ resolved_bignetwork_edge.group }}"
+    mode: "{{ resolved_bignetwork_edge.token_mode }}"
+  no_log: true
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.metrics_token | length > 0
+
+- name: Render BigNetwork init script
+  ansible.builtin.template:
+    src: "{{ 'bn.openrc.j2' if bignetwork_edge_service_manager == 'openrc' else 'bn.sysvinit.j2' }}"
+    dest: "/etc/init.d/{{ resolved_bignetwork_edge.service_name }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: bignetwork_edge_enabled
+
+- name: Render BigNetwork smoke-test helper
+  ansible.builtin.template:
+    src: bignetwork-smoketest.sh.j2
+    dest: "{{ resolved_bignetwork_edge.smoketest_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.install_smoketest | bool
+
+- name: Enable BigNetwork service on OpenRC
+  ansible.builtin.command: "rc-update add {{ resolved_bignetwork_edge.service_name }} default"
+  changed_when: true
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.service_enabled | bool
+    - bignetwork_edge_service_manager == 'openrc'
+
+- name: Enable BigNetwork service on sysvinit
+  ansible.builtin.command: "update-rc.d {{ resolved_bignetwork_edge.service_name }} defaults"
+  changed_when: true
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.service_enabled | bool
+    - bignetwork_edge_service_manager == 'sysvinit'
+
+- name: Start BigNetwork service
+  ansible.builtin.service:
+    name: "{{ resolved_bignetwork_edge.service_name }}"
+    state: started
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.service_started | bool

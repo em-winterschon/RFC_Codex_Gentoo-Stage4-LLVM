@@ -1,0 +1,24 @@
+[nfsrahead]
+nfs = 15000
+nfs4 = 15000
+
+[nfsd]
+rdma = {{ 'y' if resolved_nfs_storage_client.enable_rdma else 'n' }}
+rdma-port = {{ resolved_nfs_storage_client.rdma_port }}
+vers3 = {{ 'y' if resolved_nfs_storage_client.enable_nfsv3 else 'n' }}
+vers4 = {{ 'y' if resolved_nfs_storage_client.enable_nfsv4 else 'n' }}
+vers4.1 = {{ 'y' if resolved_nfs_storage_client.enable_nfsv4 else 'n' }}
+vers4.2 = {{ 'y' if resolved_nfs_storage_client.enable_nfsv4 else 'n' }}
+
+[gssd]
+verbosity = 0
+rpc-verbosity = 0
+
+[mount]
+proto = tcp
+{% if resolved_nfs_storage_client.protocol_default == 'nfsv4_tcp' %}
+vers = 4.2
+nconnect = {{ resolved_nfs_storage_client.nconnect }}
+{% else %}
+vers = 3
+{% endif %}

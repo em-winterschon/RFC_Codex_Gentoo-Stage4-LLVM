@@ -1,0 +1,34 @@
+# Managed by gentoo-liveiso-ansible workstation_session_stack
+Section "ServerLayout"
+    Identifier "WorkstationGPUDisplayLayout"
+    Screen 0 "{{ resolved_workstation_session_stack.display_policy.screen_identifier }}"
+EndSection
+
+Section "Device"
+    Identifier "{{ resolved_workstation_session_stack.display_policy.device_identifier }}"
+    Driver "nvidia"
+    BusID "{{ resolved_workstation_session_stack.display_policy.bus_id }}"
+    Option "AllowEmptyInitialConfiguration" "false"
+{% if resolved_workstation_session_stack.display_policy.connector | length > 0 %}
+    Option "ConnectedMonitor" "{{ resolved_workstation_session_stack.display_policy.connector }}"
+    Option "UseDisplayDevice" "{{ resolved_workstation_session_stack.display_policy.connector }}"
+{% else %}
+    Option "UseDisplayDevice" "DFP"
+{% endif %}
+EndSection
+
+Section "Monitor"
+    Identifier "{{ resolved_workstation_session_stack.display_policy.monitor_identifier }}"
+    Option "PreferredMode" "{{ resolved_workstation_session_stack.display_policy.preferred_mode }}"
+EndSection
+
+Section "Screen"
+    Identifier "{{ resolved_workstation_session_stack.display_policy.screen_identifier }}"
+    Device "{{ resolved_workstation_session_stack.display_policy.device_identifier }}"
+    Monitor "{{ resolved_workstation_session_stack.display_policy.monitor_identifier }}"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+        Modes "{{ resolved_workstation_session_stack.display_policy.preferred_mode }}"{% for mode in resolved_workstation_session_stack.display_policy.fallback_modes %} "{{ mode }}"{% endfor +%}
+    EndSubSection
+EndSection

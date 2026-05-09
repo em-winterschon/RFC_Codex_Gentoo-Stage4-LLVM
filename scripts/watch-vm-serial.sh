@@ -8,7 +8,7 @@ PRINT_ONLY=0
 VM_NAME=''
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: watch-vm-serial.sh [--vm NAME] [--host HOST] [--port PORT] [--mode telnet|socat|nc] [--print]
 
 Convenience wrapper for watching a QEMU TCP serial console without having to
@@ -54,8 +54,7 @@ print_cmd() {
 
 resolve_vm_defaults() {
   case "${VM_NAME}" in
-  '')
-    ;;
+  '') ;;
   routeros)
     HOST='127.0.0.1'
     PORT='5001'
@@ -83,7 +82,7 @@ resolve_vm_defaults() {
 }
 
 require_command() {
-  command -v "$1" >/dev/null 2>&1 || fail "Required command is missing: $1"
+  command -v "$1" > /dev/null 2>&1 || fail "Required command is missing: $1"
 }
 
 build_command() {

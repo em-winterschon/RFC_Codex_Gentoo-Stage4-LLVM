@@ -63,7 +63,7 @@ fi
 exec python3 "${NOTIFY_BIN}" \
   --allow-missing-config \
   --app-name "codex" \
-  --url "${url:-https://ntfy.sh}" \
+  --url "${url}" \
   --topic "${topic}" \
   --state "${state}" \
   --title "${title}" \

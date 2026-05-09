@@ -1,0 +1,41 @@
+---
+ntfy_server_install_method: binary
+ntfy_server_package_name: ntfy
+ntfy_server_version: "2.21.0"
+ntfy_server_release_base_url: https://github.com/binwiederhier/ntfy/releases/download
+ntfy_server_arch_map:
+  x86_64: amd64
+  aarch64: arm64
+  armv7l: armv7
+
+ntfy_server_user: ntfy
+ntfy_server_group: ntfy
+ntfy_server_service_name: ntfy
+ntfy_server_binary_path: /usr/local/bin/ntfy
+ntfy_server_release_root: /usr/local/lib
+ntfy_server_config_dir: /etc/ntfy
+ntfy_server_config_file: /etc/ntfy/server.yml
+ntfy_server_cache_dir: /var/cache/ntfy
+ntfy_server_cache_file: /var/cache/ntfy/cache.db
+ntfy_server_attachment_cache_dir: /var/cache/ntfy/attachments
+ntfy_server_state_dir: /var/lib/ntfy
+ntfy_server_auth_file: /var/lib/ntfy/auth.db
+ntfy_server_log_dir: /var/log/ntfy
+ntfy_server_stdout_log: /var/log/ntfy/stdout.log
+ntfy_server_stderr_log: /var/log/ntfy/stderr.log
+ntfy_server_openrc_runlevel: default
+ntfy_server_manage_service: true
+ntfy_server_enabled: true
+ntfy_server_debug_checkpoints: false
+
+ntfy_server_listen_http: ":2586"
+ntfy_server_base_url: ""
+ntfy_server_behind_proxy: false
+ntfy_server_upstream_base_url: ""
+ntfy_server_web_root: ""
+
+ntfy_server_auth_default_access: deny-all
+ntfy_server_auth_users: []
+ntfy_server_auth_access: []
+
+ntfy_server_extra_config: {}

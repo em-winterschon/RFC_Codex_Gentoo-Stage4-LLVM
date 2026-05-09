@@ -8,6 +8,7 @@ time without needing external plotting dependencies.
 
 from __future__ import annotations
 
+# ruff: noqa: E501
 import argparse
 import csv
 import datetime as dt
@@ -16,9 +17,8 @@ import json
 import math
 import pathlib
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
-
 
 EMERGE_START_RE = re.compile(
     r"^(?P<ts>\d+):\s+>>> emerge \((?P<index>\d+) of (?P<total>\d+)\) "
@@ -71,7 +71,7 @@ class BuilderSample:
 
 
 def iso8601(ts: int) -> str:
-    return dt.datetime.fromtimestamp(ts, dt.timezone.utc).isoformat()
+    return dt.datetime.fromtimestamp(ts, dt.UTC).isoformat()
 
 
 def parse_emerge_log(path: pathlib.Path) -> list[EmergeEvent]:
@@ -163,9 +163,7 @@ def parse_builder_log(path: pathlib.Path, fallback_ts: int | None) -> list[Build
 def write_emerge_csv(path: pathlib.Path, events: Iterable[EmergeEvent]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow(
-            ["ts", "iso8601_utc", "event", "index", "total", "atom", "target", "phase"]
-        )
+        writer.writerow(["ts", "iso8601_utc", "event", "index", "total", "atom", "target", "phase"])
         for event in events:
             writer.writerow(
                 [
@@ -232,26 +230,30 @@ def summarize(
         "started_iso8601_utc": iso8601(started) if started is not None else None,
         "last_event_ts": finished,
         "last_event_iso8601_utc": iso8601(finished) if finished is not None else None,
-        "duration_seconds": (finished - started) if started is not None and finished is not None else None,
+        "duration_seconds": (
+            (finished - started) if started is not None and finished is not None else None
+        ),
         "total_packages": total,
         "completed_packages": completed,
         "completed_percent_by_count": round((completed / total) * 100, 2) if total else 0.0,
         "builder_samples": len(builder_samples),
-        "latest_builder": {
-            "ts": latest_builder.ts,
-            "iso8601_utc": iso8601(latest_builder.ts),
-            "completed": latest_builder.completed,
-            "total": latest_builder.total,
-            "running": latest_builder.running,
-            "merge_wait": latest_builder.merge_wait,
-            "load1": latest_builder.load1,
-            "load5": latest_builder.load5,
-            "load15": latest_builder.load15,
-            "current_index": latest_builder.current_index,
-            "current_atom": latest_builder.current_atom,
-        }
-        if latest_builder
-        else None,
+        "latest_builder": (
+            {
+                "ts": latest_builder.ts,
+                "iso8601_utc": iso8601(latest_builder.ts),
+                "completed": latest_builder.completed,
+                "total": latest_builder.total,
+                "running": latest_builder.running,
+                "merge_wait": latest_builder.merge_wait,
+                "load1": latest_builder.load1,
+                "load5": latest_builder.load5,
+                "load15": latest_builder.load15,
+                "current_index": latest_builder.current_index,
+                "current_atom": latest_builder.current_atom,
+            }
+            if latest_builder
+            else None
+        ),
     }
     return summary
 

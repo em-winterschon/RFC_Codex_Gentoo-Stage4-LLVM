@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: watch-sync-binpkgs-to-repo.sh --pkgdir PATH --repo-id ID --remote HOST [options]
 
 Continuously publish a local or SSH-remote Portage PKGDIR to a Stage4/Stage5
@@ -52,61 +52,61 @@ DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --pkgdir)
-      PKGDIR=${2-}
-      shift 2
-      ;;
-    --repo-id)
-      REPO_ID=${2-}
-      shift 2
-      ;;
-    --remote)
-      REMOTE=${2-}
-      shift 2
-      ;;
-    --remote-root)
-      REMOTE_ROOT=${2-}
-      shift 2
-      ;;
-    --staging-dir)
-      STAGING_DIR=${2-}
-      shift 2
-      ;;
-    --index-command)
-      INDEX_COMMAND=${2-}
-      shift 2
-      ;;
-    --interval)
-      INTERVAL=${2-}
-      shift 2
-      ;;
-    --watch-remote)
-      WATCH_REMOTE=${2-}
-      shift 2
-      ;;
-    --watch-pid)
-      WATCH_PID=${2-}
-      shift 2
-      ;;
-    --watch-pattern)
-      WATCH_PATTERN=${2-}
-      shift 2
-      ;;
-    --once)
-      ONCE=true
-      shift
-      ;;
-    --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
-    --help|-h)
-      usage
-      exit 0
-      ;;
-    *)
-      die "unknown argument: $1"
-      ;;
+  --pkgdir)
+    PKGDIR=${2-}
+    shift 2
+    ;;
+  --repo-id)
+    REPO_ID=${2-}
+    shift 2
+    ;;
+  --remote)
+    REMOTE=${2-}
+    shift 2
+    ;;
+  --remote-root)
+    REMOTE_ROOT=${2-}
+    shift 2
+    ;;
+  --staging-dir)
+    STAGING_DIR=${2-}
+    shift 2
+    ;;
+  --index-command)
+    INDEX_COMMAND=${2-}
+    shift 2
+    ;;
+  --interval)
+    INTERVAL=${2-}
+    shift 2
+    ;;
+  --watch-remote)
+    WATCH_REMOTE=${2-}
+    shift 2
+    ;;
+  --watch-pid)
+    WATCH_PID=${2-}
+    shift 2
+    ;;
+  --watch-pattern)
+    WATCH_PATTERN=${2-}
+    shift 2
+    ;;
+  --once)
+    ONCE=true
+    shift
+    ;;
+  --dry-run)
+    DRY_RUN=true
+    shift
+    ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    die "unknown argument: $1"
+    ;;
   esac
 done
 
@@ -183,7 +183,7 @@ build_is_running() {
       ssh -n -o BatchMode=yes -o ConnectTimeout=10 "${WATCH_REMOTE}" \
         "kill -0 ${WATCH_PID} >/dev/null 2>&1"
     else
-      kill -0 "${WATCH_PID}" >/dev/null 2>&1
+      kill -0 "${WATCH_PID}" > /dev/null 2>&1
     fi
     return $?
   fi

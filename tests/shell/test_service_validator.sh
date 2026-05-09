@@ -22,7 +22,7 @@ python3 -m py_compile "${VALIDATOR}"
 temp_dir="$(mktemp -d)"
 trap 'rm -rf "${temp_dir}"' EXIT
 
-cat > "${temp_dir}/nmap-open" <<'EOF'
+cat > "${temp_dir}/nmap-open" << 'EOF'
 #!/usr/bin/env bash
 cat <<'XML'
 <?xml version="1.0"?>
@@ -40,7 +40,7 @@ cat <<'XML'
 XML
 EOF
 
-cat > "${temp_dir}/nmap-closed" <<'EOF'
+cat > "${temp_dir}/nmap-closed" << 'EOF'
 #!/usr/bin/env bash
 cat <<'XML'
 <?xml version="1.0"?>
@@ -57,7 +57,7 @@ cat <<'XML'
 XML
 EOF
 
-cat > "${temp_dir}/nmap-open-filtered" <<'EOF'
+cat > "${temp_dir}/nmap-open-filtered" << 'EOF'
 #!/usr/bin/env bash
 cat <<'XML'
 <?xml version="1.0"?>
@@ -83,11 +83,11 @@ assert_contains "${open_output}" '"port": 9200'
 assert_contains "${open_output}" '"protocol": "tcp"'
 assert_contains "${open_output}" '"status": "open"'
 
-if "${VALIDATOR}" --nmap-bin "${temp_dir}/nmap-closed" --target 10.9.8.92 --port 9200 --protocol tcp >/dev/null 2>&1; then
+if "${VALIDATOR}" --nmap-bin "${temp_dir}/nmap-closed" --target 10.9.8.92 --port 9200 --protocol tcp > /dev/null 2>&1; then
   fail 'closed TCP port unexpectedly passed validation'
 fi
 
-if "${VALIDATOR}" --nmap-bin "${temp_dir}/nmap-open-filtered" --target 10.9.8.92 --port 514 --protocol udp >/dev/null 2>&1; then
+if "${VALIDATOR}" --nmap-bin "${temp_dir}/nmap-open-filtered" --target 10.9.8.92 --port 514 --protocol udp > /dev/null 2>&1; then
   fail 'open|filtered UDP port unexpectedly passed without --allow-open-filtered'
 fi
 

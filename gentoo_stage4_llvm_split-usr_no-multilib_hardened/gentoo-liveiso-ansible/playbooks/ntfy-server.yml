@@ -1,0 +1,8 @@
+---
+- name: Deploy a private ntfy server
+  hosts: ntfy_servers
+  gather_facts: true
+  become: true
+
+  roles:
+    - role: ntfy_server

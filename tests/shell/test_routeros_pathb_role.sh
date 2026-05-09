@@ -20,14 +20,18 @@ test_routeros_role_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/playbooks/routeros-path-b.yml" "hosts: routeros_pathb"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/defaults/main.yml" "routeros_pathb_boot_mode: uefi-http-ipxe"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/defaults/main.yml" "routeros_pathb_routeros_arch: x86"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/defaults/main.yml" "routeros_pathb_netboot_protocol_flow_enum:"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/defaults/main.yml" "ZeroTier is documented by MikroTik only for ARM and ARM64 RouterOS targets"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/tasks/main.yml" "Assert Path B RouterOS role is UEFI-only"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/tasks/main.yml" "Classify RouterOS Path B required packages by architecture support"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/tasks/main.yml" "Build RouterOS Path B managed target host list"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/tasks/main.yml" "netboot_protocol_flow"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/templates/routeros-pathb.rsc.j2" "legacy BIOS is unsupported"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/templates/routeros-pathb.rsc.j2" "Required package missing:"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/templates/routeros-pathb-manifest.json.j2" "\"requiredPackages\":"
   assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/templates/routeros-pathb-manifest.json.j2" "\"unsupportedRequiredPackages\":"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/templates/routeros-pathb-manifest.json.j2" "protocol_flow"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_pathb/templates/routeros-pathb.rsc.j2" "flow={{ routeros_target_host.protocol_flow }}"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/group_vars/routeros_pathb.yml" "routeros_pathb_required_packages:"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" "routeros_pathb_primary:"
   assert_file_contains "${REPO_ROOT}/docs/workflows/stage4-routeros-pathb-deployment.json" "\"name\": \"stage4-routeros-pathb-deployment\""
@@ -39,7 +43,7 @@ test_routeros_playbook_syntax() {
   (
     cd "${ANSIBLE_ROOT}"
     ANSIBLE_STDOUT_CALLBACK=default ANSIBLE_CALLBACKS_ENABLED=control_flow \
-      ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-path-b.yml --syntax-check >/dev/null
+      ansible-playbook -i inventories/examples/hosts.yml playbooks/routeros-path-b.yml --syntax-check > /dev/null
   )
 }
 

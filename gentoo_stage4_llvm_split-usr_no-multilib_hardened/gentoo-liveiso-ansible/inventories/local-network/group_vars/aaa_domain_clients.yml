@@ -1,0 +1,17 @@
+---
+profile_aaa_policy_files:
+  - "{{ playbook_dir }}/../aaa-policy-definitions/site-baseline.yml"
+
+profile_ipa_client:
+  realm: RFC1918.HOST
+  domain: rfc1918.host
+  servers:
+    - ipa01.rfc1918.host
+  mkhomedir: true
+  cache_credentials: true
+  configure_krb5: true
+  configure_sssd: true
+  ssh_trust_ipa_keys: true
+  access_provider: ipa
+  hbac_provider: ipa
+  sudo_provider: ipa

@@ -1,0 +1,4 @@
+dev-perl/Text-CSV
+dev-perl/Text-CSV_XS
+dev-python/pyparsing
+net-misc/spice-gtk

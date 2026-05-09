@@ -71,6 +71,7 @@
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
     resolved_kernel_config_fragment_files: "{{ kernel_config_fragment_files | default({}) }}"
+    resolved_portage_patch_files: "{{ portage_patch_files | default({}) }}"
     resolved_profile_parents: "{{ profile_parents | default([]) }}"
     resolved_profile_package_atoms: "{{ profile_package_atoms | default([]) }}"
     resolved_profile_package_list_files: "{{ profile_package_list_files | default([]) }}"
@@ -88,10 +89,13 @@
     resolved_profile_kibana: "{{ profile_kibana | default({}) }}"
     resolved_profile_netbox_connector: "{{ profile_netbox_connector | default({}) }}"
     resolved_profile_netbox_essentials: "{{ profile_netbox_essentials | default({}) }}"
+    resolved_profile_vm_redfish_emulator: "{{ profile_vm_redfish_emulator | default({}) }}"
     resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
     resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
     resolved_profile_nexus_repo: "{{ profile_nexus_repo | default({}) }}"
+    resolved_profile_nscde_workstation: "{{ profile_nscde_workstation | default({}) }}"
+    resolved_profile_workstation_session_stack: "{{ profile_workstation_session_stack | default({}) }}"
     resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
     resolved_profile_service_readiness: "{{ profile_service_readiness | default({}) }}"
     resolved_profile_container_base_image: "{{ profile_container_base_image | default({}) }}"
@@ -178,6 +182,11 @@
         resolved_profile_netbox_essentials
         | combine(profile_netbox_essentials | default({}), recursive=True)
       }}
+    resolved_profile_vm_redfish_emulator: >-
+      {{
+        resolved_profile_vm_redfish_emulator
+        | combine(profile_vm_redfish_emulator | default({}), recursive=True)
+      }}
     resolved_profile_zerotier: >-
       {{
         resolved_profile_zerotier
@@ -197,6 +206,16 @@
       {{
         resolved_profile_nexus_repo
         | combine(profile_nexus_repo | default({}), recursive=True)
+      }}
+    resolved_profile_nscde_workstation: >-
+      {{
+        resolved_profile_nscde_workstation
+        | combine(profile_nscde_workstation | default({}), recursive=True)
+      }}
+    resolved_profile_workstation_session_stack: >-
+      {{
+        resolved_profile_workstation_session_stack
+        | combine(profile_workstation_session_stack | default({}), recursive=True)
       }}
     resolved_profile_haproxy_service_types: >-
       {{

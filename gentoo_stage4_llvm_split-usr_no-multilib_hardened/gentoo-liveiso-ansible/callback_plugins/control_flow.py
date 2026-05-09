@@ -75,9 +75,7 @@ class CallbackModule(CallbackBase):
         if self._stream is not None:
             return self._stream
 
-        explicit_path = os.getenv(
-            "ANSIBLE_CONTROL_FLOW_PATH", self.get_option("control_flow_path")
-        )
+        explicit_path = os.getenv("ANSIBLE_CONTROL_FLOW_PATH", self.get_option("control_flow_path"))
         if explicit_path:
             output_path = Path(explicit_path)
         else:
@@ -132,11 +130,7 @@ class CallbackModule(CallbackBase):
             "log_path": str(self._stream_path) if self._stream_path else None,
         }
         payload.update(
-            {
-                key: self._stringify(value)
-                for key, value in fields.items()
-                if value is not None
-            }
+            {key: self._stringify(value) for key, value in fields.items() if value is not None}
         )
         stream.write(json.dumps(payload, sort_keys=True) + "\n")
         stream.flush()

@@ -1,0 +1,97 @@
+---
+- name: Resolve NsCDE workstation settings
+  ansible.builtin.set_fact:
+    nscde_workstation_enabled: "{{ resolved_profile_nscde_workstation.enabled | default(nscde_workstation_default_enabled) | bool }}"
+    resolved_nscde_workstation:
+      version: "{{ resolved_profile_nscde_workstation.version | default(nscde_workstation_default_version) }}"
+      source_url: "{{ resolved_profile_nscde_workstation.source_url | default(nscde_workstation_default_source_url) }}"
+      source_sha256: "{{ resolved_profile_nscde_workstation.source_sha256 | default(nscde_workstation_default_source_sha256) }}"
+      source_dir_name: "{{ resolved_profile_nscde_workstation.source_dir_name | default(nscde_workstation_default_source_dir_name) }}"
+      work_root: "{{ resolved_profile_nscde_workstation.work_root | default(nscde_workstation_default_work_root) }}"
+      install_prefix: "{{ resolved_profile_nscde_workstation.install_prefix | default(nscde_workstation_default_install_prefix) }}"
+      build_jobs: "{{ resolved_profile_nscde_workstation.build_jobs | default(nscde_workstation_default_build_jobs) }}"
+      create_skel_xinitrc: "{{ resolved_profile_nscde_workstation.create_skel_xinitrc | default(nscde_workstation_default_create_skel_xinitrc) | bool }}"
+      create_root_xinitrc: "{{ resolved_profile_nscde_workstation.create_root_xinitrc | default(nscde_workstation_default_create_root_xinitrc) | bool }}"
+      xsession_desktop_path: "{{ resolved_profile_nscde_workstation.xsession_desktop_path | default(nscde_workstation_default_xsession_desktop_path) }}"
+      session_command: "{{ resolved_profile_nscde_workstation.session_command | default(nscde_workstation_default_session_command) }}"
+
+- name: Ensure NsCDE workstation directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nscde_workstation_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_nscde_workstation.work_root }}"
+    - /etc/profile.d
+    - /etc/skel
+    - /root
+    - "{{ resolved_nscde_workstation.xsession_desktop_path | dirname }}"
+  loop_control:
+    loop_var: nscde_workstation_dir
+  when: nscde_workstation_enabled
+
+- name: Download pinned NsCDE source archive
+  ansible.builtin.get_url:
+    url: "{{ resolved_nscde_workstation.source_url }}"
+    dest: "{{ install_target_root }}{{ resolved_nscde_workstation.work_root }}/nscde-{{ resolved_nscde_workstation.version }}.tar.gz"
+    mode: '0644'
+    checksum: "sha256:{{ resolved_nscde_workstation.source_sha256 }}"
+  when: nscde_workstation_enabled
+
+- name: Extract pinned NsCDE source archive
+  ansible.builtin.unarchive:
+    src: "{{ install_target_root }}{{ resolved_nscde_workstation.work_root }}/nscde-{{ resolved_nscde_workstation.version }}.tar.gz"
+    dest: "{{ install_target_root }}{{ resolved_nscde_workstation.work_root }}"
+    remote_src: true
+    creates: "{{ install_target_root }}{{ resolved_nscde_workstation.work_root }}/{{ resolved_nscde_workstation.source_dir_name }}/configure"
+  when: nscde_workstation_enabled
+
+- name: Build and install NsCDE in target chroot
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ (
+      'cd ' ~ resolved_nscde_workstation.work_root ~ '/' ~ resolved_nscde_workstation.source_dir_name ~
+      ' && ./configure --prefix=' ~ resolved_nscde_workstation.install_prefix ~
+      ' && make -j' ~ resolved_nscde_workstation.build_jobs ~
+      ' && make install'
+    ) | quote }}
+  args:
+    creates: "{{ install_target_root }}{{ resolved_nscde_workstation.install_prefix }}/bin/nscde"
+  when: nscde_workstation_enabled
+
+- name: Install NsCDE profile environment fragment
+  ansible.builtin.template:
+    src: nscde.sh.j2
+    dest: "{{ install_target_root }}/etc/profile.d/nscde.sh"
+    mode: '0644'
+  when: nscde_workstation_enabled
+
+- name: Install NsCDE skel xinitrc
+  ansible.builtin.template:
+    src: xinitrc.j2
+    dest: "{{ install_target_root }}/etc/skel/.xinitrc"
+    mode: '0755'
+  when:
+    - nscde_workstation_enabled
+    - resolved_nscde_workstation.create_skel_xinitrc | bool
+
+- name: Install NsCDE root xinitrc
+  ansible.builtin.template:
+    src: xinitrc.j2
+    dest: "{{ install_target_root }}/root/.xinitrc"
+    mode: '0755'
+  when:
+    - nscde_workstation_enabled
+    - resolved_nscde_workstation.create_root_xinitrc | bool
+
+- name: Install NsCDE display-manager session entry when available
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ (
+      'if [ -f ' ~ resolved_nscde_workstation.install_prefix ~ '/share/examples/xsession-integration/nscde.desktop ]; then ' ~
+      'install -Dm0644 ' ~ resolved_nscde_workstation.install_prefix ~ '/share/examples/xsession-integration/nscde.desktop ' ~
+      resolved_nscde_workstation.xsession_desktop_path ~
+      '; fi'
+    ) | quote }}
+  changed_when: true
+  when: nscde_workstation_enabled

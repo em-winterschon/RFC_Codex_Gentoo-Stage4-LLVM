@@ -7,7 +7,7 @@ ANSIBLE_ROOT="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gen
 VAULT_ENV_HELPER="${SCRIPT_DIR}/with-ansible-vault-env.sh"
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: validate-ansible-vaults.sh [path...]
 
 Validates that Ansible vault files are encrypted and decryptable with the
@@ -56,6 +56,6 @@ for vault_file in "${vault_files[@]}"; do
     exit 1
   fi
 
-  "${VAULT_ENV_HELPER}" ansible-vault view "${vault_file}" >/dev/null
+  "${VAULT_ENV_HELPER}" ansible-vault view "${vault_file}" > /dev/null
   printf 'PASS: decryptable vault %s\n' "${vault_file}"
 done

@@ -1,0 +1,20 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-workstation-nscde-gpu-pikvm
+  workstation_session_stack:
+    display_policy:
+      enabled: true
+      renderer: nvidia
+      bus_id: PCI:1:0:0
+      preferred_mode: 1280x720
+      fallback_modes:
+        - 1024x768
+        - 1920x1080
+      monitor_identifier: PiKVM
+      device_identifier: QuadroK1200
+      screen_identifier: PiKVMK1200Screen
+      xorg_conf_path: /etc/X11/xorg.conf.d/90-workstation-gpu-display.conf
+      validation_script_path: /usr/local/sbin/workstation-gpu-display-test
+      validation_display: ":7"
+      validation_background: navy
+      validation_title: PiKVM K1200 deterministic test pattern

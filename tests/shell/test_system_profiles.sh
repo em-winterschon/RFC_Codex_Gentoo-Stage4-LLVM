@@ -6,6 +6,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 PROFILE_DIR="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions"
 PACKAGE_LIST_DIR="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-package-lists"
 HOST_VARS_DIR="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/host_vars"
+PORTAGE_ROLE="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/portage/tasks/main.yml"
+PREFLIGHT_ROLE="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/preflight/tasks/load_profile_definition.yml"
 
 assert_file_contains() {
   local file=$1
@@ -28,6 +30,7 @@ for profile in \
   logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
+  nfs-storage-client.yml \
   netbox-managed-inventory.yml \
   netbox-pathb-lab-ipam-plan.yml \
   telemetry-elasticsearch-exporter.yml \
@@ -42,10 +45,11 @@ for profile in \
   vm-guest-simple-ipxe.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-redfish-emulator.yml \
+  vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml \
-  zerotier-managed-access.yml
-do
+  zerotier-managed-access.yml; do
   test -f "${PROFILE_DIR}/${profile}"
   assert_file_contains "${PROFILE_DIR}/${profile}" '^gentoo_profile_definition:'
 done
@@ -59,6 +63,7 @@ for metadata in \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
+  nfs-storage-client.metadata.yml \
   vm-container-services.metadata.yml \
   vm-elasticsearch-node.metadata.yml \
   vm-identity-controller.metadata.yml \
@@ -68,9 +73,10 @@ for metadata in \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
+  vm-redfish-emulator.metadata.yml \
+  vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
-  vm-nexus-repository.metadata.yml
-do
+  vm-nexus-repository.metadata.yml; do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
 done
@@ -94,9 +100,9 @@ for host_var in \
   vm-guest-simple.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
-  vm-nexus-repository.yml
-do
+  vm-nexus-repository.yml; do
   test -f "${HOST_VARS_DIR}/${host_var}"
   assert_file_contains "${HOST_VARS_DIR}/${host_var}" '^profile_definition_files:'
 done
@@ -108,6 +114,7 @@ for package_list in \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \
+  stage5-storage-nfs-client.packages \
   stage5-observability-client.packages \
   stage5-observability-metrics-client.packages \
   stage5-observability-metrics-elasticsearch-exporter.packages \
@@ -122,10 +129,24 @@ for package_list in \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
-  stage5-virtual-host-container-services.packages
-do
+  stage5-virtual-host-redfish-emulator.packages \
+  stage5-virtual-host-workstation-nscde.packages \
+  stage5-virtual-host-container-services.packages; do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"
 done
+
+test -d "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/nscde_workstation"
+test -f "${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-workstation-nscde-vm.sh"
+assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.packages" '^=x11-drivers/nvidia-drivers-580\.159\.03-r1$'
+assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.packages" '^=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1$'
+assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-workstation-nscde.packages" '^sys-block/ndctl$'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'VIDEO_CARDS=.*nvidia'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'CONFIG_DEV_DAX_PMEM'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" 'nd_pmem'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=x11-drivers/nvidia-drivers-580\.159\.03-r1 ~amd64'
+assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1 NVIDIA-CUDA'
+assert_file_contains "${PREFLIGHT_ROLE}" 'resolved_portage_patch_files'
+assert_file_contains "${PORTAGE_ROLE}" '/etc/portage/patches'
 
 test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 

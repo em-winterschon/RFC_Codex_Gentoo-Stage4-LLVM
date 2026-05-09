@@ -56,7 +56,7 @@ def main() -> int:
         "assistant=" + str(last_message),
     ]
     notify_args = argparse.Namespace(
-        url=os.getenv("CODEX_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh")),
+        url=os.getenv("CODEX_NTFY_URL", os.getenv("NTFY_URL", "")),
         topic=topic_for_state(state),
         title=title,
         message="\n".join(body_lines),
@@ -77,9 +77,14 @@ def main() -> int:
         output="json",
     )
     payload_data = ntfy_notify.build_payload(notify_args)
-    if not payload_data["topic"]:
+    if not payload_data["topic"] or not payload_data["url"]:
         if args.dry_run:
-            print(json.dumps({"skipped": True, "reason": "missing topic configuration"}, indent=2))
+            missing = "topic" if not payload_data["topic"] else "URL"
+            print(
+                json.dumps(
+                    {"skipped": True, "reason": f"missing {missing} configuration"}, indent=2
+                )
+            )
         return 0
     if args.dry_run:
         print(json.dumps(payload_data, indent=2, sort_keys=True))

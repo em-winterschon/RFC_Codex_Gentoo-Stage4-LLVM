@@ -1,0 +1,52 @@
+---
+workstation_session_stack_default_enabled: false
+workstation_session_stack_default_os_family: gentoo
+workstation_session_stack_default_session_command: /usr/bin/startx
+workstation_session_stack_default_create_skel_xinitrc: true
+workstation_session_stack_default_create_root_xinitrc: true
+workstation_session_stack_default_session_dir: /usr/share/xsessions
+workstation_session_stack_default_slim_conf_path: /etc/slim.conf
+workstation_session_stack_default_xserver_arguments: -nolisten tcp
+workstation_session_stack_default_display_managers: []
+workstation_session_stack_default_desktop_environments: []
+workstation_session_stack_default_window_managers: []
+workstation_session_stack_default_display_policy:
+  enabled: false
+  renderer: nvidia
+  bus_id: ""
+  connector: ""
+  preferred_mode: 1280x720
+  fallback_modes:
+    - 1024x768
+    - 1920x1080
+  monitor_identifier: PiKVM
+  device_identifier: WorkstationGPU
+  screen_identifier: WorkstationGPUScreen
+  xorg_conf_path: /etc/X11/xorg.conf.d/90-workstation-gpu-display.conf
+  validation_script_path: /usr/local/sbin/workstation-gpu-display-test
+  validation_display: ":7"
+  validation_background: navy
+  validation_title: PiKVM K1200 deterministic test pattern
+workstation_session_stack_package_install_enabled: false
+workstation_session_stack_supported_os_families:
+  - gentoo
+  - freebsd
+  - debian
+  - solaris
+workstation_session_stack_os_family_aliases:
+  gentoo: gentoo
+  freebsd: freebsd
+  freebsd14: freebsd
+  freebsd-14: freebsd
+  debian: debian
+  devuan: debian
+  ubuntu: debian
+  solaris: solaris
+  solaris11: solaris
+  solaris-11: solaris
+  solaris11-4: solaris
+  solaris-11-4: solaris
+  tribblix: solaris
+  tribblix-ce: solaris
+  omnios: solaris
+  openindiana: solaris

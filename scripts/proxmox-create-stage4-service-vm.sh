@@ -27,6 +27,10 @@ VM_EFI_TYPE="${VM_EFI_TYPE:-4m}"
 VM_EFI_PRE_ENROLLED_KEYS="${VM_EFI_PRE_ENROLLED_KEYS:-0}"
 VM_ENABLE_EFIDISK="${VM_ENABLE_EFIDISK:-auto}"
 VM_DISK_SIZE="${VM_DISK_SIZE:-}"
+VM_SERIAL0="${VM_SERIAL0:-socket}"
+VM_VGA="${VM_VGA:-serial0}"
+VM_EXTRA_NETS="${VM_EXTRA_NETS:-}"
+VM_HOSTPCI_DEVICES="${VM_HOSTPCI_DEVICES:-}"
 VM_CIUSER="${VM_CIUSER:-root}"
 VM_ENABLE_CLOUDINIT="${VM_ENABLE_CLOUDINIT:-1}"
 SSH_PUBKEY_FILE="${SSH_PUBKEY_FILE:-${HOME}/.ssh/id_ed25519.pub}"
@@ -36,7 +40,7 @@ PROXMOX_START_AFTER_CREATE="${PROXMOX_START_AFTER_CREATE:-0}"
 DRY_RUN=1
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: proxmox-create-stage4-service-vm.sh [--dry-run|--apply]
 
 Creates a Proxmox VM from an existing Stage4/Stage5 QCOW image. Default mode is
@@ -62,6 +66,12 @@ Optional firmware:
   VM_EFI_SIZE
   VM_EFI_TYPE
   VM_EFI_PRE_ENROLLED_KEYS
+
+Optional workstation/direct-path devices:
+  VM_SERIAL0=socket
+  VM_VGA=serial0|none|std|qxl|virtio
+  VM_EXTRA_NETS='net1=virtio=MAC,bridge=BRIDGE[,tag=VLAN]'
+  VM_HOSTPCI_DEVICES='hostpci0=0000:01:00.0,pcie=1,x-vga=1'
 
 Safety:
   Existing VMID aborts unless PROXMOX_REPLACE=1.
@@ -93,22 +103,39 @@ required_var() {
   [[ -n "${value}" ]] || fail "${name} is required"
 }
 
+validate_extra_qm_lines() {
+  local var_name="$1"
+  local allowed_regex="$2"
+  local lines="${!var_name:-}"
+  local line option value
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    [[ -n "${line}" ]] || continue
+    [[ "${line}" =~ ^[[:space:]]*# ]] && continue
+    [[ "${line}" == *'='* ]] || fail "${var_name} line must use option=value syntax: ${line}"
+    option="${line%%=*}"
+    value="${line#*=}"
+    [[ "${option}" =~ ${allowed_regex} ]] || fail "invalid ${var_name} option: ${option}"
+    [[ -n "${value}" ]] || fail "${var_name} option has empty value: ${option}"
+  done <<< "${lines}"
+}
+
 parse_args() {
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
-      --dry-run)
-        DRY_RUN=1
-        ;;
-      --apply)
-        DRY_RUN=0
-        ;;
-      --help|-h)
-        usage
-        exit 0
-        ;;
-      *)
-        fail "unknown argument: $1"
-        ;;
+    --dry-run)
+      DRY_RUN=1
+      ;;
+    --apply)
+      DRY_RUN=0
+      ;;
+    --help | -h)
+      usage
+      exit 0
+      ;;
+    *)
+      fail "unknown argument: $1"
+      ;;
     esac
     shift
   done
@@ -130,6 +157,8 @@ validate_inputs() {
   [[ "${VMID}" =~ ^[0-9]+$ ]] || fail "VMID must be numeric: ${VMID}"
   [[ "${VM_MEMORY_MIB}" =~ ^[0-9]+$ ]] || fail "VM_MEMORY_MIB must be numeric: ${VM_MEMORY_MIB}"
   [[ "${VM_CORES}" =~ ^[0-9]+$ ]] || fail "VM_CORES must be numeric: ${VM_CORES}"
+  validate_extra_qm_lines VM_EXTRA_NETS '^net[1-9][0-9]*$'
+  validate_extra_qm_lines VM_HOSTPCI_DEVICES '^hostpci[0-9]+$'
 
   if [[ "${DRY_RUN}" == '0' && "${PROXMOX_APPLY}" != '1' ]]; then
     fail "PROXMOX_APPLY=1 is required for live --apply mode"
@@ -147,8 +176,22 @@ remote_line() {
   printf '%s\n' "${rendered[*]}"
 }
 
+emit_extra_qm_set_commands() {
+  local lines="$1"
+  local line option value extra_cmd
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    [[ -n "${line}" ]] || continue
+    [[ "${line}" =~ ^[[:space:]]*# ]] && continue
+    option="${line%%=*}"
+    value="${line#*=}"
+    extra_cmd=(qm set "${VMID}" "--${option}" "${value}")
+    remote_line extra_cmd
+  done <<< "${lines}"
+}
+
 build_remote_script() {
-  local create_cmd import_cmd set_scsihw_cmd set_scsi_cmd set_net_cmd set_agent_cmd
+  local create_cmd import_cmd set_scsihw_cmd set_net_cmd set_agent_cmd
   local set_serial_cmd set_vga_cmd set_boot_cmd set_desc_cmd set_ip_cmd set_dns_cmd
   local set_search_cmd set_ciuser_cmd set_ide2_cmd set_citype_cmd set_efidisk_cmd resize_cmd start_cmd
   local destroy_cmd stop_cmd
@@ -160,11 +203,10 @@ build_remote_script() {
   fi
   import_cmd=(qm importdisk "${VMID}" "${SOURCE_QCOW}" "${VM_STORAGE}" --format qcow2)
   set_scsihw_cmd=(qm set "${VMID}" --scsihw "${VM_SCSIHW}")
-  set_scsi_cmd=(qm set "${VMID}" --scsi0 "${VM_STORAGE}:vm-${VMID}-disk-0,discard=on,ssd=1")
   set_net_cmd=(qm set "${VMID}" --net0 "virtio=${VM_MAC},bridge=${VM_BRIDGE}")
   set_agent_cmd=(qm set "${VMID}" --agent enabled=1)
-  set_serial_cmd=(qm set "${VMID}" --serial0 socket)
-  set_vga_cmd=(qm set "${VMID}" --vga serial0)
+  set_serial_cmd=(qm set "${VMID}" --serial0 "${VM_SERIAL0}")
+  set_vga_cmd=(qm set "${VMID}" --vga "${VM_VGA}")
   set_boot_cmd=(qm set "${VMID}" --boot order=scsi0)
   set_desc_cmd=(qm set "${VMID}" --description "${VM_DESCRIPTION}")
   set_ip_cmd=(qm set "${VMID}" --ipconfig0 "ip=${VM_IP_CIDR},gw=${VM_GATEWAY}")
@@ -179,11 +221,11 @@ build_remote_script() {
   stop_cmd=(qm stop "${VMID}")
   destroy_cmd=(qm destroy "${VMID}" --purge 1)
 
-  if [[ "${VM_ENABLE_EFIDISK}" == '1' || ( "${VM_ENABLE_EFIDISK}" == 'auto' && "${VM_BIOS}" == 'ovmf' ) ]]; then
+  if [[ "${VM_ENABLE_EFIDISK}" == '1' || ("${VM_ENABLE_EFIDISK}" == 'auto' && "${VM_BIOS}" == 'ovmf') ]]; then
     should_create_efidisk=1
   fi
 
-  cat <<EOF
+  cat << EOF
 set -euo pipefail
 
 vmid=$(shell_quote "${VMID}")
@@ -208,11 +250,19 @@ fi
 $(remote_line create_cmd)
 $(remote_line import_cmd)
 $(remote_line set_scsihw_cmd)
-$(remote_line set_scsi_cmd)
+imported_disk="\$(qm config "\${vmid}" | awk -F': ' '/^unused[0-9]+: / { print \$2; exit }')"
+if [[ -z "\${imported_disk}" ]]; then
+  echo "Unable to resolve imported disk for VM \${vmid} after importdisk." >&2
+  qm config "\${vmid}" >&2
+  exit 2
+fi
+qm set "\${vmid}" --scsi0 "\${imported_disk},discard=on,ssd=1"
 $(remote_line set_net_cmd)
 $(remote_line set_agent_cmd)
 $(remote_line set_serial_cmd)
 $(remote_line set_vga_cmd)
+$(emit_extra_qm_set_commands "${VM_EXTRA_NETS}")
+$(emit_extra_qm_set_commands "${VM_HOSTPCI_DEVICES}")
 $(remote_line set_boot_cmd)
 $(remote_line set_desc_cmd)
 EOF
@@ -226,7 +276,7 @@ EOF
   fi
 
   if [[ "${VM_ENABLE_CLOUDINIT}" == '1' ]]; then
-    cat <<EOF
+    cat << EOF
 $(remote_line set_ide2_cmd)
 $(remote_line set_citype_cmd)
 $(remote_line set_ciuser_cmd)

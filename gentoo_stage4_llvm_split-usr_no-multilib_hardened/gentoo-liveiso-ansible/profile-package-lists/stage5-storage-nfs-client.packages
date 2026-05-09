@@ -1,0 +1,7 @@
+net-fs/nfs-utils
+net-nds/rpcbind
+sys-apps/keyutils
+app-crypt/mit-krb5
+sys-auth/sssd
+sys-cluster/rdma-core
+sys-fs/multipath-tools

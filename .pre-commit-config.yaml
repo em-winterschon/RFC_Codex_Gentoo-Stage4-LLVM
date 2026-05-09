@@ -11,12 +11,14 @@ repos:
       - id: trailing-whitespace
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+        exclude: ^gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/.*/templates/.*\.j2$
 
   - repo: https://github.com/koalaman/shellcheck-precommit
     rev: v0.11.0
     hooks:
       - id: shellcheck
         files: \.sh$
+        args: [--severity=error]
 
   - repo: https://github.com/scop/pre-commit-shfmt
     rev: v3.12.0-2
