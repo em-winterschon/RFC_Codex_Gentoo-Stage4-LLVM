@@ -26,6 +26,47 @@ New policy data:
 
 The scaffold is intentionally opt-in. Existing install flows do not become domain-bound unless a host profile includes the identity overlays.
 
+## Identity Source Of Truth
+
+The first repo-safe source-of-truth layer is:
+
+- `identity-source-definitions/local-rfc1918.yml`
+- `scripts/validate_identity_source.py`
+- `scripts/render_identity_sync_plan.py`
+- `playbooks/identity-source-validate.yml`
+
+This layer stores only non-secret identity intent: realm, domain, groups,
+UID/GID assignments, users, service accounts, host enrollment targets, RADIUS
+clients, and rollout gates. Passwords, RADIUS shared secrets, LDAP bind
+passwords, local break-glass credentials, SNMP secrets, and bootstrap tokens
+remain in Ansible Vault or operator-private paths.
+
+The local RFC1918 source currently models:
+
+- `codex-admin` as the first central non-root operator identity
+- `radius-test` as the redacted validation identity
+- `radiusd` as the FreeRADIUS LDAP bind service account
+- `gmktek_nucbox_k10_stage5_candidate` as the first Linux SSSD enrollment
+  target
+- `pdu_rfc99_corectrl_ap7901` as the first RADIUS power-device client
+
+Validate and render the non-mutating sync plan with:
+
+```bash
+python3 scripts/validate_identity_source.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/identity-source-definitions/local-rfc1918.yml \
+  --format json
+
+python3 scripts/render_identity_sync_plan.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/identity-source-definitions/local-rfc1918.yml \
+  --format json
+```
+
+The renderer intentionally outputs secret variable names such as
+`vault_radius_client_pdu_rfc99_corectrl_ap7901_secret`, not secret values. Live
+FreeIPA and FreeRADIUS mutation should remain an explicit operator-run or
+approval-gated CI action until rollback and audit behavior are proven.
+
 ## Live Bootstrap
 
 Because native FreeIPA server packaging is not available in the current Gentoo

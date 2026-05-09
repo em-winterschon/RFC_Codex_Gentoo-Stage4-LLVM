@@ -7,6 +7,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added an AAA identity source-of-truth scaffold for RFC1918: non-secret
+  group/user/service-account/host-enrollment/RADIUS-client definitions,
+  validation, render-only sync-plan output, Ansible validation playbook, docs,
+  and shell regression coverage.
 - Extended NetBox structured inventory intake apply support for device
   interfaces, interface-bound management IP assignment, same-host IP convergence
   across prefix-length drift, and non-secret PDU outlet to host power-port
