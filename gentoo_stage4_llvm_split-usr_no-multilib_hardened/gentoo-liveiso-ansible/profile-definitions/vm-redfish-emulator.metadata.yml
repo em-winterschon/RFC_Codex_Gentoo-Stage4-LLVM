@@ -10,6 +10,19 @@ gentoo_system_profile_metadata:
     role_class: virtual-host
     role_name: redfish-emulator
     stage4_foundation: stage4-lox
+  package_pins:
+    tracked_atoms:
+      - app-emulation/libvirt
+      - app-emulation/qemu
+      - dev-python/pip
+      - dev-python/virtualenv
+      - net-misc/curl
+      - www-servers/nginx
+    upstream_app_version: sushy-tools-libvirt
+    python_packages:
+      - gunicorn
+      - libvirt-python
+      - sushy-tools
   upstreams:
     primary:
       name: sushy-tools

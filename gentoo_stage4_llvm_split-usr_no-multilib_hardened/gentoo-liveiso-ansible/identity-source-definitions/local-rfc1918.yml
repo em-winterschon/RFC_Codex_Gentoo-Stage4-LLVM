@@ -1,0 +1,102 @@
+---
+identity_source_definition:
+  version: 1
+  realm: RFC1918.HOST
+  domain: rfc1918.host
+  description: Local RFC1918 lab identity and AAA source of truth.
+  uid_gid_policy:
+    base_uid: 200000
+    base_gid: 200000
+    same_uid_gid_for_primary_users: true
+    reserved_ranges:
+      - name: human-users
+        start: 200100
+        end: 200199
+      - name: service-users
+        start: 200500
+        end: 200599
+      - name: role-groups
+        start: 201000
+        end: 201199
+  groups:
+    - name: linux-admin
+      gid: 201000
+      description: Linux host administrators with sudo and SSH access.
+    - name: ci-builder
+      gid: 201010
+      description: CI and package-build operators.
+    - name: network-admin
+      gid: 201100
+      description: Full-access network infrastructure operators.
+    - name: network-readonly
+      gid: 201110
+      description: Read-only network infrastructure operators.
+    - name: power-admin
+      gid: 201120
+      description: Power infrastructure administrators.
+    - name: power-readonly
+      gid: 201130
+      description: Read-only power infrastructure operators.
+  users:
+    - name: codex-admin
+      uid: 200100
+      primary_group: linux-admin
+      groups:
+        - ci-builder
+        - network-admin
+        - power-admin
+      shell: /bin/bash
+      ssh_public_key_vars:
+        - vault_identity_codex_admin_ssh_public_keys
+      password_state: vault-managed
+      password_var: vault_identity_codex_admin_initial_password
+      description: Central non-root automation and emergency operator identity.
+    - name: radius-test
+      uid: 200101
+      primary_group: network-readonly
+      groups:
+        - power-readonly
+      shell: /sbin/nologin
+      password_state: vault-managed
+      password_var: vault_identity_radius_test_password
+      description: Redacted RADIUS validation identity for controlled tests.
+  service_accounts:
+    - name: radiusd
+      uid: 200500
+      primary_group: network-readonly
+      shell: /sbin/nologin
+      bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=rfc1918,dc=host
+      bind_password_var: vault_identity_radiusd_ldap_bind_password
+      description: FreeRADIUS LDAP bind account for FreeIPA-backed AAA.
+  host_enrollments:
+    - name: gmktek_nucbox_k10_stage5_candidate
+      fqdn: gmktek-k10-stage5.rfc1918.host
+      netbox_device: gmktek_nucbox_k10_stage5_candidate
+      role: baremetal-workstation-validation
+      hostgroups:
+        - linux-workstations
+        - aaa-first-linux-client
+      enrollment_secret_var: vault_identity_k10_ipa_enrollment_secret
+      status: first-client
+  radius_clients:
+    - name: pdu_rfc99_corectrl_ap7901
+      shortname: pdu-rfc99-corectrl-099241
+      ipaddr: 172.16.99.241
+      netbox_device: pdu_rfc99_corectrl_ap7901
+      device_group: power-devices
+      access_role: power-admin
+      readonly_role: power-readonly
+      nastype: other
+      shared_secret_var: vault_radius_client_pdu_rfc99_corectrl_ap7901_secret
+      break_glass_secret_ref: vault_pdu_rfc99_corectrl_local_admin_password
+      status: first-power-device
+  rollout_gates:
+    - name: preserve-break-glass
+      required: true
+      description: Local fallback credentials must remain available before RADIUS enforcement.
+    - name: k10-sssd-login-validated
+      required: true
+      description: K10 must validate non-root SSSD SSH login before widening Linux enrollment.
+    - name: ap7901-radius-readonly-validated
+      required: true
+      description: AP7901 must accept a read-only RADIUS identity before power-admin authorization is enabled.
