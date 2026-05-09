@@ -16,9 +16,9 @@ from urllib import error, parse, request
 REPO_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO_ROOT))
 
-import ntfy_notify  # noqa: E402
 import codex_ntfy_policy as reply_policy  # noqa: E402
 import codex_ntfy_reply_queue as reply_queue  # noqa: E402
+import ntfy_notify  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -177,12 +177,16 @@ def reply_queue_enabled() -> bool:
 
 
 def advisory_message(reply_payload: dict, *, context: str) -> str:
+    policy_mode = reply_payload.get(
+        "policy_mode",
+        reply_policy.mode_for_kind(str(reply_payload.get("kind", ""))),
+    )
     return "\n".join(
         [
             f"context={context}",
             f"request_id={reply_payload.get('request_id', '')}",
             f"kind={reply_payload.get('kind', '')}",
-            f"mode={reply_payload.get('policy_mode', reply_policy.mode_for_kind(str(reply_payload.get('kind', ''))))}",
+            f"mode={policy_mode}",
             "",
             "reply:",
             str(reply_payload.get("raw_message", "")).strip(),

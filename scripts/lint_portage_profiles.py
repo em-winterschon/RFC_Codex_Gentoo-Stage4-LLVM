@@ -118,15 +118,14 @@ def validate_profile_definition(path: Path) -> None:
                 continue
             parts = stripped.split()
             if len(parts) != 2:
+                line_context = f"{path} package_env_files[{fragment_name}]"
                 fail(
-                    f"{path} package_env_files[{fragment_name}] line '{stripped}' must contain exactly "
+                    f"{line_context} line '{stripped}' must contain exactly "
                     "an atom and env filename"
                 )
             env_name = parts[1]
             if env_name not in env_names:
-                fail(
-                    f"{path} package_env_files[{fragment_name}] references unknown env file '{env_name}'"
-                )
+                fail(f"{line_context} references unknown env file '{env_name}'")
 
     metadata = profile.get("metadata", {})
     if metadata:
