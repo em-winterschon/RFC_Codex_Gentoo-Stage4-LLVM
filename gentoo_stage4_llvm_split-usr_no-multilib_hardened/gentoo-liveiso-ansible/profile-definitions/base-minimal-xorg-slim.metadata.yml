@@ -1,0 +1,23 @@
+---
+gentoo_system_profile_metadata:
+  id: base-minimal-xorg-slim
+  purpose: Minimal Xorg and SLiM graphical baseline without Wayland.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-base
+    role_name: base-minimal-xorg-slim
+    extends:
+      - base-minimal-nox
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    support_packages:
+      - x11-base/xorg-server
+      - x11-misc/slim
+      - x11-apps/xinit
+      - sys-apps/dbus
+  openrc_services:
+    - dbus
+    - xdm

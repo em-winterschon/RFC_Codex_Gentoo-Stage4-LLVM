@@ -1,0 +1,17 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+  make_conf_append: |
+    USE="${USE} X elogind truetype xinerama -wayland"
+  package_use_files:
+    20-base-minimal-xorg-slim: |
+      x11-base/xorg-server elogind udev xorg
+      x11-misc/slim pam
+  openrc_services_enable:
+    - chronyd
+    - dbus
+    - rsyslog
+    - sshd
+    - xdm

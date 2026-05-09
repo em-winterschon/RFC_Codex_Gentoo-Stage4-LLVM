@@ -17,6 +17,11 @@ assert_file_contains() {
 
 for profile in \
   aaa-domain-client.yml \
+  base-hypervisor-qemu-libvirt.yml \
+  base-hypervisor-xen.yml \
+  base-hypervisor-xen-qemu-libvirt.yml \
+  base-minimal-nox.yml \
+  base-minimal-xorg-slim.yml \
   cloud-init-baremetal.yml \
   cloud-init-vm.yml \
   container-elastic-apm.yml \
@@ -36,6 +41,8 @@ for profile in \
   telemetry-elasticsearch-exporter.yml \
   telemetry-node-exporter-client.yml \
   telemetry-podman-exporter.yml \
+  virt-minimal.yml \
+  virt-xorg.yml \
   vm-binpkg-repository.yml \
   vm-container-services.yml \
   vm-elasticsearch-node.yml \
@@ -56,6 +63,11 @@ done
 
 for metadata in \
   aaa-domain-client.metadata.yml \
+  base-hypervisor-qemu-libvirt.metadata.yml \
+  base-hypervisor-xen.metadata.yml \
+  base-hypervisor-xen-qemu-libvirt.metadata.yml \
+  base-minimal-nox.metadata.yml \
+  base-minimal-xorg-slim.metadata.yml \
   cloud-init-baremetal.metadata.yml \
   cloud-init-vm.metadata.yml \
   hardened-llvm-stage4-merged-usr.metadata.yml \
@@ -64,6 +76,8 @@ for metadata in \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
   nfs-storage-client.metadata.yml \
+  virt-minimal.metadata.yml \
+  virt-xorg.metadata.yml \
   vm-container-services.metadata.yml \
   vm-elasticsearch-node.metadata.yml \
   vm-identity-controller.metadata.yml \
@@ -109,6 +123,11 @@ done
 
 for package_list in \
   cloud-init-base.packages \
+  stage5-base-hypervisor-common.packages \
+  stage5-base-hypervisor-qemu-libvirt.packages \
+  stage5-base-hypervisor-xen.packages \
+  stage5-base-minimal-nox.packages \
+  stage5-base-minimal-xorg-slim.packages \
   stage5-domain-client.packages \
   stage5-managed-access-zerotier.packages \
   stage5-metal-host-builder-farm-node.packages \
@@ -119,6 +138,8 @@ for package_list in \
   stage5-observability-metrics-client.packages \
   stage5-observability-metrics-elasticsearch-exporter.packages \
   stage5-observability-metrics-podman-exporter.packages \
+  stage5-virt-minimal.packages \
+  stage5-virt-xorg.packages \
   stage5-virtual-host-base.packages \
   stage5-virtual-host-appserver.packages \
   stage5-virtual-host-binpkg-repository.packages \

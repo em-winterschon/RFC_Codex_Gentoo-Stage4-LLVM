@@ -804,6 +804,8 @@ The repo uses a layered profile language:
 
 Current Stage 5 role classes:
 
+- `baremetal-base`
+- `baremetal-hypervisor`
 - `metal-host`
 - `virtual-host`
 - `service-container`
@@ -814,6 +816,9 @@ Current Stage 5 role classes:
 For scalability, Stage 5 package sets should live in external flat files under
 `profile-package-lists/` and be referenced through `package_list_files` instead
 of embedding long `package_atoms` lists inline.
+
+Service-level atoms that bind package lists, OpenRC services, kernel modules,
+and protocol surfaces are tracked under `profile-service-atoms/`.
 
 The included Stage 4 presets:
 
@@ -857,10 +862,17 @@ profile_definition_files:
 
 ## Gentoo system profiles
 
-The repo now carries a reusable LLVM/Clang Portage baseline plus three stackable
-system-profile overlays plus modular cloud-init overlays:
+The repo now carries a reusable LLVM/Clang Portage baseline, explicit base role
+overlays, virtual-machine overlays, and modular cloud-init overlays:
 
 - `profile-definitions/llvm-clang-hardened-portage.yml`
+- `profile-definitions/base-minimal-nox.yml`
+- `profile-definitions/base-minimal-xorg-slim.yml`
+- `profile-definitions/base-hypervisor-xen.yml`
+- `profile-definitions/base-hypervisor-qemu-libvirt.yml`
+- `profile-definitions/base-hypervisor-xen-qemu-libvirt.yml`
+- `profile-definitions/virt-minimal.yml`
+- `profile-definitions/virt-xorg.yml`
 - `profile-definitions/cloud-init-baremetal.yml`
 - `profile-definitions/cloud-init-vm.yml`
 - `profile-definitions/hypervisor-xen-qemu-libvirt-host.yml`

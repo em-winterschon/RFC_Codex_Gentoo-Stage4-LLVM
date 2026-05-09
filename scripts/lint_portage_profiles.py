@@ -33,6 +33,8 @@ ALLOWED_PROFILE_KEYS = {
     "package_unmask_files",
     "package_mask_symlinks",
     "kernel_config_fragment_files",
+    "kernel_config",
+    "kernel_config_requirements",
     "profile_parents",
     "package_atoms",
     "package_list_files",
@@ -55,6 +57,8 @@ ALLOWED_PROFILE_KEYS = {
     "telemetry",
     "binpkg_repo",
     "nexus_repo",
+    "nfs_storage_client",
+    "nscde_workstation",
     "haproxy_service_types",
     "service_readiness",
     "container_base_image",
@@ -64,8 +68,11 @@ ALLOWED_PROFILE_KEYS = {
     "container_service_segments",
     "site_security_profile",
     "memory_storage",
+    "storage_protocols",
     "jenkins_controller",
     "distcc_farm",
+    "vm_redfish_emulator",
+    "workstation_session_stack",
 }
 
 

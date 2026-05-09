@@ -1,0 +1,27 @@
+---
+gentoo_system_profile_metadata:
+  id: virt-xorg
+  purpose: Graphical VM guest baseline composed from base-minimal-xorg-slim and virt-minimal.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: virt-xorg
+    extends:
+      - virt-minimal
+      - base-minimal-xorg-slim
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+      - profile-package-lists/stage5-virt-minimal.packages
+      - profile-package-lists/stage5-virt-xorg.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/qemu-guest-agent-9.2.0
+    support_packages:
+      - app-emulation/spice-vdagent
+      - x11-drivers/xf86-video-qxl
+  openrc_services:
+    - dbus
+    - qemu-guest-agent
+    - xdm

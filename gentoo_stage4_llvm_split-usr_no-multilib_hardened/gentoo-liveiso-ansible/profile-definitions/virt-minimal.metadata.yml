@@ -1,0 +1,21 @@
+---
+gentoo_system_profile_metadata:
+  id: virt-minimal
+  purpose: Minimal VM guest baseline composed from base-minimal-nox plus VM guest agents.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: virt-minimal
+    extends:
+      - base-minimal-nox
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-virt-minimal.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/qemu-guest-agent-9.2.0
+    support_packages:
+      - sys-apps/ethtool
+  openrc_services:
+    - qemu-guest-agent

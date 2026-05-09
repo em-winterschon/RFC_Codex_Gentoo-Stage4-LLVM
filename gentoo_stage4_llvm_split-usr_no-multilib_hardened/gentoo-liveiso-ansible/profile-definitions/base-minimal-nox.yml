@@ -1,0 +1,13 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  modules_load_files:
+    base-minimal-nox.conf: |
+      nvme
+  openrc_services_enable:
+    - chronyd
+    - rsyslog
+    - sshd
