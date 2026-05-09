@@ -48,6 +48,8 @@ the calling automation layer.
   Path A Stage4 VM build, launch, Ansible install, and target-disk boot validation flow
 - [stage4-destination-install-sequences.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json)
   Path A staged Ansible execution plan for a destination test host, including the structured control-flow pipeline
+- [ntfy-server-deployment.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/ntfy-server-deployment.json)
+  deploy and validate a private ntfy server on a Gentoo/OpenRC host
 
 ## Validation
 

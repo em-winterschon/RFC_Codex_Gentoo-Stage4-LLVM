@@ -1,0 +1,211 @@
+---
+- name: Validate ntfy_server inputs
+  block:
+    - name: Assert ntfy install method is supported
+      ansible.builtin.assert:
+        that:
+          - ntfy_server_install_method in ['binary', 'package']
+        fail_msg: >-
+          ntfy_server_install_method={{ ntfy_server_install_method }} is unsupported.
+          Supported values: binary, package.
+
+    - name: Resolve ntfy download architecture
+      ansible.builtin.set_fact:
+        ntfy_server_arch: "{{ ntfy_server_arch_map[ansible_architecture] | default('') }}"
+      when: ntfy_server_install_method == 'binary'
+
+    - name: Assert ntfy binary architecture is supported
+      ansible.builtin.assert:
+        that:
+          - ntfy_server_arch | length > 0
+        fail_msg: >-
+          ansible_architecture={{ ansible_architecture }} is unsupported for binary ntfy
+          installs. Override ntfy_server_arch_map or use ntfy_server_install_method=package.
+      when: ntfy_server_install_method == 'binary'
+
+    - name: Assert deny-all auth mode has at least one user
+      ansible.builtin.assert:
+        that:
+          - ntfy_server_auth_users | length > 0
+        fail_msg: >-
+          ntfy_server_auth_default_access=deny-all requires at least one ntfy_server_auth_users
+          entry so the server is reachable after deployment.
+      when: ntfy_server_auth_default_access == 'deny-all'
+
+    - name: Assert ntfy auth user entries are complete
+      ansible.builtin.assert:
+        that:
+          - ntfy_auth_user.username is defined
+          - ntfy_auth_user.username | length > 0
+          - ntfy_auth_user.password_hash is defined
+          - ntfy_auth_user.password_hash | length > 0
+        fail_msg: >-
+          Each ntfy_server_auth_users entry requires username and password_hash.
+      loop: "{{ ntfy_server_auth_users }}"
+      loop_control:
+        loop_var: ntfy_auth_user
+
+    - name: Assert ntfy auth access entries are complete
+      ansible.builtin.assert:
+        that:
+          - ntfy_auth_access.username is defined
+          - ntfy_auth_access.username | length > 0
+          - ntfy_auth_access.topic is defined
+          - ntfy_auth_access.topic | length > 0
+          - ntfy_auth_access.permission is defined
+          - ntfy_auth_access.permission in ['ro', 'rw', 'wo', 'deny']
+        fail_msg: >-
+          Each ntfy_server_auth_access entry requires username, topic, and permission
+          (ro, rw, wo, or deny).
+      loop: "{{ ntfy_server_auth_access }}"
+      loop_control:
+        loop_var: ntfy_auth_access
+
+- name: Optional ntfy validation checkpoint
+  ansible.builtin.debug:
+    msg:
+      stage: ntfy-server
+      checkpoint: validated-inputs
+      install_method: "{{ ntfy_server_install_method }}"
+      listen_http: "{{ ntfy_server_listen_http }}"
+      base_url: "{{ ntfy_server_base_url | default('', true) }}"
+  when: ntfy_server_debug_checkpoints | bool
+
+- name: Prepare ntfy runtime filesystem
+  block:
+    - name: Ensure ntfy group exists
+      ansible.builtin.group:
+        name: "{{ ntfy_server_group }}"
+        system: true
+
+    - name: Ensure ntfy user exists
+      ansible.builtin.user:
+        name: "{{ ntfy_server_user }}"
+        group: "{{ ntfy_server_group }}"
+        system: true
+        create_home: false
+        shell: /sbin/nologin
+        home: "{{ ntfy_server_state_dir }}"
+
+    - name: Ensure ntfy directories exist
+      ansible.builtin.file:
+        path: "{{ ntfy_server_dir.path }}"
+        state: directory
+        owner: "{{ ntfy_server_dir.owner | default(ntfy_server_user) }}"
+        group: "{{ ntfy_server_dir.group | default(ntfy_server_group) }}"
+        mode: "{{ ntfy_server_dir.mode }}"
+      loop:
+        - path: "{{ ntfy_server_config_dir }}"
+          owner: root
+          group: root
+          mode: "0755"
+        - path: "{{ ntfy_server_cache_dir }}"
+          mode: "0750"
+        - path: "{{ ntfy_server_attachment_cache_dir }}"
+          mode: "0750"
+        - path: "{{ ntfy_server_state_dir }}"
+          mode: "0750"
+        - path: "{{ ntfy_server_log_dir }}"
+          mode: "0750"
+      loop_control:
+        loop_var: ntfy_server_dir
+
+- name: Install ntfy
+  block:
+    - name: Install ntfy package
+      ansible.builtin.package:
+        name: "{{ ntfy_server_package_name }}"
+        state: present
+      when: ntfy_server_install_method == 'package'
+
+    - name: Download ntfy release tarball
+      ansible.builtin.get_url:
+        url: >-
+          {{ ntfy_server_release_base_url }}/v{{ ntfy_server_version }}/
+          ntfy_{{ ntfy_server_version }}_linux_{{ ntfy_server_arch }}.tar.gz
+        dest: /var/tmp/ntfy_{{ ntfy_server_version }}_linux_{{ ntfy_server_arch }}.tar.gz
+        mode: "0644"
+      when: ntfy_server_install_method == 'binary'
+
+    - name: Extract ntfy release tarball
+      ansible.builtin.unarchive:
+        src: /var/tmp/ntfy_{{ ntfy_server_version }}_linux_{{ ntfy_server_arch }}.tar.gz
+        dest: "{{ ntfy_server_release_root }}"
+        remote_src: true
+        creates: >-
+          {{ ntfy_server_release_root }}/ntfy_{{ ntfy_server_version }}_linux_{{ ntfy_server_arch }}/ntfy
+      when: ntfy_server_install_method == 'binary'
+
+    - name: Install ntfy binary from extracted release
+      ansible.builtin.copy:
+        src: >-
+          {{ ntfy_server_release_root }}/ntfy_{{ ntfy_server_version }}_linux_{{ ntfy_server_arch }}/ntfy
+        dest: "{{ ntfy_server_binary_path }}"
+        owner: root
+        group: root
+        mode: "0755"
+        remote_src: true
+      when: ntfy_server_install_method == 'binary'
+
+- name: Optional ntfy install checkpoint
+  ansible.builtin.debug:
+    msg:
+      stage: ntfy-server
+      checkpoint: installed
+      binary_path: "{{ ntfy_server_binary_path }}"
+  when: ntfy_server_debug_checkpoints | bool
+
+- name: Configure ntfy
+  block:
+    - name: Render ntfy server config
+      ansible.builtin.template:
+        src: server.yml.j2
+        dest: "{{ ntfy_server_config_file }}"
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Render ntfy OpenRC conf.d
+      ansible.builtin.template:
+        src: ntfy.confd.j2
+        dest: /etc/conf.d/{{ ntfy_server_service_name }}
+        owner: root
+        group: root
+        mode: "0644"
+      when: ntfy_server_manage_service | bool
+
+    - name: Render ntfy OpenRC init.d
+      ansible.builtin.template:
+        src: ntfy.initd.j2
+        dest: /etc/init.d/{{ ntfy_server_service_name }}
+        owner: root
+        group: root
+        mode: "0755"
+      when: ntfy_server_manage_service | bool
+
+- name: Optional ntfy config checkpoint
+  ansible.builtin.debug:
+    msg:
+      stage: ntfy-server
+      checkpoint: configured
+      config_file: "{{ ntfy_server_config_file }}"
+      service_name: "{{ ntfy_server_service_name }}"
+  when: ntfy_server_debug_checkpoints | bool
+
+- name: Enable and start ntfy service
+  block:
+    - name: Ensure ntfy OpenRC runlevel entry exists
+      ansible.builtin.command: >-
+        rc-update add {{ ntfy_server_service_name }} {{ ntfy_server_openrc_runlevel }}
+      register: ntfy_server_rc_update
+      changed_when: "'already installed' not in ntfy_server_rc_update.stdout"
+
+    - name: Ensure ntfy service is started
+      ansible.builtin.command: rc-service {{ ntfy_server_service_name }} start
+      register: ntfy_server_service_start
+      changed_when: "'started' in (ntfy_server_service_start.stdout | default(''))"
+      failed_when:
+        - ntfy_server_service_start.rc != 0
+        - "'already started' not in (ntfy_server_service_start.stdout | default(''))"
+      when: ntfy_server_enabled | bool
+  when: ntfy_server_manage_service | bool

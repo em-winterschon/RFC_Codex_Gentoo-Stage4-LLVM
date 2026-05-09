@@ -2,7 +2,7 @@
 
 ## Operator Workflow Families
 
-This repository currently has six main workflow families:
+This repository currently has seven main workflow families:
 
 - host validation and CI
 - Path A VM build and launch
@@ -10,6 +10,7 @@ This repository currently has six main workflow families:
 - Path B iPXE asset publication and fleet bootstrapping
 - Path B RouterOS CHR lab configuration
 - notification and approval visibility
+- private ntfy infrastructure deployment
 
 ## 1. Validate the Repository
 
@@ -216,7 +217,21 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 11. Release and Merge Discipline
+## 11. Private ntfy Server Deployment
+
+Deploy a standalone ntfy server on a dedicated Gentoo/OpenRC host:
+
+```bash
+ansible-playbook -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/ntfy-server.yml \
+  -l ntfy_primary
+```
+
+Machine-readable version:
+
+- `docs/workflows/ntfy-server-deployment.json`
+
+## 12. Release and Merge Discipline
 
 Operational rule:
 
@@ -231,7 +246,7 @@ Recommended GitHub protection:
 - require up-to-date branches before merge
 - restrict direct pushes to `main`
 
-## 12. Expected Return Codes
+## 13. Expected Return Codes
 
 Normal success:
 
@@ -245,7 +260,7 @@ Failure conditions should be surfaced at one of these layers:
 - SSH readiness checks
 - workflow JSONL final stats
 
-## 13. Artifacts Worth Watching
+## 14. Artifacts Worth Watching
 
 - `/tmp/ansible-control-flow/*.jsonl`
 - `/opt/gentoo-virt-qemu/stage3/state/*.serial.log`
