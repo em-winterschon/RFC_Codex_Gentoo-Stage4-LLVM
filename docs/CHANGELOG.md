@@ -14,6 +14,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
   NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
   and K10 `power0` metadata.
+- Added the Alienware `lap-sun99-chonkers.rfc1918.dev` laptop as the second
+  physical Stage5 workstation validation target, with Realtek RTL8111H LOM MAC,
+  CSS326 `ge15`, AP7901 outlet 4, and iPXE/HTTPv4 boot metadata.
 
 ### Changed
 

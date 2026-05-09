@@ -96,6 +96,9 @@ devices:
       - name: ge6
         lag: hasslehoff-bond0
         status: active
+      - name: ge15
+        purpose: lap-sun99-chonkers-lom
+        status: active
       - name: ge24
         purpose: crs354-management
         status: active
@@ -314,6 +317,32 @@ devices:
       - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.108.
       - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
       - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
+  - name: lap_sun99_chonkers
+    site: local-rfc1918-lab
+    role: baremetal-workstation-validation
+    manufacturer: Alienware
+    model: 16X Aurora
+    status: active
+    management_ip: 172.16.99.157
+    management_interface: LOM
+    fqdn: lap-sun99-chonkers.rfc1918.dev
+    asset_tag: AC16251
+    interfaces:
+      - name: LOM
+        type: 1000base-t
+        purpose: native-ipxe-httpv4-netboot
+        mac_address: "84:5C:31:A5:CF:51"
+        connected_device: sw_mgmt_css326
+        connected_interface: ge15
+        netboot_type: dynamic
+        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
+        status: active
+    notes:
+      - Alienware 16X Aurora Stage5 workstation validation laptop.
+      - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
+      - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
+      - Realtek RTL8111H 1GbE LOM is connected to CSS326 ge15.
+      - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab
     role: power-distribution-unit
@@ -330,6 +359,12 @@ devices:
         purpose: pdu-management
         status: active
     power_outlets:
+      - name: outlet4
+        label: host_lap_sun99_chonkers
+        outlet_index: 4
+        target_device: lap_sun99_chonkers
+        target_power_port: power0
+        status: active
       - name: outlet6
         label: host_gmktec_k10
         outlet_index: 6
@@ -339,6 +374,8 @@ devices:
     notes:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
+      - Operator/control-panel name is pdu-rfc99-corectrl-099241.
+      - Outlet 4 maps to lap_sun99_chonkers.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
       - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
 
