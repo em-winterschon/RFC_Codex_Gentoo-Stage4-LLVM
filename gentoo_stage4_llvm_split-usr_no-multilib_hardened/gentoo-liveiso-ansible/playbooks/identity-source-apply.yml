@@ -1,0 +1,39 @@
+---
+- name: Apply identity source-of-truth definitions
+  hosts: "{{ identity_source_apply_hosts | default('localhost') }}"
+  gather_facts: false
+  vars:
+    identity_source_repo_root: "{{ playbook_dir }}/../../.."
+    identity_source_apply_source: "{{ playbook_dir }}/../identity-source-definitions/local-rfc1918.yml"
+    identity_source_apply_enabled: false
+    identity_source_apply_provider: all
+    identity_source_apply_format: json
+    identity_source_apply_freeipa_command: ipa
+    identity_source_apply_freeradius_output: /etc/raddb/clients.d/rfc1918-generated.conf
+    identity_source_apply_audit_log: ""
+    identity_source_apply_argv: >-
+      {{
+        [
+          identity_source_repo_root + '/scripts/apply_identity_sync_plan.py',
+          identity_source_apply_source,
+          '--provider', identity_source_apply_provider,
+          '--format', identity_source_apply_format,
+          '--freeipa-command', identity_source_apply_freeipa_command,
+          '--freeradius-output', identity_source_apply_freeradius_output
+        ]
+        + (['--apply'] if identity_source_apply_enabled | bool else [])
+        + (['--audit-log', identity_source_apply_audit_log] if identity_source_apply_audit_log | length > 0 else [])
+      }}
+  tasks:
+    - name: Plan or apply identity source-of-truth sync
+      ansible.builtin.command:
+        argv: "{{ identity_source_apply_argv }}"
+      environment: "{{ identity_source_apply_environment | default({}) }}"
+      register: identity_source_apply_result
+      changed_when: identity_source_apply_enabled | bool
+      no_log: "{{ identity_source_apply_enabled | bool }}"
+
+    - name: Report identity source-of-truth dry-run output
+      ansible.builtin.debug:
+        var: identity_source_apply_result.stdout
+      when: not identity_source_apply_enabled | bool

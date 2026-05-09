@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -155,13 +155,20 @@ def parse_roadmap_issues(config: dict[str, Any]) -> list[PlannedIssue]:
                 depends_on or "None recorded.",
                 "",
                 "## Dependency Links",
-                "Dependency links are resolved by `scripts/github_project_seed.py --apply --sync-relationships` after issues exist.",
+                (
+                    "Dependency links are resolved by "
+                    "`scripts/github_project_seed.py --apply --sync-relationships` "
+                    "after issues exist."
+                ),
                 "",
                 "## Notes",
                 notes or "None recorded.",
                 "",
                 "## Removal Condition",
-                "Close this issue when the roadmap item is completed or deliberately removed from the roadmap.",
+                (
+                    "Close this issue when the roadmap item is completed or "
+                    "deliberately removed from the roadmap."
+                ),
             ]
         )
         issues.append(
@@ -220,10 +227,17 @@ def epic_issues(milestones: list[dict[str, Any]]) -> list[PlannedIssue]:
                 milestone.get("description", f"Track roadmap work for {title}."),
                 "",
                 "## Child Issues",
-                "Child issues are linked by milestone, project board fields, dependency references, and native GitHub sub-issue relationships when the API accepts them.",
+                (
+                    "Child issues are linked by milestone, project board fields, "
+                    "dependency references, and native GitHub sub-issue relationships "
+                    "when the API accepts them."
+                ),
                 "",
                 "## Removal Condition",
-                "Close this epic when all child roadmap issues in this milestone are completed or intentionally moved.",
+                (
+                    "Close this epic when all child roadmap issues in this milestone "
+                    "are completed or intentionally moved."
+                ),
             ]
         )
         issues.append(
@@ -266,7 +280,8 @@ def load_catalogs(args: argparse.Namespace) -> Catalogs:
         labels=labels,
         milestones=milestones,
         issues=deduped,
-        project_title=args.project_title or settings.get("project_title", "RFC Codex Infrastructure Roadmap"),
+        project_title=args.project_title
+        or settings.get("project_title", "RFC Codex Infrastructure Roadmap"),
     )
 
 
@@ -325,10 +340,7 @@ def print_plan(repo: str, catalogs: Catalogs, emit_query_urls: bool) -> None:
 
 
 def apply_labels(repo: str, labels: list[dict[str, Any]]) -> None:
-    existing = {
-        item["name"]
-        for item in gh_json(["api", f"repos/{repo}/labels", "--paginate"])
-    }
+    existing = {item["name"] for item in gh_json(["api", f"repos/{repo}/labels", "--paginate"])}
     for label in labels:
         name = label["name"]
         color = str(label["color"]).lstrip("#")
@@ -458,7 +470,20 @@ def issue_records_by_roadmap_id(repo: str) -> dict[str, IssueRecord]:
 
 def existing_issue_titles(repo: str) -> set[str]:
     try:
-        data = gh_json(["issue", "list", "--repo", repo, "--state", "all", "--limit", "1000", "--json", "title"])
+        data = gh_json(
+            [
+                "issue",
+                "list",
+                "--repo",
+                repo,
+                "--state",
+                "all",
+                "--limit",
+                "1000",
+                "--json",
+                "title",
+            ]
+        )
     except subprocess.CalledProcessError:
         data = gh_json(["api", f"repos/{repo}/issues?state=all&per_page=100"])
     return {item["title"] for item in data}
@@ -508,7 +533,9 @@ def replace_markdown_section(body: str, heading: str, replacement: str) -> str:
     return (body.rstrip() + "\n\n" + replacement.rstrip()).rstrip()
 
 
-def resolve_dependency_numbers(issue: PlannedIssue, records_by_id: dict[str, IssueRecord]) -> tuple[int, ...]:
+def resolve_dependency_numbers(
+    issue: PlannedIssue, records_by_id: dict[str, IssueRecord]
+) -> tuple[int, ...]:
     numbers = []
     for dep_id in issue.depends_on:
         record = records_by_id.get(dep_id)
@@ -517,8 +544,12 @@ def resolve_dependency_numbers(issue: PlannedIssue, records_by_id: dict[str, Iss
     return tuple(numbers)
 
 
-def update_issue_body_for_relationships(repo: str, issue: PlannedIssue, record: IssueRecord, records_by_id: dict[str, IssueRecord]) -> None:
-    new_body = replace_markdown_section(record.body, "Dependency Links", dependency_section(issue, records_by_id))
+def update_issue_body_for_relationships(
+    repo: str, issue: PlannedIssue, record: IssueRecord, records_by_id: dict[str, IssueRecord]
+) -> None:
+    new_body = replace_markdown_section(
+        record.body, "Dependency Links", dependency_section(issue, records_by_id)
+    )
     if new_body == record.body:
         return
     gh_run(["issue", "edit", str(record.number), "--repo", repo, "--body", new_body])
@@ -540,15 +571,15 @@ def apply_native_dependency(repo: str, blocked_by_number: int, blocking_number: 
             "--silent",
         ],
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     if result.returncode == 0:
         print(f"linked native dependency: #{blocked_by_number} blocked by #{blocking_number}")
         return True
     if "already" not in result.stderr.lower() and "exists" not in result.stderr.lower():
         print(
-            f"skipped native dependency #{blocked_by_number} -> #{blocking_number}: {result.stderr.strip()}",
+            f"skipped native dependency #{blocked_by_number} -> "
+            f"#{blocking_number}: {result.stderr.strip()}",
             file=sys.stderr,
         )
     return False
@@ -567,15 +598,15 @@ def apply_native_sub_issue(repo: str, parent_number: int, child_number: int) -> 
             "--silent",
         ],
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     if result.returncode == 0:
         print(f"linked native sub-issue: #{parent_number} -> #{child_number}")
         return True
     if "already" not in result.stderr.lower() and "exists" not in result.stderr.lower():
         print(
-            f"skipped native sub-issue #{parent_number} -> #{child_number}: {result.stderr.strip()}",
+            f"skipped native sub-issue #{parent_number} -> "
+            f"#{child_number}: {result.stderr.strip()}",
             file=sys.stderr,
         )
     return False
@@ -639,7 +670,20 @@ def ensure_project_field(
 
 
 def repo_issues_by_title(repo: str) -> dict[str, str]:
-    data = gh_json(["issue", "list", "--repo", repo, "--state", "all", "--limit", "1000", "--json", "title,url"])
+    data = gh_json(
+        [
+            "issue",
+            "list",
+            "--repo",
+            repo,
+            "--state",
+            "all",
+            "--limit",
+            "1000",
+            "--json",
+            "title,url",
+        ]
+    )
     return {item["title"]: item["url"] for item in data}
 
 
@@ -648,7 +692,19 @@ def repo_issue_urls_by_title(repo: str) -> dict[str, str]:
 
 
 def project_item_titles(project_number: str, owner: str) -> set[str]:
-    data = gh_json(["project", "item-list", project_number, "--owner", owner, "--format", "json", "--limit", "1000"])
+    data = gh_json(
+        [
+            "project",
+            "item-list",
+            project_number,
+            "--owner",
+            owner,
+            "--format",
+            "json",
+            "--limit",
+            "1000",
+        ]
+    )
     titles = set()
     for item in data.get("items", []):
         title = item.get("title") or item.get("content", {}).get("title")
@@ -658,7 +714,19 @@ def project_item_titles(project_number: str, owner: str) -> set[str]:
 
 
 def project_items_by_title(project_number: str, owner: str) -> dict[str, dict[str, Any]]:
-    data = gh_json(["project", "item-list", project_number, "--owner", owner, "--format", "json", "--limit", "1000"])
+    data = gh_json(
+        [
+            "project",
+            "item-list",
+            project_number,
+            "--owner",
+            owner,
+            "--format",
+            "json",
+            "--limit",
+            "1000",
+        ]
+    )
     items = {}
     for item in data.get("items", []):
         title = item.get("title") or item.get("content", {}).get("title")
@@ -667,7 +735,9 @@ def project_items_by_title(project_number: str, owner: str) -> dict[str, dict[st
     return items
 
 
-def add_issues_to_project(project_number: str, owner: str, repo: str, issues: list[PlannedIssue]) -> None:
+def add_issues_to_project(
+    project_number: str, owner: str, repo: str, issues: list[PlannedIssue]
+) -> None:
     urls = repo_issue_urls_by_title(repo)
     existing_titles = project_item_titles(project_number, owner)
     for issue in issues:
@@ -731,7 +801,9 @@ def update_project_item_fields(project_number: str, owner: str, issues: list[Pla
                     "json",
                 ]
             )
-        option_id = single_select_option_id(roadmap_status_field, roadmap_status_label(issue.status))
+        option_id = single_select_option_id(
+            roadmap_status_field, roadmap_status_label(issue.status)
+        )
         if option_id:
             gh_run(
                 [
@@ -765,7 +837,9 @@ def create_project(owner: str, title: str) -> str:
     return number
 
 
-def ensure_project(owner: str, repo: str, title: str, issues: list[PlannedIssue], sync_fields: bool) -> None:
+def ensure_project(
+    owner: str, repo: str, title: str, issues: list[PlannedIssue], sync_fields: bool
+) -> None:
     project_number = create_project(owner, title)
     ensure_project_field(
         project_number,
@@ -814,16 +888,38 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", required=True, help="GitHub repository in owner/name form.")
     parser.add_argument("--labels", default=str(DEFAULT_LABELS), help="Label catalog path.")
-    parser.add_argument("--milestones", default=str(DEFAULT_MILESTONES), help="Milestone catalog path.")
+    parser.add_argument(
+        "--milestones", default=str(DEFAULT_MILESTONES), help="Milestone catalog path."
+    )
     parser.add_argument("--issues", default=str(DEFAULT_ISSUES), help="Issue seed catalog path.")
     parser.add_argument("--project-title", default=None, help="Project title override.")
     parser.add_argument("--apply", action="store_true", help="Apply GitHub mutations.")
-    parser.add_argument("--create-project", action="store_true", help="Create the GitHub Projects v2 board.")
-    parser.add_argument("--sync-relationships", action="store_true", help="Update issue bodies and optional native issue relationships.")
-    parser.add_argument("--native-issue-links", action="store_true", help="Attempt native GitHub dependency and sub-issue API links.")
-    parser.add_argument("--sync-project-fields", action="store_true", help="Populate Roadmap ID and Roadmap Status project fields.")
-    parser.add_argument("--emit-query-urls", action="store_true", help="Print issue creation query URLs.")
-    parser.add_argument("--no-roadmap", action="store_true", help="Do not derive issues from docs/ROADMAP-AND-TODO.md.")
+    parser.add_argument(
+        "--create-project", action="store_true", help="Create the GitHub Projects v2 board."
+    )
+    parser.add_argument(
+        "--sync-relationships",
+        action="store_true",
+        help="Update issue bodies and optional native issue relationships.",
+    )
+    parser.add_argument(
+        "--native-issue-links",
+        action="store_true",
+        help="Attempt native GitHub dependency and sub-issue API links.",
+    )
+    parser.add_argument(
+        "--sync-project-fields",
+        action="store_true",
+        help="Populate Roadmap ID and Roadmap Status project fields.",
+    )
+    parser.add_argument(
+        "--emit-query-urls", action="store_true", help="Print issue creation query URLs."
+    )
+    parser.add_argument(
+        "--no-roadmap",
+        action="store_true",
+        help="Do not derive issues from docs/ROADMAP-AND-TODO.md.",
+    )
     return parser.parse_args(argv)
 
 

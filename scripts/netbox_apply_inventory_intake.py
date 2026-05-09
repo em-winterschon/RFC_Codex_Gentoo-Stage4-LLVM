@@ -388,7 +388,9 @@ def normalize_interface_type(interface: dict[str, Any]) -> str:
     return "virtual"
 
 
-def apply_device_interfaces(client: NetBoxClient, device: dict[str, Any], source: dict[str, Any]) -> None:
+def apply_device_interfaces(
+    client: NetBoxClient, device: dict[str, Any], source: dict[str, Any]
+) -> None:
     for interface in source.get("interfaces", []) or []:
         if isinstance(interface, dict) and interface.get("name"):
             ensure_device_interface(client, device, interface)
@@ -403,21 +405,18 @@ def assign_management_ip(
     if not source.get("management_ip"):
         return
     address = matching_address(str(source["management_ip"]), networks)
-    management_interface_name = (
-        source.get("management_interface")
-        or next(
-            (
-                interface.get("name")
-                for interface in source.get("interfaces", []) or []
-                if isinstance(interface, dict)
-                and (
-                    interface.get("purpose") == "management"
-                    or interface.get("purpose") == "pdu-management"
-                    or interface.get("name") in {"mgmt", "eth0"}
-                )
-            ),
-            None,
-        )
+    management_interface_name = source.get("management_interface") or next(
+        (
+            interface.get("name")
+            for interface in source.get("interfaces", []) or []
+            if isinstance(interface, dict)
+            and (
+                interface.get("purpose") == "management"
+                or interface.get("purpose") == "pdu-management"
+                or interface.get("name") in {"mgmt", "eth0"}
+            )
+        ),
+        None,
     )
     interface = None
     if management_interface_name:

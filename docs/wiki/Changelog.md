@@ -3,6 +3,15 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-09
+
+### Added
+
+- Added gated identity apply automation for the RFC1918 AAA source of truth:
+  dry-run JSON plans, explicit global and provider mutation gates, redacted
+  audit logging, FreeIPA CLI reconciliation for groups/users/hosts, FreeRADIUS
+  `clients.d` rendering, and Ansible playbook integration.
+
 ## 2026-05-08
 
 ### Added

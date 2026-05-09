@@ -58,4 +58,3 @@ The shell regression `test_identity_source_of_truth.sh` verifies:
 - invalid duplicate GID, unknown group, and plaintext RADIUS secret cases fail
 - rendered sync plans contain FreeIPA groups/users, FreeRADIUS clients, vault
   secret references, and K10 enrollment data
-

@@ -67,6 +67,50 @@ The renderer intentionally outputs secret variable names such as
 FreeIPA and FreeRADIUS mutation should remain an explicit operator-run or
 approval-gated CI action until rollback and audit behavior are proven.
 
+## Gated Apply
+
+The first apply path is now available through:
+
+- `scripts/apply_identity_sync_plan.py`
+- `playbooks/identity-source-apply.yml`
+
+The apply tool is dry-run by default and prints only redacted plan metadata. Live
+mutation requires all relevant gates:
+
+```bash
+IDENTITY_SYNC_APPLY=1 \
+IDENTITY_SYNC_APPLY_FREEIPA=1 \
+python3 scripts/apply_identity_sync_plan.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/identity-source-definitions/local-rfc1918.yml \
+  --apply \
+  --provider freeipa \
+  --audit-log /var/log/identity-sync/freeipa.jsonl
+
+IDENTITY_SYNC_APPLY=1 \
+IDENTITY_SYNC_APPLY_FREERADIUS=1 \
+vault_radius_client_pdu_rfc99_corectrl_ap7901_secret='from-vault-not-shell-history' \
+python3 scripts/apply_identity_sync_plan.py \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/identity-source-definitions/local-rfc1918.yml \
+  --apply \
+  --provider freeradius \
+  --freeradius-output /etc/raddb/clients.d/rfc1918-generated.conf \
+  --audit-log /var/log/identity-sync/freeradius.jsonl
+```
+
+In normal operations, pass vault-backed values through Ansible environment data,
+not through shell history. The JSON summary and audit log intentionally preserve
+vault variable names but redact resolved secret values and SSH key material.
+
+Current apply scope:
+
+- FreeIPA groups, users, SSH public keys, supplemental group membership, hosts,
+  and hostgroups through the `ipa` CLI.
+- FreeRADIUS `clients.d` rendering for managed client records, with shared
+  secrets resolved only during gated apply.
+- LDAP sysaccount creation for bind DNs remains a manual action in the plan
+  because the current `radiusd` account uses a FreeIPA sysaccount DN rather than
+  a normal IPA user object.
+
 ## Live Bootstrap
 
 Because native FreeIPA server packaging is not available in the current Gentoo

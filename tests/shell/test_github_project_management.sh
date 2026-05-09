@@ -46,7 +46,7 @@ assert_file_contains "${SEED}" "resolve_dependency_numbers"
 assert_file_contains "${SEED}" "apply_issue_relationships"
 assert_file_contains "${SEED}" "update_project_item_fields"
 
-python3 - <<'PY' "${REPO_ROOT}/.github/ISSUE_TEMPLATE" "${REPO_ROOT}/project-management"
+python3 - "${REPO_ROOT}/.github/ISSUE_TEMPLATE" "${REPO_ROOT}/project-management" << 'PY'
 import pathlib
 import sys
 import yaml
@@ -74,7 +74,7 @@ grep -Fq 'relationship edges:' <<< "${dry_run}" ||
 grep -Fq 'https://github.com/example/example/issues/new?template=roadmap_task.yml' <<< "${dry_run}" ||
   fail 'dry run did not include issue query URL'
 
-if "${SEED}" --repo example/example --create-project >/tmp/github-project-seed-project.out 2>&1; then
+if "${SEED}" --repo example/example --create-project > /tmp/github-project-seed-project.out 2>&1; then
   fail 'create-project succeeded without --apply'
 fi
 grep -Fq -- '--create-project requires --apply' /tmp/github-project-seed-project.out ||
