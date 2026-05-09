@@ -1,0 +1,3 @@
+# NFS-RDMA client readiness. Enable only on RDMA-attached bare-metal or VM hosts.
+softdep rpcrdma pre: ib_core rdma_ucm
+softdep xprtrdma pre: ib_core rdma_ucm
