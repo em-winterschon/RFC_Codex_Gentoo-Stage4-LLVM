@@ -7,6 +7,16 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added GitHub project-management scaffolding for the interim NOW() tracker:
+  structured issue forms, label catalog, milestone catalog, roadmap-derived
+  issue seeding, query-parameter issue URLs, and a dry-run-first local seed
+  script that avoids GitHub Actions.
+- Created the `RFC Codex Infrastructure Roadmap` GitHub Projects v2 board with
+  seeded roadmap items and repo-specific `Roadmap Status` / `Roadmap ID`
+  fields.
+- Added the GitHub issue relationship pass: 14 milestone epic issues,
+  relationship labels, roadmap dependency sections with live issue references,
+  and Projects v2 `Roadmap Status` / `Roadmap ID` field synchronization.
 - Added an AAA identity source-of-truth scaffold for RFC1918: non-secret
   group/user/service-account/host-enrollment/RADIUS-client definitions,
   validation, render-only sync-plan output, Ansible validation playbook, docs,

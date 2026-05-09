@@ -3,6 +3,7 @@
 - [Home](Home)
 - [Architecture and Design](Architecture-and-Design)
 - [Workflows](Workflows)
+- [GitHub Project Management](GitHub-Project-Management)
 - [ITIL Change Control: Path B RouterOS Lab](ITIL-Change-Control-Path-B-RouterOS-Lab)
 - [ITIL Change Control: Container Services Safe Move](ITIL-Change-Control-Container-Services-Safe-Move)
 - [RouterOS Path B](RouterOS-Path-B)

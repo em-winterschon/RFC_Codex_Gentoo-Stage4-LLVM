@@ -3,6 +3,41 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-08
+
+### Added
+
+- Added GitHub project-management scaffolding for the interim NOW() tracker:
+  structured issue forms, label catalog, milestone catalog, roadmap-derived
+  issue seeding, query-parameter issue URLs, and a dry-run-first local seed
+  script that avoids GitHub Actions.
+- Created the `RFC Codex Infrastructure Roadmap` GitHub Projects v2 board with
+  seeded roadmap items and repo-specific `Roadmap Status` / `Roadmap ID`
+  fields.
+- Added the GitHub issue relationship pass: 14 milestone epic issues,
+  relationship labels, roadmap dependency sections with live issue references,
+  and Projects v2 `Roadmap Status` / `Roadmap ID` field synchronization.
+- Added an AAA identity source-of-truth scaffold for RFC1918: non-secret
+  group/user/service-account/host-enrollment/RADIUS-client definitions,
+  validation, render-only sync-plan output, Ansible validation playbook, docs,
+  and shell regression coverage.
+- Extended NetBox structured inventory intake apply support for device
+  interfaces, interface-bound management IP assignment, same-host IP convergence
+  across prefix-length drift, and non-secret PDU outlet to host power-port
+  mapping.
+- Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
+  NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
+  and K10 `power0` metadata.
+- Added the Alienware `lap-sun99-chonkers.rfc1918.dev` laptop as the second
+  physical Stage5 workstation validation target, with Realtek RTL8111H LOM MAC,
+  CSS326 `ge15`, AP7901 outlet 4, and iPXE/HTTPv4 boot metadata.
+
+### Changed
+
+- Updated the AAA rollout sequence to use the now-inventoried K10 as the first
+  Linux SSSD/RBAC validation client and the AP7901 as the first power-device
+  RADIUS enrollment target after local break-glass checks.
+
 ## 2026-05-07
 
 ### Added
