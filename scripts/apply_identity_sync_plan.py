@@ -181,7 +181,10 @@ def build_summary(
                 {
                     "kind": "ldap_sysaccount",
                     "name": account["name"],
-                    "reason": "sysaccount bind DN creation remains LDAP-specific and is not mutated by the IPA CLI path",
+                    "reason": (
+                        "sysaccount bind DN creation remains LDAP-specific "
+                        "and is not mutated by the IPA CLI path"
+                    ),
                 }
                 for account in plan["freeipa_service_accounts"]
             ],

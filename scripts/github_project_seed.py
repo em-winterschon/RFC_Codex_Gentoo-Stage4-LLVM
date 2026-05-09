@@ -13,7 +13,7 @@ import re
 import subprocess
 import sys
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -155,13 +155,20 @@ def parse_roadmap_issues(config: dict[str, Any]) -> list[PlannedIssue]:
                 depends_on or "None recorded.",
                 "",
                 "## Dependency Links",
-                "Dependency links are resolved by `scripts/github_project_seed.py --apply --sync-relationships` after issues exist.",
+                (
+                    "Dependency links are resolved by "
+                    "`scripts/github_project_seed.py --apply --sync-relationships` "
+                    "after issues exist."
+                ),
                 "",
                 "## Notes",
                 notes or "None recorded.",
                 "",
                 "## Removal Condition",
-                "Close this issue when the roadmap item is completed or deliberately removed from the roadmap.",
+                (
+                    "Close this issue when the roadmap item is completed or "
+                    "deliberately removed from the roadmap."
+                ),
             ]
         )
         issues.append(
@@ -220,10 +227,17 @@ def epic_issues(milestones: list[dict[str, Any]]) -> list[PlannedIssue]:
                 milestone.get("description", f"Track roadmap work for {title}."),
                 "",
                 "## Child Issues",
-                "Child issues are linked by milestone, project board fields, dependency references, and native GitHub sub-issue relationships when the API accepts them.",
+                (
+                    "Child issues are linked by milestone, project board fields, "
+                    "dependency references, and native GitHub sub-issue relationships "
+                    "when the API accepts them."
+                ),
                 "",
                 "## Removal Condition",
-                "Close this epic when all child roadmap issues in this milestone are completed or intentionally moved.",
+                (
+                    "Close this epic when all child roadmap issues in this milestone "
+                    "are completed or intentionally moved."
+                ),
             ]
         )
         issues.append(
@@ -557,15 +571,15 @@ def apply_native_dependency(repo: str, blocked_by_number: int, blocking_number: 
             "--silent",
         ],
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     if result.returncode == 0:
         print(f"linked native dependency: #{blocked_by_number} blocked by #{blocking_number}")
         return True
     if "already" not in result.stderr.lower() and "exists" not in result.stderr.lower():
         print(
-            f"skipped native dependency #{blocked_by_number} -> #{blocking_number}: {result.stderr.strip()}",
+            f"skipped native dependency #{blocked_by_number} -> "
+            f"#{blocking_number}: {result.stderr.strip()}",
             file=sys.stderr,
         )
     return False
@@ -584,15 +598,15 @@ def apply_native_sub_issue(repo: str, parent_number: int, child_number: int) -> 
             "--silent",
         ],
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     if result.returncode == 0:
         print(f"linked native sub-issue: #{parent_number} -> #{child_number}")
         return True
     if "already" not in result.stderr.lower() and "exists" not in result.stderr.lower():
         print(
-            f"skipped native sub-issue #{parent_number} -> #{child_number}: {result.stderr.strip()}",
+            f"skipped native sub-issue #{parent_number} -> "
+            f"#{child_number}: {result.stderr.strip()}",
             file=sys.stderr,
         )
     return False

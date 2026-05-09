@@ -72,9 +72,9 @@ radius_output="${tmpdir}/clients.conf"
 audit_log="${tmpdir}/identity-sync-audit.jsonl"
 radius_stdout="$(
   IDENTITY_SYNC_APPLY=1 \
-  IDENTITY_SYNC_APPLY_FREERADIUS=1 \
-  vault_radius_client_pdu_rfc99_corectrl_ap7901_secret="${radius_secret}" \
-  python3 "${apply_script}" "${source_file}" \
+    IDENTITY_SYNC_APPLY_FREERADIUS=1 \
+    vault_radius_client_pdu_rfc99_corectrl_ap7901_secret="${radius_secret}" \
+    python3 "${apply_script}" "${source_file}" \
     --apply \
     --provider freeradius \
     --freeradius-output "${radius_output}" \
@@ -103,10 +103,10 @@ chmod +x "${fake_ipa}"
 
 freeipa_stdout="$(
   IDENTITY_SYNC_APPLY=1 \
-  IDENTITY_SYNC_APPLY_FREEIPA=1 \
-  FAKE_IPA_LOG="${fake_log}" \
-  vault_identity_codex_admin_ssh_public_keys='ssh-ed25519 AAAATEST codex-admin' \
-  python3 "${apply_script}" "${source_file}" \
+    IDENTITY_SYNC_APPLY_FREEIPA=1 \
+    FAKE_IPA_LOG="${fake_log}" \
+    vault_identity_codex_admin_ssh_public_keys='ssh-ed25519 AAAATEST codex-admin' \
+    python3 "${apply_script}" "${source_file}" \
     --apply \
     --provider freeipa \
     --freeipa-command "${fake_ipa}" \
