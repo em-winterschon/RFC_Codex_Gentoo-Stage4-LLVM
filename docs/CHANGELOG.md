@@ -7,6 +7,10 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added the `nfs-storage-client` Stage5 overlay and `nfs_storage_client`
+  Ansible role for bare-metal/VM NFSv3, NFSv4, NFS-RDMA, and storage multipath
+  readiness. The profile keeps NFSv3/TCP as default, requires AAA/SSSD for
+  consistent NFSv4 UID/GID behavior, and excludes containers by default.
 - Added gated identity apply automation for the RFC1918 AAA source of truth:
   dry-run JSON plans, explicit global and provider mutation gates, redacted
   audit logging, FreeIPA CLI reconciliation for groups/users/hosts, FreeRADIUS

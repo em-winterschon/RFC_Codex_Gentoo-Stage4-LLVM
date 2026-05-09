@@ -1,0 +1,33 @@
+---
+gentoo_system_profile_metadata:
+  id: nfs-storage-client
+  purpose: Reusable Stage5 overlay for NFSv3/NFSv4 client access, NFS-RDMA readiness, and storage-path policy on bare-metal and VM systems.
+  profile_taxonomy:
+    stage: stage5
+    role_class: storage-overlay
+    role_name: nfs-client
+    package_layers:
+      - profile-package-lists/stage5-storage-nfs-client.packages
+  base_profile:
+    intended_overlay_on:
+      - hardened-llvm-stage4-merged-usr
+      - hardened-llvm-stage4-split-usr
+      - vm-guest-application-server
+      - hypervisor-xen-qemu-libvirt-host
+    excluded_by_default:
+      - container-service-base-image
+  package_pins:
+    tracked_atoms:
+      - net-fs/nfs-utils
+      - net-nds/rpcbind
+      - sys-cluster/rdma-core
+      - sys-fs/multipath-tools
+  source_references:
+    - https://packages.gentoo.org/packages/net-fs/nfs-utils
+    - https://packages.gentoo.org/packages/net-nds/rpcbind
+    - https://packages.gentoo.org/packages/sys-cluster/rdma-core
+    - https://packages.gentoo.org/packages/sys-fs/multipath-tools
+  operational_notes:
+    - NFSv3 over TCP remains the default for compatibility and simple rescue bootstraps.
+    - NFSv4 requires the AAA domain-client overlay for consistent UID/GID and optional Kerberos security modes.
+    - NFS-RDMA is opt-in and should only be enabled on hosts attached to the RoCE/RDMA fabric.

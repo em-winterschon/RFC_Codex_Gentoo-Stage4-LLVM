@@ -32,6 +32,7 @@
       - nexus_repo
       - freeipa_controller
       - ipa_client
+      - nfs_storage_client
       - freeradius_bridge
       - elasticsearch_cluster
       - kibana_interface

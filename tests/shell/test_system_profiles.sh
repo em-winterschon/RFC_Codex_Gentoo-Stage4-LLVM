@@ -30,6 +30,7 @@ for profile in \
   logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
+  nfs-storage-client.yml \
   netbox-managed-inventory.yml \
   netbox-pathb-lab-ipam-plan.yml \
   telemetry-elasticsearch-exporter.yml \
@@ -62,6 +63,7 @@ for metadata in \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
+  nfs-storage-client.metadata.yml \
   vm-container-services.metadata.yml \
   vm-elasticsearch-node.metadata.yml \
   vm-identity-controller.metadata.yml \
@@ -112,6 +114,7 @@ for package_list in \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \
+  stage5-storage-nfs-client.packages \
   stage5-observability-client.packages \
   stage5-observability-metrics-client.packages \
   stage5-observability-metrics-elasticsearch-exporter.packages \
