@@ -1,0 +1,27 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+    - profile-package-lists/stage5-virt-minimal.packages
+    - profile-package-lists/stage5-virt-xorg.packages
+  make_conf_append: |
+    USE="${USE} X elogind spice truetype xinerama -wayland"
+  package_use_files:
+    20-virt-xorg: |
+      app-emulation/spice-vdagent -systemd
+      x11-base/xorg-server elogind udev xorg
+      x11-misc/slim pam
+  modules_load_files:
+    virt-xorg.conf: |
+      qxl
+      virtio_blk
+      virtio_net
+      virtio_pci
+  openrc_services_enable:
+    - chronyd
+    - dbus
+    - qemu-guest-agent
+    - rsyslog
+    - sshd
+    - xdm

@@ -240,6 +240,14 @@ Dependency:
 
 ## Completed Milestones
 
+- native `bpool` + mirrored `rpool` validation in VM path
+- target-disk boot path with ZFSBootMenu
+- staged Ansible install sequences with checkpoints
+- JSONL control-flow callback and watcher
+- alias-mode QEMU networking path as the validated standard workflow for the current LiveISO host
+- ntfy integration across Ansible, GitHub, and Codex tooling
+- persistent Codex approval watcher OpenRC service
+- validated `gentoo-kernel` + Gentoo-native ZFS mitigation path that removes the prior `ftrace` warning reproduction on target-disk boot
 - Path B `container-services` VM profile and Podman runtime validation
 - tmpfs-backed memory drive support for fast ephemeral VM work
 - modular cloud-init definitions for VM and bare-metal profiles

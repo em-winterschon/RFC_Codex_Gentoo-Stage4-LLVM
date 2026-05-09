@@ -119,6 +119,18 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
    - publish them through DHCP/TFTP plus iPXE HTTP or UEFI HTTP + iPXE
    - boot into the Gentoo provisioning environment and then invoke the same installer workflow
 
+## Current Recommended Validation Path
+
+For the current LiveISO host, the validated standard workflow is:
+
+- QEMU alias-mode networking
+- staged Ansible install execution
+- target-disk reboot validation
+- Gentoo-native `sys-fs/zfs` + `sys-fs/zfs-kmod`
+- `gentoo-kernel` with the validated ZFS/ftrace mitigation fragment
+
+Tap/bridge remains a later enhancement, not the required default path.
+
 ## Reference Documents
 
 - repo overview: `README.md`

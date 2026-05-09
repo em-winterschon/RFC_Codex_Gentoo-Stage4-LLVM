@@ -365,3 +365,11 @@
             recursive=True
           )
       }}
+    resolved_kernel_config_fragment_files: >-
+      {{
+        resolved_kernel_config_fragment_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.kernel_config_fragment_files | default({}),
+            recursive=True
+          )
+      }}

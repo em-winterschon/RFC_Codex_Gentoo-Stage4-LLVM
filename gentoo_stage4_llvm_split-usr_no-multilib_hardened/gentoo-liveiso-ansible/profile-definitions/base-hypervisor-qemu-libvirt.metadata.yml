@@ -1,0 +1,29 @@
+---
+gentoo_system_profile_metadata:
+  id: base-hypervisor-qemu-libvirt
+  purpose: Bare-metal QEMU and Libvirt hypervisor baseline on top of base-minimal-nox.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-hypervisor
+    role_name: base-hypervisor-qemu-libvirt
+    extends:
+      - base-minimal-nox
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-hypervisor-common.packages
+      - profile-package-lists/stage5-base-hypervisor-qemu-libvirt.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/qemu-10.2.0-r1
+      - =app-emulation/libvirt-12.0.0
+      - =app-emulation/guestfs-tools-1.52.3-r1
+      - =net-misc/openvswitch-3.3.8
+      - =sys-apps/nvme-cli-2.16
+      - =sys-block/ndctl-77-r2
+    support_packages:
+      - sys-cluster/rdma-core
+      - sys-fs/zfs
+  openrc_services:
+    - libvirtd
+    - openvswitch

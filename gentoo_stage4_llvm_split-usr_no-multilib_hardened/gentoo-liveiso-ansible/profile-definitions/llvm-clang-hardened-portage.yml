@@ -1,5 +1,13 @@
 ---
 gentoo_profile_definition:
+  metadata:
+    profile_id: llvm-clang-hardened-portage
+    description: >-
+      Baseline Portage policy for LLVM/Clang-first Gentoo systems with
+      hardening enabled and GCC constrained to explicit per-package fallback
+      paths.
+    version_pin_metadata_file: >-
+      profile-definitions/llvm-clang-hardened-portage.metadata.yml
   repository_enable:
     - guru
     - xira

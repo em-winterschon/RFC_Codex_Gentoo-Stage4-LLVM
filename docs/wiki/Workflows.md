@@ -54,6 +54,12 @@ QEMU_NETWORK_MODE=alias \
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
 
+Current operator guidance:
+
+- alias mode is the validated standard workflow for the current LiveISO host
+- it preserves simple host recovery semantics while still allowing staged imaging and target-disk boot validation
+- tap/bridge remain supported implementation paths, but are not required for the standard validation loop
+
 ## 4. Watch Long-Running Install Control Flow
 
 Start the sequence:
@@ -87,6 +93,17 @@ High-level order:
 6. shut down installer-QCOW boot
 7. relaunch with `QEMU_BOOT_SOURCE=target-disks`
 8. verify installed target boot, SSH, and ZFS state
+
+Current validated kernel/ZFS path for this workflow:
+
+- `kernel_strategy: gentoo-kernel`
+- Gentoo-native `sys-fs/zfs`
+- Gentoo-native `sys-fs/zfs-kmod`
+- kernel fragment disabling:
+  - `CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS`
+  - `CONFIG_DYNAMIC_FTRACE_WITH_ARGS`
+
+This path replaced the earlier `gentoo-kernel-bin` validation path for ZFS warning triage.
 
 Machine-readable version:
 

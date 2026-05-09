@@ -20,9 +20,7 @@ SYSLOG_MESSAGE_RE = re.compile(r'message="([^"]+)"')
 
 
 def reply_queue_root() -> Path:
-    return Path(
-        os.getenv("CODEX_NTFY_REPLY_QUEUE_DIR", str(Path.home() / ".codex/ntfy-replies"))
-    )
+    return Path(os.getenv("CODEX_NTFY_REPLY_QUEUE_DIR", str(Path.home() / ".codex/ntfy-replies")))
 
 
 def pending_dir(root: Path | None = None) -> Path:
@@ -59,7 +57,7 @@ def normalize_reply_message(
     if syslog_match:
         stripped = syslog_match.group(1).strip()
     if not stripped:
-      return None
+        return None
 
     allow_match = ALLOW_RE.match(stripped)
     if allow_match:

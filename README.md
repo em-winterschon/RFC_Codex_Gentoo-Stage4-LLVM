@@ -7,6 +7,10 @@ Additional host-side QEMU/VFIO helper files live under `gentoo-virt-qemu/`.
 
 - [docs/WORKFLOWS.md](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/WORKFLOWS.md)
   human-readable index for the machine-readable workflow manifests
+- [gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.yml](/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.yml)
+  repo-managed LLVM/Clang-first Portage baseline with explicit GCC fallback via `package.env`
+- [gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.metadata.yml](/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/llvm-clang-hardened-portage.metadata.yml)
+  machine-readable package-list and exact-version pin metadata for the baseline profile
 - [docs/wiki](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/wiki)
   versioned source for the GitHub wiki; publish separately after PR approval
 - [docs/workflows/codex-approval-watcher-service.json](/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/codex-approval-watcher-service.json)
@@ -162,13 +166,15 @@ Local validation:
 - `python -m pip install -r requirements-dev.txt`
 - `pre-commit install`
 - `pre-commit run --all-files`
+- `python3 scripts/lint_portage_profiles.py`
+- `ANSIBLE_LINT_NODEPS=1 ansible-lint gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/install.yml`
 - `bash tests/shell/run-tests.sh`
 - `bash tests/shell/test_workflow_manifests.sh`
 
 PR and release validation:
 - `.github/workflows/validate.yml` runs the repo validation suite on pull requests and pushes to `main`
 - `.github/workflows/notify.yml` sends repository event notifications to ntfy when configured
-- the shell validation sequence currently covers shell syntax checks for committed `.sh` files, generator/output parity for the Ansible Python environment helper, and unit tests for `gentoo-virt-qemu/qemu-launch-minimal-vm.sh`
+- the shell validation sequence covers shell syntax checks, Portage profile linting, offline `ansible-lint`, generator/output parity for the Ansible Python environment helper, and the repo shell unit tests
 - Python linting and formatting are enforced through `ruff` and `black`
 
 ## Container Publishing

@@ -70,6 +70,7 @@
     resolved_portage_package_license_files: "{{ portage_package_license_files | default({}) }}"
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
+    resolved_kernel_config_fragment_files: "{{ kernel_config_fragment_files | default({}) }}"
     resolved_portage_patch_files: "{{ portage_patch_files | default({}) }}"
     resolved_profile_parents: "{{ profile_parents | default([]) }}"
     resolved_profile_package_atoms: "{{ profile_package_atoms | default([]) }}"

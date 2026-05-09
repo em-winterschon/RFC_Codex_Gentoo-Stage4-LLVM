@@ -42,6 +42,8 @@ profile_name: install-target
 profile_parents:
   - gentoo:default/linux/amd64/23.0/llvm
   - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 
 portage_cpu_profile: x86_64_v2_generic
 gpu_stack: none
