@@ -22,7 +22,7 @@ test_dry_run() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 # comment
 app-shells/bash
 net-misc/curl
@@ -53,11 +53,11 @@ test_auto_engine_prefers_buildah() {
   mkdir -p "${bin_dir}"
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
-  cat >"${bin_dir}/buildah" <<'EOF'
+  cat > "${bin_dir}/buildah" << 'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
@@ -66,10 +66,10 @@ EOF
   output="$(
     PATH="${bin_dir}:${PATH}" \
       bash "${BUILD_SCRIPT}" \
-        --root "${temp_dir}/rootfs" \
-        --package-list "${package_list}" \
-        --image-ref localhost/test:latest \
-        --dry-run
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --image-ref localhost/test:latest \
+      --dry-run
   )"
 
   assert_contains "${output}" 'engine=buildah'
@@ -82,17 +82,17 @@ test_dry_run_sanitizes_features() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
   output="$(
     FEATURES='network-sandbox distcc ccache userpriv' \
       bash "${BUILD_SCRIPT}" \
-        --root "${temp_dir}/rootfs" \
-        --package-list "${package_list}" \
-        --engine none \
-        --dry-run
+      --root "${temp_dir}/rootfs" \
+      --package-list "${package_list}" \
+      --engine none \
+      --dry-run
   )"
 
   assert_contains "${output}" 'sanitized-features=network-sandbox userpriv'
@@ -108,24 +108,24 @@ test_dry_run_use_file() {
   host_package_use_file="${temp_dir}/host.package.use"
   rootfs_links_file="${temp_dir}/rootfs.links"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
-  cat >"${use_file}" <<'EOF'
+  cat > "${use_file}" << 'EOF'
 # merged-usr container rootfs override
 -split-usr
 EOF
 
-  cat >"${package_use_file}" <<'EOF'
+  cat > "${package_use_file}" << 'EOF'
 app-alternatives/awk -split-usr
 EOF
 
-  cat >"${host_package_use_file}" <<'EOF'
+  cat > "${host_package_use_file}" << 'EOF'
 sys-apps/coreutils -split-usr
 EOF
 
-  cat >"${rootfs_links_file}" <<'EOF'
+  cat > "${rootfs_links_file}" << 'EOF'
 /bin usr/bin
 /sbin usr/sbin
 EOF
@@ -157,13 +157,13 @@ test_dry_run_overlay_dir() {
   package_list="${temp_dir}/packages.txt"
   overlay_dir="${temp_dir}/overlay"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
   mkdir -p "${overlay_dir}/profiles" "${overlay_dir}/metadata"
   printf 'test-overlay\n' > "${overlay_dir}/profiles/repo_name"
-  cat >"${overlay_dir}/metadata/layout.conf" <<'EOF'
+  cat > "${overlay_dir}/metadata/layout.conf" << 'EOF'
 masters = gentoo
 repo-name = test-overlay
 EOF
@@ -189,11 +189,11 @@ test_dry_run_host_package_mask_file() {
   package_list="${temp_dir}/packages.txt"
   mask_file="${temp_dir}/package.mask"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
-  cat >"${mask_file}" <<'EOF'
+  cat > "${mask_file}" << 'EOF'
 =app-alternatives/awk-4::gentoo
 EOF
 
@@ -215,7 +215,7 @@ test_dry_run_bootstrap_runtime_seed() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
@@ -238,11 +238,11 @@ test_package_use_file_requires_explicit_config_root() {
   package_list="${temp_dir}/packages.txt"
   package_use_file="${temp_dir}/package.use"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
-  cat >"${package_use_file}" <<'EOF'
+  cat > "${package_use_file}" << 'EOF'
 app-alternatives/awk -split-usr
 EOF
 
@@ -266,7 +266,7 @@ test_dry_run_sysroot() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
@@ -290,7 +290,7 @@ test_dry_run_explicit_pkgdir() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
@@ -312,7 +312,7 @@ test_dry_run_binpkg_sync() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
@@ -339,7 +339,7 @@ test_dry_run_stage3_target_plan() {
   trap 'rm -rf "${temp_dir}"' RETURN
   package_list="${temp_dir}/packages.txt"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
@@ -370,7 +370,7 @@ test_dry_run_stage3_tarball_plan() {
   package_list="${temp_dir}/packages.txt"
   stage3_tarball="${temp_dir}/stage3-amd64-llvm-openrc-test.tar.xz"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
   : > "${stage3_tarball}"
@@ -397,7 +397,7 @@ test_stage3_tarball_extracts_before_rootfs_skeleton() {
   stage3_tarball="${temp_dir}/stage3-amd64-llvm-openrc-test.tar.xz"
   emerge_log="${temp_dir}/emerge.log"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
@@ -405,7 +405,7 @@ EOF
   printf 'Gentoo Base System release test\n' > "${stage3_dir}/etc/gentoo-release"
   tar -C "${stage3_dir}" -cJf "${stage3_tarball}" .
 
-  cat >"${temp_dir}/bin/emerge" <<EOF
+  cat > "${temp_dir}/bin/emerge" << EOF
 #!/usr/bin/env bash
 printf '%s\n' "\$*" > "${emerge_log}"
 exit 0
@@ -414,10 +414,10 @@ EOF
 
   PATH="${temp_dir}/bin:${PATH}" \
     bash "${BUILD_SCRIPT}" \
-      --root "${temp_dir}/rootfs" \
-      --package-list "${package_list}" \
-      --stage3-tarball "${stage3_tarball}" \
-      --engine none
+    --root "${temp_dir}/rootfs" \
+    --package-list "${package_list}" \
+    --stage3-tarball "${stage3_tarball}" \
+    --engine none
 
   [[ -f "${temp_dir}/rootfs/etc/gentoo-release" ]] || fail "stage3 gentoo-release was not extracted"
   [[ -f "${emerge_log}" ]] || fail "stub emerge was not called"
@@ -437,20 +437,20 @@ test_stage3_config_root_disables_inherited_binrepos() {
   stage5_conf="${temp_dir}/rootfs/etc/portage/binrepos.conf/stage5-container.conf"
   disabled_conf="${temp_dir}/rootfs/etc/portage/binrepos.conf.disabled-by-stage5-builder/gentoobinhost.conf"
 
-  cat >"${package_list}" <<'EOF'
+  cat > "${package_list}" << 'EOF'
 app-shells/bash
 EOF
 
   mkdir -p "${stage3_dir}/etc/portage/binrepos.conf" "${temp_dir}/bin"
   printf 'Gentoo Base System release test\n' > "${stage3_dir}/etc/gentoo-release"
-  cat >"${stage3_dir}/etc/portage/binrepos.conf/gentoobinhost.conf" <<'EOF'
+  cat > "${stage3_dir}/etc/portage/binrepos.conf/gentoobinhost.conf" << 'EOF'
 [gentoobinhost]
 sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64
 verify-signature = true
 EOF
   tar -C "${stage3_dir}" -cJf "${stage3_tarball}" .
 
-  cat >"${temp_dir}/bin/emerge" <<EOF
+  cat > "${temp_dir}/bin/emerge" << EOF
 #!/usr/bin/env bash
 printf '%s\n' "\$*" > "${emerge_log}"
 exit 0
@@ -460,17 +460,17 @@ EOF
   PATH="${temp_dir}/bin:${PATH}" \
     PORTAGE_BINHOST='http://binhost.example.invalid/stage3-test' \
     bash "${BUILD_SCRIPT}" \
-      --root "${temp_dir}/rootfs" \
-      --config-root "${temp_dir}/rootfs" \
-      --sysroot "${temp_dir}/rootfs" \
-      --package-list "${package_list}" \
-      --stage3-tarball "${stage3_tarball}" \
-      --binpkg-repo-id stage3-test \
-      --engine none
+    --root "${temp_dir}/rootfs" \
+    --config-root "${temp_dir}/rootfs" \
+    --sysroot "${temp_dir}/rootfs" \
+    --package-list "${package_list}" \
+    --stage3-tarball "${stage3_tarball}" \
+    --binpkg-repo-id stage3-test \
+    --engine none
 
   [[ -f "${stage5_conf}" ]] || fail "stage5 binrepo config was not written"
-  assert_contains "$(<"${stage5_conf}")" 'sync-uri = http://binhost.example.invalid/stage3-test'
-  assert_contains "$(<"${stage5_conf}")" 'verify-signature = false'
+  assert_contains "$(< "${stage5_conf}")" 'sync-uri = http://binhost.example.invalid/stage3-test'
+  assert_contains "$(< "${stage5_conf}")" 'verify-signature = false'
   [[ -f "${disabled_conf}" ]] || fail "inherited stage3 binrepo config was not disabled"
 }
 

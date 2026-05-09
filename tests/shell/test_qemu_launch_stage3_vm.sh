@@ -36,6 +36,12 @@ mark_stage3_launch_globals_used() {
     "${QEMU_LAUNCH_DRY_RUN-}" \
     "${QEMU_DAEMONIZE-}" \
     "${QEMU_DISPLAY_MODE-}" \
+    "${QEMU_VIDEO_DEVICE-}" \
+    "${QEMU_VIDEO_DEVICE_HELP_OUTPUT-}" \
+    "${QEMU_SPICE_PORT-}" \
+    "${QEMU_SPICE_ADDRESS-}" \
+    "${QEMU_SPICE_OPTIONS-}" \
+    "${QEMU_SPICE_AGENT-}" \
     "${QEMU_BOOT_SOURCE-}" \
     "${QEMU_SERIAL_MODE-}" \
     "${QEMU_NETWORK_MODE-}" \
@@ -95,6 +101,12 @@ reset_launcher_state() {
   QEMU_LAUNCH_DRY_RUN='1'
   QEMU_DAEMONIZE='1'
   QEMU_DISPLAY_MODE='none'
+  QEMU_VIDEO_DEVICE='auto'
+  QEMU_VIDEO_DEVICE_HELP_OUTPUT=$'name "std"\nname "virtio-vga"\nname "qxl-vga"\n'
+  QEMU_SPICE_PORT='5931'
+  QEMU_SPICE_ADDRESS='127.0.0.1'
+  QEMU_SPICE_OPTIONS='port=5931,addr=127.0.0.1,disable-ticketing=on'
+  QEMU_SPICE_AGENT='1'
   QEMU_SERIAL_MODE='file'
   QEMU_SERIAL_FILE='/tmp/stage3.serial.log'
   QEMU_SERIAL_TCP='127.0.0.1:4555,server=on,wait=off,telnet=on'
@@ -271,7 +283,7 @@ test_build_qemu_cmd_supports_memory_drive_manifest() {
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   manifest="${temp_dir}/memory-drives.json"
-  cat > "${manifest}" <<EOF
+  cat > "${manifest}" << EOF
 {"drives":[{"path":"${temp_dir}/mem0.qcow2","format":"qcow2","serial":"mem-portage-cache","device_model":"virtio-blk-pci"}]}
 EOF
   QEMU_MEMORY_DRIVES_FILE="${manifest}"
@@ -371,12 +383,76 @@ test_main_dry_run_prints_target_disk_boot_plan() {
   rm -rf "${temp_dir}"
 }
 
+test_video_device_defaults_to_qxl_for_spice() {
+  reset_launcher_state
+  QEMU_DISPLAY_MODE='spice'
+  assert_equals 'qxl-vga' "$(video_device_name)"
+}
+
+test_validate_display_backend_rejects_missing_spice() {
+  local output status
+
+  reset_launcher_state
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_BIN='/tmp/fake-qemu'
+
+  qemu_help_output() {
+    printf '%s\n' 'QEMU options without spice'
+  }
+
+  set +e
+  output="$(validate_display_backend 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '1'
+  assert_contains "${output}" 'USE=spice'
+}
+
+test_build_qemu_cmd_supports_spice_qxl_and_agent() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/vm.qcow2"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  BPOOL_DISK0="${temp_dir}/bpool0.img"
+  BPOOL_DISK1="${temp_dir}/bpool1.img"
+  RPOOL_DISK0="${temp_dir}/rpool0.img"
+  RPOOL_DISK1="${temp_dir}/rpool1.img"
+  QEMU_DISPLAY_MODE='spice'
+  QEMU_VIDEO_DEVICE='qxl-vga'
+  QEMU_SPICE_PORT='5931'
+  QEMU_SPICE_ADDRESS='127.0.0.1'
+  QEMU_SPICE_OPTIONS='port=5931,addr=127.0.0.1,disable-ticketing=on'
+  : > "${QCOW_IMAGE}"
+  : > "${EFI_FIRM}"
+  : > "${EFI_VARS_TEMPLATE}"
+  : > "${BPOOL_DISK0}"
+  : > "${BPOOL_DISK1}"
+  : > "${RPOOL_DISK0}"
+  : > "${RPOOL_DISK1}"
+
+  build_qemu_cmd
+  rendered="${QEMU_CMD[*]}"
+
+  assert_contains "${rendered}" '-display none'
+  assert_contains "${rendered}" '-spice port=5931,addr=127.0.0.1,disable-ticketing=on'
+  assert_contains "${rendered}" '-device qxl-vga'
+  assert_contains "${rendered}" '-device virtio-serial-pci'
+  assert_contains "${rendered}" 'name=com.redhat.spice.0'
+  rm -rf "${temp_dir}"
+}
+
 test_default_launcher_log_file_uses_requested_format
 test_build_qemu_cmd_uses_boot_disk_and_tcp_serial
 test_build_qemu_cmd_supports_pty_serial
 test_build_qemu_cmd_supports_target_disk_boot
 test_build_qemu_cmd_supports_alias_network_mode
 test_build_qemu_cmd_supports_memory_drive_manifest
+test_video_device_defaults_to_qxl_for_spice
+test_validate_display_backend_rejects_missing_spice
+test_build_qemu_cmd_supports_spice_qxl_and_agent
 test_validate_boot_source_rejects_invalid_value
 test_main_dry_run_prints_stage3_vm_command
 test_main_dry_run_prints_target_disk_boot_plan

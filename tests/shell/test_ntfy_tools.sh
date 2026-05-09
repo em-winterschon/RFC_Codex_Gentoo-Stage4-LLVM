@@ -14,6 +14,7 @@ CODEX_APPROVAL_WATCHER_WITH_ENV="${REPO_ROOT}/scripts/codex_approval_watcher_wit
 NTFY_PUBSUB_TUI="${REPO_ROOT}/scripts/ntfy_pubsub_tui.py"
 SLACK_WEBHOOK="${REPO_ROOT}/scripts/slack_webhook.py"
 GITHUB_NOTIFY="${REPO_ROOT}/.github/scripts/ntfy_repo_event.py"
+LAN_NTFY_URL="http://msg-sun99-ntfysys.rfc1918.host"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -55,7 +56,7 @@ test_ntfy_notify_dry_run_renders_payload() {
   output="$(
     python3 "${NTFY_NOTIFY}" \
       --dry-run \
-      --url https://ntfy.sh \
+      --url "${LAN_NTFY_URL}" \
       --topic codex-test \
       --state success \
       --app-name codex \
@@ -70,11 +71,43 @@ test_ntfy_notify_dry_run_renders_payload() {
   assert_contains "${output}" 'validation complete'
 }
 
+test_ntfy_notify_requires_configured_url() {
+  local output status
+
+  set +e
+  output="$(
+    env -u NTFY_URL \
+      python3 "${NTFY_NOTIFY}" \
+      --dry-run \
+      --topic codex-test \
+      --state info \
+      --message "validation complete" 2>&1
+  )"
+  status=$?
+  set -e
+
+  [[ "${status}" -eq 2 ]] || fail "expected missing URL to exit 2, got ${status}: ${output}"
+  assert_contains "${output}" "ntfy URL is not configured"
+}
+
+test_codex_ntfy_wrapper_skips_without_public_fallback() {
+  local output
+
+  output="$(
+    env -u CODEX_NTFY_URL -u NTFY_URL \
+      CODEX_NTFY_TOPIC=codex-topic \
+      bash "${CODEX_NOTIFY}" info "done" --dry-run
+  )"
+
+  assert_contains "${output}" '"skipped": true'
+  assert_contains "${output}" 'missing URL configuration'
+}
+
 test_codex_ntfy_wrapper_uses_coded_env() {
   local output
 
   output="$(
-    CODEX_NTFY_URL=https://ntfy.sh \
+    CODEX_NTFY_URL="${LAN_NTFY_URL}" \
       CODEX_NTFY_TOPIC=codex-topic \
       bash "${CODEX_NOTIFY}" success "done" --title "Codex done" --dry-run
   )"
@@ -114,7 +147,7 @@ EOF
     python3 "${GITHUB_NOTIFY}" \
       --dry-run \
       --allow-missing-config \
-      --url https://ntfy.sh \
+      --url "${LAN_NTFY_URL}" \
       --topic repo-topic \
       --event-name pull_request \
       --event-path "${payload}"
@@ -131,7 +164,8 @@ test_codex_notify_event_renders_turn_complete_payload() {
   payload='{"type":"agent-turn-complete","thread-id":"thread-1","turn-id":"turn-2","cwd":"/root/project","input-messages":["do work"],"last-assistant-message":"done"}'
 
   output="$(
-    CODEX_NTFY_TOPIC=codex-alerts \
+    CODEX_NTFY_URL="${LAN_NTFY_URL}" \
+      CODEX_NTFY_TOPIC=codex-alerts \
       python3 "${CODEX_NOTIFY_EVENT}" --dry-run "${payload}"
   )"
 
@@ -145,7 +179,7 @@ test_codex_notify_wrapper_sources_env_file() {
   temp_dir="$(mktemp -d)"
   env_file="${temp_dir}/ntfy.env"
   cat > "${env_file}" << 'EOF'
-export CODEX_NTFY_URL='https://ntfy.sh'
+export CODEX_NTFY_URL='http://msg-sun99-ntfysys.rfc1918.host'
 export CODEX_NTFY_TOPIC='codex-wrapper-topic'
 EOF
 
@@ -163,6 +197,7 @@ test_codex_hook_wrapper_sources_env_file() {
   temp_dir="$(mktemp -d)"
   env_file="${temp_dir}/ntfy.env"
   cat > "${env_file}" << 'EOF'
+export CODEX_NTFY_URL='http://msg-sun99-ntfysys.rfc1918.host'
 export CODEX_NTFY_ALERT_TOPIC='codex-alerts-wrapper'
 export CODEX_NTFY_REPLY_TOPIC='codex-replies-wrapper'
 EOF
@@ -182,7 +217,8 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
   payload='{"hook_event_name":"PermissionRequest","tool_input":{"description":"Need root access","command":"emerge -avuDN @world"}}'
 
   dry_output="$(
-    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
+    CODEX_NTFY_URL="${LAN_NTFY_URL}" \
+      CODEX_NTFY_ALERT_TOPIC=codex-alerts \
       CODEX_NTFY_REPLY_TOPIC=codex-replies \
       python3 "${CODEX_NTFY_HOOK}" --dry-run <<< "${payload}"
   )"
@@ -191,7 +227,8 @@ test_codex_ntfy_hook_permission_dry_run_and_reply() {
   assert_contains "${dry_output}" 'Codex approval needed'
 
   reply_output="$(
-    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
+    CODEX_NTFY_URL="${LAN_NTFY_URL}" \
+      CODEX_NTFY_ALERT_TOPIC=codex-alerts \
       CODEX_NTFY_REPLY_TOPIC=codex-replies \
       CODEX_NTFY_TEST_REQUEST_ID='12345678' \
       CODEX_NTFY_TEST_REPLIES='allow 12345678' \
@@ -213,7 +250,8 @@ test_approval_watcher_exec_request_dry_run() {
 EOF
 
   output="$(
-    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
+    CODEX_NTFY_URL="${LAN_NTFY_URL}" \
+      CODEX_NTFY_ALERT_TOPIC=codex-alerts \
       python3 "${CODEX_APPROVAL_WATCHER}" \
       --dry-run \
       --from-start \
@@ -240,7 +278,8 @@ test_approval_watcher_patch_request_dry_run() {
 EOF
 
   output="$(
-    CODEX_NTFY_ALERT_TOPIC=codex-alerts \
+    CODEX_NTFY_URL="${LAN_NTFY_URL}" \
+      CODEX_NTFY_ALERT_TOPIC=codex-alerts \
       python3 "${CODEX_APPROVAL_WATCHER}" \
       --dry-run \
       --from-start \
@@ -269,6 +308,18 @@ test_ntfy_pubsub_tui_prints_config() {
   assert_contains "${output}" '"reply_topic": "replies-topic"'
 }
 
+test_public_ntfy_service_url_is_not_reintroduced() {
+  if grep -R -I --exclude-dir='__pycache__' "https://ntfy\\.sh" \
+    "${REPO_ROOT}/scripts" \
+    "${REPO_ROOT}/ntfy.env.example" \
+    "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/action_plugins" \
+    "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/callback_plugins" \
+    "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/ansible.cfg" \
+    > /dev/null; then
+    fail "public ntfy service URL fallback was reintroduced"
+  fi
+}
+
 test_slack_webhook_dry_run_renders_payload() {
   local output
 
@@ -288,6 +339,8 @@ test_slack_webhook_dry_run_renders_payload() {
 test_python_sources_compile
 test_shell_wrappers_parse
 test_ntfy_notify_dry_run_renders_payload
+test_ntfy_notify_requires_configured_url
+test_codex_ntfy_wrapper_skips_without_public_fallback
 test_codex_ntfy_wrapper_uses_coded_env
 test_github_event_formatter_renders_pull_request_message
 test_codex_notify_event_renders_turn_complete_payload
@@ -297,6 +350,7 @@ test_codex_ntfy_hook_permission_dry_run_and_reply
 test_approval_watcher_exec_request_dry_run
 test_approval_watcher_patch_request_dry_run
 test_ntfy_pubsub_tui_prints_config
+test_public_ntfy_service_url_is_not_reintroduced
 test_slack_webhook_dry_run_renders_payload
 
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -1,0 +1,38 @@
+---
+- name: Validate identity source-of-truth definitions
+  hosts: localhost
+  gather_facts: false
+  vars:
+    identity_source_file: "{{ playbook_dir }}/../identity-source-definitions/local-rfc1918.yml"
+    identity_source_validator: "{{ playbook_dir }}/../../../scripts/validate_identity_source.py"
+    identity_source_renderer: "{{ playbook_dir }}/../../../scripts/render_identity_sync_plan.py"
+
+  tasks:
+    - name: Validate identity source definition
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ identity_source_validator }}"
+          - "{{ identity_source_file }}"
+          - "--format"
+          - json
+      register: identity_source_validation
+      changed_when: false
+
+    - name: Render identity sync plan
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ identity_source_renderer }}"
+          - "{{ identity_source_file }}"
+          - "--format"
+          - json
+      register: identity_source_sync_plan
+      changed_when: false
+
+    - name: Report sanitized identity source summary
+      ansible.builtin.debug:
+        msg: >-
+          Identity source validated:
+          {{ (identity_source_validation.stdout | from_json).counts }};
+          sync_plan_keys={{ (identity_source_sync_plan.stdout | from_json).keys() | list | sort }}.

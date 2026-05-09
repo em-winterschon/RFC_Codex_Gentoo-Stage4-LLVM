@@ -1,0 +1,6 @@
+# Managed by Ansible role gpu_host_policy.
+# Prevent framebuffer/display drivers from binding NVIDIA GPUs reserved for compute or passthrough.
+{% for module_name in gpu_host_policy_blacklisted_modules %}
+blacklist {{ module_name }}
+{% endfor %}
+options nouveau modeset=0

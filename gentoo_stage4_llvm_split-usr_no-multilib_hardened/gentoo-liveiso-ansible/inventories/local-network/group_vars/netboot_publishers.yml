@@ -1,0 +1,21 @@
+---
+netboot_publish_root: /var/lib/netboot/path-b
+netboot_public_base_url: http://172.16.99.108:8080
+netboot_tftp_autoexec_chain_url: http://172.16.99.108:8080/hosts/gmktek-k10-stage5.ipxe
+
+netboot_roles_extra:
+  workstation-validation:
+    description: Boot the GMKtek K10 LOX Stage5 workstation validation environment.
+    kernel_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/vmlinuz"
+    initrd_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/{{ netboot_initramfs_short_name }}"
+    initrd_boot_name: "{{ netboot_initramfs_short_name }}"
+    rootfs_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img"
+    extra_cmdline: >-
+      bootdev=eth0
+      ifname=eth0:84:47:09:5f:21:64
+      ip=172.16.99.156::172.16.99.1:255.255.255.0:gmktek-k10-stage5:eth0:none
+      nameserver=9.9.9.9
+      rd.neednet=1
+      rd.net.timeout.carrier=60
+      rd.live.image
+      root=live:{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img

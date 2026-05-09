@@ -42,6 +42,11 @@ Current mixed-environment intake state:
   - `fmt2`
 - Local validation currently covers `5` files, `5` sites, `25` prefixes, `11`
   devices, `5` clusters, and `4` service VIPs.
+- FMT2 intake has been expanded from placeholder VPN/public-IP rows into a
+  tomorrow-ready discovery baseline using the legacy SFO-200 evidence repo:
+  HE.net IPv4/IPv6 allocations, OpenVPN transport, OOB management, the Arista
+  data switch, Aruba OOB/border switches, HA router pair, Dell KVM hosts, the
+  NASA storage/virtualization host, serial console, Check_MK, and Prometheus.
 - Live NetBox apply completed on 2026-05-03 after pre-apply snapshot
   `nb-pre-ms-20260503`.
 - Idempotence pass completed with `0` creates and `0` updates.

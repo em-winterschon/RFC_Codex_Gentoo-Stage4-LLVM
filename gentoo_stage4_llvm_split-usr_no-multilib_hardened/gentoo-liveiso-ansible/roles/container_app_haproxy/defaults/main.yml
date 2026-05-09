@@ -1,2 +1,4 @@
 ---
 container_haproxy_config_dir: /etc/container-services/apps/haproxy
+container_haproxy_tls_dir: "{{ container_haproxy_config_dir }}/tls"
+container_haproxy_container_tls_dir: /etc/haproxy/tls

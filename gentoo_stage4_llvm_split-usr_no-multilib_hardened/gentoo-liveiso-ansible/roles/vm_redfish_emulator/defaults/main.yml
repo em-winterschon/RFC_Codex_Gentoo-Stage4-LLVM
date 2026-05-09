@@ -1,0 +1,18 @@
+---
+vm_redfish_emulator_default_enabled: false
+vm_redfish_emulator_default_backend: sushy-tools-libvirt
+vm_redfish_emulator_default_user: sushy
+vm_redfish_emulator_default_group: sushy
+vm_redfish_emulator_default_root: /opt/vm-redfish-emulator
+vm_redfish_emulator_default_venv: /opt/vm-redfish-emulator/venv
+vm_redfish_emulator_default_listen_host: 0.0.0.0
+vm_redfish_emulator_default_listen_port: 8000
+vm_redfish_emulator_default_libvirt_uri: qemu:///system
+vm_redfish_emulator_default_tls_enabled: true
+vm_redfish_emulator_default_tls_cert: /etc/vm-redfish-emulator/tls/redfish.crt
+vm_redfish_emulator_default_tls_key: /etc/vm-redfish-emulator/tls/redfish.key
+vm_redfish_emulator_default_wsgi: sushy_tools.emulator.main:app
+vm_redfish_emulator_default_pip_packages:
+  - sushy-tools
+  - gunicorn
+  - libvirt-python

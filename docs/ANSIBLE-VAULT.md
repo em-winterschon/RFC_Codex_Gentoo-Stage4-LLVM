@@ -120,6 +120,113 @@ Use `GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" gh ...` for
 operator-local GitHub CLI calls. Do not commit the token file or print token
 contents to logs.
 
+## BigNetwork Token
+
+The operator-private BigNetwork API/client token for the Forge/Codexian portal
+account is sourced from:
+
+```bash
+/root/.ssh/codex.d/tokens/BIGNETWORK_TOKEN_CODEXIAN
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-bignetwork-vault.sh
+```
+
+The encrypted local-network vault stores the token and repo-safe metadata under:
+
+```text
+vault_bignetwork_codexian_api_token
+vault_bignetwork_codexian_token_name
+vault_bignetwork_codexian_account_name
+vault_bignetwork_codexian_token_owner
+vault_bignetwork_codexian_purpose
+```
+
+Repo-safe transport intent and role wiring live in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/bignetwork.yml
+```
+
+## Private CA
+
+The shared RFC1918 private certificate authority should be imported from an
+operator-private source file, not generated in the repo. The default source path
+is:
+
+```bash
+/root/.ssh/vault/private-ca/RFC1918_PRIVATE_CA.env
+```
+
+Import or rotate the encrypted vault values with:
+
+```bash
+scripts/import-private-ca-vault.sh
+```
+
+The source file may provide PEM material, PKCS#12 material, or paths to
+operator-private files:
+
+```bash
+RFC1918_PRIVATE_CA_NAME="rfc1918_private_ca"
+RFC1918_PRIVATE_CA_CERT_PEM="-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----"
+RFC1918_PRIVATE_CA_KEY_PEM="-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----"
+RFC1918_PRIVATE_CA_CHAIN_PEM="-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----"
+RFC1918_PRIVATE_CA_PKCS12_BASE64="base64-encoded-pkcs12"
+RFC1918_PRIVATE_CA_PKCS12_PASSWORD="replace-me"
+```
+
+The encrypted local-network vault stores the material or references under:
+
+```text
+vault_private_ca_rfc1918_name
+vault_private_ca_rfc1918_cert_pem
+vault_private_ca_rfc1918_key_pem
+vault_private_ca_rfc1918_chain_pem
+vault_private_ca_rfc1918_pkcs12_base64
+vault_private_ca_rfc1918_pkcs12_password
+vault_private_ca_rfc1918_cert_path
+vault_private_ca_rfc1918_key_path
+vault_private_ca_rfc1918_chain_path
+vault_private_ca_rfc1918_pkcs12_path
+```
+
+Until this CA is imported and distributed to clients, service TLS may use
+runtime-generated self-signed certificates for transport testing only.
+
+## APC PDU Credentials
+
+The operator-private AP7901 RFC99 core-control PDU credential source is:
+
+```bash
+/root/.ssh/codex.d/tokens/PDU_RFC99_CORECTRL
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-pdu-rfc99-corectrl-vault.sh
+```
+
+The importer copies `vault_pdu_rfc99_corecontrol_*` keys into the encrypted
+local-network vault and never prints secret values. Keep the source file outside
+git. K10 power-cycle automation must validate the AP7901 outlet label
+`host_gmktec_k10` before setting outlet control OIDs.
+
+NetBox inventory for the AP7901 must remain non-secret. It may contain the
+device model, management IP, serial number, SNMPv3 capability marker, and outlet
+labels, but it must not contain SNMPv3 usernames, authentication secrets,
+privacy secrets, or local break-glass passwords.
+
 ## Safety Rules
 
 - Commit only encrypted vault files.

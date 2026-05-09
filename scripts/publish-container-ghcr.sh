@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: publish-container-ghcr.sh --local-image IMAGE --image-name NAME [options]
 
 Options:
@@ -43,17 +43,17 @@ infer_namespace_from_git() {
   local origin owner
   origin="$(git config --get remote.origin.url 2> /dev/null || true)"
   case "${origin}" in
-    git@github.com:*)
-      owner="${origin#git@github.com:}"
-      owner="${owner%%/*}"
-      ;;
-    https://github.com/*)
-      owner="${origin#https://github.com/}"
-      owner="${owner%%/*}"
-      ;;
-    *)
-      owner=''
-      ;;
+  git@github.com:*)
+    owner="${origin#git@github.com:}"
+    owner="${owner%%/*}"
+    ;;
+  https://github.com/*)
+    owner="${origin#https://github.com/}"
+    owner="${owner%%/*}"
+    ;;
+  *)
+    owner=''
+    ;;
   esac
   printf '%s' "${owner}"
 }
@@ -73,57 +73,57 @@ DRY_RUN='0'
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --local-image)
-      LOCAL_IMAGE="${2:-}"
-      shift 2
-      ;;
-    --image-name)
-      IMAGE_NAME="${2:-}"
-      shift 2
-      ;;
-    --tag)
-      IMAGE_TAG="${2:-}"
-      shift 2
-      ;;
-    --namespace)
-      GHCR_NAMESPACE="${2:-}"
-      shift 2
-      ;;
-    --registry)
-      GHCR_REGISTRY="${2:-}"
-      shift 2
-      ;;
-    --user)
-      GHCR_USER="${2:-}"
-      shift 2
-      ;;
-    --token-file)
-      GHCR_TOKEN_FILE="${2:-}"
-      shift 2
-      ;;
-    --source-url)
-      OCI_SOURCE_URL="${2:-}"
-      shift 2
-      ;;
-    --description)
-      OCI_DESCRIPTION="${2:-}"
-      shift 2
-      ;;
-    --print-target)
-      PRINT_TARGET='1'
-      shift
-      ;;
-    --dry-run)
-      DRY_RUN='1'
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      fail "Unknown argument: $1"
-      ;;
+  --local-image)
+    LOCAL_IMAGE="${2:-}"
+    shift 2
+    ;;
+  --image-name)
+    IMAGE_NAME="${2:-}"
+    shift 2
+    ;;
+  --tag)
+    IMAGE_TAG="${2:-}"
+    shift 2
+    ;;
+  --namespace)
+    GHCR_NAMESPACE="${2:-}"
+    shift 2
+    ;;
+  --registry)
+    GHCR_REGISTRY="${2:-}"
+    shift 2
+    ;;
+  --user)
+    GHCR_USER="${2:-}"
+    shift 2
+    ;;
+  --token-file)
+    GHCR_TOKEN_FILE="${2:-}"
+    shift 2
+    ;;
+  --source-url)
+    OCI_SOURCE_URL="${2:-}"
+    shift 2
+    ;;
+  --description)
+    OCI_DESCRIPTION="${2:-}"
+    shift 2
+    ;;
+  --print-target)
+    PRINT_TARGET='1'
+    shift
+    ;;
+  --dry-run)
+    DRY_RUN='1'
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    fail "Unknown argument: $1"
+    ;;
   esac
 done
 
@@ -148,7 +148,7 @@ fi
 
 if [[ -z "${GHCR_TOKEN}" && -n "${GHCR_TOKEN_FILE}" ]]; then
   [[ -f "${GHCR_TOKEN_FILE}" ]] || fail "Token file not found: ${GHCR_TOKEN_FILE}"
-  GHCR_TOKEN="$(<"${GHCR_TOKEN_FILE}")"
+  GHCR_TOKEN="$(< "${GHCR_TOKEN_FILE}")"
 fi
 
 if [[ "${DRY_RUN}" == '1' ]]; then
@@ -177,7 +177,7 @@ podman push --digestfile "${digest_file}" "${TARGET_REF}"
 
 log "Published ${TARGET_REF}"
 if [[ -s "${digest_file}" ]]; then
-  log "Digest: $(<"${digest_file}")"
+  log "Digest: $(< "${digest_file}")"
 fi
 [[ -n "${OCI_SOURCE_URL}" ]] && log "Source URL: ${OCI_SOURCE_URL}"
 [[ -n "${OCI_DESCRIPTION}" ]] && log "Description: ${OCI_DESCRIPTION}"

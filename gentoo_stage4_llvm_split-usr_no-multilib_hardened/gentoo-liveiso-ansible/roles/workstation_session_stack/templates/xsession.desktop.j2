@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=XSession
+Name={{ workstation_session_desktop.name | default(workstation_session_desktop.id) }}
+Comment={{ workstation_session_desktop.comment | default('Managed workstation desktop session') }}
+Exec={{ workstation_session_desktop.session_command | default(resolved_workstation_session_stack.session_command) }}
+TryExec={{ workstation_session_desktop.try_exec | default(workstation_session_desktop.session_command | default(resolved_workstation_session_stack.session_command)) }}

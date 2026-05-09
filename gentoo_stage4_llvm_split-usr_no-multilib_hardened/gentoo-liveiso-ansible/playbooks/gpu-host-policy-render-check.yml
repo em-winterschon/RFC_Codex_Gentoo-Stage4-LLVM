@@ -1,0 +1,76 @@
+---
+- name: Validate GPU host policy renders blacklist configuration safely
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    gpu_host_policy_root: /tmp/gpu-host-policy-render-check
+    gpu_compute_enabled: true
+    gpu_host_policy_detect_nvidia: false
+    gpu_host_policy_update_grub: false
+    gpu_host_policy_update_initramfs: false
+    gpu_passthrough_enabled: true
+    gpu_host_policy_blacklisted_modules:
+      - nouveau
+      - nvidiafb
+      - snd_hda_intel
+    gpu_host_policy_vfio_ids:
+      - "10de:13bc"
+      - "10de:0fbc"
+    gpu_host_policy_manage_kernel_cmdline: true
+    gpu_host_policy_kernel_cmdline_base: root=ZFS=rpool/ROOT/pve-1 boot=zfs intel_iommu=on
+    gpu_host_policy_grub_cmdline_tokens:
+      - modprobe.blacklist=nouveau,nvidiafb,snd_hda_intel
+      - nouveau.modeset=0
+    gpu_host_policy_kernel_cmdline_tokens:
+      - modprobe.blacklist=nouveau,nvidiafb,snd_hda_intel
+      - nouveau.modeset=0
+  pre_tasks:
+    - name: Reset temporary GPU host policy render root
+      ansible.builtin.file:
+        path: "{{ gpu_host_policy_root }}"
+        state: absent
+
+  roles:
+    - role: gpu_host_policy
+
+  post_tasks:
+    - name: Read rendered modprobe blacklist
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/modprobe.d/blacklist-nouveau.conf"
+      register: gpu_policy_rendered_blacklist
+
+    - name: Read rendered GRUB drop-in
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/default/grub.d/99-gpu-compute-blacklist.cfg"
+      register: gpu_policy_rendered_grub
+
+    - name: Read rendered vfio-pci policy
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/modprobe.d/vfio-pci-gpu.conf"
+      register: gpu_policy_rendered_vfio
+
+    - name: Read rendered vfio modules-load policy
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/modules-load.d/vfio.conf"
+      register: gpu_policy_rendered_vfio_modules
+
+    - name: Read rendered Proxmox kernel command line
+      ansible.builtin.slurp:
+        path: "{{ gpu_host_policy_root }}/etc/kernel/cmdline"
+      register: gpu_policy_rendered_kernel_cmdline
+
+    - name: Assert NVIDIA display drivers are blacklisted in rendered files
+      ansible.builtin.assert:
+        that:
+          - "'blacklist nouveau' in (gpu_policy_rendered_blacklist.content | b64decode)"
+          - "'blacklist nvidiafb' in (gpu_policy_rendered_blacklist.content | b64decode)"
+          - "'blacklist snd_hda_intel' in (gpu_policy_rendered_blacklist.content | b64decode)"
+          - "'modprobe.blacklist=nouveau,nvidiafb,snd_hda_intel' in (gpu_policy_rendered_grub.content | b64decode)"
+          - "'nouveau.modeset=0' in (gpu_policy_rendered_grub.content | b64decode)"
+          - "'options vfio-pci ids=10de:13bc,10de:0fbc disable_vga=1' in (gpu_policy_rendered_vfio.content | b64decode)"
+          - "'vfio_pci' in (gpu_policy_rendered_vfio_modules.content | b64decode)"
+          - "'modprobe.blacklist=nouveau,nvidiafb,snd_hda_intel' in (gpu_policy_rendered_kernel_cmdline.content | b64decode)"
+          - "'vfio-pci.ids=10de:13bc,10de:0fbc' in (gpu_policy_rendered_kernel_cmdline.content | b64decode)"
+          - "'intel_iommu=on' in (gpu_policy_rendered_kernel_cmdline.content | b64decode)"
+        fail_msg: GPU host policy render did not include the required NVIDIA blacklist controls.

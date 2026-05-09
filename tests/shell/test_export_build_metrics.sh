@@ -19,7 +19,7 @@ assert_file_contains() {
 temp_dir="$(mktemp -d)"
 trap 'rm -rf "${temp_dir}"' EXIT
 
-cat >"${temp_dir}/emerge.log" <<'EOF'
+cat > "${temp_dir}/emerge.log" << 'EOF'
 1000:  >>> emerge (1 of 2) app-shells/bash-5.2_p37-r1 to /
 1001:  === (1 of 2) Compiling/Merging (app-shells/bash-5.2_p37-r1::/var/db/repos/gentoo/app-shells/bash/bash-5.2_p37-r1.ebuild)
 1005:  ::: completed emerge (1 of 2) app-shells/bash-5.2_p37-r1 to /
@@ -27,7 +27,7 @@ cat >"${temp_dir}/emerge.log" <<'EOF'
 1018:  ::: completed emerge (2 of 2) sys-devel/gcc-15.2.1_p20260214 to /
 EOF
 
-cat >"${temp_dir}/builder.log" <<'EOF'
+cat > "${temp_dir}/builder.log" << 'EOF'
 >>> Jobs: 0 of 2 complete, 1 running                                Load avg: 1.00, 0.50, 0.25
 >>> Emerging (1 of 2) app-shells/bash-5.2_p37-r1::gentoo
 >>> Jobs: 1 of 2 complete                                           Load avg: 2.00, 1.00, 0.50
@@ -40,7 +40,7 @@ python3 "${EXPORTER}" \
   --emerge-log "${temp_dir}/emerge.log" \
   --builder-log "${temp_dir}/builder.log" \
   --output-dir "${temp_dir}/out" \
-  >/dev/null
+  > /dev/null
 
 test -f "${temp_dir}/out/report.html" || fail "missing HTML report"
 test -f "${temp_dir}/out/summary.json" || fail "missing summary"

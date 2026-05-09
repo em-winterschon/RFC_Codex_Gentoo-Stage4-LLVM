@@ -41,6 +41,9 @@ STAGE3_SSH_PACKAGE="${STAGE3_SSH_PACKAGE:-net-misc/openssh}"
 STAGE3_NETWORK_SERVICE="${STAGE3_NETWORK_SERVICE:-dhcpcd}"
 STAGE3_SSH_SERVICE="${STAGE3_SSH_SERVICE:-sshd}"
 STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod}"
+STAGE3_MAKE_CONF_APPEND="${STAGE3_MAKE_CONF_APPEND-}"
+STAGE3_PACKAGE_USE_APPEND="${STAGE3_PACKAGE_USE_APPEND-}"
+STAGE3_PACKAGE_UNMASK_APPEND="${STAGE3_PACKAGE_UNMASK_APPEND-}"
 VM_HOSTNAME="${VM_HOSTNAME:-${INSTANCE_NAME}}"
 VM_TIMEZONE="${VM_TIMEZONE:-UTC}"
 VM_LOCALE="${VM_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -472,6 +475,7 @@ mkdir -p /boot/efi /root/.ssh /etc/portage
 mkdir -p /etc/default
 mkdir -p /etc/portage/package.use
 mkdir -p /etc/portage/package.mask
+mkdir -p /etc/portage/package.unmask
 mkdir -p /etc/portage/repos.conf
 mkdir -p /var/db/repos/gentoo
 
@@ -489,9 +493,30 @@ COMMON_CFLAGS="\${COMMON_FLAGS}"
 COMMON_CXXFLAGS="\${COMMON_FLAGS}"
 MAKECONF
 
+if [[ -n ${STAGE3_MAKE_CONF_APPEND@Q} ]]; then
+  cat >> /etc/portage/make.conf <<'MAKECONF_EXTRA'
+${STAGE3_MAKE_CONF_APPEND}
+MAKECONF_EXTRA
+fi
+
 cat > /etc/portage/package.use/stage3-qcow-kernel <<'PKGUSE'
 sys-kernel/installkernel dracut
 PKGUSE
+
+if [[ -n ${STAGE3_PACKAGE_USE_APPEND@Q} ]]; then
+  cat > /etc/portage/package.use/stage3-extra <<'PKGUSE_EXTRA'
+${STAGE3_PACKAGE_USE_APPEND}
+PKGUSE_EXTRA
+fi
+
+if [[ -n ${STAGE3_PACKAGE_UNMASK_APPEND@Q} ]]; then
+  cat > /etc/portage/package.unmask/stage3-extra <<'PKGUNMASK_EXTRA'
+${STAGE3_PACKAGE_UNMASK_APPEND}
+PKGUNMASK_EXTRA
+fi
+
+mkdir -p /dev/shm/portage-tmpfs /var/cache/binpkgs /var/log/portage
+chmod 1777 /dev/shm/portage-tmpfs
 
 cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
 [DEFAULT]
@@ -513,7 +538,7 @@ CMDLINE
 
 printf '%s\n' 'hostname="${VM_HOSTNAME}"' > /etc/conf.d/hostname
 printf '%s\n' '${VM_TIMEZONE}' > /etc/timezone
-printf '%s\n' '${VM_KEYMAP}' > /etc/conf.d/keymaps
+printf '%s\n' 'keymap="${VM_KEYMAP}"' > /etc/conf.d/keymaps
 printf '%s\n' '${VM_LOCALE}' > /etc/locale.gen
 
 cat > /etc/hosts <<'HOSTS'

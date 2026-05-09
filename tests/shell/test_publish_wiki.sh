@@ -35,7 +35,7 @@ COMMIT_MESSAGE='Sync test wiki' \
   "${PUBLISH}" \
   --source-dir "${source_dir}" \
   --wiki-worktree "${wiki_worktree}" \
-  --remote "${remote_repo}" >/tmp/publish-wiki-test.out
+  --remote "${remote_repo}" > /tmp/publish-wiki-test.out
 
 test -f "${wiki_worktree}/README.md" || fail 'README.md was not preserved in wiki sync'
 grep -q 'Source policy' "${wiki_worktree}/README.md" || fail 'README.md was not copied from source'

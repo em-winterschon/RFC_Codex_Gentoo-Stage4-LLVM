@@ -96,8 +96,7 @@ def run_nmap(command: list[str], timeout: int) -> str:
         completed = subprocess.run(
             command,
             check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             timeout=timeout,
         )

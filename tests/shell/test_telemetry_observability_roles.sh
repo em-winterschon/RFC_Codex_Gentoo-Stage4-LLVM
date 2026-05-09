@@ -21,8 +21,7 @@ for role_dir in \
   telemetry_alertmanager \
   telemetry_grafana \
   container_app_ipmi_exporter \
-  container_app_redfish_exporter
-do
+  container_app_redfish_exporter; do
   test -d "${ANSIBLE_ROOT}/roles/${role_dir}"
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
@@ -34,16 +33,14 @@ for profile in \
   container-ipmi-exporter.yml \
   container-redfish-exporter.yml \
   vm-observability-prometheus.yml \
-  vm-observability-grafana.yml
-do
+  vm-observability-grafana.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${profile}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${profile}" '^gentoo_profile_definition:'
 done
 
 for metadata in \
   vm-observability-prometheus.metadata.yml \
-  vm-observability-grafana.metadata.yml
-do
+  vm-observability-grafana.metadata.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${metadata}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${metadata}" '^gentoo_system_profile_metadata:'
 done
@@ -53,8 +50,7 @@ for package_list in \
   stage5-observability-metrics-podman-exporter.packages \
   stage5-observability-metrics-elasticsearch-exporter.packages \
   stage5-virtual-host-observability-prometheus.packages \
-  stage5-virtual-host-observability-grafana.packages
-do
+  stage5-virtual-host-observability-grafana.packages; do
   test -f "${ANSIBLE_ROOT}/profile-package-lists/${package_list}"
 done
 

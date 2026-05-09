@@ -17,7 +17,7 @@ if [[ ! -f "${IDENTITY_SECRET_FILE}" ]]; then
     printf 'IPA_ADMIN_PASSWORD=%q\n' "$(openssl rand -base64 30)"
     printf 'IPA_DS_PASSWORD=%q\n' "$(openssl rand -base64 30)"
     printf 'RADIUS_LDAP_PASSWORD=%q\n' "$(openssl rand -base64 30)"
-  } >"${IDENTITY_SECRET_FILE}"
+  } > "${IDENTITY_SECRET_FILE}"
   chmod 0600 "${IDENTITY_SECRET_FILE}"
 fi
 
@@ -31,7 +31,7 @@ ssh -o BatchMode=yes -o ConnectTimeout=20 "${ssh_target}" sudo bash -s -- \
   "${IPA_FQDN}" \
   "${IPA_REALM}" \
   "${IPA_DOMAIN}" \
-  "${IPA_IP}" <<'REMOTE'
+  "${IPA_IP}" << 'REMOTE'
 set -euo pipefail
 
 ipa_fqdn="$1"

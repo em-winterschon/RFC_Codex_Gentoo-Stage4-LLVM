@@ -45,18 +45,38 @@ assert_file_contains "${apply_script}" "virtualization/clusters"
 assert_file_contains "${apply_script}" "ipam/ip-addresses"
 assert_file_contains "${apply_script}" "first_query"
 assert_file_contains "${apply_script}" "manufacturer_id"
+assert_file_contains "${apply_script}" "apply_device_interfaces"
+assert_file_contains "${apply_script}" "apply_power_outlets"
+assert_file_contains "${apply_script}" "normalize_interface_type"
 
 assert_file_contains "${example}" "inventory_intake_version: 1"
 assert_file_contains "${example}" "datacenters:"
 assert_file_contains "${example}" "clusters:"
 assert_file_contains "${example}" "devices:"
 assert_file_contains "${example}" "service_vips:"
+assert_file_contains "${example}" "gmktek_nucbox_k10_stage5_candidate"
+assert_file_contains "${example}" "pdu_rfc99_corectrl_ap7901"
+assert_file_contains "${example}" "lap_sun99_chonkers"
+assert_file_contains "${example}" "172.16.99.156"
+assert_file_contains "${example}" "172.16.99.157"
+assert_file_contains "${example}" "172.16.99.241"
+assert_file_contains "${example}" "84:5C:31:A5:CF:51"
+assert_file_contains "${example}" "ipxe-httpv4-with-pxe-fallback"
+assert_file_contains "${example}" "outlet_index: 4"
+assert_file_contains "${example}" "host_gmktec_k10"
+assert_file_contains "${example}" "power_outlets:"
+assert_file_contains "${example}" "outlet_index: 6"
 assert_file_contains "${rfc99}" "gw_rfc99_mkcrs309"
 assert_file_contains "${rfc99}" "gw_rfc99_mkccr2004_16g"
 assert_file_contains "${rfc99}" "CCR2004-16G-2S+PC"
 assert_file_contains "${sun99}" "nanonet-private-cloud"
 assert_file_contains "${yks99}" "172.28.0.0/16"
 assert_file_contains "${fmt2}" "66.160.146.148/32"
+assert_file_contains "${fmt2}" "66.160.146.144/28"
+assert_file_contains "${fmt2}" "2001:470:1:43c::/64"
+assert_file_contains "${fmt2}" "sw-sfo200-7060cx32s-2010"
+assert_file_contains "${fmt2}" "kvm-sfo200-pri-9922"
+assert_file_contains "${fmt2}" "fmt2-checkmk"
 
 assert_file_contains "${readme}" "inventory-intake"
 assert_file_contains "${playbook}" "Validate NetBox inventory intake definitions"
@@ -71,18 +91,57 @@ assert_file_contains "${run_tests}" "test_netbox_inventory_intake.sh"
 
 python3 -m py_compile "${validator}"
 python3 -m py_compile "${apply_script}"
-python3 "${validator}" "${example}" --format json >/dev/null
-python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json >/tmp/netbox-intake-all-sites-validation.json
-grep -Fq '"devices": 15' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
-python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json >/tmp/netbox-intake-apply-plan.json
+python3 "${validator}" "${example}" --format json > /dev/null
+python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json > /tmp/netbox-intake-all-sites-validation.json
+grep -Fq '"devices": 28' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
+python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json > /tmp/netbox-intake-apply-plan.json
 grep -Fq '"dry_run": true' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not default to dry-run"
 grep -Fq 'dcim/sites:local-rfc1918-lab' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include site"
 grep -Fq 'virtualization/clusters:hasslehoff-proxmox' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include cluster"
 grep -Fq 'ipam/ip-addresses:10.9.8.20/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include rsyslog VIP"
+grep -Fq 'dcim/devices:gmktek_nucbox_k10_stage5_candidate' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 device"
+grep -Fq 'dcim/devices:lap_sun99_chonkers' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers laptop device"
+grep -Fq 'dcim/devices:pdu_rfc99_corectrl_ap7901' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU device"
+grep -Fq 'ipam/ip-addresses:172.16.99.156/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.157/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.241/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU management IP"
+grep -Fq 'dcim/interfaces:gmktek_nucbox_k10_stage5_candidate:eth0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 interface"
+grep -Fq 'dcim/interfaces:lap_sun99_chonkers:LOM' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers LOM interface"
+grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 management interface"
+grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet4' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 4"
+grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 6"
+
+python3 - <<'PY' "${apply_script}"
+import importlib.util
+import pathlib
+import sys
+
+script = pathlib.Path(sys.argv[1])
+sys.path.insert(0, str(script.parent))
+spec = importlib.util.spec_from_file_location("netbox_apply_inventory_intake", script)
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+
+assert module.normalize_interface_type({"type": "1gbase-t"}) == "1000base-t"
+assert module.normalize_interface_type({"type": "10gbase-x-sfpp", "media": "10G-SR"}) == "10gbase-sr"
+assert module.normalize_interface_type({"type": "10gbase-x-sfpp", "media": "10G-DAC"}) == "10gbase-cu"
+assert module.normalize_interface_type({"type": "40gbase-x-qsfpp"}) == "40gbase-sr4"
+assert module.normalize_interface_type({"name": "ge16"}) == "1000base-t"
+assert module.primary_ip_update_payload("172.16.99.6/24", 10, interface_bound=False) is None
+assert module.primary_ip_update_payload("172.16.99.156/24", 11, interface_bound=True) == {"primary_ip4": 11}
+assert module.primary_ip_update_payload("2001:db8::1/64", 12, interface_bound=True) == {"primary_ip6": 12}
+assert module.ip_host("172.16.99.96/24") == "172.16.99.96"
+assert module.ip_host("172.16.99.96/32") == "172.16.99.96"
+assert module.ip_host("2001:db8::1/64") == "2001:db8::1"
+assert module.ip_hosts_match("172.16.99.96/24", "172.16.99.96/32")
+assert not module.ip_hosts_match("172.16.99.96/24", "172.16.99.97/24")
+PY
 
 invalid_fixture="$(mktemp --suffix=.yml)"
 trap 'rm -f "${invalid_fixture}"' EXIT
-cat > "${invalid_fixture}" <<'EOF'
+cat > "${invalid_fixture}" << 'EOF'
 ---
 inventory_intake_version: 1
 datacenters:
@@ -101,24 +160,24 @@ prefixes:
     site: broken-site
 EOF
 
-if python3 "${validator}" "${invalid_fixture}" >/tmp/netbox-intake-invalid.out 2>&1; then
+if python3 "${validator}" "${invalid_fixture}" > /tmp/netbox-intake-invalid.out 2>&1; then
   fail "invalid intake fixture unexpectedly passed"
 fi
 grep -Fq "missing-site" /tmp/netbox-intake-invalid.out || fail "invalid fixture did not report missing site"
 grep -Fq "not-a-prefix" /tmp/netbox-intake-invalid.out || fail "invalid fixture did not report invalid prefix"
 
-if command -v ansible-playbook >/dev/null 2>&1; then
+if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -f "${invalid_fixture}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'EOF'
+  cat > "${tmp_inventory}" << 'EOF'
 ---
 all:
   hosts:
     localhost:
       ansible_connection: local
 EOF
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" >/dev/null
-  ansible-playbook --syntax-check -i "${tmp_inventory}" "${apply_playbook}" >/dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${playbook}" > /dev/null
+  ansible-playbook --syntax-check -i "${tmp_inventory}" "${apply_playbook}" > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

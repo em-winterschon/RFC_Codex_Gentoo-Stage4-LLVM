@@ -39,6 +39,8 @@
       - netbox_essentials
       - netbox_connector
       - zerotier_access
+      - nscde_workstation
+      - workstation_session_stack
       - platform_profile
       - identity
       - memory_storage
@@ -49,6 +51,8 @@
       - container_app_elastic_apm
       - container_app_ipmi_exporter
       - container_app_redfish_exporter
+      - container_app_nginx_ui
+      - container_app_mcp_generic
       - container_app_ntfy
       - container_app_nginx
       - container_app_haproxy

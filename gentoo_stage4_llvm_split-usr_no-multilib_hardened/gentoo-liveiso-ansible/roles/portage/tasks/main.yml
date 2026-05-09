@@ -47,6 +47,12 @@
     state: directory
     mode: '0755'
 
+- name: Ensure Portage user patches directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/patches"
+    state: directory
+    mode: '0755'
+
 - name: Ensure binrepos.conf directory exists when binrepos are configured
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/binrepos.conf"
@@ -169,6 +175,24 @@
   loop: "{{ (resolved_portage_package_env_files | default({})) | dict2items }}"
   loop_control:
     loop_var: portage_package_env_file
+
+- name: Ensure extra Portage user patch directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/patches/{{ portage_patch_file.key | dirname }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ (resolved_portage_patch_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_patch_file
+
+- name: Write extra Portage user patches from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/portage/patches/{{ portage_patch_file.key }}"
+    mode: '0644'
+    content: "{{ portage_patch_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_patch_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_patch_file
 
 - name: Link package.mask fragments from selected profile definitions
   ansible.builtin.file:

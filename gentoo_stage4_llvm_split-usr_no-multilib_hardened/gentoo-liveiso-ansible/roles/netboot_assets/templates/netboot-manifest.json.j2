@@ -36,6 +36,7 @@
       "scriptName": "{{ netboot_host.script_name }}",
       "interfaceName": "{{ netboot_host.interface_name | default('') }}",
       "bootType": "{{ netboot_host.boot_type | default('') }}",
+      "protocolFlow": "{{ netboot_host.protocol_flow | default('ipxe-direct') }}",
       "dhcpClientOptions": {{ netboot_host.dhcp_client_options | default([]) | to_json }},
       "osType": "{{ netboot_host.os_type | default('') }}",
       "osName": "{{ netboot_host.os_name | default('') }}",

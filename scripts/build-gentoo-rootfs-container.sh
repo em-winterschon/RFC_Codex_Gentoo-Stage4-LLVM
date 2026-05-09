@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: build-gentoo-rootfs-container.sh --root DIR --package-list FILE [options]
 
 Build a Gentoo rootfs with emerge --root, optionally archive it, and optionally
@@ -70,7 +70,7 @@ die() {
 }
 
 require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+  command -v "$1" > /dev/null 2>&1 || die "missing required command: $1"
 }
 
 sanitize_emerge_features() {
@@ -82,11 +82,11 @@ sanitize_emerge_features() {
   fi
 
   sanitized="$(
-    printf '%s\n' "${raw}" \
-      | tr ' ' '\n' \
-      | grep -Ev '^-?(distcc|ccache)$' \
-      | awk 'NF' \
-      | paste -sd' ' -
+    printf '%s\n' "${raw}" |
+      tr ' ' '\n' |
+      grep -Ev '^-?(distcc|ccache)$' |
+      awk 'NF' |
+      paste -sd' ' -
   )"
   printf '%s' "${sanitized}"
 }
@@ -142,137 +142,137 @@ HOST_PACKAGE_MASK_DEST=/etc/portage/package.mask/99-build-gentoo-rootfs-containe
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --root)
-      ROOT_DIR=${2-}
-      shift 2
-      ;;
-    --package-list)
-      PACKAGE_LIST=${2-}
-      shift 2
-      ;;
-    --bootstrap-package-list)
-      BOOTSTRAP_PACKAGE_LIST=${2-}
-      shift 2
-      ;;
-    --bootstrap-runtime-seed)
-      BOOTSTRAP_RUNTIME_SEED=${2-}
-      shift 2
-      ;;
-    --stage3-target)
-      STAGE3_TARGET=${2-}
-      shift 2
-      ;;
-    --stage3-tarball)
-      STAGE3_TARBALL=${2-}
-      shift 2
-      ;;
-    --stage3-cache-dir)
-      STAGE3_CACHE_DIR=${2-}
-      shift 2
-      ;;
-    --stage3-mirror-root)
-      STAGE3_MIRROR_ROOT=${2-}
-      shift 2
-      ;;
-    --stage3-verify-checksum)
-      STAGE3_VERIFY_CHECKSUM=${2-}
-      shift 2
-      ;;
-    --main-emptytree)
-      MAIN_EMPTYTREE=${2-}
-      shift 2
-      ;;
-    --reset-rootfs)
-      RESET_ROOTFS=true
-      shift
-      ;;
-    --pkgdir)
-      PKGDIR=${2-}
-      shift 2
-      ;;
-    --binpkg-repo-id)
-      BINPKG_REPO_ID=${2-}
-      shift 2
-      ;;
-    --binpkg-sync-remote)
-      BINPKG_SYNC_REMOTE=${2-}
-      shift 2
-      ;;
-    --binpkg-sync-root)
-      BINPKG_SYNC_ROOT=${2-}
-      shift 2
-      ;;
-    --profile-parent)
-      PROFILE_PARENTS+=("${2-}")
-      shift 2
-      ;;
-    --use-file)
-      USE_FILE=${2-}
-      shift 2
-      ;;
-    --package-use-file)
-      PACKAGE_USE_FILE=${2-}
-      shift 2
-      ;;
-    --host-package-use-file)
-      HOST_PACKAGE_USE_FILE=${2-}
-      shift 2
-      ;;
-    --host-package-mask-file)
-      HOST_PACKAGE_MASK_FILE=${2-}
-      shift 2
-      ;;
-    --rootfs-links-file)
-      ROOTFS_LINKS_FILE=${2-}
-      shift 2
-      ;;
-    --overlay-dir)
-      OVERLAY_DIR=${2-}
-      shift 2
-      ;;
-    --config-root)
-      CONFIG_ROOT=${2-}
-      shift 2
-      ;;
-    --sysroot)
-      SYSROOT=${2-}
-      shift 2
-      ;;
-    --image-ref)
-      IMAGE_REF=${2-}
-      shift 2
-      ;;
-    --engine)
-      ENGINE=${2-}
-      shift 2
-      ;;
-    --tarball)
-      TARBALL=${2-}
-      shift 2
-      ;;
-    --source-url)
-      SOURCE_URL=${2-}
-      shift 2
-      ;;
-    --description)
-      DESCRIPTION=${2-}
-      shift 2
-      ;;
-    --default-cmd)
-      DEFAULT_CMD=${2-}
-      shift 2
-      ;;
-    --dry-run)
-      DRY_RUN=true
-      shift
-      ;;
-    --help|-h)
-      usage
-      exit 0
-      ;;
-    *)
-      die "unknown argument: $1"
-      ;;
+  --root)
+    ROOT_DIR=${2-}
+    shift 2
+    ;;
+  --package-list)
+    PACKAGE_LIST=${2-}
+    shift 2
+    ;;
+  --bootstrap-package-list)
+    BOOTSTRAP_PACKAGE_LIST=${2-}
+    shift 2
+    ;;
+  --bootstrap-runtime-seed)
+    BOOTSTRAP_RUNTIME_SEED=${2-}
+    shift 2
+    ;;
+  --stage3-target)
+    STAGE3_TARGET=${2-}
+    shift 2
+    ;;
+  --stage3-tarball)
+    STAGE3_TARBALL=${2-}
+    shift 2
+    ;;
+  --stage3-cache-dir)
+    STAGE3_CACHE_DIR=${2-}
+    shift 2
+    ;;
+  --stage3-mirror-root)
+    STAGE3_MIRROR_ROOT=${2-}
+    shift 2
+    ;;
+  --stage3-verify-checksum)
+    STAGE3_VERIFY_CHECKSUM=${2-}
+    shift 2
+    ;;
+  --main-emptytree)
+    MAIN_EMPTYTREE=${2-}
+    shift 2
+    ;;
+  --reset-rootfs)
+    RESET_ROOTFS=true
+    shift
+    ;;
+  --pkgdir)
+    PKGDIR=${2-}
+    shift 2
+    ;;
+  --binpkg-repo-id)
+    BINPKG_REPO_ID=${2-}
+    shift 2
+    ;;
+  --binpkg-sync-remote)
+    BINPKG_SYNC_REMOTE=${2-}
+    shift 2
+    ;;
+  --binpkg-sync-root)
+    BINPKG_SYNC_ROOT=${2-}
+    shift 2
+    ;;
+  --profile-parent)
+    PROFILE_PARENTS+=("${2-}")
+    shift 2
+    ;;
+  --use-file)
+    USE_FILE=${2-}
+    shift 2
+    ;;
+  --package-use-file)
+    PACKAGE_USE_FILE=${2-}
+    shift 2
+    ;;
+  --host-package-use-file)
+    HOST_PACKAGE_USE_FILE=${2-}
+    shift 2
+    ;;
+  --host-package-mask-file)
+    HOST_PACKAGE_MASK_FILE=${2-}
+    shift 2
+    ;;
+  --rootfs-links-file)
+    ROOTFS_LINKS_FILE=${2-}
+    shift 2
+    ;;
+  --overlay-dir)
+    OVERLAY_DIR=${2-}
+    shift 2
+    ;;
+  --config-root)
+    CONFIG_ROOT=${2-}
+    shift 2
+    ;;
+  --sysroot)
+    SYSROOT=${2-}
+    shift 2
+    ;;
+  --image-ref)
+    IMAGE_REF=${2-}
+    shift 2
+    ;;
+  --engine)
+    ENGINE=${2-}
+    shift 2
+    ;;
+  --tarball)
+    TARBALL=${2-}
+    shift 2
+    ;;
+  --source-url)
+    SOURCE_URL=${2-}
+    shift 2
+    ;;
+  --description)
+    DESCRIPTION=${2-}
+    shift 2
+    ;;
+  --default-cmd)
+    DEFAULT_CMD=${2-}
+    shift 2
+    ;;
+  --dry-run)
+    DRY_RUN=true
+    shift
+    ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    die "unknown argument: $1"
+    ;;
   esac
 done
 
@@ -311,7 +311,7 @@ if [[ -n "${OVERLAY_DIR}" ]]; then
   [[ -d "${OVERLAY_DIR}" ]] || die "overlay dir not found: ${OVERLAY_DIR}"
   [[ -f "${OVERLAY_DIR}/profiles/repo_name" ]] || die "overlay dir missing profiles/repo_name: ${OVERLAY_DIR}"
   [[ "${CONFIG_ROOT}" != "/" ]] || die "--overlay-dir requires an explicit non-/ --config-root"
-  OVERLAY_REPO_NAME="$(<"${OVERLAY_DIR}/profiles/repo_name")"
+  OVERLAY_REPO_NAME="$(< "${OVERLAY_DIR}/profiles/repo_name")"
   [[ -n "${OVERLAY_REPO_NAME}" ]] || die "overlay repo_name is empty: ${OVERLAY_DIR}"
   STAGED_OVERLAY_DIR="/var/tmp/build-gentoo-rootfs-container/overlays/${OVERLAY_REPO_NAME}"
 fi
@@ -341,24 +341,24 @@ supported_stage3_targets() {
 
 resolve_stage3_target() {
   case "${STAGE3_TARGET}" in
-    amd64-llvm-openrc)
-      STAGE3_RELEASE_ARCH=amd64
-      STAGE3_CURRENT_DIR=current-stage3-amd64-llvm-openrc
-      STAGE3_LATEST_TXT=latest-stage3-amd64-llvm-openrc.txt
-      ;;
-    arm64-llvm-openrc)
-      STAGE3_RELEASE_ARCH=arm64
-      STAGE3_CURRENT_DIR=current-stage3-arm64-llvm-openrc
-      STAGE3_LATEST_TXT=latest-stage3-arm64-llvm-openrc.txt
-      ;;
-    power9le-openrc)
-      STAGE3_RELEASE_ARCH=ppc
-      STAGE3_CURRENT_DIR=current-stage3-power9le-openrc
-      STAGE3_LATEST_TXT=latest-stage3-power9le-openrc.txt
-      ;;
-    *)
-      die "unsupported stage3 target: ${STAGE3_TARGET} (supported: $(supported_stage3_targets))"
-      ;;
+  amd64-llvm-openrc)
+    STAGE3_RELEASE_ARCH=amd64
+    STAGE3_CURRENT_DIR=current-stage3-amd64-llvm-openrc
+    STAGE3_LATEST_TXT=latest-stage3-amd64-llvm-openrc.txt
+    ;;
+  arm64-llvm-openrc)
+    STAGE3_RELEASE_ARCH=arm64
+    STAGE3_CURRENT_DIR=current-stage3-arm64-llvm-openrc
+    STAGE3_LATEST_TXT=latest-stage3-arm64-llvm-openrc.txt
+    ;;
+  power9le-openrc)
+    STAGE3_RELEASE_ARCH=ppc
+    STAGE3_CURRENT_DIR=current-stage3-power9le-openrc
+    STAGE3_LATEST_TXT=latest-stage3-power9le-openrc.txt
+    ;;
+  *)
+    die "unsupported stage3 target: ${STAGE3_TARGET} (supported: $(supported_stage3_targets))"
+    ;;
   esac
 
   STAGE3_LATEST_URL="${STAGE3_MIRROR_ROOT}/${STAGE3_RELEASE_ARCH}/autobuilds/${STAGE3_CURRENT_DIR}/${STAGE3_LATEST_TXT}"
@@ -385,9 +385,9 @@ SANITIZED_FEATURES="$(sanitize_emerge_features)"
 
 RESOLVED_ENGINE=${ENGINE}
 if [[ "${RESOLVED_ENGINE}" == "auto" ]]; then
-  if command -v buildah >/dev/null 2>&1; then
+  if command -v buildah > /dev/null 2>&1; then
     RESOLVED_ENGINE=buildah
-  elif command -v podman >/dev/null 2>&1; then
+  elif command -v podman > /dev/null 2>&1; then
     RESOLVED_ENGINE=podman-import
   else
     die "no container engine available; install buildah or podman"
@@ -437,11 +437,11 @@ require_cmd emerge
 require_cmd install
 
 find_fetch_tool() {
-  if command -v curl >/dev/null 2>&1; then
+  if command -v curl > /dev/null 2>&1; then
     printf 'curl'
     return 0
   fi
-  if command -v wget >/dev/null 2>&1; then
+  if command -v wget > /dev/null 2>&1; then
     printf 'wget'
     return 0
   fi
@@ -454,12 +454,12 @@ download_file() {
   local fetch_tool
   fetch_tool="$(find_fetch_tool)"
   case "${fetch_tool}" in
-    curl)
-      curl -fL --retry 5 --retry-delay 2 -o "${destination}" "${url}"
-      ;;
-    wget)
-      wget -O "${destination}" "${url}"
-      ;;
+  curl)
+    curl -fL --retry 5 --retry-delay 2 -o "${destination}" "${url}"
+    ;;
+  wget)
+    wget -O "${destination}" "${url}"
+    ;;
   esac
 }
 
@@ -468,12 +468,12 @@ download_stdout() {
   local fetch_tool
   fetch_tool="$(find_fetch_tool)"
   case "${fetch_tool}" in
-    curl)
-      curl -fsSL --retry 5 --retry-delay 2 "${url}"
-      ;;
-    wget)
-      wget -qO- "${url}"
-      ;;
+  curl)
+    curl -fsSL --retry 5 --retry-delay 2 "${url}"
+    ;;
+  wget)
+    wget -qO- "${url}"
+    ;;
   esac
 }
 
@@ -565,7 +565,7 @@ configure_config_root_binrepo() {
     mv "${binrepo_conf}" "${disabled_dir}/$(basename "${binrepo_conf}")"
   done
 
-  cat > "${CONFIG_ROOT}/etc/portage/binrepos.conf/stage5-container.conf" <<EOF
+  cat > "${CONFIG_ROOT}/etc/portage/binrepos.conf/stage5-container.conf" << EOF
 [stage5-container]
 priority = 50
 sync-uri = ${binhost_uri}
@@ -576,7 +576,7 @@ EOF
 
 cleanup_rootfs_builder() {
   if [[ -n "${BUILDAH_CONTAINER_ID}" ]]; then
-    buildah rm "${BUILDAH_CONTAINER_ID}" >/dev/null 2>&1 || true
+    buildah rm "${BUILDAH_CONTAINER_ID}" > /dev/null 2>&1 || true
   fi
   rm -f "${HOST_PACKAGE_USE_DEST}" "${HOST_PACKAGE_MASK_DEST}"
   if [[ "${CONFIG_ROOT}" != "/" ]]; then
@@ -646,7 +646,7 @@ if [[ -n "${ROOTFS_LINKS_FILE}" ]]; then
     install -d -m 0755 "$(dirname "${link_dest}")"
     install -d -m 0755 "${ROOT_DIR}/$(dirname "${link_target}")" "${ROOT_DIR}/${link_target}"
     if [[ -e "${link_dest}" && ! -L "${link_dest}" ]]; then
-      rmdir "${link_dest}" 2>/dev/null || die "rootfs link destination exists and is not replaceable: ${link_dest}"
+      rmdir "${link_dest}" 2> /dev/null || die "rootfs link destination exists and is not replaceable: ${link_dest}"
     fi
     ln -snf "${link_target}" "${link_dest}"
   done < "${ROOTFS_LINKS_FILE}"
@@ -690,7 +690,7 @@ if [[ "${CONFIG_ROOT}" != "/" && ${#PROFILE_PARENTS[@]} -gt 0 ]]; then
         >> "${CONFIG_ROOT}/var/db/repos/${PROFILE_OVERLAY_NAME}/profiles/${PROFILE_NAME}/parent"
     fi
   done
-  cat > "${CONFIG_ROOT}/etc/portage/repos.conf/${PROFILE_OVERLAY_NAME}.conf" <<EOF
+  cat > "${CONFIG_ROOT}/etc/portage/repos.conf/${PROFILE_OVERLAY_NAME}.conf" << EOF
 [${PROFILE_OVERLAY_NAME}]
 location = /var/db/repos/${PROFILE_OVERLAY_NAME}
 masters = gentoo
@@ -731,14 +731,14 @@ if [[ -n "${OVERLAY_DIR}" ]]; then
   find "${STAGED_OVERLAY_DIR}" -type f -exec chmod 644 {} +
   ln -snf "${STAGED_OVERLAY_DIR}" "/var/db/repos/${OVERLAY_REPO_NAME}"
   ln -snf "${STAGED_OVERLAY_DIR}" "${CONFIG_ROOT}/var/db/repos/${OVERLAY_REPO_NAME}"
-  cat > "/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" <<EOF
+  cat > "/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" << EOF
 [${OVERLAY_REPO_NAME}]
 location = ${STAGED_OVERLAY_DIR}
 masters = gentoo
 auto-sync = no
 priority = 9999
 EOF
-  cat > "${CONFIG_ROOT}/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" <<EOF
+  cat > "${CONFIG_ROOT}/etc/portage/repos.conf/zz-build-gentoo-rootfs-container-${OVERLAY_REPO_NAME}.conf" << EOF
 [${OVERLAY_REPO_NAME}]
 location = ${STAGED_OVERLAY_DIR}
 masters = gentoo
@@ -810,7 +810,7 @@ check_clang_sysroot_abi() {
   tmpdir="$(mktemp -d)"
   trap 'rm -rf "${tmpdir}"' RETURN
   printf 'int main(void) { return 0; }\n' > "${tmpdir}/test.${suffix}"
-  if ! ${compiler} --sysroot="${ROOT_DIR}" "${tmpdir}/test.${suffix}" -o "${tmpdir}/test" >/tmp/build-gentoo-rootfs-container-${lang}-abi.log 2>&1; then
+  if ! ${compiler} --sysroot="${ROOT_DIR}" "${tmpdir}/test.${suffix}" -o "${tmpdir}/test" > /tmp/build-gentoo-rootfs-container-${lang}-abi.log 2>&1; then
     sed 's/^/[build-gentoo-rootfs-container] ABI check: /' "/tmp/build-gentoo-rootfs-container-${lang}-abi.log" >&2 || true
     die "clang ${lang} ABI check failed for sysroot ${ROOT_DIR}"
   fi
@@ -866,13 +866,12 @@ seed_clang_runtime_libraries() {
     "clang:libunwind.so" \
     "clang++:libc++.so" \
     "clang++:libc++_shared.so" \
-    "clang++:libc++abi.so"
-  do
+    "clang++:libc++abi.so"; do
     compiler_name="${runtime_spec%%:*}"
     library_name="${runtime_spec#*:}"
     library_path="$("${compiler_name}" --print-file-name="${library_name}")"
-    [[ "${library_path}" == /* && ( -e "${library_path}" || -L "${library_path}" ) ]] \
-      || die "${compiler_name} could not resolve ${library_name}: ${library_path}"
+    [[ "${library_path}" == /* && (-e "${library_path}" || -L "${library_path}") ]] ||
+      die "${compiler_name} could not resolve ${library_name}: ${library_path}"
     seed_runtime_path "${library_path}"
   done
 }
@@ -915,30 +914,29 @@ if [[ -n "${TARBALL}" ]]; then
 fi
 
 case "${RESOLVED_ENGINE}" in
-  none)
-    ;;
-  buildah)
-    require_cmd buildah
-    log "committing rootfs into ${IMAGE_REF} with buildah"
-    BUILDAH_CONTAINER_ID="$(buildah from scratch)"
-    buildah add "${BUILDAH_CONTAINER_ID}" "${ROOT_DIR}" /
-    buildah config --cmd "[\"${DEFAULT_CMD}\"]" "${BUILDAH_CONTAINER_ID}"
-    [[ -n "${SOURCE_URL}" ]] && buildah config --label "org.opencontainers.image.source=${SOURCE_URL}" "${BUILDAH_CONTAINER_ID}"
-    [[ -n "${DESCRIPTION}" ]] && buildah config --label "org.opencontainers.image.description=${DESCRIPTION}" "${BUILDAH_CONTAINER_ID}"
-    buildah commit "${BUILDAH_CONTAINER_ID}" "${IMAGE_REF}" >/dev/null
-    buildah rm "${BUILDAH_CONTAINER_ID}" >/dev/null
-    BUILDAH_CONTAINER_ID=
-    ;;
-  podman-import)
-    require_cmd podman
-    require_cmd tar
-    log "importing rootfs into ${IMAGE_REF} with podman"
-    import_args=()
-    [[ -n "${SOURCE_URL}" ]] && import_args+=(--change "LABEL org.opencontainers.image.source=${SOURCE_URL}")
-    [[ -n "${DESCRIPTION}" ]] && import_args+=(--change "LABEL org.opencontainers.image.description=${DESCRIPTION}")
-    import_args+=(--change "CMD [\"${DEFAULT_CMD}\"]")
-    tar -C "${ROOT_DIR}" -cf - . | podman import "${import_args[@]}" - "${IMAGE_REF}" >/dev/null
-    ;;
+none) ;;
+buildah)
+  require_cmd buildah
+  log "committing rootfs into ${IMAGE_REF} with buildah"
+  BUILDAH_CONTAINER_ID="$(buildah from scratch)"
+  buildah add "${BUILDAH_CONTAINER_ID}" "${ROOT_DIR}" /
+  buildah config --cmd "[\"${DEFAULT_CMD}\"]" "${BUILDAH_CONTAINER_ID}"
+  [[ -n "${SOURCE_URL}" ]] && buildah config --label "org.opencontainers.image.source=${SOURCE_URL}" "${BUILDAH_CONTAINER_ID}"
+  [[ -n "${DESCRIPTION}" ]] && buildah config --label "org.opencontainers.image.description=${DESCRIPTION}" "${BUILDAH_CONTAINER_ID}"
+  buildah commit "${BUILDAH_CONTAINER_ID}" "${IMAGE_REF}" > /dev/null
+  buildah rm "${BUILDAH_CONTAINER_ID}" > /dev/null
+  BUILDAH_CONTAINER_ID=
+  ;;
+podman-import)
+  require_cmd podman
+  require_cmd tar
+  log "importing rootfs into ${IMAGE_REF} with podman"
+  import_args=()
+  [[ -n "${SOURCE_URL}" ]] && import_args+=(--change "LABEL org.opencontainers.image.source=${SOURCE_URL}")
+  [[ -n "${DESCRIPTION}" ]] && import_args+=(--change "LABEL org.opencontainers.image.description=${DESCRIPTION}")
+  import_args+=(--change "CMD [\"${DEFAULT_CMD}\"]")
+  tar -C "${ROOT_DIR}" -cf - . | podman import "${import_args[@]}" - "${IMAGE_REF}" > /dev/null
+  ;;
 esac
 
 log "completed rootfs build"

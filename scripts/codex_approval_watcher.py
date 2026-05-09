@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def base_url() -> str:
-    return os.getenv("CODEX_NTFY_URL", os.getenv("NTFY_URL", "https://ntfy.sh"))
+    return os.getenv("CODEX_NTFY_URL", os.getenv("NTFY_URL", ""))
 
 
 def alert_topic() -> str:
@@ -103,7 +103,7 @@ def notify(title: str, message: str, tags: list[str], *, dry_run: bool) -> int:
         output="json",
     )
     payload = ntfy_notify.build_payload(notify_args)
-    if not payload["topic"]:
+    if not payload["topic"] or not payload["url"]:
         return 0
     if dry_run:
         print(json.dumps(payload, indent=2, sort_keys=True))

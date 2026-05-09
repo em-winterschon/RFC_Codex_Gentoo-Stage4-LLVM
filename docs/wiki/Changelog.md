@@ -3,6 +3,240 @@
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
+## 2026-05-07
+
+### Added
+
+- Added Stage5 `vm-redfish-emulator` profile scaffolding using OpenStack
+  `sushy-tools` as the primary libvirt-backed VM Redfish path and DMTF Redfish
+  Interface Emulator as the static mockup fallback.
+- Added explicit Stage5 workstation AMDGPU/AMDGPU-PRO fallback policy and
+  Intel Optane Persistent Memory 200-series `libnvdimm`/`ndctl` readiness.
+- Expanded FMT2 NetBox intake from placeholders into a legacy-evidence based
+  SFO-200 discovery baseline for tomorrow's BigNetwork L2 validation.
+- Added private-CA vault import scaffolding for the RFC1918 certificate
+  authority, including PEM/PKCS#12 source support and encrypted
+  `vault_private_ca_rfc1918_*` variables.
+- Enabled profile-driven HAProxy TLS termination for the container-services
+  ntfy VIP while keeping HTTP available concurrently.
+- Removed implicit public ntfy fallback from Codex and Ansible notification
+  helpers; missing local URL configuration now skips or fails explicitly.
+- Added the 2026-05-07 EOD report and wiki mirror covering K10 netboot
+  validation, AP7901 PDU vaulting, NetBox inventory gaps, ntfy topic state, and
+  the next netboot lifecycle/AAA automation block.
+- Added a repeatable BigNetwork vault importer, repo-safe local-network
+  BigNetwork variable wiring, and docs for the Forge/Codexian token plus NanoPi
+  R6S Edge Lite bridge path.
+- Added BigNetwork FMT2 smoke-test scaffolding: a disposable Devuan iPXE/preseed
+  asset role, a `bignetwork_edge` service role for the extracted `bn` binary,
+  regression coverage, and operator documentation.
+- Added `docs/FMT2-INFRA-UPGRADE-PLANNING.md` and wiki mirror to capture the
+  legacy SFO-200/FMT2 wiki as traceable evidence for future transport,
+  NetBox/IPAM/DCIM, OOB, monitoring, and rack-inventory work.
+- Added FMT2 roadmap tasks for evidence consolidation, live validation, NetBox
+  intake promotion, transport validation, and Check_MK integration.
+- Added explicit `netboot_protocol_flow` modeling for Path B hosts, separating
+  IP assignment mode from firmware/handoff behavior.
+- Added a reproducible K10 netboot-image manifest for Jenkins-driven future
+  dracut/kernel/rootfs artifact rebuilds.
+- Added repo-safe local NetBox intake rows for the GMKtek K10 validation host
+  and AP7901 PDU, including management IPs and non-secret operational metadata.
+
+### Changed
+
+- Moved GMKtek K10 Stage5 validation from MAC-discovery blocked to active
+  iPXE validation tracking after observing DHCP requests from NIC slot
+  `04:00:00`, MAC `84:47:09:5F:21:64`.
+- Recorded the x86/amd64 netboot policy as UEFI/EFI-only, scoped the K10
+  RouterOS DHCP lease to `172.16.99.156`, and set its EFI handoff URL to
+  `http://172.16.99.108/k10-ipxe.efi`; the RouterOS gateway role now renders
+  DHCP option 60, option 67, `next-server`, and static leases for this class of
+  UEFI handoff.
+- Captured the current K10 blocker: DHCP ACK is validated, but the firmware has
+  not issued ARP or TCP toward `172.16.99.108`, so the remaining work is BIOS or
+  UEFI HTTPBoot behavior rather than the on-host netboot address.
+- Switched the active K10 fallback to UEFI PXE/TFTP after PXE IPv4 issued ARP
+  and TFTP RRQ traffic. The current RouterOS lease renders option 67
+  `k10-ipxe.efi` with `next-server=172.16.99.108`; local TFTP fetch from
+  `/var/lib/netboot/path-b` validates.
+- Patched the live Path B installer initramfs with
+  `rtl_nic/rtl8125b-2.fw` after K10 dracut boot showed the Realtek 8125
+  firmware missing and DHCP failure. The Path B artifact builder now installs
+  `sys-kernel/linux-firmware` and forces the same firmware into future dracut
+  initramfs builds.
+- Updated the netboot iPXE role template and live K10 installer handoff to use
+  the served initramfs basename `initramfs-gz.img` directly, avoiding an
+  EFI/iPXE initrd name remap that reached the kernel but skipped dracut.
+- Validated K10 through the full UEFI PXE/TFTP to iPXE path using
+  `initrd=initrd.magic`, patched RTL8125B firmware in the initramfs, and static
+  dracut networking; it now fetches the HTTP rootfs and reaches the Gentoo live
+  login prompt.
+- Confirmed live NetBox API reachability while identifying that K10 and AP7901
+  PDU records still need repo-safe inventory-intake promotion before live apply.
+- Updated RouterOS and netboot manifests so managed host entries expose
+  protocol-flow intent such as `pxe-to-ipxe`.
+- Confirmed the active shell does not currently load the LAN ntfy export file;
+  helper defaults now avoid public fallback and require explicit local URL
+  configuration.
+- Updated the FMT2 Check_MK transport plan to depend on legacy-evidence review
+  and live validation before importing Check_MK targets or alerting
+  dependencies.
+
+## 2026-05-06
+
+### Added
+
+- Added the 2026-05-06 EOD report and wiki mirror covering workstation GPU
+  validation, ntfy topics, K10 discovery state, and active package-build gates.
+- Added `scripts/proxmox-create-workstation-nscde-gpu-vm.sh` for the
+  Hasslehoff Stage5 workstation GPU VM path.
+- Added regression coverage for Proxmox workstation VM rendering, extra Proxmox
+  NICs, host PCI passthrough options, and imported-disk resolution from Proxmox
+  `unusedN` slots.
+- Added exact workstation GPU package pins for the Quadro K1200 validation VM:
+  `=x11-drivers/nvidia-drivers-580.159.03-r1` and
+  `=dev-util/nvidia-cuda-toolkit-12.9.1-r1`.
+- Added `workstation_session_stack`, a cross-OS session abstraction for display
+  managers, desktop environments, and window managers. Initial mappings cover
+  Gentoo, Debian/Devuan, FreeBSD 14, Solaris 11.4, Tribblix-CE, OmniOS, and
+  OpenIndiana task families.
+- Added an opt-in workstation GPU display policy for NVIDIA passthrough guests.
+  It renders a deterministic Xorg config and `workstation-gpu-display-test`
+  helper for PiKVM capture validation.
+- Added `scripts/capture-gentoo-emerge-state.sh` and captured the current
+  X12AGAIN Portage world, since-boot merge log, and workstation package
+  candidate state under `docs/workstation-package-capture/`.
+- Added `scripts/generate-workstation-package-review.sh`, imported the microbox
+  Gentoo capture, and generated the combined Stage4 LOX workstation package
+  review set.
+- Added sanitized former LLVM/Clang Portage policy notes from the `legiongo`
+  and `susse` etc-keeper archives without importing raw GnuPG/private-key
+  material.
+- Added Stage4 LOX workstation package policy coverage for NVIDIA, AMDGPU,
+  ROCm/AMDGPU-PRO, Intel Xe/Level Zero/OpenCL/Vulkan, and Xorg-only operation.
+- Added CCR2004 RouterOS role coverage for LAN ICMP redirect suppression while
+  legacy `/24` prefixes share the `br-lan` L2 domain.
+- Added a scoped CCR2004 management-compat DHCP definition for
+  `172.16.99.150-172.16.99.158` with `1h` leases.
+- Added live ntfy service DNS tracking for
+  `msg-sun99-ntfysys-099096.rfc1918.host` / `msg-sun99-ntfysys.rfc1918.host`
+  on `172.16.99.96`, including RouterOS static DNS render data, Hetzner
+  managed RRset inventory data, and NetBox service VIP intake metadata.
+
+### Changed
+
+- Switched the Stage5 workstation Intel policy to display-only by default:
+  retained Intel Xorg/Mesa/libdrm/libva/firmware support and removed IGC,
+  Level Zero, `intel-compute-runtime`, `intel-metrics-library`, and `gmmlib`
+  from the base package path because Gentoo's current IGC hard-locks to
+  `llvm:16`.
+- Completed the display-only Intel workstation package run on VM `1094` and
+  depcleaned stale Intel compute packages from the live validation VM.
+- Extended the generic Proxmox Stage4 service VM creator with configurable
+  serial, VGA, extra `netN`, and `hostpciN` settings.
+- Fixed the Proxmox VM creator to attach the disk reported by `qm config` after
+  `qm importdisk` instead of assuming the imported zvol is always
+  `vm-${VMID}-disk-0`.
+- Updated the workstation profile with explicit NVIDIA/CUDA keyword, license,
+  and package-mask gates so the Maxwell K1200 stays on the R580 driver branch.
+- Normalized workstation profile naming to
+  `stage4-lox__stage5-workstation-nscde__<arch>__gpu-universal-xorg`, with the
+  active amd64 binpkg path using
+  `stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg`.
+- Added profile-level no-Wayland masks for Wayland, Plasma, SDDM, XWayland,
+  wlroots, and xdg-desktop-portal in the Stage4 LOX workstation profile.
+- Switched the workstation profile to disk-backed `PORTAGE_TMPDIR=/var/tmp/portage`
+  for CUDA builds on smaller VMs.
+- Added `x11-misc/slim` and `workstation_session_stack` wiring to the NsCDE
+  workstation profile, package list, installer playbook, and install sequences.
+- Updated the live CCR2004 gateway to disable IPv4 redirects and drop generated
+  LAN ICMP redirect packets so `172.16.99.0/24` hosts can consistently transit
+  to `172.16.199.0/24` through the router.
+- Enabled the live CCR2004 DHCP server `rfc99-management-compat` on `br-lan`
+  for `172.16.99.0/24`, gateway/DNS `172.16.99.1`, pool
+  `172.16.99.150-172.16.99.158`, and `1h` leases.
+- Enabled ntfy in the `vm-container-services` profile and moved its internal
+  listener to unprivileged port `8080` so the container can keep `--cap-drop
+  all` while HAProxy publishes LAN HTTP on port `80`.
+- Updated the `dev-libs/intel-metrics-library` user patch to match the current
+  upstream source context and remove upstream release-mode `-flto`, `-fPIE`,
+  and linker `-pie` flags.
+- Documented the GMKtek K10 discovery blocker: physical link moved to CSS326
+  `ge16`, no confirmed DHCP/iPXE lease observed, and `172.16.99.160` is a
+  duplicate/unknown host rather than safe K10 evidence.
+
+### Operational Notes
+
+- Hasslehoff QLogic LACP is live through host bond `bond-qlogic0`, VLAN-aware
+  Proxmox bridge `vmbr-qlogic0`, and CRS309 `bond-hasslehoff-qlogic`.
+- The installed QLogic QL41232HOCU does not expose SR-IOV in Linux, so the
+  requested workstation one-VF-per-port design is blocked. The live fallback is
+  virtio NICs on tagged VLANs over `vmbr-qlogic0`.
+- Proxmox VM `1094`, `vm-workstation-nscde-gpu01`, is running at
+  `172.16.99.94` with K1200 VGA/audio functions passed through and a serial
+  console enabled for boot visibility.
+- The live workstation VM completed the NVIDIA R580 and CUDA 12.9.1 package
+  merge. After blacklisting `nouveau` and `nvidiafb` in the guest and rebooting,
+  `nvidia-smi` reports Quadro K1200 on driver `580.159.03`, and
+  `/opt/cuda/bin/nvcc --version` reports CUDA `12.9`.
+- Hasslehoff VM `1089`, `svc-container-services-safe-move-01`, now serves ntfy
+  through HAProxy on `172.16.99.96:80`; health and publish validation passed
+  through both the long hostname and CNAME alias.
+- Xorg and `startx` are present in VM `1094`; `/opt/NsCDE/bin/nscde` and SLiM
+  are still pending live application of the workstation session-stack role.
+- PiKVM raw uStreamer snapshots showed the original corruption before browser
+  transport, so WebRTC/Direct H.264/Legacy MJPEG were ruled out. The live VM now
+  has a managed NVIDIA Xorg policy at `1280x720@60`; Direct H.264 displays the
+  deterministic K1200 test pattern cleanly.
+- Workstation Intel/K10 package build remains active on VM `1094`. Near EOD,
+  Portage had an active `emerge --jobs=2 --load-average=10`, the binpkg cache
+  was `5.7G` / `437` files, and a second guarded rerun was queued to reuse
+  binpkgs after the fixed Intel metrics patch lands.
+- Draft PR `#20` was green at commit
+  `f61b75d8f0c686d4e82fcdaf6b72df88e580c973` before this EOD documentation
+  update.
+
+## 2026-05-05
+
+### Added
+
+- Added `bmc_redfish` and `bmc_idrac` Ansible roles for BMC management
+  scaffolding. The roles default to safe read-only behavior and require
+  explicit mutation gates for power, boot override, and virtual media actions.
+- Added `gpu_host_policy` for GPU compute and passthrough hosts. The role
+  renders `nouveau` and `nvidiafb` blacklist controls plus a GRUB drop-in and
+  does not reboot or run update commands unless explicitly enabled.
+- Added BMC and GPU validation playbooks:
+  - `playbooks/bmc-redfish-validate.yml`
+  - `playbooks/gpu-host-policy.yml`
+  - `playbooks/gpu-host-policy-render-check.yml`
+- Added Hasslehoff post-maintenance PCIe inventory for the NVIDIA Quadro K1200
+  and QLogic QL41232HOCU CNA.
+- Added gated Proxmox host maintenance upgrade scaffolding with pre/post ZFS
+  root snapshots.
+- Added gated NVIDIA DOCA/OFED repository/package scaffolding for future RoCE
+  standardization.
+- Added CRS309 render-only intent for Hasslehoff QLogic LACP on
+  `sfp-sfpplus4/5`.
+- Added `scripts/routeros-serial-command.py`, a RouterOS serial helper that
+  handles the `ESC Z` terminal-identification probe emitted after login.
+- Added `tests/shell/test_routeros_serial_command.sh` to regression-test serial
+  helper answerback and transcript redaction behavior.
+- Added EOD status for 2026-05-05 covering GPU passthrough scaffolding, QLogic
+  link validation, RouterOS serial automation, and the gated Hasslehoff
+  workstation VM next path.
+
+### Changed
+
+- Added `gpu_compute`, `bmc_managed`, and `dell_idrac` inventory groups to the
+  local-network inventory.
+- Placed Hasslehoff in `gpu_compute` and `bmc_managed`, with BMC live access
+  disabled until its IPMI/Redfish credentials are imported into Ansible Vault.
+- Extended Hasslehoff GPU policy to blacklist `snd_hda_intel` and prepare exact
+  vfio-pci binding for K1200 functions `10de:13bc` and `10de:0fbc`.
+- Documented live Hasslehoff QLogic to CRS309 10G-SR validation and the failed
+  optic diagnosis.
+
 ## 2026-05-04
 
 ### Changed
@@ -79,6 +313,24 @@ infrastructure work. It is intentionally higher level than `git log`.
   pattern for `FORGE_TOKEN`.
 - Added the 2026-05-04 EOD report and opened the next Stage5 workstation VM
   planning track for a QEMU-first Xorg, SPICE, and NsCDE workstation profile.
+- Added initial `vm-workstation-nscde` profile scaffolding, normalized Xorg and
+  NsCDE package atoms, SPICE/QXL QEMU launch support, and the
+  `nscde_workstation` source-install role pinned to NsCDE `2.3`.
+- Added Stage3 QCOW builder overlay hooks for profile-specific `make.conf` and
+  `package.use` fragments, including RAM-backed Portage temp directory
+  preparation for `/dev/shm/portage-tmpfs`.
+- Started the on-host `vm-workstation-nscde` image build in tmux session
+  `codex-workstation-nscde-build` with Portage binpkg generation enabled and
+  workstation Xorg/SPICE/NsCDE dependencies staged from the profile package
+  list.
+- Encoded the first workstation resolver corrections: `media-libs/freetype`
+  requires `harfbuzz` for the GTK/xscreensaver path, and PyQt5 remains
+  explicitly unmasked until NsCDE can be moved to a non-masked dependency path.
+- Added `app-text/xmlto[text]` to the workstation Portage policy for the
+  `dunst[xdg] -> xdg-utils` documentation helper dependency chain.
+- Added `dev-python/pillow -truetype` as a scoped workstation bootstrap cycle
+  break and unmasked `dev-python/pyqt5-sip` alongside PyQt5 for the current
+  NsCDE PyQt5 dependency path.
 
 ## 2026-05-03
 

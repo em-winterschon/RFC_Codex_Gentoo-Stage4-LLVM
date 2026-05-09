@@ -18,7 +18,7 @@ dry_run=0
 extra_vars=()
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: run-install-sequence.sh [options]
 
 Options:
@@ -40,63 +40,63 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --inventory)
-      inventory="$2"
-      shift 2
-      ;;
-    --playbook)
-      playbook="$2"
-      shift 2
-      ;;
-    --sequence)
-      sequence="$2"
-      shift 2
-      ;;
-    --limit)
-      limit_target="$2"
-      shift 2
-      ;;
-    --control-flow-path)
-      control_flow_path="$2"
-      shift 2
-      ;;
-    --control-flow-dir)
-      control_flow_dir="$2"
-      shift 2
-      ;;
-    --ssh-args)
-      ansible_ssh_args="$2"
-      shift 2
-      ;;
-    --stdout-callback)
-      stdout_callback="$2"
-      shift 2
-      ;;
-    --checkpoint)
-      debug_checkpoints='true'
-      shift
-      ;;
-    --no-checkpoint)
-      debug_checkpoints='false'
-      shift
-      ;;
-    --extra-vars)
-      extra_vars+=("$2")
-      shift 2
-      ;;
-    --dry-run)
-      dry_run=1
-      shift
-      ;;
-    --help)
-      usage
-      exit 0
-      ;;
-    *)
-      printf 'ERROR: Unknown argument: %s\n' "$1" >&2
-      usage >&2
-      exit 1
-      ;;
+  --inventory)
+    inventory="$2"
+    shift 2
+    ;;
+  --playbook)
+    playbook="$2"
+    shift 2
+    ;;
+  --sequence)
+    sequence="$2"
+    shift 2
+    ;;
+  --limit)
+    limit_target="$2"
+    shift 2
+    ;;
+  --control-flow-path)
+    control_flow_path="$2"
+    shift 2
+    ;;
+  --control-flow-dir)
+    control_flow_dir="$2"
+    shift 2
+    ;;
+  --ssh-args)
+    ansible_ssh_args="$2"
+    shift 2
+    ;;
+  --stdout-callback)
+    stdout_callback="$2"
+    shift 2
+    ;;
+  --checkpoint)
+    debug_checkpoints='true'
+    shift
+    ;;
+  --no-checkpoint)
+    debug_checkpoints='false'
+    shift
+    ;;
+  --extra-vars)
+    extra_vars+=("$2")
+    shift 2
+    ;;
+  --dry-run)
+    dry_run=1
+    shift
+    ;;
+  --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: Unknown argument: %s\n' "$1" >&2
+    usage >&2
+    exit 1
+    ;;
   esac
 done
 

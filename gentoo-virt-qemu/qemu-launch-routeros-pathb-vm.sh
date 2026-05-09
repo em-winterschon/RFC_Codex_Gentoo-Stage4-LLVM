@@ -25,20 +25,20 @@ die() {
 }
 
 require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+  command -v "$1" > /dev/null 2>&1 || die "missing required command: $1"
 }
 
 bool_true() {
   case "${1,,}" in
-    1|true|yes|y|on) return 0 ;;
-    *) return 1 ;;
+  1 | true | yes | y | on) return 0 ;;
+  *) return 1 ;;
   esac
 }
 
 ensure_tap() {
   local tap_if=$1
   local bridge_if=$2
-  if ! ip link show "${tap_if}" >/dev/null 2>&1; then
+  if ! ip link show "${tap_if}" > /dev/null 2>&1; then
     ip tuntap add dev "${tap_if}" mode tap
   fi
   ip link set "${tap_if}" up
@@ -49,11 +49,11 @@ require_cmd ip
 require_cmd qemu-img
 require_cmd qemu-system-x86_64
 
-if pgrep -af "qemu-system-x86_64 .*${VM_NAME}" >/dev/null; then
+if pgrep -af "qemu-system-x86_64 .*${VM_NAME}" > /dev/null; then
   die "VM appears to already be running: ${VM_NAME}"
 fi
 
-ip link show "${LAN_BRIDGE}" >/dev/null 2>&1 || die "LAN bridge not found: ${LAN_BRIDGE}"
+ip link show "${LAN_BRIDGE}" > /dev/null 2>&1 || die "LAN bridge not found: ${LAN_BRIDGE}"
 
 mkdir -p "$(dirname "${CHR_DISK}")" "${BACKUP_DIR}"
 if bool_true "${FRESH_DISK}" || [[ ! -f "${CHR_DISK}" ]]; then
@@ -66,18 +66,18 @@ if bool_true "${FRESH_DISK}" || [[ ! -f "${CHR_DISK}" ]]; then
     mv "${CHR_STATE_DISK}" "${BACKUP_DIR}/$(basename "${CHR_STATE_DISK}").${stamp}.bak"
   fi
   qemu-img convert -f raw -O qcow2 "${CHR_RAW_IMAGE}" "${CHR_DISK}"
-  qemu-img create -f qcow2 "${CHR_STATE_DISK}" 16M >/dev/null
+  qemu-img create -f qcow2 "${CHR_STATE_DISK}" 16M > /dev/null
   chmod 0640 "${CHR_DISK}" "${CHR_STATE_DISK}"
 fi
 
-if ! ip link show "${WAN_BRIDGE}" >/dev/null 2>&1; then
+if ! ip link show "${WAN_BRIDGE}" > /dev/null 2>&1; then
   ip link add "${WAN_BRIDGE}" type bridge
 fi
 ip addr flush dev "${WAN_BRIDGE}" || true
 ip link set "${WAN_BRIDGE}" up
 
 if [[ -n "${WAN_PHYS_IF}" ]]; then
-  ip link show "${WAN_PHYS_IF}" >/dev/null 2>&1 || die "WAN physical interface not found: ${WAN_PHYS_IF}"
+  ip link show "${WAN_PHYS_IF}" > /dev/null 2>&1 || die "WAN physical interface not found: ${WAN_PHYS_IF}"
   ip link set "${WAN_PHYS_IF}" up
   ip link set "${WAN_PHYS_IF}" master "${WAN_BRIDGE}"
 fi

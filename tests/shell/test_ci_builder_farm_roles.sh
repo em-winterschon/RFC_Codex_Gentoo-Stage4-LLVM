@@ -13,32 +13,28 @@ assert_file_contains() {
 
 for role_dir in \
   jenkins_controller \
-  distcc_farm
-do
+  distcc_farm; do
   test -d "${ANSIBLE_ROOT}/roles/${role_dir}"
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
 
 for profile in \
   vm-jenkins-controller.yml \
-  metal-builder-farm-node.yml
-do
+  metal-builder-farm-node.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${profile}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${profile}" '^gentoo_profile_definition:'
 done
 
 for metadata in \
   vm-jenkins-controller.metadata.yml \
-  metal-builder-farm-node.metadata.yml
-do
+  metal-builder-farm-node.metadata.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${metadata}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${metadata}" '^gentoo_system_profile_metadata:'
 done
 
 for package_list in \
   stage5-virtual-host-jenkins-controller.packages \
-  stage5-metal-host-builder-farm-node.packages
-do
+  stage5-metal-host-builder-farm-node.packages; do
   test -f "${ANSIBLE_ROOT}/profile-package-lists/${package_list}"
 done
 

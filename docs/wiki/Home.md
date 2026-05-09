@@ -8,7 +8,7 @@ This repository is a Gentoo-focused operating-system imaging toolkit centered on
 - mirrored ZFS `bpool` and `rpool` layouts
 - unattended QEMU validation before bare-metal rollout
 - staged Ansible execution with structured control-flow logging
-- operator notifications through `ntfy.sh` and Codex-side helpers
+- operator notifications through the LAN ntfy-compatible service and Codex-side helpers
 
 It exists to turn the Gentoo install process into a repeatable, inspectable pipeline instead of a one-off interactive procedure.
 
@@ -62,14 +62,22 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)
+- [Workstation NsCDE](Workstation-NsCDE)
+- [GMKtek K10 Stage5 Validation](GMKtek-K10-Stage5-Validation)
 - [Container Building](Container-Building)
 - [Container Publishing](Container-Publishing)
 - [Identity AAA](Identity-AAA)
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
+- [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
+- [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
+- [BigNetwork FMT2 Smoke-Test](BigNetwork-FMT2-Smoke-Test)
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)
 - [Changelog](Changelog)
 - [SITREP Status 2026-05-03](SITREP-Status-2026-05-03)
+- [EOD Status 2026-05-07](EOD-Status-2026-05-07)
+- [EOD Status 2026-05-06](EOD-Status-2026-05-06)
+- [EOD Status 2026-05-05](EOD-Status-2026-05-05)
 - [EOD Status 2026-05-04](EOD-Status-2026-05-04)
 - [EOD Status 2026-05-02](EOD-Status-2026-05-02)
 - [EOD Status 2026-04-30](EOD-Status-2026-04-30)

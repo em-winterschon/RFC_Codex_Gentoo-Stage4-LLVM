@@ -95,7 +95,7 @@ network_fabric_devices:
       - Optional RouterOS container and zerotier packages were removed before upgrade to recover flash space.
       - CCR2004 gateway uplink is active on CRS309 sfp-sfpplus1 using FS.com SFP-10GSR-85 10G-SR optics over MMF.
       - CRS354 LACP is active on CRS309 sfp-sfpplus2 plus sfp-sfpplus3.
-      - Hasslehoff CCR-PCI 10G DAC target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.
+      - Hasslehoff QLogic QL41232HOCU LACP target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.
       - CSS326 10G aggregation target is CRS309 sfp-sfpplus8.
   qnap_archive_ts435xeu:
     role: archive-storage
@@ -282,6 +282,26 @@ network_fabric_links:
       rate: 10Gbps
       observed_at: 2026-05-04
   - endpoint_a:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus4
+    endpoint_b:
+      device: hasslehoff
+      interface: enp4s0f0
+    purpose: hasslehoff-qlogic-lacp-member
+    lag: hasslehoff-qlogic-bond0
+    media: 10G-DAC
+    status: planned
+  - endpoint_a:
+      device: sw_spine_crs309_rfc99
+      interface: sfp-sfpplus5
+    endpoint_b:
+      device: hasslehoff
+      interface: enp4s0f1
+    purpose: hasslehoff-qlogic-lacp-member
+    lag: hasslehoff-qlogic-bond0
+    media: 10G-DAC
+    status: planned
+  - endpoint_a:
       device: sw_mgmt_mkcrs354
       interface: sfp-sfpplus3
     endpoint_b:
@@ -349,6 +369,26 @@ network_fabric_lags:
     media: 10G-DAC
     observed_routeros_bond: bond-qnap
     status: observed
+  hasslehoff-qlogic-bond0:
+    mode: 802.3ad
+    switch: sw_spine_crs309_rfc99
+    switch_ports:
+      - sfp-sfpplus4
+      - sfp-sfpplus5
+    host: hasslehoff
+    host_ports:
+      - enp4s0f0
+      - enp4s0f1
+    media: 10G-DAC
+    observed_routeros_bond: bond-hasslehoff-qlogic
+    linux_recommendation:
+      bond_mode: 802.3ad
+      lacp_rate: fast
+      miimon: 100
+      xmit_hash_policy: layer3+4
+      initial_mtu: 1500
+      future_mtu_after_path_validation: 9000
+    status: planned
 
 network_fabric_vlan_plan:
   - vlan_id: 1
