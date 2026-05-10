@@ -25,6 +25,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added the `RFC99 Host E2ET Acceptance Pipeline` policy, wiki mirror, and
   regression coverage defining transient validation, reboot-durable acceptance
   gates, conformance tiers, and K10 release-gating semantics.
+- Added the first Host E2ET conformance report renderer with JSON, Markdown,
+  and JUnit outputs, an Ansible wrapper, and a K10 post-reboot AAA durability
+  manifest.
 
 ### Changed
 

@@ -1,0 +1,56 @@
+---
+run:
+  id: k10-stage5-aaa-reboot-20260510
+  phase: post-reboot
+  timestamp: "2026-05-10T02:00:00-07:00"
+host:
+  name: gmktek_nucbox_k10_stage5_candidate
+  fqdn: gmktek-k10-stage5.rfc1918.host
+  profile: stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg
+baseline:
+  name: RFC99 workstation AAA reboot durability
+  target_tier: p90
+gates:
+  - name: Inventory Gate
+    weight: 10
+    hard_required: true
+    checks:
+      - name: K10 inventory identity is modeled
+        status: pass
+        evidence: K10 host vars, NetBox intake, CSS326 ge16, and AP7901 outlet 6 are repo-tracked.
+  - name: Provisioning Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: PXE chainload reaches Gentoo live root
+        status: pass
+        evidence: PXE to iPXE with static dracut networking reaches the Gentoo login prompt.
+      - name: Rebuilt rootfs contains aaa-domain-client
+        status: fail
+        hard_fail: true
+        evidence: AP7901 outlet 6 reboot returned the original rootfs without SSSD; rebuild or disk install must include aaa-domain-client.
+  - name: Identity Gate
+    weight: 30
+    hard_required: true
+    checks:
+      - name: SSSD IPA backend persists after reboot
+        status: fail
+        hard_fail: true
+        evidence: /usr/lib64/sssd/libsss_ipa.so was missing after AP7901 outlet 6 reboot.
+      - name: FreeIPA SSH login is transiently validated
+        status: warn
+        evidence: codex-admin SSH worked before reboot but is not yet durable.
+  - name: Service Gate
+    weight: 15
+    hard_required: false
+    checks:
+      - name: SSH management path returns after reboot
+        status: pass
+        evidence: root SSH returned after PDU reboot and live image boot.
+  - name: Performance Gate
+    weight: 10
+    hard_required: false
+    checks:
+      - name: Package build performance baseline
+        status: skip
+        evidence: Deferred until reboot-durable identity and workstation install gates pass.

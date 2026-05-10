@@ -163,3 +163,34 @@ K10 cannot be marked `E2ET passed`, RC-capable, or GA-capable until the rebuilt
 rootfs or disk-installed Stage5 profile includes `aaa-domain-client`, survives
 reboot, and passes the Identity Gate plus the remaining host acceptance gates.
 
+## Report Tooling
+
+The first repo-native report renderer is:
+
+- `scripts/host_e2et_conformance.py`
+- sample manifest:
+  `gentoo-liveiso-ansible/host-e2et-definitions/k10-stage5-aaa-reboot.yml`
+- Ansible wrapper:
+  `gentoo-liveiso-ansible/playbooks/host-e2et-conformance-report.yml`
+
+Render JSON, Markdown, and JUnit artifacts directly:
+
+```bash
+scripts/host_e2et_conformance.py \
+  --manifest gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/host-e2et-definitions/k10-stage5-aaa-reboot.yml \
+  --json-output /tmp/k10-e2et.json \
+  --markdown-output /tmp/k10-e2et.md \
+  --junit-output /tmp/k10-e2et.xml
+```
+
+Or render through Ansible:
+
+```bash
+ansible-playbook \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/host-e2et-conformance-report.yml \
+  -e host_e2et_report_dir=/tmp/host-e2et
+```
+
+The CLI exits `0` only when the manifest meets its target tier and has no hard
+failures. It exits `1` for a valid but blocked or under-threshold host, and
+`2` for invalid input.

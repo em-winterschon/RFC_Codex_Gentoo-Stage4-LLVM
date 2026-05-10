@@ -221,7 +221,7 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `E2ET-001` | completed | Define RFC99 Host E2ET Acceptance Pipeline | K10 transient AAA validation evidence | `docs/HOST-E2ET-ACCEPTANCE.md` defines transient validation, reboot-durable acceptance, inventory/provisioning/boot/platform/network/storage/identity/service/performance gates, and p60/p80/p90/p95/p99 conformance tiers. |
-| `E2ET-002` | pending | Implement host E2ET conformance report tooling | `E2ET-001`, service validator patterns | Create Ansible/Python report tooling that emits JSON, Markdown, and optional JUnit output from host acceptance runs. |
+| `E2ET-002` | completed | Implement host E2ET conformance report tooling | `E2ET-001`, service validator patterns | `scripts/host_e2et_conformance.py` and `host-e2et-conformance-report.yml` emit JSON, Markdown, and JUnit artifacts from host acceptance manifests. K10 has a sample blocked post-reboot manifest for the AAA durability gap. |
 | `E2ET-003` | pending | Apply E2ET pipeline to K10 rebuilt rootfs or disk install | `AAA-009`, `WS-006` | K10 remains blocked from RC/GA semantics until `aaa-domain-client` survives reboot and the post-boot gates pass. |
 
 ### Workstation VM Profiles
