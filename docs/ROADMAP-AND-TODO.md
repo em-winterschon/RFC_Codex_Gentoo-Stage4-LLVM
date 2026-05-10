@@ -158,6 +158,12 @@ Dependency:
 | `AAA-008` | pending | Enroll AP7901 as the first RADIUS-managed power device | `AAA-006`, `AAA-005`, `PNR-031` | Render and deploy the AP7901 FreeRADIUS client stanza, preserve local break-glass access, validate read-only RADIUS login first, then test power-admin authorization before any wider PDU/UPS/ATS rollout. |
 | `AAA-009` | pending | Persist K10 Stage5 installed-system SSSD policy | `AAA-007`, `WS-006` | Rebuild the K10 rootfs or complete disk install with `aaa-domain-client`, then validate persistent hostname/FQDN behavior, SSSD offline cache, sudo rule refresh, local break-glass account access, and reboot durability before enrolling additional Linux clients. |
 
+### Storage, NAS, And Home Directories
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `NAS-001` | pending | Inventory QNAP TS435XEU and prepare NFS home-directory service | `AAA-006`, `PNR-021`, `PNR-022` | Operator is powering on the QNAP NAS with roughly 16TB raw storage, 2x 2.5GbE, and 2x 10GbE currently expected on CRS354 `sfp-plus3/4`. First pass should discover firmware, storage pools, NIC MACs, link mode, LACP state, NFS capabilities, LDAP/RADIUS/SSSD integration options, and safe backup/export settings before enabling floating home directories. |
+
 ### Observability, Logs, And Telemetry
 
 | ID | Status | Task | Depends On | Notes |
@@ -175,9 +181,9 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `LOG-001` | scaffolded | Validate rsyslog client templating everywhere | base profiles stable | Base rsyslog role now supports remote forwarding. |
-| `LOG-002` | active | Validate centralized rsyslog receiver container | container-services stable | Live TCP receive is validated on `10.9.8.89`; HAProxy exposes the Elasticsearch test VIP at `10.9.8.92:9200`; end-to-end rsyslog-to-index validation remains pending. |
+| `LOG-002` | completed | Validate centralized rsyslog receiver container | container-services stable | Live TCP receive is validated on `10.9.8.89`; HAProxy exposes the Elasticsearch test VIP at `10.9.8.92:9200`; `scripts/syslog_elasticsearch_validator.py` sends a unique marker through rsyslog and verifies it is searchable in `stage5-syslog.message`. |
 | `LOG-003` | pending | Validate 3-node Elasticsearch VM profile | VM provisioning stable | Must include load-balanced access path. |
-| `LOG-004` | pending | Validate Kibana VM profile | `LOG-003` | Connect to Elasticsearch VIP. |
+| `LOG-004` | active | Validate Kibana VM profile | `LOG-002`, `PNR-014` | SUN99 inventory, DNS, NetBox service intent, and host vars now reserve `obs-sun99-kibana-099067` / `172.16.99.67` with Kibana pointed at `http://10.9.8.92:9200`; live provisioning remains next. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |
 
 ### FMT2 / SFO-200 Recovery

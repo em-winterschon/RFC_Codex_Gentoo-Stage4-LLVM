@@ -539,6 +539,17 @@ service_vips:
     listeners:
       - protocol: http
         port: 3000
+  - name: obs-sun99-kibana
+    site: local-rfc1918-lab
+    address: 172.16.99.67
+    fqdn: obs-sun99-kibana-099067.rfc1918.host
+    aliases:
+      - obs-sun99-kibana.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 5601
   - name: rsyslog-ingest-vip
     site: local-rfc1918-lab
     address: 10.9.8.20

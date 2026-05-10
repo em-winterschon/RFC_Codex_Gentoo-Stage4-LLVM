@@ -213,6 +213,20 @@ network_fabric_devices:
     notes:
       - Grafana dashboard VM for SUN99 metrics visibility.
       - Default datasource is VictoriaMetrics with Prometheus kept as secondary.
+  obs_sun99_kibana_099067:
+    role: observability-kibana
+    hypervisor: hasslehoff
+    proxmox_vmid: 1067
+    runtime: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.67
+    fqdn: obs-sun99-kibana-099067.rfc1918.host
+    dns_aliases:
+      - obs-sun99-kibana.rfc1918.host
+    elasticsearch_endpoint: http://10.9.8.92:9200
+    notes:
+      - Kibana web interface for full-text infrastructure log search.
+      - Initial target is the live Path B Elasticsearch HAProxy VIP until the multi-node Elasticsearch service VIP is promoted.
 
 network_fabric_links:
   - endpoint_a:

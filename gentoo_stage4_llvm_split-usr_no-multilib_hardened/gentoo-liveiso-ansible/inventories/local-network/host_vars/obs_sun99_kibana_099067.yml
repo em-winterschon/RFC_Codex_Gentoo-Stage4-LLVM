@@ -1,0 +1,48 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-kibana-interface.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: obs-sun99-kibana-099067
+
+profile_cloud_init:
+  enabled: true
+  instance_id: obs-sun99-kibana-099067
+  local_hostname: obs-sun99-kibana-099067
+  disable_root: false
+  ssh_pwauth: false
+
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: 10.9.8.89
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_kibana:
+  enabled: true
+  server_name: obs-sun99-kibana.rfc1918.host
+  server_host: 0.0.0.0
+  server_port: 5601
+  public_base_url: https://obs-sun99-kibana.rfc1918.host/
+  elasticsearch_hosts:
+    - http://10.9.8.92:9200
+
+profile_service_readiness:
+  enabled: true
+  checks:
+    - name: obs-sun99-kibana-http
+      target: 172.16.99.67
+      port: 5601
+      protocol: tcp
+      phases:
+        - post_boot
+      retries: 24
+      delay: 5

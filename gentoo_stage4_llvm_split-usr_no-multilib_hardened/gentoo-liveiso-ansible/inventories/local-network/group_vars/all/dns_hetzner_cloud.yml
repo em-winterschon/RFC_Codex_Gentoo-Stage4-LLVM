@@ -110,3 +110,21 @@ dns_hetzner_cloud_managed_rrsets:
     values:
       - obs-sun99-grafana-099066.rfc1918.host.
     comment: sun99 grafana service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-kibana-099067
+    fqdn: obs-sun99-kibana-099067.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.67
+    comment: sun99 kibana vm
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-kibana
+    fqdn: obs-sun99-kibana.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - obs-sun99-kibana-099067.rfc1918.host.
+    comment: sun99 kibana service cname

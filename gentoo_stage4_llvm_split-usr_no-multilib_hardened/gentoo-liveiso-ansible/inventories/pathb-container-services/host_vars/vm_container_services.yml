@@ -115,3 +115,17 @@ profile_service_readiness:
         - post_boot
       retries: 24
       delay: 5
+    - name: rsyslog-elasticsearch-ingest
+      type: syslog_elasticsearch
+      syslog_target: 10.9.8.89
+      syslog_port: 514
+      syslog_protocol: tcp
+      elasticsearch_url: http://10.9.8.92:9200
+      index_pattern: stage5-syslog*
+      field: message
+      phases:
+        - post_boot
+      retries: 3
+      delay: 10
+      ingest_retries: 10
+      ingest_delay: 2

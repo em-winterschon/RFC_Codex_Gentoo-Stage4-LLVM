@@ -92,6 +92,8 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/temp
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'app-admin/rsyslog elasticsearch'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'elasticsearch_es_version_major: 9'
 assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/validate_check.yml" 'scripts/service_validator.py'
+assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/defaults/main.yml" 'scripts/syslog_elasticsearch_validator.py'
+assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/validate_check.yml" 'syslog_elasticsearch'
 assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/main.yml" 'block:'
 assert_file_contains "${ANSIBLE_ROOT}/roles/service_readiness/tasks/main.yml" 'resolved_service_readiness_phase'
 assert_file_contains "${ANSIBLE_ROOT}/roles/netbox_connector/templates/netbox-connector.yml.j2" 'planned_prefixes'
@@ -111,5 +113,7 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-observability-grafa
 test -f "${REPO_ROOT}/docs/OBSERVABILITY-ACCESS.md"
 test -f "${REPO_ROOT}/docs/wiki/Observability-Access.md"
 test -f "${REPO_ROOT}/scripts/service_validator.py"
+test -f "${REPO_ROOT}/scripts/syslog_elasticsearch_validator.py"
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'rsyslog-elasticsearch-ingest'
 
 printf 'PASS: %s\n' "$(basename "$0")"

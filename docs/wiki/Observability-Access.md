@@ -138,6 +138,29 @@ Example:
 scripts/service_validator.py --target 10.9.8.92 --port 9200 --protocol tcp --service-name elasticsearch-test --json
 ```
 
+`scripts/syslog_elasticsearch_validator.py` performs the deeper logging check:
+it emits a unique RFC5424-style syslog marker, then queries Elasticsearch for
+that marker in the configured index pattern and field. This catches receiver,
+template, `omelasticsearch`, HAProxy, and Elasticsearch indexing regressions
+that plain port checks cannot see.
+
+Example:
+
+```bash
+scripts/syslog_elasticsearch_validator.py \
+  --syslog-target 10.9.8.89 \
+  --syslog-port 514 \
+  --syslog-protocol tcp \
+  --elasticsearch-url http://10.9.8.92:9200 \
+  --index-pattern 'stage5-syslog*' \
+  --field message \
+  --json
+```
+
+The `service_readiness` role supports this as
+`type: syslog_elasticsearch`; the Path B container-services inventory now runs
+`rsyslog-elasticsearch-ingest` during `post_boot` validation.
+
 Serial console helper mapping:
 
 ```bash
@@ -204,7 +227,6 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 
 1. Promote the live rsyslog template fix through the normal container-services
    redeploy path so the mounted config is regenerated instead of hand-edited.
-2. Add a repeatable service-readiness check that emits a unique syslog marker
-   and searches `stage5-syslog.message` through the Elasticsearch VIP.
-3. Validate the native Gentoo `kibana-bin` service behavior on a fresh VM.
-4. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
+2. Provision `obs-sun99-kibana-099067` / `172.16.99.67` and validate
+   `kibana-bin` against `http://10.9.8.92:9200`.
+3. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.

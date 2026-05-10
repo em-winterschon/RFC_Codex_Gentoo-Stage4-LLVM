@@ -53,6 +53,12 @@
   quoting the `message` field while retaining JSON escaping, then validated a
   unique TCP syslog marker through `10.9.8.89:514` into the `stage5-syslog`
   Elasticsearch index via the HAProxy VIP `10.9.8.92:9200`.
+- Added `scripts/syslog_elasticsearch_validator.py` and `service_readiness`
+  support for `type: syslog_elasticsearch`, so post-boot validation can emit a
+  fresh syslog marker and verify it is searchable in Elasticsearch.
+- Added SUN99 Kibana deployment intent for
+  `obs-sun99-kibana-099067.rfc1918.host` / `172.16.99.67`, wired to the live
+  Elasticsearch HAProxy VIP `http://10.9.8.92:9200`.
 
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
