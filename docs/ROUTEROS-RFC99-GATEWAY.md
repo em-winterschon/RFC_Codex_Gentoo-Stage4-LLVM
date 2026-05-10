@@ -45,6 +45,22 @@ Rendered artifacts:
 - `/tmp/routeros-rfc99-gateway/<host>-rfc99-gateway.rsc`
 - `/tmp/routeros-rfc99-gateway/<host>-rfc99-gateway.json`
 
+## RouterOS Artifact Cache
+
+The on-host RouterOS package cache for this target is
+`/opt/routeros/mikrotik-official`.
+
+Current staged artifacts:
+
+- RouterOS `7.22.3` arm64 package:
+  `/opt/routeros/mikrotik-official/os-systems/arm64/routeros-7.22.3-arm64.npk`
+- RouterOS container `7.22.3` arm64 package:
+  `/opt/routeros/mikrotik-official/containers/arm64/container-7.22.3-arm64.npk`
+
+The container package is tracked for lab validation only. Production service
+VIPs should continue to terminate on the Stage4 container-services VM through
+HAProxy, not inside RouterOS containers on the primary gateway.
+
 ## Security Posture
 
 The rendered management plane enables:
@@ -91,6 +107,32 @@ The role encodes current VLAN intent:
 The CRS309 WIP declared overlapping `172.16.228.0/22` gateway entries. The
 CCR2004 render normalizes that to only `172.16.228.1/22` and intentionally omits
 the duplicate `172.16.229.1/22` and `172.16.230.1/22` entries.
+
+## Service VIP Routing
+
+The approved production boundary is:
+
+- CCR2004 owns L3 service VIPs and narrowly scoped DNAT rules.
+- Stage4 container-services VMs run HAProxy/nginx and own application behavior.
+- RouterOS containers remain a lab-only experiment until package enablement,
+  external storage, image provenance, health checks, and private key handling
+  are validated away from the primary gateway.
+
+Initial SUN99 Elasticsearch/search VIP intent:
+
+| Field | Value |
+| --- | --- |
+| VIP | `172.16.99.92/32` |
+| FQDN | `obs-sun99-esvip-099092.rfc1918.host` |
+| Alias | `obs-sun99-esvip.rfc1918.host` |
+| CCR2004 action | DNAT TCP/9200 to `172.16.99.89:9200` |
+| HAProxy host | `svc-container-services-safe-move-01` |
+| Backend path | HAProxy forwards to the Path B Elasticsearch test endpoint |
+
+The role also renders temporary `/32` static routes for `10.9.8.91` and
+`10.9.8.92` via `172.16.99.108` while Path B services remain behind X12AGAIN.
+Remove those routes once VLAN `1098` and the Elasticsearch service path are
+fully owned by the physical CCR2004/spine fabric.
 
 ## DHCP Scope
 

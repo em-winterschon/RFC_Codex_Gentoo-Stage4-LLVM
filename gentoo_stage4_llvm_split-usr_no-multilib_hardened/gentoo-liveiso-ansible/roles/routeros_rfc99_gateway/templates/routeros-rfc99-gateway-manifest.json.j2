@@ -9,7 +9,11 @@
     "identity": "{{ routeros_rfc99_gateway_identity }}",
     "expectedModel": "{{ routeros_rfc99_gateway_expected_model }}",
     "expectedBoardName": "{{ routeros_rfc99_gateway_expected_board_name }}",
-    "routerosArch": "{{ routeros_rfc99_gateway_routeros_arch }}"
+    "routerosArch": "{{ routeros_rfc99_gateway_routeros_arch }}",
+    "targetVersion": "{{ routeros_rfc99_gateway_target_version }}",
+    "localArtifactRoot": "{{ routeros_rfc99_gateway_local_artifact_root }}",
+    "routerosPackagePath": "{{ routeros_rfc99_gateway_routeros_package_path }}",
+    "containerPackagePath": "{{ routeros_rfc99_gateway_container_package_path }}"
   },
   "interfaces": {
     "wanInterface": "{{ routeros_rfc99_gateway_wan_interface }}",
@@ -26,6 +30,8 @@
   },
   "vlans": {{ routeros_rfc99_gateway_vlan_plan | to_json }},
   "legacyBridgeAddresses": {{ routeros_rfc99_gateway_legacy_bridge_addresses | to_json }},
+  "serviceVips": {{ routeros_rfc99_gateway_service_vips | to_json }},
+  "staticRoutes": {{ routeros_rfc99_gateway_static_routes | to_json }},
   "management": {
     "allowedCidrs": {{ routeros_rfc99_gateway_management_cidrs | to_json }},
     "sshEnabled": {{ (routeros_rfc99_gateway_ssh_enabled | bool) | to_json }},
@@ -43,6 +49,7 @@
     "zerotierScaffoldEnabled": {{ (routeros_rfc99_gateway_zerotier_scaffold_enabled | bool) | to_json }},
     "ripEnabled": {{ (routeros_rfc99_gateway_rip_enabled | bool) | to_json }}
   },
+  "dstNatRules": {{ routeros_rfc99_gateway_dst_nat_rules | to_json }},
   "apply": {
     "enabled": {{ (routeros_rfc99_gateway_apply | bool) | to_json }},
     "mode": "render-only"

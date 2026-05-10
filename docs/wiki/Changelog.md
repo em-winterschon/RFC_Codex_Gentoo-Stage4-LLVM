@@ -71,6 +71,12 @@
 - Added `scripts/install-kibana-upstream-tarball.sh` and
   `scripts/apply-x12again-pathb-sun99-nat.sh` to capture the live-proven
   install and temporary SUN99-to-Path-B forwarding steps.
+- Added CCR2004 render-only service VIP support for the SUN99 Elasticsearch
+  front door: `172.16.99.92/32` on `br-lan`, DNAT TCP/9200 to
+  `svc-container-services-safe-move-01` at `172.16.99.89:9200`, temporary
+  `/32` Path-B backend routes via `172.16.99.108`, NetBox/IPAM intake, and
+  RouterOS `7.22.3` arm64 package/cache metadata under
+  `/opt/routeros/mikrotik-official`.
 
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.

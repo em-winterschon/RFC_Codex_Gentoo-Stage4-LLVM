@@ -82,6 +82,10 @@
 {% for routeros_address in routeros_rfc99_gateway_legacy_bridge_addresses %}
 /ip address add address={{ routeros_address.address }} interface={{ routeros_address.interface }} comment="RFC99 legacy {{ routeros_address.comment }}"
 {% endfor %}
+/ip address remove [find comment~"RFC99 service VIP"]
+{% for service_vip in routeros_rfc99_gateway_service_vips %}
+/ip address add address={{ service_vip.address }} interface={{ service_vip.interface | default(routeros_rfc99_gateway_lan_bridge) }} comment="RFC99 service VIP {{ service_vip.name }}"
+{% endfor %}
 
 # WAN egress.
 /ip dhcp-client remove [find interface="{{ routeros_rfc99_gateway_wan_interface }}"]
@@ -98,6 +102,10 @@
 {% else %}
 :error ("[" . $cfgTag . "] invalid WAN mode {{ routeros_rfc99_gateway_wan_mode }}")
 {% endif %}
+/ip route remove [find comment~"RFC99 static route"]
+{% for static_route in routeros_rfc99_gateway_static_routes %}
+/ip route add dst-address={{ static_route.dst_address }} gateway={{ static_route.gateway }} distance={{ static_route.distance | default(1) }} comment="RFC99 static route {{ static_route.comment }}"
+{% endfor %}
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
 {% for dns_record in routeros_rfc99_gateway_dns_static_records %}
 {% set record_type = dns_record.type | default('A') | upper %}
@@ -209,6 +217,10 @@
 {% endif %}
 
 {% if routeros_rfc99_gateway_nat_enabled | bool %}
+/ip firewall nat remove [find comment~"RFC99 service dstnat"]
+{% for dnat_rule in routeros_rfc99_gateway_dst_nat_rules %}
+/ip firewall nat add chain=dstnat action=dst-nat protocol={{ dnat_rule.protocol | default('tcp') }} dst-address={{ dnat_rule.dst_address }} dst-port={{ dnat_rule.dst_port }} to-addresses={{ dnat_rule.to_address }} to-ports={{ dnat_rule.to_port | default(dnat_rule.dst_port) }} comment="RFC99 service dstnat {{ dnat_rule.comment }}"
+{% endfor %}
 /ip firewall nat remove [find comment="RFC99 WAN SNAT"]
 /ip firewall nat add chain=srcnat action=masquerade out-interface-list=WAN comment="RFC99 WAN SNAT"
 {% endif %}

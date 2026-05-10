@@ -120,6 +120,21 @@ frontend for Elasticsearch:
 - HAProxy frontend: `*:9200`
 - backend: `10.9.8.91:9200`
 
+The CCR2004 gateway role now renders a SUN99-facing Elasticsearch/search VIP
+without moving HAProxy into RouterOS containers:
+
+- RouterOS service VIP: `172.16.99.92/32` on `br-lan`
+- DNS: `obs-sun99-esvip-099092.rfc1918.host`
+- CNAME: `obs-sun99-esvip.rfc1918.host`
+- RouterOS DNAT: `172.16.99.92:9200` to
+  `svc-container-services-safe-move-01` at `172.16.99.89:9200`
+- temporary backend routes: `10.9.8.91/32` and `10.9.8.92/32` via
+  `172.16.99.108` until Path B leaves the X12AGAIN transit path
+
+RouterOS `7.22.3` and the `arm64` container package are cached under
+`/opt/routeros/mikrotik-official` for future lab work, but production
+observability ingress stays on the Stage4 HAProxy container-service role.
+
 Additional HAProxy service-type definitions now exist for Jenkins, FreeIPA /
 FreeRADIUS, Prometheus, Alertmanager, Grafana, Kibana, Elasticsearch,
 Elasticsearch exporter, node exporter, Podman exporter, IPMI exporter,
@@ -201,6 +216,10 @@ Live Kibana validation on `172.16.99.67` currently confirms:
   `9.3.1`.
 - `/api/status` returns HTTP `200` with overall level `available`.
 - Elasticsearch is available through `http://10.9.8.92:9200`.
+- CCR2004 render intent now adds SUN99 VIP
+  `obs-sun99-esvip-099092.rfc1918.host` / `172.16.99.92` with DNAT to the
+  container-services HAProxy listener, providing the planned non-Path-B client
+  front door.
 - the default Kibana data view is `stage5-syslog*` with `@timestamp`.
 - OpenRC exports `TZ=UTC`; without that, Kibana's bundled Node runtime reports
   `Etc/Unknown` and Moment Timezone terminates the process.
