@@ -30,5 +30,13 @@ assert_contains "${output}" "source=root@10.9.8.89"
 assert_contains "${output}" "target=root@172.16.99.89"
 assert_contains "${output}" "/etc/container-services"
 assert_contains "${output}" "staging_mode=1"
+assert_contains "${output}" "target_pathb_routes=10.9.8.91/32 via 172.16.99.108|10.9.8.92/32 via 172.16.99.108"
+
+script_text="$(<"${HELPER}")"
+assert_contains "${script_text}" "persist_target_pathb_routes"
+assert_contains "${script_text}" "routes_eth0"
+assert_contains "${script_text}" "routes_ens18"
+assert_contains "${script_text}" "\"route\", \"get\", gateway"
+assert_contains "${script_text}" "10.9.8.91/32 via 172.16.99.108"
 
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -1,9 +1,9 @@
 # RouterOS RFC99 Gateway Role
 
 `routeros_rfc99_gateway` renders the physical CCR2004 replacement-router
-configuration for the RFC99 management and services fabric. It is intentionally
-render-only until the generated `.rsc` file has been reviewed against the live
-serial console state.
+configuration for the RFC99 management and services fabric. The role remains
+render-first: generated `.rsc` files must be reviewed against live gateway
+state before any operator-applied import or SSH command stream.
 
 ## Target
 
@@ -104,7 +104,7 @@ The approved production boundary is:
   external storage, image provenance, health checks, and private key handling
   are validated away from the primary gateway.
 
-Initial SUN99 Elasticsearch/search VIP intent:
+Initial SUN99 Elasticsearch/search VIP:
 
 | Field | Value |
 | --- | --- |
@@ -112,13 +112,22 @@ Initial SUN99 Elasticsearch/search VIP intent:
 | FQDN | `obs-sun99-esvip-099092.rfc1918.host` |
 | Alias | `obs-sun99-esvip.rfc1918.host` |
 | CCR2004 action | DNAT TCP/9200 to `172.16.99.89:9200` |
+| CCR2004 hairpin | SRCNAT LAN clients to the backend for symmetric replies |
 | HAProxy host | `svc-container-services-safe-move-01` |
 | Backend path | HAProxy forwards to the Path B Elasticsearch test endpoint |
 
+The service VIP was applied live on `2026-05-10` after pre-change RouterOS
+backup/export capture. Validation passed for ICMP reachability, TCP/9200
+readiness, RouterOS DNS A/CNAME resolution, Elasticsearch cluster health
+`green`, and syslog-to-Elasticsearch marker ingestion through the VIP.
+
 The role also renders temporary `/32` static routes for `10.9.8.91` and
 `10.9.8.92` via `172.16.99.108` while Path B services remain behind X12AGAIN.
-Remove those routes once VLAN `1098` and the Elasticsearch service path are
-fully owned by the physical CCR2004/spine fabric.
+The container-services VM must also keep matching backend routes through
+`172.16.99.108`; `scripts/migrate-container-services-runtime.sh` persists
+those routes during safe-move redeploys. Remove these routes once VLAN `1098`
+and the Elasticsearch service path are fully owned by the physical
+CCR2004/spine fabric.
 
 ## DHCP Scope
 
@@ -163,7 +172,19 @@ path is now PXE/TFTP with filename `k10-ipxe.efi`.
 
 ## Live Apply Gate
 
-No live apply task exists in this role yet. Before adding one, keep serial
-console open, export the current RouterOS config, review the rendered RSC, and
-validate SSH, HTTPS, API-SSL, WAN DHCP, default route, DNS, SNAT, and VLAN
-gateway reachability before retiring the existing gateway path.
+The first scoped live apply covered only the Elasticsearch/search service VIP.
+Before adding broader apply automation, keep serial console access available,
+export the current RouterOS config, review the rendered RSC, and validate SSH,
+HTTPS, API-SSL, WAN DHCP, default route, DNS, SNAT, and VLAN gateway
+reachability before retiring any existing gateway path.
+
+Captured operator artifacts from the scoped service-VIP apply:
+
+- pre-change state:
+  `/root/operator-private/routeros/ccr2004-16g/pre-service-vip-20260510T175807Z`
+- reviewed render:
+  `/root/operator-private/routeros/ccr2004-16g/render-20260510T180201Z`
+- applied RSC:
+  `/root/operator-private/routeros/ccr2004-16g/service-vip-apply-20260510T180226Z.rsc`
+- post-change state:
+  `/root/operator-private/routeros/ccr2004-16g/post-service-vip-20260510T180309Z`

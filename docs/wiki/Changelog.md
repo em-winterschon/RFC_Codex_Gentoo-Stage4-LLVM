@@ -71,11 +71,20 @@
 - Added `scripts/install-kibana-upstream-tarball.sh` and
   `scripts/apply-x12again-pathb-sun99-nat.sh` to capture the live-proven
   install and temporary SUN99-to-Path-B forwarding steps.
-- Added CCR2004 render-only service VIP support for the SUN99 Elasticsearch
-  front door: `172.16.99.92/32` on `br-lan`, DNAT TCP/9200 to
-  `svc-container-services-safe-move-01` at `172.16.99.89:9200`, temporary
-  `/32` Path-B backend routes via `172.16.99.108`, NetBox/IPAM intake, and
-  RouterOS `7.22.3` arm64 package/cache metadata under
+- Applied the scoped CCR2004 service VIP for the SUN99 Elasticsearch front
+  door: `172.16.99.92/32` on `br-lan`, RouterOS DNS A/CNAME records,
+  DNAT/SRCNAT hairpin for TCP/9200 to `svc-container-services-safe-move-01`
+  at `172.16.99.89:9200`, and temporary `/32` Path-B backend routes via
+  `172.16.99.108`; validation passed for ICMP, TCP/9200, Elasticsearch
+  cluster health, and rsyslog-to-Elasticsearch marker ingestion through the
+  new VIP.
+- Updated the container-services migration helper to persist matching Path-B
+  backend routes on the safe-move VM, preventing HAProxy redeploys from
+  regressing to Elasticsearch `503` responses.
+- Moved live Kibana and its local-network inventory from the Path-B-only
+  `10.9.8.92:9200` endpoint to the CCR2004 SUN99 VIP
+  `172.16.99.92:9200`.
+- Recorded RouterOS `7.22.3` arm64 package/cache metadata under
   `/opt/routeros/mikrotik-official`.
 
 This changelog tracks operator-visible changes to the Stage4/Stage5

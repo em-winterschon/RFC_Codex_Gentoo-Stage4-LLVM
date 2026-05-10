@@ -108,7 +108,7 @@ assert_file_contains "${obs_grafana_vars}" "root_url: https://obs-sun99-grafana.
 assert_file_contains "${obs_kibana_vars}" "vm-kibana-interface.yml"
 assert_file_contains "${obs_kibana_vars}" "install_hostname: obs-sun99-kibana-099067"
 assert_file_contains "${obs_kibana_vars}" "server_name: obs-sun99-kibana.rfc1918.host"
-assert_file_contains "${obs_kibana_vars}" "http://10.9.8.92:9200"
+assert_file_contains "${obs_kibana_vars}" "http://172.16.99.92:9200"
 
 assert_file_contains "${network_fabric}" "hasslehoff-bond0"
 assert_file_contains "${network_fabric}" "svc_netbox_stage4"

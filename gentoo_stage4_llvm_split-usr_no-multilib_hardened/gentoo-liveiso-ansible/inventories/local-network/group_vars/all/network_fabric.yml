@@ -223,10 +223,10 @@ network_fabric_devices:
     fqdn: obs-sun99-kibana-099067.rfc1918.host
     dns_aliases:
       - obs-sun99-kibana.rfc1918.host
-    elasticsearch_endpoint: http://10.9.8.92:9200
+    elasticsearch_endpoint: http://172.16.99.92:9200
     notes:
       - Kibana web interface for full-text infrastructure log search.
-      - Initial target is the live Path B Elasticsearch HAProxy VIP until the multi-node Elasticsearch service VIP is promoted.
+      - Initial target is the live CCR2004 SUN99 Elasticsearch VIP until the multi-node Elasticsearch service VIP is promoted.
 
 network_fabric_links:
   - endpoint_a:

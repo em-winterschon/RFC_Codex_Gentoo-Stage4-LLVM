@@ -120,14 +120,16 @@ frontend for Elasticsearch:
 - HAProxy frontend: `*:9200`
 - backend: `10.9.8.91:9200`
 
-The CCR2004 gateway role now renders a SUN99-facing Elasticsearch/search VIP
-without moving HAProxy into RouterOS containers:
+The CCR2004 gateway role renders and has a scoped live apply for a SUN99-facing
+Elasticsearch/search VIP without moving HAProxy into RouterOS containers:
 
 - RouterOS service VIP: `172.16.99.92/32` on `br-lan`
 - DNS: `obs-sun99-esvip-099092.rfc1918.host`
 - CNAME: `obs-sun99-esvip.rfc1918.host`
 - RouterOS DNAT: `172.16.99.92:9200` to
   `svc-container-services-safe-move-01` at `172.16.99.89:9200`
+- RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:9200`
+  so same-subnet clients receive symmetric replies from the VIP path
 - temporary backend routes: `10.9.8.91/32` and `10.9.8.92/32` via
   `172.16.99.108` until Path B leaves the X12AGAIN transit path
 
@@ -215,18 +217,17 @@ Live Kibana validation on `172.16.99.67` currently confirms:
   Gentoo `www-apps/kibana-bin-7.17.25` is incompatible with Elasticsearch
   `9.3.1`.
 - `/api/status` returns HTTP `200` with overall level `available`.
-- Elasticsearch is available through `http://10.9.8.92:9200`.
-- CCR2004 render intent now adds SUN99 VIP
-  `obs-sun99-esvip-099092.rfc1918.host` / `172.16.99.92` with DNAT to the
-  container-services HAProxy listener, providing the planned non-Path-B client
-  front door.
+- Kibana now uses the CCR2004 SUN99 Elasticsearch VIP
+  `http://172.16.99.92:9200`.
+- CCR2004 provides SUN99 VIP `obs-sun99-esvip-099092.rfc1918.host` /
+  `172.16.99.92` with DNAT to the container-services HAProxy listener,
+  providing the planned non-Path-B client front door.
 - the default Kibana data view is `stage5-syslog*` with `@timestamp`.
 - OpenRC exports `TZ=UTC`; without that, Kibana's bundled Node runtime reports
   `Etc/Unknown` and Moment Timezone terminates the process.
-- X12AGAIN currently carries a narrow temporary SNAT rule for
-  `172.16.99.0/24 -> 10.9.8.0/24` over `br-pathb`; promote this to CCR2004
-  routing or a production HAProxy frontend before treating Path-B Elasticsearch
-  as a stable SUN99 dependency.
+- X12AGAIN still carries temporary Path-B transit/SNAT for the Elasticsearch
+  backend path; do not retire it until VLAN `1098` and the backend route are
+  moved fully onto the physical CCR2004/spine fabric.
 
 If an existing test index was created before the zero-replica template was
 installed, apply the rendered helper and update the existing index settings:
@@ -242,6 +243,10 @@ The live rsyslog-to-Elasticsearch validation found and corrected one collector
 template issue: `message` must be quoted in the rendered JSON while
 `property(name="msg" format="json")` handles escaping. Without that correction,
 `omelasticsearch` rejects bulk requests before they reach Elasticsearch.
+
+Live validation on `2026-05-10` confirmed that a unique TCP syslog marker sent
+to `172.16.99.89:514` is searchable in `stage5-syslog.message` through
+`http://172.16.99.92:9200`.
 
 ## NetBox
 
@@ -260,9 +265,8 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 
 ## Remaining Work
 
-1. Promote the live rsyslog template fix through the normal container-services
-   redeploy path so the mounted config is regenerated instead of hand-edited.
-2. Promote the live Kibana upstream-tarball workflow into a full Ansible apply
-   path, including persistent SUN99-to-Path-B routing through CCR2004 or a
-   production HAProxy frontend.
+1. Promote the live Kibana upstream-tarball workflow into a full Ansible apply
+   path.
+2. Move the remaining Path-B backend dependency off X12AGAIN once VLAN `1098`
+   and the Elasticsearch backend path are owned by the CCR2004/spine fabric.
 3. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.

@@ -39,7 +39,7 @@ profile_kibana:
   server_port: 5601
   public_base_url: https://obs-sun99-kibana.rfc1918.host/
   elasticsearch_hosts:
-    - http://10.9.8.92:9200
+    - http://172.16.99.92:9200
   data_views:
     - id: stage5-syslog
       title: stage5-syslog*

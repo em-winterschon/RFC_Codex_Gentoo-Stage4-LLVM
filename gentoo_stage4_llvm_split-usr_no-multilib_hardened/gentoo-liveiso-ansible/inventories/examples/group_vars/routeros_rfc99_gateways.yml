@@ -50,6 +50,14 @@ routeros_rfc99_gateway_dst_nat_rules:
     to_address: 172.16.99.89
     to_port: 9200
     comment: obs-sun99-esvip-099092 elasticsearch to container-services HAProxy
+routeros_rfc99_gateway_src_nat_rules:
+  - name: obs-sun99-esvip-099092-hairpin
+    action: masquerade
+    protocol: tcp
+    src_address: 172.16.99.0/24
+    dst_address: 172.16.99.89
+    dst_port: 9200
+    comment: obs-sun99-esvip-099092 hairpin to container-services HAProxy
 routeros_rfc99_gateway_syslog_remote_host: 172.16.99.80
 routeros_rfc99_gateway_dhcp_next_server: 172.16.99.108
 routeros_rfc99_gateway_dhcp_options:

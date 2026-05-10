@@ -203,6 +203,7 @@ routeros_rfc99_gateway_legacy_bridge_addresses:
 routeros_rfc99_gateway_service_vips: []
 routeros_rfc99_gateway_static_routes: []
 routeros_rfc99_gateway_dst_nat_rules: []
+routeros_rfc99_gateway_src_nat_rules: []
 
 routeros_rfc99_gateway_nat_enabled: true
 routeros_rfc99_gateway_firewall_enabled: true
