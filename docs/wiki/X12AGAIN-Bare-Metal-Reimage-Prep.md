@@ -13,9 +13,14 @@ profile: vm-netboot-publisher
 
 Cutover gates:
 
-- Copy `/var/lib/netboot/path-b/` from X12AGAIN to VM `1088`.
-- Validate HTTP `:8080` and TFTP `k10-ipxe.efi` from `172.16.99.88`.
-- Apply CCR2004 DHCP `next-server=172.16.99.88` only after service validation.
+- VM `1088` is running from the populated Stage4 service image with OVMF and
+  static OpenRC networking at `172.16.99.88/24`.
+- `/var/lib/netboot/path-b/` and `/opt/gentoo-netboot/path-b/artifacts/` have
+  been copied from X12AGAIN.
+- HTTP `:8080` and TFTP `k10-ipxe.efi` validate from `172.16.99.88`.
+- CCR2004 DHCP now advertises `next-server=172.16.99.88`.
+- CCR2004 DNS resolves `boot-sun99-netboot-099088.rfc1918.host` and the
+  `boot-sun99-netboot.rfc1918.host` alias.
 - Reboot K10 and prove PXE -> iPXE -> rootfs without `172.16.99.108`.
 - Move `/srv/build-cache`, `/srv/vm-images`, binpkg, and distfiles caches to
   durable storage before X12AGAIN shutdown.

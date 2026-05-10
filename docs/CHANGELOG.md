@@ -13,6 +13,12 @@
   metadata, K10 manifest URL updates, netboot publisher group vars, and CCR2004
   DHCP `next-server` desired-state migration away from X12AGAIN
   `172.16.99.108`.
+- Provisioned live Hasslehoff VM `1088` as
+  `boot-sun99-netboot-099088.rfc1918.host`, copied the X12AGAIN Path B publish
+  tree and absolute artifact symlink target, validated HTTP and TFTP service,
+  cut CCR2004 DHCP over to `next-server=172.16.99.88`, added the CCR2004
+  netboot DNS A/CNAME records, and stored a final encrypted post-change CCR2004
+  export in the network-device backup tree.
 - Defined X12AGAIN as a stable hypervisor/resource provider and moved
   heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
   disposable high-resource builder VMs.

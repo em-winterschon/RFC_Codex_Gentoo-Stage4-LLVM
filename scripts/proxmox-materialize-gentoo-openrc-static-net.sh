@@ -163,29 +163,44 @@ if [[ ! -b "\${zvol}" ]]; then
 fi
 
 disk="\$(realpath "\${zvol}")"
-part="\${disk}p2"
 
 sgdisk -e "\${disk}" >/dev/null
 partprobe "\${disk}" || true
 partx -u "\${disk}" >/dev/null 2>&1 || true
 
-if [[ ! -b "\${part}" ]]; then
-  echo "missing Gentoo root partition: \${part}" >&2
-  exit 3
+root_part=""
+root_part_type=""
+while read -r candidate; do
+  if [[ "\${candidate}" == "\${disk}" ]]; then
+    continue
+  fi
+  candidate_type="\$(blkid -o value -s TYPE "\${candidate}" 2>/dev/null || true)"
+  case "\${candidate_type}" in
+    ext2 | ext3 | ext4)
+      root_part="\${candidate}"
+      root_part_type="\${candidate_type}"
+      break
+      ;;
+  esac
+done < <(lsblk -pnro NAME "\${disk}")
+
+if [[ -z "\${root_part}" ]]; then
+  while read -r candidate; do
+    if [[ "\${candidate}" == "\${disk}" ]]; then
+      continue
+    fi
+    candidate_type="\$(blkid -o value -s TYPE "\${candidate}" 2>/dev/null || true)"
+    if [[ "\${candidate_type}" == 'zfs_member' ]]; then
+      root_part="\${candidate}"
+      root_part_type="\${candidate_type}"
+      break
+    fi
+  done < <(lsblk -pnro NAME "\${disk}")
 fi
 
-if [[ "\${resize_rootfs}" == '1' ]]; then
-  parted -s "\${disk}" resizepart 2 100% || true
-  partprobe "\${disk}" || true
-  partx -u "\${disk}" >/dev/null 2>&1 || true
-  set +e
-  e2fsck -fy "\${part}"
-  fsck_rc=\$?
-  set -e
-  if [[ "\${fsck_rc}" -gt 1 ]]; then
-    exit "\${fsck_rc}"
-  fi
-  resize2fs "\${part}"
+if [[ -z "\${root_part}" ]]; then
+  echo "unable to locate an ext or ZFS Gentoo root partition on \${disk}" >&2
+  exit 3
 fi
 
 mnt="/mnt/offline-vm-\${vmid}"
@@ -193,11 +208,72 @@ mkdir -p "\${mnt}"
 if mountpoint -q "\${mnt}"; then
   umount "\${mnt}"
 fi
-mount "\${part}" "\${mnt}"
+
+zfs_import_name=""
+zfs_imported=0
+zfs_root_dataset=""
 cleanup() {
-  umount "\${mnt}" >/dev/null 2>&1 || true
+  if [[ "\${zfs_imported}" == '1' ]]; then
+    zfs list -H -r -o name,mounted "\${zfs_import_name}" 2>/dev/null \
+      | awk '\$2 == "yes" {print \$1}' \
+      | sort -r \
+      | while read -r dataset; do
+          zfs unmount "\${dataset}" >/dev/null 2>&1 || true
+        done
+    zpool export "\${zfs_import_name}" >/dev/null 2>&1 || true
+  elif mountpoint -q "\${mnt}"; then
+    umount "\${mnt}" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
+
+case "\${root_part_type}" in
+  ext2 | ext3 | ext4)
+    if [[ "\${resize_rootfs}" == '1' ]]; then
+      root_part_num="\$(partx -g -o NR "\${root_part}" | awk 'NF {print \$1; exit}')"
+      if [[ -n "\${root_part_num}" ]]; then
+        parted -s "\${disk}" resizepart "\${root_part_num}" 100% || true
+        partprobe "\${disk}" || true
+        partx -u "\${disk}" >/dev/null 2>&1 || true
+      fi
+      set +e
+      e2fsck -fy "\${root_part}"
+      fsck_rc=\$?
+      set -e
+      if [[ "\${fsck_rc}" -gt 1 ]]; then
+        exit "\${fsck_rc}"
+      fi
+      resize2fs "\${root_part}"
+    fi
+    mount "\${root_part}" "\${mnt}"
+    ;;
+  zfs_member)
+    zfs_pool_id="\$(blkid -o value -s UUID "\${root_part}" 2>/dev/null || true)"
+    if [[ -z "\${zfs_pool_id}" ]]; then
+      echo "unable to resolve ZFS pool id from \${root_part}" >&2
+      exit 3
+    fi
+    zfs_import_name="offlinevm\${vmid}"
+    if zpool list -H -o name | grep -qx "\${zfs_import_name}"; then
+      zpool export "\${zfs_import_name}" >/dev/null 2>&1 || true
+    fi
+    zpool import -f -N -R "\${mnt}" "\${zfs_pool_id}" "\${zfs_import_name}"
+    zfs_imported=1
+    zfs_root_dataset="\$(zfs list -H -r -o name,mountpoint "\${zfs_import_name}" | awk -v mnt="\${mnt}" '\$2 == mnt {print \$1; exit}')"
+    if [[ -z "\${zfs_root_dataset}" ]]; then
+      zfs_root_dataset="\$(zfs list -H -r -o name "\${zfs_import_name}" | awk '/\\/ROOT\\// {print; exit}')"
+    fi
+    if [[ -z "\${zfs_root_dataset}" ]]; then
+      echo "unable to locate ZFS root dataset in \${zfs_import_name}" >&2
+      exit 3
+    fi
+    zfs mount "\${zfs_root_dataset}"
+    ;;
+  *)
+    echo "unsupported Gentoo root partition type \${root_part_type} on \${root_part}" >&2
+    exit 3
+    ;;
+esac
 
 mkdir -p "\${mnt}/etc/conf.d" "\${mnt}/etc/runlevels/default"
 cat > "\${mnt}/etc/conf.d/net" <<NETEOF
@@ -236,7 +312,7 @@ if [[ "\${enable_serial_getty}" == '1' && -f "\${mnt}/etc/inittab" ]]; then
 fi
 
 sync
-umount "\${mnt}"
+cleanup
 trap - EXIT
 
 if [[ "\${start_after_config}" == '1' ]]; then

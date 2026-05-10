@@ -42,6 +42,16 @@ routeros_rfc99_gateway_dns_static_records:
     cname: log-sun99-rsyslog-099093.rfc1918.host
     ttl: 5m
     comment: codex rsyslog service cname
+  - name: boot-sun99-netboot-099088.rfc1918.host
+    type: A
+    address: 172.16.99.88
+    ttl: 5m
+    comment: codex netboot publisher vm
+  - name: boot-sun99-netboot.rfc1918.host
+    type: CNAME
+    cname: boot-sun99-netboot-099088.rfc1918.host
+    ttl: 5m
+    comment: codex netboot publisher cname
 routeros_rfc99_gateway_service_vips:
   - name: obs-sun99-esvip-099092
     address: 172.16.99.92/32

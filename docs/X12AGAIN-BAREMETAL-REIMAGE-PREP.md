@@ -17,8 +17,20 @@ HTTP: 8080
 TFTP: 69
 ```
 
-Do not apply CCR2004 DHCP `next-server=172.16.99.88` live until VM `1088`
-exists and serves the copied X12AGAIN netboot tree.
+Live status as of 2026-05-10:
+
+- Hasslehoff VM `1088` is running from the populated Stage4 service image with
+  OVMF enabled and static OpenRC networking at `172.16.99.88/24`.
+- `/var/lib/netboot/path-b/` and the absolute symlink target
+  `/opt/gentoo-netboot/path-b/artifacts/` are copied from X12AGAIN.
+- HTTP `:8080` validates for K10 host scripts, `g/vmlinuz`, and `g/rootfs.img`.
+- TFTP validates for `k10-ipxe.efi` with SHA256
+  `a3b9d117b69bb9f6387093011f7ace0e5f5ea2c76f679707f0229da634cd3e75`.
+- CCR2004 DHCP now advertises `next-server=172.16.99.88`.
+- CCR2004 DNS resolves `boot-sun99-netboot-099088.rfc1918.host` to
+  `172.16.99.88` and `boot-sun99-netboot.rfc1918.host` as a CNAME.
+
+The remaining hard gate is a K10 reboot validation through the new publisher.
 
 ## Cutover Sequence
 
@@ -27,6 +39,8 @@ exists and serves the copied X12AGAIN netboot tree.
 2. Apply the `vm-netboot-publisher` package/profile overlay.
 3. Rsync X12AGAIN `/var/lib/netboot/path-b/` to VM `1088` preserving symlinks,
    modes, and timestamps.
+   Also copy `/opt/gentoo-netboot/path-b/artifacts/` because the live publish
+   tree uses absolute symlinks into that path.
 4. Generate checksums on X12AGAIN and VM `1088` for:
    `k10-ipxe.efi`, `bootstrap.ipxe`, `hosts/gmktek-k10-stage5.ipxe`,
    `g/vmlinuz`, `g/initramfs-gz.img`, and `g/rootfs.img`.
@@ -49,7 +63,8 @@ exists and serves the copied X12AGAIN netboot tree.
 X12AGAIN can be shut down for bare-metal reimage only after:
 
 - K10 boots from `172.16.99.88` without any asset fetch from `172.16.99.108`.
-- RouterOS DHCP no longer references `172.16.99.108` for K10.
+- RouterOS DHCP no longer references `172.16.99.108` for K10. This is complete
+  for the CCR2004 management DHCP scope as of 2026-05-10.
 - `/srv/build-cache`, `/srv/vm-images`, and any binpkg/distfiles caches are
   copied to Hasslehoff, Nexus, or NFS-backed storage.
 - No QEMU process or tap bridge on X12AGAIN is serving production traffic.

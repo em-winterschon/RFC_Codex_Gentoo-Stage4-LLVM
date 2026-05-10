@@ -1,5 +1,5 @@
 {
-  "generated_at_epoch": 1778449385,
+  "generated_at_epoch": 1778451762,
   "records": [
     {
       "device_type": "routeros",
@@ -54,6 +54,15 @@
       "snapshot_timestamp": "20260510T213905Z",
       "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260510T213905Z/summary.json",
       "source_size_bytes": 4271
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004/post-netboot-vm1088-dns-cutover-20260510T222724Z.rsc.vault",
+      "encrypted_size_bytes": 60625,
+      "inventory_host": "ccr2004",
+      "snapshot_timestamp": "netboot-vm1088-dns-cutover-20260510T222724Z",
+      "source_file": "/root/operator-private/routeros/ccr2004/post-netboot-vm1088-dns-cutover-20260510T222724Z.rsc",
+      "source_size_bytes": 14891
     },
     {
       "device_type": "routeros-manual",
