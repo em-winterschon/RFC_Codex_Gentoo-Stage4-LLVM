@@ -79,7 +79,7 @@ routeros_rfc99_gateway_src_nat_rules:
     dst_port: 6514
     comment: log-sun99-rsyslog-099093 hairpin to container-services HAProxy
 routeros_rfc99_gateway_syslog_remote_host: 172.16.99.80
-routeros_rfc99_gateway_dhcp_next_server: 172.16.99.108
+routeros_rfc99_gateway_dhcp_next_server: 172.16.99.88
 routeros_rfc99_gateway_dhcp_options:
   - name: k10-pxe-bootfile
     code: 67

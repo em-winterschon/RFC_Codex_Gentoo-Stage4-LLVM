@@ -60,6 +60,12 @@ locked_apps:
     enforcement:
       - roles/telemetry_victoriametrics/defaults/main.yml version pin
       - profile metadata package_pins.app_version_lock_id
+  - id: netboot-publisher-stack
+    version: portage-resolved-nginx-tftp-hpa
+    profile: profile-definitions/vm-netboot-publisher.yml
+    enforcement:
+      - Gentoo atom tracking in profile metadata
+      - netboot_assets rendered artifact manifest
 
 pin_gaps:
   - id: jenkins
@@ -70,3 +76,5 @@ pin_gaps:
     gap: Exact Prometheus component versions follow Gentoo app-metrics atoms until a binpkg lockfile is generated from the built VM.
   - id: victoriametrics-stack
     gap: VictoriaMetrics is pinned to upstream OSS release assets until the tarball is mirrored into the internal artifact repository.
+  - id: netboot-publisher-stack
+    gap: Exact nginx and tftp-hpa versions follow Gentoo package resolution until a binpkg lockfile is generated from the live netboot publisher VM.

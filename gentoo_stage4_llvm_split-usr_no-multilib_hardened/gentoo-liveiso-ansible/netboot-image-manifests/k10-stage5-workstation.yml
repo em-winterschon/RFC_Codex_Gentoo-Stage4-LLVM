@@ -20,14 +20,14 @@ network:
   nameserver: 9.9.9.9
 artifacts:
   publish_root: /var/lib/netboot/path-b
-  public_base_url: http://172.16.99.108
+  public_base_url: http://172.16.99.88:8080
   tftp_first_stage: k10-ipxe.efi
   host_script: hosts/gmktek-k10-stage5.ipxe
   role_script: roles/installer-k10.ipxe
-  kernel_url: http://172.16.99.108/g/vmlinuz
-  initramfs_url: http://172.16.99.108/g/initramfs-gz.img
+  kernel_url: http://172.16.99.88:8080/g/vmlinuz
+  initramfs_url: http://172.16.99.88:8080/g/initramfs-gz.img
   initramfs_boot_name: initrd.magic
-  rootfs_url: http://172.16.99.108/g/rootfs.img
+  rootfs_url: http://172.16.99.88:8080/g/rootfs.img
   hash_strategy: sha256sum sidecar files generated during Jenkins rebuilds
 builder:
   script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
@@ -68,7 +68,7 @@ cmdline:
     - rd.net.timeout.carrier=60
   root:
     - rd.live.image
-    - root=live:http://172.16.99.108/g/rootfs.img
+    - root=live:http://172.16.99.88:8080/g/rootfs.img
 validation:
   expected_result: Gentoo live login prompt on PiKVM video or serial-visible console.
   last_validated: "2026-05-09"

@@ -111,11 +111,23 @@ Snapshots are written outside the repository under:
 /root/operator-private/routeros/state-snapshots/<inventory-host>/<timestamp>/
 ```
 
+After any live RouterOS or SwOS change, use the encrypted post-change backup
+back-channel to capture current device configs and stage only Ansible Vault
+files into git:
+
+```bash
+scripts/backup-network-device-configs.sh --sync-git
+```
+
+That wrapper requests RouterOS `show-sensitive` exports for encrypted backup
+workflows, includes SwOS `backup.swb`, and writes encrypted artifacts under
+`encrypted-backups/network-devices/`. Plaintext remains in operator-private
+storage.
+
 Current live behavior:
 
 - CRS309 SSH snapshot is enabled and validated.
-- CRS354 SSH snapshot is explicitly disabled for now; serial snapshots remain
-  the authoritative capture path until CRS354 SSH command execution is
-  normalized.
-- CCR2004-16G serial-discovered state is skipped until management SSH is
-  intentionally assigned.
+- CRS354 serial snapshot collection is enabled through
+  `scripts/collect-mikrotik-routeros-serial-state.py`.
+- CCR2004-16G serial snapshot collection is available through `/dev/ttyUSB2`
+  when its vault-backed admin credentials are present.

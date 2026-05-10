@@ -2,6 +2,17 @@
 
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 
+- Added a network-device post-change backup workflow that collects RouterOS
+  `show-sensitive` exports over SSH or serial console and SwOS `backup.swb`
+  snapshots to operator-private storage, encrypts selected artifacts with
+  Ansible Vault, and stages the encrypted back-channel under
+  `encrypted-backups/network-devices/` for git commit/push without bloating the
+  primary Ansible variable vault.
+- Added the SUN99 netboot publisher offload desired state for Hasslehoff VM
+  `1088` at `172.16.99.88`, including `vm-netboot-publisher` package/profile
+  metadata, K10 manifest URL updates, netboot publisher group vars, and CCR2004
+  DHCP `next-server` desired-state migration away from X12AGAIN
+  `172.16.99.108`.
 - Defined X12AGAIN as a stable hypervisor/resource provider and moved
   heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
   disposable high-resource builder VMs.

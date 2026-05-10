@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect read-only MikroTik RouterOS state over SSH."""
+"""Collect read-only MikroTik RouterOS state through a serial console."""
 
 from __future__ import annotations
 
@@ -38,14 +38,15 @@ SENSITIVE_EXPORT_COMMAND: tuple[str, str] = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Snapshot RouterOS read-only state into an operator-private directory.",
+        description="Snapshot RouterOS read-only state through serial console automation.",
     )
-    parser.add_argument("--host", required=True, help="RouterOS host or IP address")
+    parser.add_argument("--port", required=True, help="Serial device, e.g. /dev/ttyUSB2")
+    parser.add_argument("--baud", type=int, default=115200, help="Serial baud rate")
     parser.add_argument("--username", default="admin", help="RouterOS username")
     parser.add_argument(
         "--password-env",
         default="ROUTEROS_PASSWORD",
-        help="Environment variable containing the RouterOS SSH password",
+        help="Environment variable containing the RouterOS password",
     )
     parser.add_argument(
         "--output-dir",
@@ -54,10 +55,10 @@ def parse_args() -> argparse.Namespace:
         help="Directory for command outputs and manifest.json",
     )
     parser.add_argument(
-        "--ssh-option",
-        action="append",
-        default=[],
-        help="Extra ssh -o option, e.g. StrictHostKeyChecking=no",
+        "--serial-command-script",
+        type=Path,
+        default=Path(__file__).resolve().with_name("routeros-serial-command.py"),
+        help="Path to routeros-serial-command.py.",
     )
     parser.add_argument(
         "--timeout",
@@ -66,84 +67,59 @@ def parse_args() -> argparse.Namespace:
         help="Per-command timeout in seconds",
     )
     parser.add_argument(
-        "--command",
-        action="append",
-        dest="commands",
-        help="Additional command in name=routeros-command form",
+        "--include-sensitive-export",
+        action="store_true",
+        help="Also collect /export show-sensitive for encrypted config backup workflows.",
     )
     parser.add_argument(
         "--allow-failures",
         action="store_true",
-        help="Write partial snapshots and exit zero even when one command fails",
-    )
-    parser.add_argument(
-        "--include-sensitive-export",
-        action="store_true",
-        help=(
-            "Also collect /export show-sensitive for encrypted config backup workflows. "
-            "Use only with off-repo operator-private output directories."
-        ),
+        help="Write partial snapshots and exit zero even when one command fails.",
     )
     return parser.parse_args()
-
-
-def parse_extra_commands(values: list[str] | None) -> list[tuple[str, str]]:
-    commands: list[tuple[str, str]] = []
-    for value in values or []:
-        if "=" not in value:
-            raise SystemExit(f"--command must use name=command form: {value}")
-        name, command = value.split("=", 1)
-        name = name.strip()
-        command = command.strip()
-        if not name or not command:
-            raise SystemExit(f"--command must use non-empty name and command: {value}")
-        commands.append((name, command))
-    return commands
 
 
 def safe_filename(name: str) -> str:
     return "".join(ch if ch.isalnum() or ch in "._-" else "-" for ch in name).strip("-")
 
 
-def run_routeros_command(
+def run_serial_command(
     *,
-    host: str,
+    script: Path,
+    port: str,
+    baud: int,
     username: str,
-    password: str,
+    password_env: str,
     command: str,
-    ssh_options: list[str],
     timeout: int,
 ) -> subprocess.CompletedProcess[str]:
     argv = [
         "timeout",
         "--kill-after=2s",
-        f"{max(timeout, 1)}s",
-        "sshpass",
-        "-e",
-        "ssh",
-        "-T",
-        "-n",
+        f"{max(timeout + 8, 1)}s",
+        "python3",
+        str(script),
+        "--port",
+        port,
+        "--baud",
+        str(baud),
+        "--username",
+        username,
+        "--password-env",
+        password_env,
+        "--login-timeout",
+        "8",
+        "--command-timeout",
+        str(timeout),
+        "--command",
+        command,
     ]
-    for option in ssh_options:
-        argv.extend(["-o", option])
-    argv.extend(
-        [
-            "-o",
-            "BatchMode=no",
-            "-o",
-            "ConnectTimeout=8",
-            f"{username}@{host}",
-            command,
-        ]
-    )
-    env = os.environ.copy()
-    env["SSHPASS"] = password
     return subprocess.run(
         argv,
-        env=env,
+        env=os.environ.copy(),
         text=True,
         capture_output=True,
-        timeout=timeout + 5,
+        timeout=timeout + 12,
         check=False,
     )
 
@@ -154,39 +130,36 @@ def main() -> int:
     if password is None:
         print(f"missing password env var: {args.password_env}", file=sys.stderr)
         return 2
-
     if not password:
         print(f"empty password env var: {args.password_env}", file=sys.stderr)
+        return 2
+    if not args.serial_command_script.exists():
+        print(f"missing serial command script: {args.serial_command_script}", file=sys.stderr)
         return 2
 
     commands = list(DEFAULT_COMMANDS)
     if args.include_sensitive_export:
         commands.append(SENSITIVE_EXPORT_COMMAND)
-    commands += parse_extra_commands(args.commands)
-    ssh_options = [
-        "StrictHostKeyChecking=no",
-        "UserKnownHostsFile=/root/.ssh/known_hosts",
-        "LogLevel=ERROR",
-        *args.ssh_option,
-    ]
-    args.output_dir.mkdir(parents=True, exist_ok=True)
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     manifest: dict[str, object] = {
-        "host": args.host,
+        "port": args.port,
         "username": args.username,
         "collected_at_epoch": int(time.time()),
         "commands": [],
+        "transport": "serial",
     }
     failures = 0
 
     for name, command in commands:
         filename = safe_filename(name) + ".txt"
-        result = run_routeros_command(
-            host=args.host,
+        result = run_serial_command(
+            script=args.serial_command_script,
+            port=args.port,
+            baud=args.baud,
             username=args.username,
-            password=password,
+            password_env=args.password_env,
             command=command,
-            ssh_options=ssh_options,
             timeout=args.timeout,
         )
         output = result.stdout

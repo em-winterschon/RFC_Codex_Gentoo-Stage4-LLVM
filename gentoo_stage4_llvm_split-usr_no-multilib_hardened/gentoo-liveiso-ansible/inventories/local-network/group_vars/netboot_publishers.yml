@@ -1,7 +1,7 @@
 ---
 netboot_publish_root: /var/lib/netboot/path-b
-netboot_public_base_url: http://172.16.99.108:8080
-netboot_tftp_autoexec_chain_url: http://172.16.99.108:8080/hosts/gmktek-k10-stage5.ipxe
+netboot_public_base_url: http://172.16.99.88:8080
+netboot_tftp_autoexec_chain_url: http://172.16.99.88:8080/hosts/gmktek-k10-stage5.ipxe
 
 netboot_roles_extra:
   workstation-validation:

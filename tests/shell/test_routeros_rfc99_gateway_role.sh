@@ -104,7 +104,7 @@ test_routeros_rfc99_gateway_rendered_config() {
   assert_file_contains "${rsc}" '/ip dns static add name="log-sun99-rsyslog.rfc1918.host" type=CNAME cname="log-sun99-rsyslog-099093.rfc1918.host" ttl=5m comment="codex rsyslog service cname"'
   assert_file_contains "${rsc}" '/ip settings set send-redirects=no accept-redirects=no secure-redirects=no'
   assert_file_contains "${rsc}" '/ip pool add name="rfc99-management-compat-dhcp" ranges=172.16.99.150-172.16.99.158'
-  assert_file_contains "${rsc}" '/ip dhcp-server network add address=172.16.99.0/24 gateway=172.16.99.1 netmask=24 dns-server=172.16.99.1 next-server=172.16.99.108 comment="RFC99 management compatibility DHCP"'
+  assert_file_contains "${rsc}" '/ip dhcp-server network add address=172.16.99.0/24 gateway=172.16.99.1 netmask=24 dns-server=172.16.99.1 next-server=172.16.99.88 comment="RFC99 management compatibility DHCP"'
   assert_file_contains "${rsc}" '/ip dhcp-server add name="rfc99-management-compat" interface=br-lan address-pool=rfc99-management-compat-dhcp lease-time=1h disabled=no'
   assert_file_contains "${rsc}" "/ip dhcp-server option add name=\"k10-pxe-bootfile\" code=67 value=\"'k10-ipxe.efi'\""
   assert_file_contains "${rsc}" '/ip dhcp-server lease set [find where mac-address="84:47:09:5F:21:64"] address=172.16.99.156 server=rfc99-management-compat comment="gmktek-k10-stage5-ipxe" dhcp-option=k10-pxe-bootfile'

@@ -70,6 +70,9 @@ test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/group_vars/netboot_publishers.yml" "netboot_host_map_extra:"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" "netboot_machine_type: qemu"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_protocol_flow: pxe-to-ipxe"
+  assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "boot_sun99_netboot_099088:"
+  assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml" "172.16.99.88:8080"
+  assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "http://172.16.99.88:8080/g/rootfs.img"
   assert_file_contains "${REPO_ROOT}/docs/workflows/stage4-netboot-path-b.json" "\"name\": \"stage4-netboot-path-b\""
 }
 

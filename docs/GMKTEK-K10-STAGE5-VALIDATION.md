@@ -21,8 +21,10 @@ before reimaging X12AGAIN with the LOX Stage4 plus Stage5 workstation profile.
   live-root fetch phase
 - DHCP client class: `PXEClient:Arch:00007:UNDI:003016`
 - HTTPBoot class observed: `HTTPClient:Arch:00016:UNDI:003016`
-- DHCP next-server: `172.16.99.108`
-- EFI handoff: TFTP `k10-ipxe.efi` from `172.16.99.108`
+- Desired DHCP next-server after netboot offload: `172.16.99.88`
+- Desired publisher: `boot-sun99-netboot-099088.rfc1918.host`
+- Last fully observed historical path: TFTP `k10-ipxe.efi` from X12AGAIN
+  `172.16.99.108`
 - Optional console: rear DB9 RS232, pending validation for pre/post-bootloader
   redirection
 
