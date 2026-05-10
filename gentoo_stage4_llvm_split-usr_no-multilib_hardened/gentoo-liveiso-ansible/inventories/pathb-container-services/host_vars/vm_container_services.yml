@@ -84,7 +84,7 @@ profile_service_readiness:
   enabled: true
   checks:
     - name: container-services-nginx
-      target: 10.9.8.89
+      target: 172.16.99.89
       port: 8080
       protocol: tcp
       phases:
@@ -92,7 +92,7 @@ profile_service_readiness:
       retries: 24
       delay: 5
     - name: container-services-haproxy-http
-      target: 10.9.8.89
+      target: 172.16.99.89
       port: 80
       protocol: tcp
       phases:
@@ -100,7 +100,7 @@ profile_service_readiness:
       retries: 24
       delay: 5
     - name: container-services-rsyslog-tcp
-      target: 10.9.8.89
+      target: 172.16.99.89
       port: 514
       protocol: tcp
       phases:
@@ -108,7 +108,7 @@ profile_service_readiness:
       retries: 24
       delay: 5
     - name: elasticsearch-test-vip-http
-      target: 10.9.8.92
+      target: 172.16.99.92
       port: 9200
       protocol: tcp
       phases:
@@ -117,10 +117,10 @@ profile_service_readiness:
       delay: 5
     - name: rsyslog-elasticsearch-ingest
       type: syslog_elasticsearch
-      syslog_target: 10.9.8.89
+      syslog_target: 172.16.99.89
       syslog_port: 514
       syslog_protocol: tcp
-      elasticsearch_url: http://10.9.8.92:9200
+      elasticsearch_url: http://172.16.99.92:9200
       index_pattern: stage5-syslog*
       field: message
       phases:

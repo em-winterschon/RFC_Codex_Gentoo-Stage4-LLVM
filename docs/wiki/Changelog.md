@@ -51,14 +51,20 @@
   Grafana datasource health validation.
 - Fixed the live rsyslog collector JSON template for `omelasticsearch` by
   quoting the `message` field while retaining JSON escaping, then validated a
-  unique TCP syslog marker through `10.9.8.89:514` into the `stage5-syslog`
-  Elasticsearch index via the HAProxy VIP `10.9.8.92:9200`.
+  unique TCP syslog marker through `172.16.99.89:514` into the `stage5-syslog`
+  Elasticsearch index via the HAProxy VIP `172.16.99.92:9200`.
+- Published HAProxy syslog TCP `6514` on the live container-services wrapper
+  and validated a marker through `172.16.99.89:6514` into Elasticsearch.
 - Added `scripts/syslog_elasticsearch_validator.py` and `service_readiness`
   support for `type: syslog_elasticsearch`, so post-boot validation can emit a
   fresh syslog marker and verify it is searchable in Elasticsearch.
+- Migrated the Elasticsearch test backend off X12AGAIN and onto Hasslehoff VM
+  `1091`, preserving service IP `10.9.8.91` on VLAN1098, removing the
+  temporary CCR2004 `/32` route exceptions via `172.16.99.108`, and validating
+  CCR ARP, HAProxy/VIP health, and rsyslog-to-Elasticsearch marker ingestion.
 - Added SUN99 Kibana deployment intent for
   `obs-sun99-kibana-099067.rfc1918.host` / `172.16.99.67`, wired to the live
-  Elasticsearch HAProxy VIP `http://10.9.8.92:9200`.
+  Elasticsearch HAProxy VIP `http://172.16.99.92:9200`.
 - Provisioned Hasslehoff VM `1067`, `obs-sun99-kibana-099067`, as the SUN99
   Kibana interface for infrastructure log search.
 - Installed Kibana `9.3.1` from the verified Elastic upstream tarball after
@@ -80,8 +86,8 @@
   new VIP.
 - Removed the safe-move VM-local Path B backend route pins after live testing
   confirmed `172.16.99.89` reaches `10.9.8.91` through the normal CCR2004
-  gateway at `172.16.99.1`; CCR2004 retains the temporary `/32` backend routes
-  until Elasticsearch leaves the X12AGAIN-hosted Path B bridge.
+  gateway at `172.16.99.1`; the follow-up Hasslehoff migration removed the
+  temporary CCR2004 `/32` backend routes via X12AGAIN.
 - Updated the container-services migration helper to persist matching Path-B
   backend routes on the safe-move VM, preventing HAProxy redeploys from
   regressing to Elasticsearch `503` responses.

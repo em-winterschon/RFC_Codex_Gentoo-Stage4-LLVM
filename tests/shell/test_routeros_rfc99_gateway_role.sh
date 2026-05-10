@@ -91,8 +91,9 @@ test_routeros_rfc99_gateway_rendered_config() {
   assert_file_contains "${rsc}" '/ip address add address=172.16.99.92/32 interface=br-lan comment="RFC99 service VIP obs-sun99-esvip-099092"'
   assert_file_contains "${rsc}" '/ip address remove [find where interface="sfp-sfpplus1" and dynamic=no]'
   assert_file_contains "${rsc}" '/ip route remove [find where dst-address="0.0.0.0/0" and dynamic=no and gateway="192.168.1.254"]'
-  assert_file_contains "${rsc}" '/ip route add dst-address=10.9.8.91/32 gateway=172.16.99.108 distance=1 comment="RFC99 static route elasticsearch Path-B node via X12AGAIN transit"'
-  assert_file_contains "${rsc}" '/ip route add dst-address=10.9.8.92/32 gateway=172.16.99.108 distance=1 comment="RFC99 static route elasticsearch Path-B VIP via X12AGAIN transit"'
+  if grep -q 'X12AGAIN transit' "${rsc}"; then
+    fail "rendered RouterOS config still contains obsolete X12AGAIN transit routes"
+  fi
   assert_file_contains "${rsc}" '/ip dns static add name="msg-sun99-ntfysys-099096.rfc1918.host" type=A address=172.16.99.96 ttl=5m comment="codex ntfy service vip"'
   assert_file_contains "${rsc}" '/ip dns static add name="msg-sun99-ntfysys.rfc1918.host" type=CNAME cname="msg-sun99-ntfysys-099096.rfc1918.host" ttl=5m comment="codex ntfy service cname"'
   assert_file_contains "${rsc}" '/ip dns static add name="obs-sun99-esvip-099092.rfc1918.host" type=A address=172.16.99.92 ttl=5m comment="codex elasticsearch sun99 vip"'

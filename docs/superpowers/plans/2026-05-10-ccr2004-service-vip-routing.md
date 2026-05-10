@@ -4,7 +4,7 @@
 
 **Goal:** Move the Elasticsearch service VIP front door into CCR2004-managed RouterOS configuration while keeping HAProxy/nginx on the Stage4 container-services VM.
 
-**Architecture:** CCR2004 owns the SUN99 service VIP address and DNATs only the explicit published service port to the existing container-services HAProxy listener. CCR2004 also renders specific temporary static routes for the Path-B Elasticsearch endpoints via X12AGAIN until VLAN 1098 is migrated behind the physical gateway.
+**Architecture:** CCR2004 owns the SUN99 service VIP address and DNATs only the explicit published service port to the existing container-services HAProxy listener. The former temporary static routes for Path-B Elasticsearch endpoints via X12AGAIN were removed after VLAN1098-backed Elasticsearch moved to Hasslehoff.
 
 **Tech Stack:** RouterOS RSC rendered by Ansible, HAProxy container-service profile, NetBox/IPAM inventory intake, shell render tests.
 
@@ -25,7 +25,9 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_rfc99_gateway/defaults/main
 assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_rfc99_gateway/defaults/main.yml" "routeros_rfc99_gateway_dst_nat_rules: []"
 assert_file_contains "${ANSIBLE_ROOT}/roles/routeros_rfc99_gateway/defaults/main.yml" "routeros_rfc99_gateway_target_version: 7.22.3"
 assert_file_contains "${rsc}" '/ip address add address=172.16.99.92/32 interface=br-lan comment="RFC99 service VIP obs-sun99-esvip-099092"'
-assert_file_contains "${rsc}" '/ip route add dst-address=10.9.8.92/32 gateway=172.16.99.108 distance=1 comment="RFC99 static route elasticsearch Path-B VIP via X12AGAIN transit"'
+if grep -q 'X12AGAIN transit' "${rsc}"; then
+  fail "rendered RouterOS config still contains obsolete X12AGAIN transit routes"
+fi
 assert_file_contains "${rsc}" '/ip firewall nat add chain=dstnat action=dst-nat protocol=tcp dst-address=172.16.99.92 dst-port=9200 to-addresses=172.16.99.89 to-ports=9200 comment="RFC99 service dstnat obs-sun99-esvip-099092 elasticsearch to container-services HAProxy"'
 assert_file_contains "${manifest}" '"targetVersion": "7.22.3"'
 assert_file_contains "${manifest}" '"serviceVips":'
@@ -107,14 +109,7 @@ routeros_rfc99_gateway_service_vips:
     address: 172.16.99.92/32
     interface: br-lan
 routeros_rfc99_gateway_static_routes:
-  - dst_address: 10.9.8.91/32
-    gateway: 172.16.99.108
-    distance: 1
-    comment: elasticsearch Path-B node via X12AGAIN transit
-  - dst_address: 10.9.8.92/32
-    gateway: 172.16.99.108
-    distance: 1
-    comment: elasticsearch Path-B VIP via X12AGAIN transit
+  []
 routeros_rfc99_gateway_dst_nat_rules:
   - name: obs-sun99-esvip-099092-elasticsearch
     protocol: tcp

@@ -5,12 +5,8 @@ gentoo_profile_definition:
       published_ports:
         - 80:80/tcp
         - 443:443/tcp
-        - 10.9.8.92:9200:9200/tcp
-      pre_commands:
-        - >-
-          vip_dev="$(ip -o route get 10.9.8.1 | awk '{for (i = 1; i <= NF; i++) if ($i == "dev") {print $(i + 1); exit}}')";
-          test -n "${vip_dev}";
-          ip address replace 10.9.8.92/32 dev "${vip_dev}"
+        - 6514:6514/tcp
+        - 9200:9200/tcp
   haproxy_service_types:
     - name: elasticsearch-test-http
       bind: "*:9200"
@@ -24,7 +20,7 @@ gentoo_profile_definition:
     enabled: true
     checks:
       - name: elasticsearch-test-vip-http
-        target: 10.9.8.92
+        target: 172.16.99.92
         port: 9200
         protocol: tcp
         retries: 24

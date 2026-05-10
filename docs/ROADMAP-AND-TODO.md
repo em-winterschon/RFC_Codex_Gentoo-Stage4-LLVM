@@ -58,10 +58,11 @@ Current state:
     from generated OpenRC Podman wrappers
   - upstream-image `ntfy` is currently stopped after the Docker Hub pull
     stalled during the post-outage redeploy
-  - direct nginx ingress on `10.9.8.89:8080` and HAProxy ingress on
-    `10.9.8.89:80` return HTTP `200`
-  - rsyslog TCP receive on `10.9.8.89:514` works
-  - HAProxy Elasticsearch test VIP on `10.9.8.92:9200` reaches the test
+  - direct nginx ingress on `172.16.99.89:8080` and HAProxy ingress on
+    `172.16.99.89:80` return HTTP `200`
+  - rsyslog TCP receive on `172.16.99.89:514` works, and HAProxy syslog TCP on
+    `172.16.99.89:6514` forwards to the collector
+  - HAProxy Elasticsearch VIP on `172.16.99.92:9200` reaches the test
     Elasticsearch backend
 
 Dependency:
@@ -85,10 +86,10 @@ Dependency:
 | `ST-010` | completed | Validate package-backed service images | `ST-009` | `nginx`, `haproxy`, and `rsyslog_collector` images built, smoke-tested, published to GHCR, and synced to service binpkg repos. |
 | `ST-011` | completed | Wire package-backed images into runtime profiles | `ST-010` | `vm-container-services` now defaults nginx and HAProxy to the published GHCR Stage5 images; `container-rsyslog-collector` now uses the published GHCR rsyslog image with explicit command, tmpfs, and spool-volume handling. |
 | `ST-012` | completed | Live-validate generated Podman service wrappers on the container-services VM | `ST-011` | Initial chroot/live validation passed for `rsyslog-collector`, `nginx`, `ntfy`, and `haproxy`. Hasslehoff safe-move validation now has `ntfy`, `rsyslog-collector`, `nginx`, and `haproxy` running under OpenRC/Podman. |
-| `ST-013` | completed | Validate post-outage installed-disk container-services redeploy | `ST-012` | Host-side checks passed for `10.9.8.89:8080`, `10.9.8.89:80`, `10.9.8.89:514/tcp`, and `10.9.8.92:9200`. |
+| `ST-013` | completed | Validate post-outage installed-disk container-services redeploy | `ST-012` | Host-side checks passed for `172.16.99.89:8080`, `172.16.99.89:80`, `172.16.99.89:514/tcp`, `172.16.99.89:6514/tcp`, and `172.16.99.92:9200`. |
 | `ST-014` | pending | Replace `ntfy` upstream-image dependency | `ST-013` | Build a package-backed Stage5 image or add a controlled archive preload path so redeploys do not depend on Docker Hub availability. |
 | `ST-015` | completed | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Generated Podman wrappers emit `--pull`; package-backed GHCR profiles default to `missing`, and the live Path B `ntfy` override uses `never` while the upstream-image path is blocked. |
-| `ST-016` | active | Safe-move container-services workload to Hasslehoff Stage4 VM | `PNR-014`, `ST-013` | Staging VM `svc-container-services-safe-move-01` is live at `172.16.99.89`; Podman/Buildah/Skopeo bootstrap completed; rsyslog, nginx, HAProxy, and ntfy are running. ntfy is exposed on service VIP `172.16.99.96` as `msg-sun99-ntfysys-099096.rfc1918.host` with RouterOS, Hetzner, and NetBox tracking. CCR2004 now owns the scoped Elasticsearch/search VIP `obs-sun99-esvip-099092.rfc1918.host` / `172.16.99.92` with DNS, DNAT, hairpin SRCNAT, and temporary `/32` Path-B backend routes via X12AGAIN; VM-local route pins were removed after validation showed the safe-move VM can use CCR2004 as its normal gateway. |
+| `ST-016` | active | Safe-move container-services workload to Hasslehoff Stage4 VM | `PNR-014`, `ST-013` | Staging VM `svc-container-services-safe-move-01` is live at `172.16.99.89`; Podman/Buildah/Skopeo bootstrap completed; rsyslog, nginx, HAProxy, and ntfy are running. ntfy is exposed on service VIP `172.16.99.96` as `msg-sun99-ntfysys-099096.rfc1918.host` with RouterOS, Hetzner, and NetBox tracking. CCR2004 owns the scoped Elasticsearch/search VIP `obs-sun99-esvip-099092.rfc1918.host` / `172.16.99.92` with DNS, DNAT, and hairpin SRCNAT. Elasticsearch now runs on Hasslehoff VM `1091` at `10.9.8.91` on VLAN1098; temporary `/32` Path-B backend routes via X12AGAIN were removed after validation. |
 
 ## Proxmox, NetBox, And RouterOS
 
@@ -181,9 +182,9 @@ Dependency:
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
 | `LOG-001` | scaffolded | Validate rsyslog client templating everywhere | base profiles stable | Base rsyslog role now supports remote forwarding. |
-| `LOG-002` | completed | Validate centralized rsyslog receiver container | container-services stable | Live TCP receive is validated on `10.9.8.89`; HAProxy exposes the Elasticsearch test VIP at `10.9.8.92:9200`; the CCR2004 SUN99 VIP exposes the same path at `172.16.99.92:9200`; `scripts/syslog_elasticsearch_validator.py` sends a unique marker through rsyslog and verifies it is searchable in `stage5-syslog.message`. |
+| `LOG-002` | completed | Validate centralized rsyslog receiver container | container-services stable | Live TCP receive is validated on `172.16.99.89:514`; HAProxy syslog TCP is validated on `172.16.99.89:6514`; HAProxy exposes Elasticsearch through the CCR2004 SUN99 VIP at `172.16.99.92:9200`; `scripts/syslog_elasticsearch_validator.py` sends a unique marker through rsyslog and verifies it is searchable in `stage5-syslog.message`. |
 | `LOG-003` | pending | Validate 3-node Elasticsearch VM profile | VM provisioning stable | Must include load-balanced access path. |
-| `LOG-004` | completed | Validate Kibana VM profile | `LOG-002`, `PNR-014` | Hasslehoff VM `1067`, `obs-sun99-kibana-099067` / `172.16.99.67`, is live with upstream Kibana `9.3.1`, HTTP status `available`, Elasticsearch `9.3.1` reachable through the CCR2004 SUN99 VIP `172.16.99.92:9200`, and default `stage5-syslog*` data view created. Gentoo `www-apps/kibana-bin` was rejected because it is `7.17.25` and incompatible with Elasticsearch `9.3.1`; the profile now uses the verified Elastic tarball. Current caveat: X12AGAIN remains temporary backend transit/SNAT until VLAN `1098` and the Elasticsearch backend path move fully onto CCR2004/spine routing. |
+| `LOG-004` | completed | Validate Kibana VM profile | `LOG-002`, `PNR-014` | Hasslehoff VM `1067`, `obs-sun99-kibana-099067` / `172.16.99.67`, is live with upstream Kibana `9.3.1`, HTTP status `available`, Elasticsearch `9.3.1` reachable through the CCR2004 SUN99 VIP `172.16.99.92:9200`, and default `stage5-syslog*` data view created. Gentoo `www-apps/kibana-bin` was rejected because it is `7.17.25` and incompatible with Elasticsearch `9.3.1`; the profile now uses the verified Elastic tarball. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |
 
 ### FMT2 / SFO-200 Recovery

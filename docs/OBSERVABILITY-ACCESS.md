@@ -92,7 +92,7 @@ The Path B single-node test profile uses:
 - `action.auto_create_index: stage5-*` for rsyslog bulk ingestion
 - a `stage5-syslog*` index template with one shard and zero replicas for
   single-node lab health
-- HAProxy test VIP `10.9.8.92:9200`, backed by the test node
+- SUN99 Elasticsearch VIP `172.16.99.92:9200`, backed by HAProxy and the test node
 - explicit `ES_JAVA_HOME=/opt/openjdk-bin-21.0.10_p7`
 - `localmount` ordering for ZFS-backed Elasticsearch paths
 
@@ -114,9 +114,7 @@ registered.
 The `container-haproxy-elasticsearch-test-vip` overlay adds a Path B test
 frontend for Elasticsearch:
 
-- host-side VIP command: resolve the default Path B interface with
-  `ip -o route get 10.9.8.1`, then add `10.9.8.92/32` to that interface
-- Podman published port: `10.9.8.92:9200:9200/tcp`
+- Podman published port: `9200:9200/tcp`
 - HAProxy frontend: `*:9200`
 - backend: `10.9.8.91:9200`
 
@@ -130,8 +128,9 @@ Elasticsearch/search VIP without moving HAProxy into RouterOS containers:
   `svc-container-services-safe-move-01` at `172.16.99.89:9200`
 - RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:9200`
   so same-subnet clients receive symmetric replies from the VIP path
-- temporary CCR2004 backend routes: `10.9.8.91/32` and `10.9.8.92/32` via
-  `172.16.99.108` until Path B leaves the X12AGAIN transit path
+- the former CCR2004 backend route exceptions through X12AGAIN were removed on
+  `2026-05-10`; `10.9.8.91` is now directly reachable on VLAN1098 from
+  Hasslehoff VM `1091`
 - container-services VM-local `/32` route pins are no longer required; live
   validation on `2026-05-10` confirmed `172.16.99.89` can reach the Path B
   Elasticsearch backend through the normal CCR2004 gateway at `172.16.99.1`
@@ -155,7 +154,7 @@ checks through a modular task block, with per-check `target`, `port`,
 Example:
 
 ```bash
-scripts/service_validator.py --target 10.9.8.92 --port 9200 --protocol tcp --service-name elasticsearch-test --json
+scripts/service_validator.py --target 172.16.99.92 --port 9200 --protocol tcp --service-name elasticsearch-test --json
 ```
 
 `scripts/syslog_elasticsearch_validator.py` performs the deeper logging check:
@@ -168,17 +167,17 @@ Example:
 
 ```bash
 scripts/syslog_elasticsearch_validator.py \
-  --syslog-target 10.9.8.89 \
+  --syslog-target 172.16.99.89 \
   --syslog-port 514 \
   --syslog-protocol tcp \
-  --elasticsearch-url http://10.9.8.92:9200 \
+  --elasticsearch-url http://172.16.99.92:9200 \
   --index-pattern 'stage5-syslog*' \
   --field message \
   --json
 ```
 
 The `service_readiness` role supports this as
-`type: syslog_elasticsearch`; the Path B container-services inventory now runs
+`type: syslog_elasticsearch`; the SUN99 container-services inventory now runs
 `rsyslog-elasticsearch-ingest` during `post_boot` validation.
 
 Serial console helper mapping:
@@ -187,16 +186,17 @@ Serial console helper mapping:
 scripts/watch-vm-serial.sh --vm elasticsearch-test
 ```
 
-Live Path B validation on `10.9.8.89` currently confirms:
+Live SUN99 container-services validation on `172.16.99.89` currently confirms:
 
 - `rsyslog-collector`, `nginx`, and `haproxy` start from generated Podman
   wrappers.
-- direct nginx ingress on `10.9.8.89:8080` returns HTTP `200`.
-- HAProxy routes default HTTP traffic to nginx on `10.9.8.89:80`.
-- rsyslog collector receives TCP messages on `10.9.8.89:514`.
-- HAProxy exposes the Elasticsearch test VIP on `10.9.8.92:9200`.
+- direct nginx ingress on `172.16.99.89:8080` returns HTTP `200`.
+- HAProxy routes default HTTP traffic to nginx on `172.16.99.89:80`.
+- rsyslog collector receives TCP messages on `172.16.99.89:514`.
+- HAProxy forwards syslog TCP from `172.16.99.89:6514` to the collector.
+- HAProxy exposes Elasticsearch through the SUN99 VIP on `172.16.99.92:9200`.
 - rsyslog collector forwards TCP syslog into Elasticsearch through the
-  `10.9.8.92:9200` HAProxy VIP; a unique `forge-rsyslog-es-smoke-*` marker was
+  `172.16.99.92:9200` HAProxy VIP; a unique `forge-rsyslog-es-smoke-*` marker was
   searchable in `stage5-syslog.message`.
 - ntfy is live on Hasslehoff VM `1089` behind HAProxy at
   `172.16.99.96:80`, with service names

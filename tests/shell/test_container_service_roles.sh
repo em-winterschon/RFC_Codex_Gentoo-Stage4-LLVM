@@ -174,7 +174,7 @@ nft_rendered = nft_template.render(
             "published_ports": [
                 "80:80/tcp",
                 "443:443/tcp",
-                "10.9.8.92:9200:9200/tcp",
+                "9200:9200/tcp",
             ],
         }
     ],
