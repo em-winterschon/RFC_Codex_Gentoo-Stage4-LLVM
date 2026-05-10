@@ -28,12 +28,24 @@ profile_rsyslog:
 
 profile_kibana:
   enabled: true
+  install_method: upstream_tarball
+  version: "9.3.1"
+  tarball_url: https://artifacts.elastic.co/downloads/kibana/kibana-9.3.1-linux-x86_64.tar.gz
+  tarball_sha512: abe6628dd58cbd2f878d0d158aa9e93c415cf6a39b5812adb8ac9dcfe6b8ec610fd0e802b75a8398c50b243a732aa53547ae253d6bd1a6f579c51c2ffef0499a
+  timezone: UTC
+  node_options: --max-old-space-size=2048
   server_name: obs-sun99-kibana.rfc1918.host
   server_host: 0.0.0.0
   server_port: 5601
   public_base_url: https://obs-sun99-kibana.rfc1918.host/
   elasticsearch_hosts:
     - http://10.9.8.92:9200
+  data_views:
+    - id: stage5-syslog
+      title: stage5-syslog*
+      name: Stage5 Syslog
+      time_field: "@timestamp"
+      default: true
 
 profile_service_readiness:
   enabled: true

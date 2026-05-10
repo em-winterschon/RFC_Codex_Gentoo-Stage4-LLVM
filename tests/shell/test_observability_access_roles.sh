@@ -70,6 +70,10 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-virtual-host-
 assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-virtual-host-elasticsearch-node.packages" 'net-analyzer/nmap'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-node.yml" 'package_license_files:'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-test.yml" 'app-misc/elasticsearch Elastic-2.0'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-kibana-interface.yml" 'install_method: upstream_tarball'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-kibana-interface.yml" 'kibana-9.3.1-linux-x86_64.tar.gz'
+assert_file_contains "${ANSIBLE_ROOT}/roles/kibana_interface/templates/kibana.openrc.j2" 'export TZ='
+assert_file_contains "${ANSIBLE_ROOT}/roles/kibana_interface/templates/stage5-kibana-bootstrap-data-views.sh.j2" '/api/data_views/data_view'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/telemetry-elasticsearch-exporter.yml" 'app-metrics/elasticsearch_exporter ~amd64'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/telemetry-podman-exporter.yml" 'app-metrics/prometheus-podman-exporter ~amd64'
 assert_file_contains "${ANSIBLE_ROOT}/roles/preflight/tasks/main.yml" 'resolved_portage_package_license_files'
@@ -114,6 +118,8 @@ test -f "${REPO_ROOT}/docs/OBSERVABILITY-ACCESS.md"
 test -f "${REPO_ROOT}/docs/wiki/Observability-Access.md"
 test -f "${REPO_ROOT}/scripts/service_validator.py"
 test -f "${REPO_ROOT}/scripts/syslog_elasticsearch_validator.py"
+test -x "${REPO_ROOT}/scripts/install-kibana-upstream-tarball.sh"
+test -x "${REPO_ROOT}/scripts/apply-x12again-pathb-sun99-nat.sh"
 assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'rsyslog-elasticsearch-ingest'
 
 printf 'PASS: %s\n' "$(basename "$0")"

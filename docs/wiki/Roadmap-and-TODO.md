@@ -183,7 +183,7 @@ Dependency:
 | `LOG-001` | scaffolded | Validate rsyslog client templating everywhere | base profiles stable | Base rsyslog role now supports remote forwarding. |
 | `LOG-002` | completed | Validate centralized rsyslog receiver container | container-services stable | Live TCP receive is validated on `10.9.8.89`; HAProxy exposes the Elasticsearch test VIP at `10.9.8.92:9200`; `scripts/syslog_elasticsearch_validator.py` sends a unique marker through rsyslog and verifies it is searchable in `stage5-syslog.message`. |
 | `LOG-003` | pending | Validate 3-node Elasticsearch VM profile | VM provisioning stable | Must include load-balanced access path. |
-| `LOG-004` | active | Validate Kibana VM profile | `LOG-002`, `PNR-014` | SUN99 inventory, DNS, NetBox service intent, and host vars now reserve `obs-sun99-kibana-099067` / `172.16.99.67` with Kibana pointed at `http://10.9.8.92:9200`; live provisioning remains next. |
+| `LOG-004` | completed | Validate Kibana VM profile | `LOG-002`, `PNR-014` | Hasslehoff VM `1067`, `obs-sun99-kibana-099067` / `172.16.99.67`, is live with upstream Kibana `9.3.1`, HTTP status `available`, Elasticsearch `9.3.1` reachable through `10.9.8.92:9200`, and default `stage5-syslog*` data view created. Gentoo `www-apps/kibana-bin` was rejected because it is `7.17.25` and incompatible with Elasticsearch `9.3.1`; the profile now uses the verified Elastic tarball. Current caveat: SUN99-to-Path-B reachability depends on X12AGAIN forwarding plus the repo-tracked temporary SNAT helper until routing is promoted into the CCR2004 design. |
 | `LOG-005` | pending | Validate APM container profile | `LOG-003`, container-services stable | Feed traces into Elasticsearch cluster. |
 
 ### FMT2 / SFO-200 Recovery

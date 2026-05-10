@@ -174,6 +174,8 @@ assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=x11-drivers/nvi
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1 NVIDIA-CUDA'
 assert_file_contains "${PREFLIGHT_ROLE}" 'resolved_portage_patch_files'
 assert_file_contains "${PORTAGE_ROLE}" '/etc/portage/patches'
+assert_file_contains "${PROFILE_DIR}/vm-kibana-interface.yml" 'install_method: upstream_tarball'
+assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-kibana-interface.packages" '^net-misc/curl$'
 
 test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 

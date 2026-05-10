@@ -59,6 +59,18 @@
 - Added SUN99 Kibana deployment intent for
   `obs-sun99-kibana-099067.rfc1918.host` / `172.16.99.67`, wired to the live
   Elasticsearch HAProxy VIP `http://10.9.8.92:9200`.
+- Provisioned Hasslehoff VM `1067`, `obs-sun99-kibana-099067`, as the SUN99
+  Kibana interface for infrastructure log search.
+- Installed Kibana `9.3.1` from the verified Elastic upstream tarball after
+  rejecting Gentoo `www-apps/kibana-bin-7.17.25` as incompatible with the live
+  Elasticsearch `9.3.1` test cluster.
+- Fixed live Kibana OpenRC startup with `TZ=UTC`, removed the invalid
+  `xpack.security.enabled` Kibana 9 setting, made the install data directory
+  writable for the service user, created the default `stage5-syslog*` data
+  view, and validated `/api/status` as available.
+- Added `scripts/install-kibana-upstream-tarball.sh` and
+  `scripts/apply-x12again-pathb-sun99-nat.sh` to capture the live-proven
+  install and temporary SUN99-to-Path-B forwarding steps.
 
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.

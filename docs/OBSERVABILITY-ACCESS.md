@@ -193,6 +193,22 @@ Live Elasticsearch validation on `10.9.8.91` currently confirms:
   from `stage5-syslog`, validating the index settings required by rsyslog
   `omelasticsearch`.
 
+Live Kibana validation on `172.16.99.67` currently confirms:
+
+- Hasslehoff VM `1067`, `obs-sun99-kibana-099067`, boots as a Stage4/OpenRC VM.
+- Kibana `9.3.1` is installed from the verified Elastic upstream tarball because
+  Gentoo `www-apps/kibana-bin-7.17.25` is incompatible with Elasticsearch
+  `9.3.1`.
+- `/api/status` returns HTTP `200` with overall level `available`.
+- Elasticsearch is available through `http://10.9.8.92:9200`.
+- the default Kibana data view is `stage5-syslog*` with `@timestamp`.
+- OpenRC exports `TZ=UTC`; without that, Kibana's bundled Node runtime reports
+  `Etc/Unknown` and Moment Timezone terminates the process.
+- X12AGAIN currently carries a narrow temporary SNAT rule for
+  `172.16.99.0/24 -> 10.9.8.0/24` over `br-pathb`; promote this to CCR2004
+  routing or a production HAProxy frontend before treating Path-B Elasticsearch
+  as a stable SUN99 dependency.
+
 If an existing test index was created before the zero-replica template was
 installed, apply the rendered helper and update the existing index settings:
 
@@ -227,6 +243,7 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 
 1. Promote the live rsyslog template fix through the normal container-services
    redeploy path so the mounted config is regenerated instead of hand-edited.
-2. Provision `obs-sun99-kibana-099067` / `172.16.99.67` and validate
-   `kibana-bin` against `http://10.9.8.92:9200`.
+2. Promote the live Kibana upstream-tarball workflow into a full Ansible apply
+   path, including persistent SUN99-to-Path-B routing through CCR2004 or a
+   production HAProxy frontend.
 3. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
