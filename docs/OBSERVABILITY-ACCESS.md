@@ -130,8 +130,11 @@ Elasticsearch/search VIP without moving HAProxy into RouterOS containers:
   `svc-container-services-safe-move-01` at `172.16.99.89:9200`
 - RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:9200`
   so same-subnet clients receive symmetric replies from the VIP path
-- temporary backend routes: `10.9.8.91/32` and `10.9.8.92/32` via
+- temporary CCR2004 backend routes: `10.9.8.91/32` and `10.9.8.92/32` via
   `172.16.99.108` until Path B leaves the X12AGAIN transit path
+- container-services VM-local `/32` route pins are no longer required; live
+  validation on `2026-05-10` confirmed `172.16.99.89` can reach the Path B
+  Elasticsearch backend through the normal CCR2004 gateway at `172.16.99.1`
 
 RouterOS `7.22.3` and the `arm64` container package are cached under
 `/opt/routeros/mikrotik-official` for future lab work, but production

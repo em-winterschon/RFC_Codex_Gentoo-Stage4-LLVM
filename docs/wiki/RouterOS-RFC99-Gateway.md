@@ -123,10 +123,11 @@ readiness, RouterOS DNS A/CNAME resolution, Elasticsearch cluster health
 
 The role also renders temporary `/32` static routes for `10.9.8.91` and
 `10.9.8.92` via `172.16.99.108` while Path B services remain behind X12AGAIN.
-The container-services VM must also keep matching backend routes through
-`172.16.99.108`; `scripts/migrate-container-services-runtime.sh` persists
-those routes during safe-move redeploys. Remove these routes once VLAN `1098`
-and the Elasticsearch service path are fully owned by the physical
+The container-services VM no longer keeps matching backend route pins through
+`172.16.99.108`; live validation on `2026-05-10` confirmed it can use the
+normal CCR2004 gateway at `172.16.99.1` while CCR2004 owns the temporary
+backend `/32` routing exception. Remove the CCR2004 `/32` routes only after
+VLAN `1098` and the Elasticsearch service path are fully owned by the physical
 CCR2004/spine fabric.
 
 ## DHCP Scope

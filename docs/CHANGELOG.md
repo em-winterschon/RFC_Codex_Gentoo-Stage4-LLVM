@@ -78,6 +78,10 @@
   `172.16.99.108`; validation passed for ICMP, TCP/9200, Elasticsearch
   cluster health, and rsyslog-to-Elasticsearch marker ingestion through the
   new VIP.
+- Removed the safe-move VM-local Path B backend route pins after live testing
+  confirmed `172.16.99.89` reaches `10.9.8.91` through the normal CCR2004
+  gateway at `172.16.99.1`; CCR2004 retains the temporary `/32` backend routes
+  until Elasticsearch leaves the X12AGAIN-hosted Path B bridge.
 - Updated the container-services migration helper to persist matching Path-B
   backend routes on the safe-move VM, preventing HAProxy redeploys from
   regressing to Elasticsearch `503` responses.

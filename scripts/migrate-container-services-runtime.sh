@@ -5,7 +5,7 @@ SOURCE_HOST="${SOURCE_HOST:-root@10.9.8.89}"
 TARGET_HOST="${TARGET_HOST:-root@172.16.99.89}"
 STAGING_MODE="${STAGING_MODE:-1}"
 START_SERVICES="${START_SERVICES:-0}"
-TARGET_PATHB_ROUTES="${TARGET_PATHB_ROUTES:-10.9.8.91/32 via 172.16.99.108|10.9.8.92/32 via 172.16.99.108}"
+TARGET_PATHB_ROUTES="${TARGET_PATHB_ROUTES:-}"
 DRY_RUN=1
 
 usage() {
@@ -20,8 +20,9 @@ Environment:
   TARGET_HOST    SSH target for the staging VM.
   STAGING_MODE   When 1, patch HAProxy to avoid claiming production 10.9.8.92.
   TARGET_PATHB_ROUTES
-                 Pipe-delimited routes to persist on the target for Path B
-                 backends. Set empty to skip route management.
+                 Optional pipe-delimited routes to persist on the target for
+                 legacy Path B backends. Empty by default; CCR2004 should be
+                 the normal gateway for current container-services targets.
 
 Safety:
   This copies runtime config and OpenRC wrappers only. It does not move the
