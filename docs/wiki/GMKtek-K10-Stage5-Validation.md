@@ -63,6 +63,21 @@ Current physical discovery state:
   `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img` from
   `http://172.16.99.108:8080`, mounts `LiveOS_rootfs`, switches root, and
   reaches the Gentoo login prompt on the PiKVM video console.
+- FreeIPA/SSSD status: K10 was transiently enrolled on the live Gentoo image as
+  `gmktek-k10-stage5.rfc1918.host` on 2026-05-09. The live validation gates
+  passed for the IPA backend module, `sssctl config-check`, NSS lookup,
+  FreeIPA SSH-key lookup, PAM account checks, and floating SSH login as
+  `codex-admin` before reboot. A later AP7901 outlet 6 PDU reboot proved this
+  is not yet reboot-durable because the original netboot rootfs returned
+  without SSSD or `/usr/lib64/sssd/libsss_ipa.so`.
+- SSSD package policy: the active Gentoo client requires `sys-auth/sssd samba`
+  and `net-fs/samba winbind`; without those flags, the IPA provider module
+  `/usr/lib64/sssd/libsss_ipa.so` is missing.
+- Live-image caveat: the booted live root still reports `hostname -f` as
+  `gentoo-pathb`, and system D-Bus is not running by default. The live
+  validation therefore treats `sssctl domain-status` as advisory if the failure
+  is exactly `Unable to connect to system bus` and the stronger NSS, SSH, PAM,
+  backend-module, and config-check gates pass.
 - Rebuild source of truth:
   `gentoo-liveiso-ansible/netboot-image-manifests/k10-stage5-workstation.yml`
   records the kernel, initramfs, rootfs, dracut firmware requirements, static
@@ -99,7 +114,10 @@ Once the host requests DHCP, record:
 9. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
 10. Validate Intel display stack: Mesa, libdrm, libva, Vulkan loader/tools, and
     Xorg driver behavior.
-11. Validate SSH, rsyslog, telemetry, and optional SSSD client enrollment.
+11. Validate SSH, rsyslog, telemetry, and SSSD client enrollment. The transient
+    live FreeIPA/SSSD enrollment gate passed on 2026-05-09, but reboot-durable
+    Stage5 still must include `aaa-domain-client` in the rootfs or disk install
+    and persist hostname, offline cache, sudo policy, and break-glass behavior.
 12. Snapshot/capture final package and Portage state before considering X12AGAIN.
 
 ## Backout

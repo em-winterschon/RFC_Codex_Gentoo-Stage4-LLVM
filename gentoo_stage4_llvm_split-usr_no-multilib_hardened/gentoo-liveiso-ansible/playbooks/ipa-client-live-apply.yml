@@ -1,0 +1,381 @@
+---
+- name: Apply live FreeIPA SSSD client enrollment
+  hosts: aaa_domain_clients
+  gather_facts: true
+  become: true
+  vars:
+    ipa_client_live_apply: true
+    ipa_client_live_required: "{{ freeipa_client_apply_required | default(false) | bool }}"
+    ipa_client_live_validate_user: "{{ freeipa_client_validate_user | default('codex-admin') }}"
+    ipa_client_live_realm: "{{ freeipa_client_realm | default('RFC1918.HOST') }}"
+    ipa_client_live_domain: "{{ freeipa_client_domain | default('rfc1918.host') }}"
+    ipa_client_live_server: "{{ freeipa_client_server | default('ipa01.rfc1918.host') }}"
+    ipa_client_live_server_ip: "{{ freeipa_client_server_ip | default('172.16.99.63') }}"
+    ipa_client_live_controller_inventory_host: "{{ freeipa_client_controller_inventory_host | default('svc_identity_ipa01') }}"
+    ipa_client_live_fqdn: "{{ freeipa_client_fqdn | default(inventory_hostname ~ '.' ~ ipa_client_live_domain) }}"
+    ipa_client_live_short_hostname: "{{ freeipa_client_short_hostname | default(ipa_client_live_fqdn.split('.')[0]) }}"
+    ipa_client_live_package_atoms: "{{ freeipa_client_package_atoms | default(['sys-auth/sssd', 'app-crypt/mit-krb5', 'net-nds/openldap', 'app-misc/ca-certificates']) }}"
+    ipa_client_live_package_use_file: /etc/portage/package.use/30-aaa-domain-client-sssd
+    ipa_client_live_keytab_tmp: "/tmp/{{ ipa_client_live_fqdn }}.krb5.keytab"
+    ipa_client_live_keytab_dest: /etc/krb5.keytab
+    ipa_client_live_pam_validate_user: "{{ freeipa_client_pam_validate_user | default(ipa_client_live_validate_user) }}"
+  pre_tasks:
+    - name: Gate live IPA client apply
+      ansible.builtin.assert:
+        that:
+          - ipa_client_live_required | bool
+        fail_msg: >-
+          Set freeipa_client_apply_required=true for the intended host or run
+          with --limit after verifying root break-glass SSH access.
+
+    - name: Assert live client apply is not targeting the IPA controller
+      ansible.builtin.assert:
+        that:
+          - ipa_client_live_fqdn != ipa_client_live_server
+        fail_msg: "Refusing to enroll the IPA controller as a client through this playbook."
+
+    - name: Check root SSH break-glass is active
+      ansible.builtin.command: id -u
+      changed_when: false
+      register: ipa_client_live_root_id
+
+    - name: Assert root SSH break-glass is active
+      ansible.builtin.assert:
+        that:
+          - ipa_client_live_root_id.stdout | trim == '0'
+        fail_msg: "Root break-glass SSH is required before mutating PAM/NSS/SSHD."
+
+  tasks:
+    - name: Set live client hostname
+      ansible.builtin.hostname:
+        name: "{{ ipa_client_live_short_hostname }}"
+      when: freeipa_client_manage_hostname | default(true) | bool
+
+    - name: Write canonical hostname file
+      ansible.builtin.copy:
+        dest: /etc/hostname
+        mode: '0644'
+        content: "{{ ipa_client_live_short_hostname }}\n"
+      when: freeipa_client_manage_hostname | default(true) | bool
+
+    - name: Ensure FreeIPA server and local host fallback records are present
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} RFC1918 FreeIPA client fallback"
+        block: |
+          {{ ipa_client_live_server_ip }} {{ ipa_client_live_server }} identity-ldap-radius.rfc1918.host
+          {{ ansible_default_ipv4.address | default(ansible_host) }} {{ ipa_client_live_fqdn }} {{ ipa_client_live_short_hostname }}
+      when: freeipa_client_manage_hosts_fallback | default(true) | bool
+
+    - name: Ensure Portage package.use directory exists
+      ansible.builtin.file:
+        path: /etc/portage/package.use
+        state: directory
+        mode: '0755'
+      when: freeipa_client_install_packages | default(true) | bool
+
+    - name: Write SSSD package USE requirements
+      ansible.builtin.copy:
+        dest: "{{ ipa_client_live_package_use_file }}"
+        mode: '0644'
+        content: |
+          dev-libs/cyrus-sasl kerberos
+          net-dns/bind gssapi
+          net-libs/ngtcp2 gnutls
+          net-fs/samba winbind
+          net-nds/openldap experimental sasl
+          sys-auth/sssd samba
+      when: freeipa_client_install_packages | default(true) | bool
+
+    - name: Install SSSD client package set with binary package capture
+      ansible.builtin.command:
+        argv: >-
+          {{
+            ['emerge', '--verbose', '--noreplace', '--changed-use']
+            + (['--buildpkg=y'] if freeipa_client_build_binary_packages | default(true) | bool else [])
+            + ['--with-bdeps=y', '--complete-graph=y', '--binpkg-respect-use=y']
+            + ipa_client_live_package_atoms
+          }}
+      register: ipa_client_live_emerge
+      changed_when: "'>>> Emerging' in ipa_client_live_emerge.stdout or 'ebuild' in ipa_client_live_emerge.stdout"
+      when: freeipa_client_install_packages | default(true) | bool
+
+    - name: Ensure IPA client directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /etc/ipa
+        - /etc/sssd
+        - /etc/ssh/sshd_config.d
+
+    - name: Write FreeIPA default.conf
+      ansible.builtin.copy:
+        dest: /etc/ipa/default.conf
+        mode: '0644'
+        content: |
+          [global]
+          realm = {{ ipa_client_live_realm }}
+          domain = {{ ipa_client_live_domain }}
+          server = {{ ipa_client_live_server }}
+          xmlrpc_uri = https://{{ ipa_client_live_server }}/ipa/xml
+          enable_ra = True
+
+    - name: Write Kerberos configuration
+      ansible.builtin.copy:
+        dest: /etc/krb5.conf
+        mode: '0644'
+        content: |
+          [libdefaults]
+            default_realm = {{ ipa_client_live_realm }}
+            dns_lookup_realm = true
+            dns_lookup_kdc = true
+            rdns = false
+            ticket_lifetime = 24h
+            forwardable = true
+
+          [realms]
+            {{ ipa_client_live_realm }} = {
+              kdc = {{ ipa_client_live_server }}
+              admin_server = {{ ipa_client_live_server }}
+            }
+
+          [domain_realm]
+            .{{ ipa_client_live_domain }} = {{ ipa_client_live_realm }}
+            {{ ipa_client_live_domain }} = {{ ipa_client_live_realm }}
+
+    - name: Write SSSD configuration
+      ansible.builtin.copy:
+        dest: /etc/sssd/sssd.conf
+        owner: sssd
+        group: sssd
+        mode: '0600'
+        content: |
+          [sssd]
+          services = nss, pam, sudo, ssh
+          domains = {{ ipa_client_live_domain }}
+
+          [nss]
+          homedir_substring = /home
+
+          [pam]
+          pam_verbosity = 1
+
+          [domain/{{ ipa_client_live_domain }}]
+          id_provider = ipa
+          auth_provider = ipa
+          chpass_provider = ipa
+          access_provider = ipa
+          sudo_provider = ipa
+          subdomains_provider = ipa
+          cache_credentials = true
+          enumerate = false
+          ipa_domain = {{ ipa_client_live_domain }}
+          krb5_realm = {{ ipa_client_live_realm }}
+          ipa_server = {{ ipa_client_live_server }}
+          dyndns_update = false
+          fallback_homedir = /home/%u
+          default_shell = /bin/bash
+          ldap_tls_cacert = /etc/ipa/ca.crt
+
+    - name: Read IPA CA certificate from controller
+      ansible.builtin.slurp:
+        src: /etc/ipa/ca.crt
+      register: ipa_client_live_ca_crt
+      delegate_to: "{{ ipa_client_live_controller_inventory_host }}"
+      changed_when: false
+
+    - name: Install IPA CA certificate
+      ansible.builtin.copy:
+        dest: /etc/ipa/ca.crt
+        owner: root
+        group: root
+        mode: '0644'
+        content: "{{ ipa_client_live_ca_crt.content | b64decode }}"
+
+    - name: Generate host keytab on IPA controller
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - ipa-getkeytab
+          - -s
+          - "{{ ipa_client_live_server }}"
+          - -p
+          - "host/{{ ipa_client_live_fqdn }}@{{ ipa_client_live_realm }}"
+          - -k
+          - "{{ ipa_client_live_keytab_tmp }}"
+      register: ipa_client_live_keytab_generate
+      changed_when: false
+      delegate_to: "{{ ipa_client_live_controller_inventory_host }}"
+      no_log: true
+
+    - name: Read host keytab from IPA controller
+      ansible.builtin.slurp:
+        src: "{{ ipa_client_live_keytab_tmp }}"
+      register: ipa_client_live_keytab_b64
+      delegate_to: "{{ ipa_client_live_controller_inventory_host }}"
+      no_log: true
+
+    - name: Remove temporary host keytab from IPA controller
+      ansible.builtin.file:
+        path: "{{ ipa_client_live_keytab_tmp }}"
+        state: absent
+      delegate_to: "{{ ipa_client_live_controller_inventory_host }}"
+      no_log: true
+
+    - name: Install host keytab
+      ansible.builtin.copy:
+        dest: "{{ ipa_client_live_keytab_dest }}"
+        owner: root
+        group: root
+        mode: '0600'
+        content: "{{ ipa_client_live_keytab_b64.content | b64decode }}"
+      no_log: true
+
+    - name: Enable sss in nsswitch passwd group shadow services
+      ansible.builtin.lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: "^{{ item }}:"
+        line: "{{ item }}:     files sss"
+      loop:
+        - passwd
+        - group
+        - shadow
+        - services
+
+    - name: Enable sss in nsswitch netgroup
+      ansible.builtin.lineinfile:
+        path: /etc/nsswitch.conf
+        regexp: '^netgroup:'
+        line: 'netgroup:   files sss'
+
+    - name: Enable pam_sss for system-auth auth
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/system-auth
+        insertafter: '^auth.*pam_unix\\.so'
+        line: 'auth        sufficient    pam_sss.so use_first_pass'
+
+    - name: Enable pam_sss for system-auth account
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/system-auth
+        insertafter: '^account.*pam_unix\\.so'
+        line: 'account     sufficient    pam_sss.so'
+
+    - name: Enable pam_sss for system-auth password
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/system-auth
+        insertafter: '^password.*pam_unix\\.so'
+        line: 'password    sufficient    pam_sss.so use_authtok'
+
+    - name: Enable pam_sss for system-auth session
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/system-auth
+        insertafter: '^session.*pam_unix\\.so'
+        line: 'session     optional      pam_sss.so'
+
+    - name: Enable home directory creation for remote logins
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/system-login
+        insertafter: '^session\\s+include\\s+system-auth'
+        line: 'session     optional      pam_mkhomedir.so skel=/etc/skel umask=0077'
+
+    - name: Enable SSSD SSH authorized key lookup
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/60-sssd-authorized-keys.conf
+        mode: '0644'
+        content: |
+          AuthorizedKeysCommand /usr/bin/sss_ssh_authorizedkeys
+          AuthorizedKeysCommandUser nobody
+
+    - name: Add SSSD to default OpenRC runlevel
+      ansible.builtin.command:
+        argv:
+          - rc-update
+          - add
+          - sssd
+          - default
+      register: ipa_client_live_rc_update
+      changed_when: "'service sssd added' in ipa_client_live_rc_update.stdout"
+
+    - name: Restart SSSD
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - sssd
+          - restart
+      changed_when: true
+
+    - name: Restart SSHD to load authorized key command
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - sshd
+          - restart
+      changed_when: true
+
+    - name: Validate SSSD IPA backend module is installed
+      ansible.builtin.command:
+        argv:
+          - test
+          - -x
+          - /usr/lib64/sssd/libsss_ipa.so
+      register: ipa_client_live_ipa_backend
+      changed_when: false
+
+    - name: Validate SSSD configuration syntax
+      ansible.builtin.command:
+        argv:
+          - sssctl
+          - config-check
+      register: ipa_client_live_config_check
+      changed_when: false
+
+    - name: Check SSSD domain status when system bus is available
+      ansible.builtin.command:
+        argv:
+          - sssctl
+          - domain-status
+          - "{{ ipa_client_live_domain }}"
+      register: ipa_client_live_domain_status
+      changed_when: false
+      failed_when: false
+
+    - name: Validate FreeIPA user NSS lookup
+      ansible.builtin.command:
+        argv:
+          - getent
+          - passwd
+          - "{{ ipa_client_live_validate_user }}"
+      register: ipa_client_live_getent
+      changed_when: false
+
+    - name: Validate FreeIPA SSH authorized key lookup
+      ansible.builtin.command:
+        argv:
+          - sss_ssh_authorizedkeys
+          - "{{ ipa_client_live_validate_user }}"
+      register: ipa_client_live_ssh_keys
+      changed_when: false
+
+    - name: Validate PAM/NSS account for FreeIPA user
+      ansible.builtin.command:
+        argv:
+          - su
+          - -s
+          - /bin/true
+          - "{{ ipa_client_live_pam_validate_user }}"
+      register: ipa_client_live_pam_acct
+      changed_when: false
+
+    - name: Assert live IPA client validation passed
+      ansible.builtin.assert:
+        that:
+          - "ipa_client_live_ipa_backend.rc == 0"
+          - "ipa_client_live_config_check.rc == 0"
+          - "ipa_client_live_domain_status.rc == 0 or 'Unable to connect to system bus' in ipa_client_live_domain_status.stderr"
+          - "ipa_client_live_domain_status.rc != 0 or 'Online status: Online' in ipa_client_live_domain_status.stdout"
+          - "ipa_client_live_validate_user in ipa_client_live_getent.stdout"
+          - "ipa_client_live_ssh_keys.stdout | length > 0"
+          - "ipa_client_live_pam_acct.rc == 0"
+        fail_msg: "Live IPA client enrollment did not pass SSSD/NSS/SSH/PAM validation."

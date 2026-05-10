@@ -15,6 +15,26 @@ infrastructure work. It is intentionally higher level than `git log`.
   dry-run JSON plans, explicit global and provider mutation gates, redacted
   audit logging, FreeIPA CLI reconciliation for groups/users/hosts, FreeRADIUS
   `clients.d` rendering, and Ansible playbook integration.
+- Added live K10 FreeIPA client enrollment automation and regression coverage:
+  host-specific inventory, apply/validate playbooks, SSSD IPA backend checks,
+  SSH key lookup checks, PAM checks, and transient floating `codex-admin` SSH
+  validation.
+- Added K10 netboot-image manifest requirements for carrying the
+  `aaa-domain-client` profile into the rebuilt rootfs so future validation can
+  prove reboot-durable SSSD/RBAC behavior instead of one-time live mutation.
+
+### Changed
+
+- Updated the AAA domain-client package policy to build `sys-auth/sssd` with
+  `samba` and `net-fs/samba` with `winbind`, which is required for Gentoo's
+  SSSD IPA provider module.
+- Removed the obsolete `config_file_version = 2` SSSD directive and made live
+  K10 domain-status validation tolerant only of the known no-system-D-Bus live
+  image condition after stronger NSS, SSH, PAM, backend-module, and config
+  gates pass.
+- Recorded the post-PDU-reboot K10 continuity gap: the current netboot rootfs
+  returns without SSSD, so AAA client enrollment remains active until the
+  rebuilt rootfs or disk-installed Stage5 image survives reboot validation.
 
 ## 2026-05-08
 

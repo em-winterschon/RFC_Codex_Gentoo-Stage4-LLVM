@@ -187,6 +187,58 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
 The optional `radtest` path is disabled by default to avoid passing secrets in
 normal operator output. Enable it only with vault-backed variables.
 
+## First Live Linux Client
+
+The first live SSSD/RBAC workstation client gate is the GMKtek K10:
+
+- inventory host: `gmktek_nucbox_k10_stage5_candidate`
+- intended FQDN: `gmktek-k10-stage5.rfc1918.host`
+- live address: `172.16.99.156`
+- enrollment playbook: `playbooks/ipa-client-live-apply.yml`
+- validation playbook: `playbooks/ipa-client-live-validate.yml`
+
+On 2026-05-09 the K10 live Gentoo image passed the repo-managed FreeIPA client
+gates before reboot. A later PDU reboot proved the current netboot rootfs does
+not persist the live mutation: the rebooted image returned without SSSD and
+without `/usr/lib64/sssd/libsss_ipa.so`. The root cause of the initial SSSD
+failure was package policy: Gentoo's `sys-auth/sssd-2.12.0-r2` did not install
+the IPA backend unless SSSD was built with `samba`, and Samba also required
+`winbind`. The AAA profile now applies:
+
+- `sys-auth/sssd samba`
+- `net-fs/samba winbind`
+
+SSSD `2.12` also rejects `config_file_version = 2` in `[sssd]`, so the client
+template and live playbooks omit that directive.
+
+The live image does not keep system D-Bus running by default, so
+`sssctl domain-status` can fail with `Unable to connect to system bus` even
+while the IPA backend is functional. The validation path accepts that specific
+live-image failure only when all stronger local gates pass:
+
+- `/usr/lib64/sssd/libsss_ipa.so` exists
+- `sssctl config-check` reports zero validator issues
+- `getent passwd codex-admin` resolves UID `200100`
+- `getent group linux-admin` resolves GID `201000`
+- `sss_ssh_authorizedkeys codex-admin` returns the FreeIPA SSH key
+- PAM account validation for `codex-admin` succeeds
+- `sshd -T` reports PAM enabled and SSSD authorized-key lookup configured
+
+The first transient floating SSH validation passed from the operator host:
+
+```bash
+ssh codex-admin@172.16.99.156 'id; hostname -f; pwd'
+```
+
+It resolved `codex-admin` with UID `200100`, primary group `linux-admin`, and
+supplemental `ci-builder`, `network-admin`, and `power-admin` memberships. This
+is not yet reboot-durable. The live image still reports `hostname -f` as
+`gentoo-pathb` after reboot, and SSSD logs showed a non-blocking sudo refresh
+warning during the transient run. The next Stage5 gate must rebuild the K10
+rootfs or complete the disk install with `aaa-domain-client`, then validate
+hostname policy, offline cache, sudo rules, and local break-glass behavior
+across reboot before broad Linux enrollment.
+
 ## Important Constraint
 
 The current local Gentoo tree used by this repo exposes the directory, Kerberos, SSSD, and FreeRADIUS primitives, but it does **not** currently expose a native `FreeIPA` server package. Because of that:

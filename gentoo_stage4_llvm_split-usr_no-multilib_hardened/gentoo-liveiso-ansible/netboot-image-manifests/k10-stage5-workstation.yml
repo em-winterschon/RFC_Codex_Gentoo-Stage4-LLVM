@@ -31,8 +31,19 @@ artifacts:
   hash_strategy: sha256sum sidecar files generated during Jenkins rebuilds
 builder:
   script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
+  profile_definition_requirements:
+    - profile-definitions/aaa-domain-client.yml
+  rootfs_package_list_requirements:
+    - profile-package-lists/stage5-domain-client.packages
+  rootfs_package_use_requirements:
+    - sys-auth/sssd samba
+    - net-fs/samba winbind
   package_requirements:
     - sys-kernel/linux-firmware
+    - sys-auth/sssd
+    - net-fs/samba
+    - app-crypt/mit-krb5
+    - net-nds/openldap
   dracut_modules:
     add:
       - network
@@ -60,5 +71,8 @@ cmdline:
     - root=live:http://172.16.99.108/g/rootfs.img
 validation:
   expected_result: Gentoo live login prompt on PiKVM video or serial-visible console.
-  last_validated: "2026-05-07"
+  last_validated: "2026-05-09"
+  transient_live_aaa_gate: passed before reboot with repo-managed apply playbook.
+  reboot_durable_aaa_gate: pending rootfs rebuild or disk install with aaa-domain-client profile.
+  last_reboot_observation: PDU reboot returned the original live root without SSSD or libsss_ipa.so.
   backout: Remove K10 DHCP option 67 and leave CSS326 ge16 disconnected.
