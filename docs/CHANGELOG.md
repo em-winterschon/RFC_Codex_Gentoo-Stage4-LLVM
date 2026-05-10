@@ -49,6 +49,10 @@
   write_prometheus/write_graphite, Prometheus all-target health, VictoriaMetrics
   remote_write visibility, direct collectd Graphite namespace visibility, and
   Grafana datasource health validation.
+- Fixed the live rsyslog collector JSON template for `omelasticsearch` by
+  quoting the `message` field while retaining JSON escaping, then validated a
+  unique TCP syslog marker through `10.9.8.89:514` into the `stage5-syslog`
+  Elasticsearch index via the HAProxy VIP `10.9.8.92:9200`.
 
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.

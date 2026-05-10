@@ -152,6 +152,9 @@ Live Path B validation on `10.9.8.89` currently confirms:
 - HAProxy routes default HTTP traffic to nginx on `10.9.8.89:80`.
 - rsyslog collector receives TCP messages on `10.9.8.89:514`.
 - HAProxy exposes the Elasticsearch test VIP on `10.9.8.92:9200`.
+- rsyslog collector forwards TCP syslog into Elasticsearch through the
+  `10.9.8.92:9200` HAProxy VIP; a unique `forge-rsyslog-es-smoke-*` marker was
+  searchable in `stage5-syslog.message`.
 - ntfy is live on Hasslehoff VM `1089` behind HAProxy at
   `172.16.99.96:80`, with service names
   `msg-sun99-ntfysys-099096.rfc1918.host` and
@@ -163,8 +166,9 @@ Live Elasticsearch validation on `10.9.8.91` currently confirms:
 - Elasticsearch `9.3.1` responds on HTTP.
 - cluster health is `green`.
 - `elasticsearch_exporter` serves metrics on `tcp/9114`.
-- a test document can be written to and read back from `stage5-syslog`,
-  validating the index settings required by rsyslog `omelasticsearch`.
+- test documents and rsyslog-ingested documents can be written to and read back
+  from `stage5-syslog`, validating the index settings required by rsyslog
+  `omelasticsearch`.
 
 If an existing test index was created before the zero-replica template was
 installed, apply the rendered helper and update the existing index settings:
@@ -176,10 +180,10 @@ curl -XPUT http://127.0.0.1:9200/stage5-syslog/_settings \
   -d '{"index":{"number_of_replicas":0}}'
 ```
 
-The `10.9.8.92:9200` HAProxy VIP is defined, but live exposure still depends
-on redeploying the container-services host into an installed Podman-ready
-state. The current host context at `10.9.8.89` is not a reliable installed
-container host for this validation pass.
+The live rsyslog-to-Elasticsearch validation found and corrected one collector
+template issue: `message` must be quoted in the rendered JSON while
+`property(name="msg" format="json")` handles escaping. Without that correction,
+`omelasticsearch` rejects bulk requests before they reach Elasticsearch.
 
 ## NetBox
 
@@ -198,9 +202,9 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 
 ## Remaining Work
 
-1. Reapply the container-services profile with `container-haproxy-elasticsearch-test-vip`.
-2. Validate `10.9.8.92:9200` with `service_validator.py` after HAProxy is live.
-3. Complete a live rsyslog container-to-Elasticsearch forwarding run through
-   the HAProxy VIP.
-4. Validate the native Gentoo `kibana-bin` service behavior on a fresh VM.
-5. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
+1. Promote the live rsyslog template fix through the normal container-services
+   redeploy path so the mounted config is regenerated instead of hand-edited.
+2. Add a repeatable service-readiness check that emits a unique syslog marker
+   and searches `stage5-syslog.message` through the Elasticsearch VIP.
+3. Validate the native Gentoo `kibana-bin` service behavior on a fresh VM.
+4. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
