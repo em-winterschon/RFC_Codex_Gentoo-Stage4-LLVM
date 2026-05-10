@@ -1,0 +1,28 @@
+---
+observability_metrics_storage:
+  provider_host: hasslehoff
+  provider_address: 172.16.99.9
+  provider_role: proxmox-hypervisor
+  protocol_default: nfsv3_tcp
+  export_name: victoriametrics
+  zfs_dataset: rpool/observability/victoriametrics
+  host_mountpoint: /srv/exports/metrics/victoriametrics
+  export_path: /srv/exports/metrics/victoriametrics
+  client_mountpoint: /srv/metrics/victoriametrics
+  client_options:
+    - vers=3
+    - proto=tcp
+    - hard
+    - timeo=600
+    - retrans=2
+    - _netdev
+  allowed_clients:
+    - 172.16.99.65/32
+  future_protocols:
+    - nfsv4_tcp_rbac_uid_gid
+    - nfs_rdma
+    - nfs_multipath
+  backout:
+    - Stop VictoriaMetrics on obs-sun99-vmetrics-099065.
+    - Disable the Hasslehoff export and remove the client fstab line.
+    - Restart VictoriaMetrics with local VM disk at /srv/metrics/victoriametrics.

@@ -282,6 +282,65 @@ devices:
     fqdn: ipa01.rfc1918.host
     hypervisor: hasslehoff
     vmid: 1063
+  - name: obs_sun99_prometheus_099064
+    site: local-rfc1918-lab
+    role: observability-prometheus
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.64
+    fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    dns_aliases:
+      - obs-sun99-prometheus.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1064
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-and-scrape
+        status: planned
+    notes:
+      - SUN99 Prometheus scrape scheduler and alert-rule runtime.
+      - Remote writes metrics to obs_sun99_vmetrics_099065.
+  - name: obs_sun99_vmetrics_099065
+    site: local-rfc1918-lab
+    role: observability-victoriametrics
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.65
+    fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    dns_aliases:
+      - obs-sun99-vmetrics.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1065
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-metrics-store-collectd
+        status: planned
+    notes:
+      - SUN99 VictoriaMetrics single-node retention store.
+      - Persistent metrics path is /srv/metrics/victoriametrics backed by Hasslehoff NFS export intent.
+  - name: obs_sun99_grafana_099066
+    site: local-rfc1918-lab
+    role: observability-grafana
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.66
+    fqdn: obs-sun99-grafana-099066.rfc1918.host
+    dns_aliases:
+      - obs-sun99-grafana.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1066
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-dashboard
+        status: planned
+    notes:
+      - SUN99 Grafana dashboard endpoint backed by VictoriaMetrics and Prometheus datasources.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging
@@ -401,6 +460,9 @@ clusters:
     members:
       - svc_netbox_stage4
       - svc_identity_ipa01
+      - obs_sun99_prometheus_099064
+      - obs_sun99_vmetrics_099065
+      - obs_sun99_grafana_099066
       - svc_container_services_safe_move_01
 
 service_vips:
@@ -438,6 +500,45 @@ service_vips:
         port: 1812
       - protocol: udp
         port: 1813
+  - name: obs-sun99-prometheus
+    site: local-rfc1918-lab
+    address: 172.16.99.64
+    fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    aliases:
+      - obs-sun99-prometheus.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 9090
+  - name: obs-sun99-vmetrics
+    site: local-rfc1918-lab
+    address: 172.16.99.65
+    fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    aliases:
+      - obs-sun99-vmetrics.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 8428
+      - protocol: tcp
+        port: 2003
+      - protocol: udp
+        port: 25826
+      - protocol: tcp
+        port: 9103
+  - name: obs-sun99-grafana
+    site: local-rfc1918-lab
+    address: 172.16.99.66
+    fqdn: obs-sun99-grafana-099066.rfc1918.host
+    aliases:
+      - obs-sun99-grafana.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 3000
   - name: rsyslog-ingest-vip
     site: local-rfc1918-lab
     address: 10.9.8.20

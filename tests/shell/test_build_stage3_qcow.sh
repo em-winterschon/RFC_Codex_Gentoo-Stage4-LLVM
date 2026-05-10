@@ -42,6 +42,10 @@ mark_stage3_builder_globals_used() {
     "${STAGE3_MAKE_CONF_APPEND-}" \
     "${STAGE3_PACKAGE_USE_APPEND-}" \
     "${STAGE3_PACKAGE_UNMASK_APPEND-}" \
+    "${STAGE3_HOST_DISTFILES_DIR-}" \
+    "${STAGE3_HOST_BINPKG_DIR-}" \
+    "${STAGE3_GUEST_DISTFILES_DIR-}" \
+    "${STAGE3_GUEST_BINPKG_DIR-}" \
     "${STAGE3_LATEST_TXT-}" \
     "${STAGE3_LLVM_TARGETS-}" \
     "${STAGE3_STAGE_TARBALL_NAME-}" \
@@ -52,6 +56,7 @@ mark_stage3_builder_globals_used() {
     "${STAGE3_STAGE_SHA256-}" \
     "${QEMU_NBD_BIN-}" \
     "${MODPROBE_BIN-}" \
+    "${MKNOD_BIN-}" \
     "${SGDISK_BIN-}" \
     "${PARTPROBE_BIN-}" \
     "${PARTX_BIN-}" \
@@ -71,6 +76,7 @@ make_fake_host_tools() {
     qemu-img \
     qemu-nbd \
     modprobe \
+    mknod \
     sgdisk \
     partprobe \
     partx \
@@ -112,6 +118,10 @@ reset_builder_state() {
   STAGE3_MAKE_CONF_APPEND=''
   STAGE3_PACKAGE_USE_APPEND=''
   STAGE3_PACKAGE_UNMASK_APPEND=''
+  STAGE3_HOST_DISTFILES_DIR=''
+  STAGE3_HOST_BINPKG_DIR=''
+  STAGE3_GUEST_DISTFILES_DIR='/srv/build-cache/distfiles'
+  STAGE3_GUEST_BINPKG_DIR='/srv/build-cache/binpkgs'
   STAGE3_RELEASE_ARCH=''
   STAGE3_CURRENT_DIR=''
   STAGE3_LATEST_TXT=''
@@ -127,6 +137,7 @@ reset_builder_state() {
   QEMU_IMG_BIN='/usr/bin/qemu-img'
   QEMU_NBD_BIN='/usr/bin/qemu-nbd'
   MODPROBE_BIN='/sbin/modprobe'
+  MKNOD_BIN='/usr/bin/mknod'
   SGDISK_BIN='/usr/bin/sgdisk'
   PARTPROBE_BIN='/usr/sbin/partprobe'
   PARTX_BIN='/usr/bin/partx'
@@ -136,6 +147,9 @@ reset_builder_state() {
   UMOUNT_BIN='/usr/bin/umount'
   TAR_BIN='/usr/bin/tar'
   CHROOT_BIN='/usr/sbin/chroot'
+  NBD_DEVICE='/dev/nbd0'
+  DEV_DIR='/dev'
+  SYS_CLASS_BLOCK_DIR='/sys/class/block'
   mark_stage3_builder_globals_used
 }
 
@@ -224,9 +238,12 @@ EOF
   assert_contains "${output}" 'current-stage3-amd64-llvm-openrc'
   assert_contains "${output}" 'qemu-img create -f qcow2'
   assert_contains "${output}" 'qemu-nbd --connect'
+  assert_contains "${output}" 'modprobe nbd max_part=8'
   assert_contains "${output}" 'sgdisk --zap-all /dev/nbd0'
   assert_contains "${output}" 'sgdisk --new=1:0:+512MiB --typecode=1:ef00'
   assert_contains "${output}" 'partx -u /dev/nbd0'
+  assert_contains "${output}" 'ptmxmode=666'
+  assert_contains "${output}" 'mode=1777'
   assert_contains "${output}" 'chmod 0644'
   assert_contains "${output}" '[COMPLETE]'
   bootstrap="$(cat "${WORK_BOOTSTRAP_SCRIPT}")"
@@ -287,6 +304,56 @@ EOF
   rm -rf "${temp_dir}"
 }
 
+test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs() {
+  local temp_dir mknod_log
+  temp_dir="$(mktemp -d)"
+  mknod_log="${temp_dir}/mknod.log"
+
+  mkdir -p "${temp_dir}/dev" "${temp_dir}/sys/class/block/nbd0" "${temp_dir}/sys/class/block/nbd0p1" "${temp_dir}/sys/class/block/nbd0p2"
+  printf '%s\n' '43:0' > "${temp_dir}/sys/class/block/nbd0/dev"
+  printf '%s\n' '43:1' > "${temp_dir}/sys/class/block/nbd0p1/dev"
+  printf '%s\n' '43:2' > "${temp_dir}/sys/class/block/nbd0p2/dev"
+  cat > "${temp_dir}/mknod" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${MKNOD_LOG}"
+: > "$1"
+EOF
+  chmod +x "${temp_dir}/mknod"
+
+  reset_builder_state
+  QEMU_STAGE3_BUILD_DRY_RUN='0'
+  NBD_DEVICE="${temp_dir}/dev/nbd0"
+  DEV_DIR="${temp_dir}/dev"
+  SYS_CLASS_BLOCK_DIR="${temp_dir}/sys/class/block"
+  MKNOD_BIN="${temp_dir}/mknod"
+  export MKNOD_LOG="${mknod_log}"
+
+  ensure_nbd_device_nodes
+
+  assert_contains "$(cat "${mknod_log}")" "${temp_dir}/dev/nbd0 b 43 0"
+  assert_contains "$(cat "${mknod_log}")" "${temp_dir}/dev/nbd0p1 b 43 1"
+  assert_contains "$(cat "${mknod_log}")" "${temp_dir}/dev/nbd0p2 b 43 2"
+  rm -rf "${temp_dir}"
+}
+
+test_mount_host_cache_dirs_renders_bind_mounts() {
+  local temp_dir output
+  temp_dir="$(mktemp -d)"
+
+  reset_builder_state
+  TARGET_ROOT_MNT="${temp_dir}/rootfs"
+  STAGE3_HOST_DISTFILES_DIR="${temp_dir}/host-distfiles"
+  STAGE3_HOST_BINPKG_DIR="${temp_dir}/host-binpkgs"
+  STAGE3_GUEST_DISTFILES_DIR='/srv/build-cache/distfiles'
+  STAGE3_GUEST_BINPKG_DIR='/srv/build-cache/binpkgs'
+
+  output="$(mount_host_cache_dirs 2>&1)"
+
+  assert_contains "${output}" "mount --bind ${STAGE3_HOST_DISTFILES_DIR} ${TARGET_ROOT_MNT}${STAGE3_GUEST_DISTFILES_DIR}"
+  assert_contains "${output}" "mount --bind ${STAGE3_HOST_BINPKG_DIR} ${TARGET_ROOT_MNT}${STAGE3_GUEST_BINPKG_DIR}"
+  rm -rf "${temp_dir}"
+}
+
 test_render_bootstrap_script_includes_extra_portage_fragments() {
   local temp_dir bootstrap
   temp_dir="$(mktemp -d)"
@@ -304,8 +371,8 @@ test_render_bootstrap_script_includes_extra_portage_fragments() {
   assert_contains "${bootstrap}" 'MAKEOPTS="-j48 -l64"'
   assert_contains "${bootstrap}" 'USE="${USE} X dbus spice -systemd"'
   assert_contains "${bootstrap}" 'VIDEO_CARDS="${VIDEO_CARDS} qxl modesetting"'
-  assert_contains "${bootstrap}" 'mkdir -p /dev/shm/portage-tmpfs /var/cache/binpkgs /var/log/portage'
-  assert_contains "${bootstrap}" 'chmod 1777 /dev/shm/portage-tmpfs'
+  assert_contains "${bootstrap}" 'mkdir -p /dev/shm/portage-tmpfs /var/tmp/portage /var/tmp/portage-tmpfs /var/cache/binpkgs /var/log/portage'
+  assert_contains "${bootstrap}" 'chmod 1777 /dev/shm/portage-tmpfs /var/tmp /var/tmp/portage /var/tmp/portage-tmpfs'
   assert_contains "${bootstrap}" 'cat > /etc/portage/package.use/stage3-extra'
   assert_contains "${bootstrap}" 'app-emulation/spice-vdagent gtk -systemd'
   assert_contains "${bootstrap}" 'x11-base/xorg-server xorg elogind udev -systemd'
@@ -325,6 +392,7 @@ test_resolve_host_tool_paths_falls_back_to_command_v() {
   QEMU_IMG_BIN='/not-real/qemu-img'
   QEMU_NBD_BIN='/not-real/qemu-nbd'
   MODPROBE_BIN='/not-real/modprobe'
+  MKNOD_BIN='/not-real/mknod'
   SGDISK_BIN='/not-real/sgdisk'
   PARTPROBE_BIN='/not-real/partprobe'
   PARTX_BIN='/not-real/partx'
@@ -338,6 +406,7 @@ test_resolve_host_tool_paths_falls_back_to_command_v() {
   resolve_host_tool_paths
 
   [[ "${QEMU_IMG_BIN}" == */qemu-img ]] || fail "QEMU_IMG_BIN was not resolved"
+  [[ "${MKNOD_BIN}" == */mknod ]] || fail "MKNOD_BIN was not resolved"
   [[ "${MOUNT_BIN}" == */mount ]] || fail "MOUNT_BIN was not resolved"
   [[ "${CHROOT_BIN}" == */chroot ]] || fail "CHROOT_BIN was not resolved"
   PATH="${old_path}"
@@ -349,6 +418,8 @@ test_resolve_stage3_target_rejects_invalid_enum
 test_validate_stage3_profile_preset_rejects_invalid_enum
 test_main_dry_run_prints_stage3_build_plan
 test_hardened_profile_preset_renders_profile_specific_portage_config
+test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs
+test_mount_host_cache_dirs_renders_bind_mounts
 test_render_bootstrap_script_includes_extra_portage_fragments
 test_resolve_host_tool_paths_falls_back_to_command_v
 

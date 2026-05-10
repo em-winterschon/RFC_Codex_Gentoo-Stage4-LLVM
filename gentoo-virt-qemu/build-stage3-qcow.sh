@@ -22,12 +22,15 @@ QCOW_ESP_SIZE_MIB="${QCOW_ESP_SIZE_MIB:-512}"
 QEMU_IMG_BIN="${QEMU_IMG_BIN:-/usr/bin/qemu-img}"
 QEMU_NBD_BIN="${QEMU_NBD_BIN:-/usr/bin/qemu-nbd}"
 MODPROBE_BIN="${MODPROBE_BIN:-/sbin/modprobe}"
+MKNOD_BIN="${MKNOD_BIN:-/usr/bin/mknod}"
 SGDISK_BIN="${SGDISK_BIN:-/usr/bin/sgdisk}"
 PARTPROBE_BIN="${PARTPROBE_BIN:-/usr/sbin/partprobe}"
 PARTX_BIN="${PARTX_BIN:-/usr/bin/partx}"
 MKFS_VFAT_BIN="${MKFS_VFAT_BIN:-/usr/sbin/mkfs.vfat}"
 MKFS_EXT4_BIN="${MKFS_EXT4_BIN:-/usr/sbin/mkfs.ext4}"
 NBD_DEVICE="${NBD_DEVICE:-/dev/nbd0}"
+DEV_DIR="${DEV_DIR:-/dev}"
+SYS_CLASS_BLOCK_DIR="${SYS_CLASS_BLOCK_DIR:-/sys/class/block}"
 MOUNT_BIN="${MOUNT_BIN:-/usr/bin/mount}"
 UMOUNT_BIN="${UMOUNT_BIN:-/usr/bin/umount}"
 TAR_BIN="${TAR_BIN:-/usr/bin/tar}"
@@ -44,6 +47,10 @@ STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools sys-apps/gptfd
 STAGE3_MAKE_CONF_APPEND="${STAGE3_MAKE_CONF_APPEND-}"
 STAGE3_PACKAGE_USE_APPEND="${STAGE3_PACKAGE_USE_APPEND-}"
 STAGE3_PACKAGE_UNMASK_APPEND="${STAGE3_PACKAGE_UNMASK_APPEND-}"
+STAGE3_HOST_DISTFILES_DIR="${STAGE3_HOST_DISTFILES_DIR-}"
+STAGE3_HOST_BINPKG_DIR="${STAGE3_HOST_BINPKG_DIR-}"
+STAGE3_GUEST_DISTFILES_DIR="${STAGE3_GUEST_DISTFILES_DIR:-/srv/build-cache/distfiles}"
+STAGE3_GUEST_BINPKG_DIR="${STAGE3_GUEST_BINPKG_DIR:-/srv/build-cache/binpkgs}"
 VM_HOSTNAME="${VM_HOSTNAME:-${INSTANCE_NAME}}"
 VM_TIMEZONE="${VM_TIMEZONE:-UTC}"
 VM_LOCALE="${VM_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -74,6 +81,7 @@ resolve_host_tool_paths() {
     QEMU_IMG_BIN \
     QEMU_NBD_BIN \
     MODPROBE_BIN \
+    MKNOD_BIN \
     SGDISK_BIN \
     PARTPROBE_BIN \
     PARTX_BIN \
@@ -393,6 +401,43 @@ nbd_root_partition() {
   printf '%sp2' "${NBD_DEVICE}"
 }
 
+ensure_block_device_node() {
+  local block_name="$1"
+  local dev_file="${SYS_CLASS_BLOCK_DIR}/${block_name}/dev"
+  local device_path="${DEV_DIR}/${block_name}"
+  local major_minor major minor
+
+  if [[ "${QEMU_STAGE3_BUILD_DRY_RUN}" == '1' ]]; then
+    return 0
+  fi
+
+  [[ -r "${dev_file}" ]] || fail "Kernel block device is missing sysfs metadata: ${dev_file}"
+  major_minor="$(< "${dev_file}")"
+  major="${major_minor%%:*}"
+  minor="${major_minor##*:}"
+  [[ "${major}" =~ ^[0-9]+$ && "${minor}" =~ ^[0-9]+$ ]] || fail "Invalid major:minor in ${dev_file}: ${major_minor}"
+
+  if [[ ! -b "${device_path}" ]]; then
+    run_cmd "${MKNOD_BIN}" "${device_path}" b "${major}" "${minor}"
+  fi
+  run_cmd chmod 0660 "${device_path}"
+}
+
+ensure_nbd_device_nodes() {
+  local nbd_name sys_path
+
+  if [[ "${QEMU_STAGE3_BUILD_DRY_RUN}" == '1' ]]; then
+    return 0
+  fi
+
+  nbd_name="$(basename "${NBD_DEVICE}")"
+  ensure_block_device_node "${nbd_name}"
+  for sys_path in "${SYS_CLASS_BLOCK_DIR}/${nbd_name}"p*; do
+    [[ -e "${sys_path}" ]] || continue
+    ensure_block_device_node "$(basename "${sys_path}")"
+  done
+}
+
 disconnect_nbd() {
   if [[ "${QEMU_STAGE3_BUILD_DRY_RUN}" == '1' ]]; then
     return 0
@@ -414,6 +459,15 @@ cleanup() {
   disconnect_nbd
 }
 
+handle_signal() {
+  local signal_name="$1"
+
+  log "Received ${signal_name}; cleaning up"
+  cleanup
+  trap - EXIT
+  exit 128
+}
+
 create_qcow_image() {
   log "Creating ${QCOW_IMAGE}"
   mkdir -p "$(dirname "${QCOW_IMAGE}")"
@@ -421,31 +475,55 @@ create_qcow_image() {
 }
 
 attach_qcow_image() {
+  log "Attaching ${QCOW_IMAGE} to ${NBD_DEVICE}"
   run_cmd "${MODPROBE_BIN}" nbd max_part=8
+  ensure_nbd_device_nodes
   disconnect_nbd
   run_cmd "${QEMU_NBD_BIN}" --connect "${NBD_DEVICE}" "${QCOW_IMAGE}"
   run_cmd "${PARTPROBE_BIN}" "${NBD_DEVICE}"
 }
 
 partition_qcow_image() {
+  log "Partitioning ${NBD_DEVICE}"
   run_cmd "${SGDISK_BIN}" --zap-all "${NBD_DEVICE}"
   run_cmd "${SGDISK_BIN}" --new=1:0:+"${QCOW_ESP_SIZE_MIB}"MiB --typecode=1:ef00 --change-name=1:gentooefi "${NBD_DEVICE}"
   run_cmd "${SGDISK_BIN}" --new=2:0:0 --typecode=2:8300 --change-name=2:gentooroot "${NBD_DEVICE}"
   run_cmd "${PARTPROBE_BIN}" "${NBD_DEVICE}"
   run_cmd "${PARTX_BIN}" -u "${NBD_DEVICE}"
+  ensure_nbd_device_nodes
 }
 
 format_qcow_image() {
+  log "Formatting QCOW partitions"
   run_cmd "${MKFS_VFAT_BIN}" -F 32 -n gentooefi "$(nbd_partition)"
   run_cmd "${MKFS_EXT4_BIN}" -F -L gentooroot "$(nbd_root_partition)"
 }
 
 mount_qcow_image() {
+  log "Mounting QCOW root at ${TARGET_ROOT_MNT}"
   run_cmd "${MOUNT_BIN}" "$(nbd_root_partition)" "${TARGET_ROOT_MNT}"
   run_cmd "${MOUNT_BIN}" --mkdir "$(nbd_partition)" "${TARGET_EFI_MNT}"
 }
 
+mount_host_cache_dir() {
+  local host_path="$1"
+  local guest_path="$2"
+  local target_path="${TARGET_ROOT_MNT}${guest_path}"
+
+  [[ -n "${host_path}" ]] || return 0
+
+  log "Bind-mounting host cache ${host_path} at ${guest_path}"
+  mkdir -p "${host_path}" "${target_path}"
+  run_cmd "${MOUNT_BIN}" --bind "${host_path}" "${target_path}"
+}
+
+mount_host_cache_dirs() {
+  mount_host_cache_dir "${STAGE3_HOST_DISTFILES_DIR}" "${STAGE3_GUEST_DISTFILES_DIR}"
+  mount_host_cache_dir "${STAGE3_HOST_BINPKG_DIR}" "${STAGE3_GUEST_BINPKG_DIR}"
+}
+
 extract_stage3() {
+  log "Extracting ${STAGE3_STAGE_TARBALL_NAME}"
   run_cmd "${TAR_BIN}" xpf "${STAGE3_STAGE_TARBALL_PATH}" --xattrs-include='*.*' --numeric-owner -C "${TARGET_ROOT_MNT}"
   if [[ -f "${HOST_RESOLV_CONF}" ]]; then
     run_cmd cp "${HOST_RESOLV_CONF}" "${TARGET_ROOT_MNT}/etc/resolv.conf"
@@ -515,8 +593,8 @@ ${STAGE3_PACKAGE_UNMASK_APPEND}
 PKGUNMASK_EXTRA
 fi
 
-mkdir -p /dev/shm/portage-tmpfs /var/cache/binpkgs /var/log/portage
-chmod 1777 /dev/shm/portage-tmpfs
+mkdir -p /dev/shm/portage-tmpfs /var/tmp/portage /var/tmp/portage-tmpfs /var/cache/binpkgs /var/log/portage
+chmod 1777 /dev/shm/portage-tmpfs /var/tmp /var/tmp/portage /var/tmp/portage-tmpfs
 
 cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
 [DEFAULT]
@@ -587,10 +665,11 @@ install_bootstrap_script() {
 }
 
 run_bootstrap() {
+  log "Mounting chroot pseudo-filesystems"
   mkdir -p "${TARGET_ROOT_MNT}/dev" "${TARGET_ROOT_MNT}/dev/pts" "${TARGET_ROOT_MNT}/dev/shm"
   run_cmd "${MOUNT_BIN}" -t devtmpfs devtmpfs "${TARGET_ROOT_MNT}/dev"
-  run_cmd "${MOUNT_BIN}" -t devpts devpts "${TARGET_ROOT_MNT}/dev/pts"
-  run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs "${TARGET_ROOT_MNT}/dev/shm"
+  run_cmd "${MOUNT_BIN}" -t devpts devpts -o gid=5,mode=620,ptmxmode=666 "${TARGET_ROOT_MNT}/dev/pts"
+  run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs -o mode=1777,nosuid,nodev "${TARGET_ROOT_MNT}/dev/shm"
   rm -f "${TARGET_ROOT_MNT}/dev/null" "${TARGET_ROOT_MNT}/dev/zero" "${TARGET_ROOT_MNT}/dev/random" "${TARGET_ROOT_MNT}/dev/urandom" "${TARGET_ROOT_MNT}/dev/tty"
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/null" c 1 3
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/zero" c 1 5
@@ -603,11 +682,15 @@ run_bootstrap() {
   ln -sfn fd/2 "${TARGET_ROOT_MNT}/dev/stderr"
   run_cmd "${MOUNT_BIN}" --bind /proc "${TARGET_ROOT_MNT}/proc"
   run_cmd "${MOUNT_BIN}" --bind /sys "${TARGET_ROOT_MNT}/sys"
+  log "Running stage3 bootstrap inside chroot"
   run_cmd "${CHROOT_BIN}" "${TARGET_ROOT_MNT}" /bin/bash /root/bootstrap-stage3-vm.sh
 }
 
 main() {
   trap cleanup EXIT
+  trap 'handle_signal HUP' HUP
+  trap 'handle_signal INT' INT
+  trap 'handle_signal TERM' TERM
   resolve_host_tool_paths
   validate_stage3_profile_preset
   resolve_stage3_target
@@ -621,6 +704,7 @@ main() {
   format_qcow_image
   mount_qcow_image
   extract_stage3
+  mount_host_cache_dirs
   render_bootstrap_script
   install_bootstrap_script
   run_bootstrap

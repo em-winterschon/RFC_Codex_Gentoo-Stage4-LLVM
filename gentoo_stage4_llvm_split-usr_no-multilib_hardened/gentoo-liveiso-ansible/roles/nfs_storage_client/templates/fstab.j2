@@ -1,0 +1,3 @@
+{% for mount in resolved_nfs_storage_client.mounts %}
+{{ mount.src }} {{ mount.path }} {{ mount.fstype | default('nfs') }} {% if mount.options is string %}{{ mount.options }}{% else %}{{ mount.options | default(['vers=3', 'proto=tcp', 'hard', '_netdev']) | join(',') }}{% endif %} {{ mount.dump | default(0) }} {{ mount.passno | default(0) }}
+{% endfor %}

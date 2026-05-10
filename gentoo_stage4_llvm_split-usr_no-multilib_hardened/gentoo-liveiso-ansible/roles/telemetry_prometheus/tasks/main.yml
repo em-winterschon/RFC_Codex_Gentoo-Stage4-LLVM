@@ -19,6 +19,7 @@
           'evaluation_interval': resolved_profile_telemetry.prometheus.evaluation_interval | default(telemetry_prometheus_default_evaluation_interval),
           'external_labels': resolved_profile_telemetry.prometheus.external_labels | default(telemetry_prometheus_default_external_labels),
           'scrape_configs': resolved_profile_telemetry.prometheus.scrape_configs | default(telemetry_prometheus_default_scrape_configs),
+          'remote_write': resolved_profile_telemetry.prometheus.remote_write | default(telemetry_prometheus_default_remote_write),
           'alert_rules': resolved_profile_telemetry.prometheus.alert_rules | default(telemetry_prometheus_default_alert_rules),
           'alertmanager_targets': resolved_profile_telemetry.prometheus.alertmanager_targets | default(telemetry_prometheus_default_alertmanager_targets),
           'extra_args': resolved_profile_telemetry.prometheus.extra_args | default(telemetry_prometheus_default_extra_args)
@@ -198,6 +199,16 @@
             'rule_files': ['/etc/prometheus/rules/*.yml'],
             'scrape_configs': resolved_prometheus_all_scrape_configs
           }
+          | combine(
+              (
+                {
+                  'remote_write': resolved_prometheus_telemetry.remote_write
+                }
+              )
+              if (resolved_prometheus_telemetry.remote_write | length) > 0
+              else {},
+              recursive=True
+            )
           | combine(
               (
                 {

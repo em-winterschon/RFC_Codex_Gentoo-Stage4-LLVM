@@ -1,0 +1,108 @@
+---
+telemetry_exporters:
+  baseline_os:
+    applies_to:
+      - baremetal
+      - virtual_machine
+      - container_host
+    collectors:
+      - role: telemetry_node_exporter
+        endpoint: ":9100"
+        purpose: CPU, memory, filesystem, network, process, and kernel metrics.
+      - role: telemetry_collectd
+        endpoint: ":25826"
+        purpose: Legacy host metrics aggregation and graphite-format forwarding.
+  container_runtime:
+    applies_to:
+      - container_host
+    collectors:
+      - role: telemetry_podman_exporter
+        endpoint: ":9882"
+        purpose: Podman runtime, container, pod, and image metrics.
+  service_reachability:
+    applies_to:
+      - all_service_roles
+    collectors:
+      - role: telemetry_blackbox_exporter
+        endpoint: ":9115"
+        purpose: HTTP, TCP, ICMP, and SLO-style protocol probes.
+  network_power_oob:
+    applies_to:
+      - switch
+      - router
+      - firewall
+      - ups
+      - ats
+      - pdu
+      - oob_console
+    collectors:
+      - role: telemetry_snmp_exporter
+        endpoint: ":9116"
+        purpose: SNMP metrics for interface, power, UPS, PDU, ATS, and OOB devices.
+  bmc_ipmi:
+    applies_to:
+      - baremetal_bmc
+    collectors:
+      - role: container_app_ipmi_exporter
+        endpoint: ":9290"
+        purpose: IPMI sensor, chassis, power, and thermal metrics.
+  bmc_redfish:
+    applies_to:
+      - baremetal_bmc
+      - vm_redfish_emulator
+    collectors:
+      - role: container_app_redfish_exporter
+        endpoint: ":9220"
+        purpose: Redfish health, inventory, power, and performance metrics.
+
+service_role_telemetry_map:
+  container_app_haproxy:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+    notes:
+      - Enable HAProxy native Prometheus metrics on the HAProxy role when the runtime package is confirmed with PROMEX support.
+  container_app_rsyslog_collector:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_collectd
+    notes:
+      - Validate TCP syslog ports and watch queue/disk pressure via collectd and node_exporter.
+  container_app_elastic_apm:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+    notes:
+      - Probe APM HTTP ingress and ship application metrics through future Elastic APM exporter tuning.
+  elasticsearch_cluster:
+    collectors:
+      - telemetry_elasticsearch_exporter
+      - telemetry_node_exporter
+  kibana_interface:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+  freeipa_controller:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+      - telemetry_collectd
+  netbox_server:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+      - telemetry_collectd
+  jenkins_controller:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+      - telemetry_collectd
+  distcc_farm:
+    collectors:
+      - telemetry_blackbox_exporter
+      - telemetry_node_exporter
+      - telemetry_collectd
+  nfs_storage_client:
+    collectors:
+      - telemetry_node_exporter
+      - telemetry_collectd

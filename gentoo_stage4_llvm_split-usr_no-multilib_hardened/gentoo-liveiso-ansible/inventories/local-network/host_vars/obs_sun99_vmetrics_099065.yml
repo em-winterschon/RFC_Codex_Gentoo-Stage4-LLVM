@@ -1,0 +1,72 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/nfs-storage-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-observability-victoriametrics.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: obs-sun99-vmetrics-099065
+
+profile_cloud_init:
+  enabled: true
+  instance_id: obs-sun99-vmetrics-099065
+  local_hostname: obs-sun99-vmetrics-099065
+  disable_root: false
+  ssh_pwauth: false
+
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: msg-sun99-ntfysys.rfc1918.host
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_telemetry:
+  victoriametrics:
+    enabled: true
+    version: "1.142.0"
+    architecture: amd64
+    download_checksum: sha256:878e09069184d4cc86297e1f0574f2a78f5ebfce87dd1d32b286abf13aad4f85
+    data_path: /srv/metrics/victoriametrics
+    retention_period: 12
+    http_listen_addr: "0.0.0.0:8428"
+    graphite_listen_addr: "0.0.0.0:2003"
+  collectd:
+    enabled: true
+    hostname: obs-sun99-vmetrics-099065
+    network_listen: true
+    network_listen_host: "0.0.0.0"
+    network_listen_port: 25826
+    write_graphite:
+      enabled: true
+      host: 127.0.0.1
+      port: 2003
+      prefix: collectd.
+    write_prometheus:
+      enabled: true
+      host: "0.0.0.0"
+      port: 9103
+
+profile_nfs_storage_client:
+  enabled: true
+  protocol_default: nfsv3_tcp
+  enable_nfsv3: true
+  enable_nfsv4: true
+  enable_rdma: false
+  enable_multipath: false
+  mounts:
+    - src: hasslehoff.rfc1918.host:/srv/exports/metrics/victoriametrics
+      path: /srv/metrics/victoriametrics
+      fstype: nfs
+      options:
+        - vers=3
+        - proto=tcp
+        - hard
+        - timeo=600
+        - retrans=2
+        - _netdev

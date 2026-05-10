@@ -8,6 +8,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 HELPER_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/build-stage3-qcow.sh"
+PATHB_STAGE3_CACHE_DIR_EXPLICIT="${STAGE3_CACHE_DIR+x}"
 
 [[ -f "${HELPER_SCRIPT}" ]] || {
   printf '[build-path-b-netboot-artifacts] ERROR: helper script not found: %s\n' "${HELPER_SCRIPT}" >&2
@@ -29,6 +30,9 @@ PATHB_BUILD_DIR="${PATHB_BUILD_DIR:-${PATHB_ROOT}/build/${PATHB_INSTANCE_NAME}}"
 PATHB_ARTIFACT_ROOT="${PATHB_ARTIFACT_ROOT:-${PATHB_ROOT}/artifacts}"
 PATHB_INSTALLER_ARTIFACT_DIR="${PATHB_INSTALLER_ARTIFACT_DIR:-${PATHB_ARTIFACT_ROOT}/gentoo-installer}"
 PATHB_RESCUE_ARTIFACT_DIR="${PATHB_RESCUE_ARTIFACT_DIR:-${PATHB_ARTIFACT_ROOT}/gentoo-rescue}"
+if [[ -z "${PATHB_STAGE3_CACHE_DIR_EXPLICIT}" ]]; then
+  STAGE3_CACHE_DIR="${PATHB_CACHE_DIR}"
+fi
 PATHB_TARGET_ROOT_MNT="${PATHB_TARGET_ROOT_MNT:-${PATHB_BUILD_DIR}/rootfs}"
 PATHB_WORK_BOOTSTRAP_SCRIPT="${PATHB_WORK_BOOTSTRAP_SCRIPT:-${PATHB_BUILD_DIR}/bootstrap-path-b.sh}"
 TARGET_ROOT_MNT="${PATHB_TARGET_ROOT_MNT}"
@@ -43,6 +47,7 @@ PATHB_NETWORK_SERVICE="${PATHB_NETWORK_SERVICE:-dhcpcd}"
 PATHB_REUSE_INITRAMFS_NETWORK="${PATHB_REUSE_INITRAMFS_NETWORK:-1}"
 PATHB_SSH_SERVICE="${PATHB_SSH_SERVICE:-sshd}"
 PATHB_EXTRA_PACKAGES="${PATHB_EXTRA_PACKAGES:-app-admin/sudo dev-lang/python sys-apps/iproute2 sys-kernel/linux-firmware sys-fs/zfs sys-fs/zfs-kmod sys-fs/dosfstools sys-block/parted sys-apps/pciutils sys-apps/usbutils sys-apps/kmod}"
+PATHB_PACKAGE_USE_APPEND="${PATHB_PACKAGE_USE_APPEND:-}"
 PATHB_HOSTNAME="${PATHB_HOSTNAME:-gentoo-pathb}"
 PATHB_TIMEZONE="${PATHB_TIMEZONE:-UTC}"
 PATHB_LOCALE="${PATHB_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -61,7 +66,24 @@ ensure_pathb_dirs() {
     "${PATHB_RESCUE_ARTIFACT_DIR}"
 }
 
+cleanup_mounts() {
+  local mount_list
+  local mount_target
+
+  if [[ "${QEMU_STAGE3_BUILD_DRY_RUN}" == '1' || ! -e "${TARGET_ROOT_MNT}" ]]; then
+    return 0
+  fi
+
+  mount_list="$(mktemp)"
+  findmnt -Rrn -o TARGET "${TARGET_ROOT_MNT}" 2> /dev/null | sort -r > "${mount_list}" || true
+  while IFS= read -r mount_target; do
+    "${UMOUNT_BIN}" "${mount_target}" > /dev/null 2>&1 || "${UMOUNT_BIN}" -l "${mount_target}" > /dev/null 2>&1 || true
+  done < "${mount_list}"
+  rm -f "${mount_list}"
+}
+
 reset_rootfs() {
+  cleanup_mounts
   rm -rf "${TARGET_ROOT_MNT}"
   mkdir -p "${TARGET_ROOT_MNT}"
 }
@@ -107,6 +129,12 @@ MAKECONF
 cat > /etc/portage/package.use/path-b-dracut <<'PKGUSE'
 sys-kernel/installkernel dracut -systemd
 PKGUSE
+
+if [[ -n ${PATHB_PACKAGE_USE_APPEND@Q} ]]; then
+cat > /etc/portage/package.use/path-b-extra <<'PKGUSE_EXTRA'
+${PATHB_PACKAGE_USE_APPEND}
+PKGUSE_EXTRA
+fi
 
 cat > /etc/portage/repos.conf/gentoo.conf <<'REPOSCONF'
 [DEFAULT]
@@ -177,21 +205,21 @@ cat > /etc/local.d/pathb-network-handoff.start <<'LOCALNET'
 #!/usr/bin/env bash
 set +e
 
-boot_iface="$(ip route show default 2> /dev/null | awk 'NR==1 { print $5 }')"
+boot_iface="\$(ip route show default 2> /dev/null | awk 'NR==1 { print \$5 }')"
 
-if [[ -n "${boot_iface}" ]]; then
-  mapfile -t boot_ipv4_addrs < <(ip -o -4 addr show dev "${boot_iface}" scope global 2>/dev/null | awk '{ print $4 }')
+if [[ -n "\${boot_iface}" ]]; then
+  mapfile -t boot_ipv4_addrs < <(ip -o -4 addr show dev "\${boot_iface}" scope global 2>/dev/null | awk '{ print \$4 }')
 
-  if (( ${#boot_ipv4_addrs[@]} > 1 )); then
-    for stale_addr in "${boot_ipv4_addrs[@]:1}"; do
-      ip addr del "${stale_addr}" dev "${boot_iface}" >/dev/null 2>&1 || true
+  if (( \${#boot_ipv4_addrs[@]} > 1 )); then
+    for stale_addr in "\${boot_ipv4_addrs[@]:1}"; do
+      ip addr del "\${stale_addr}" dev "\${boot_iface}" >/dev/null 2>&1 || true
     done
   fi
 
-  mapfile -t boot_default_routes < <(ip route show default dev "${boot_iface}" 2>/dev/null)
-  if (( ${#boot_default_routes[@]} > 1 )); then
-    for stale_route in "${boot_default_routes[@]:1}"; do
-      ip route del ${stale_route} >/dev/null 2>&1 || true
+  mapfile -t boot_default_routes < <(ip route show default dev "\${boot_iface}" 2>/dev/null)
+  if (( \${#boot_default_routes[@]} > 1 )); then
+    for stale_route in "\${boot_default_routes[@]:1}"; do
+      ip route del \${stale_route} >/dev/null 2>&1 || true
     done
   fi
 fi
@@ -260,6 +288,7 @@ copy_variant_artifacts() {
   mkdir -p "${variant_dir}"
   install -m 0644 "${TARGET_ROOT_MNT}/boot/vmlinuz-${kernel_version}" "${variant_dir}/vmlinuz"
   install -m 0644 "${TARGET_ROOT_MNT}/boot/initramfs-${kernel_version}.img" "${variant_dir}/initramfs.img"
+  ln -sfn initramfs.img "${variant_dir}/initramfs-gz.img"
   cp -f "${squashfs_source}" "${variant_dir}/rootfs.squashfs"
   cp -f "${squashfs_source}" "${variant_dir}/rootfs.img"
 }

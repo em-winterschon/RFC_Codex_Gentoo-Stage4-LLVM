@@ -26,6 +26,7 @@ QEMU_BOOT_STRICT="${QEMU_BOOT_STRICT:-1}"
 QEMU_BOOTDISK_ID="${QEMU_BOOTDISK_ID:-bootdisk}"
 QEMU_BOOTDISK_MODEL="${QEMU_BOOTDISK_MODEL:-virtio-blk-pci}"
 QEMU_BOOTDISK_BOOTINDEX="${QEMU_BOOTDISK_BOOTINDEX:-1}"
+QEMU_ATTACH_HOST_DISKS="${QEMU_ATTACH_HOST_DISKS:-1}"
 QEMU_MEMORY_DRIVES_FILE="${QEMU_MEMORY_DRIVES_FILE:-}"
 QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
 QEMU_DAEMONIZE="${QEMU_DAEMONIZE:-1}"
@@ -283,6 +284,12 @@ setup_launcher_logging() {
   fi
 
   mkdir -p "${LAUNCHER_LOG_DIR}"
+  if [[ ! -e /dev/fd/0 ]]; then
+    LAUNCHER_LOG_INITIALIZED=1
+    log "Launcher log file requested but /dev/fd is unavailable; continuing without tee logging"
+    return 0
+  fi
+
   exec > >(tee -a "${LAUNCHER_LOG_FILE}") 2>&1
   LAUNCHER_LOG_INITIALIZED=1
   log "Launcher log file: ${LAUNCHER_LOG_FILE}"
@@ -303,6 +310,8 @@ require_host_disk_ready() {
 }
 
 validate_host_disks() {
+  host_disks_enabled || return 0
+
   require_host_disk_ready "${BPOOL_DISK0}" 'BPOOL_DISK0'
   require_host_disk_ready "${BPOOL_DISK1}" 'BPOOL_DISK1'
   require_host_disk_ready "${RPOOL_DISK0}" 'RPOOL_DISK0'
@@ -323,12 +332,22 @@ validate_boot_source() {
   esac
 }
 
+host_disks_enabled() {
+  [[ "$(boot_source_name)" == 'target-disks' || "${QEMU_ATTACH_HOST_DISKS}" == '1' ]]
+}
+
 validate_qcow_image() {
   if [[ "$(boot_source_name)" != 'qcow' ]]; then
     return 0
   fi
 
-  [[ -f "${QCOW_IMAGE}" ]] || fail "QCOW_IMAGE is missing: ${QCOW_IMAGE}"
+  if [[ ! -f "${QCOW_IMAGE}" ]]; then
+    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
+      log "QCOW_IMAGE is missing during dry-run; continuing without launch validation: ${QCOW_IMAGE}"
+      return 0
+    fi
+    fail "QCOW_IMAGE is missing: ${QCOW_IMAGE}"
+  fi
 }
 
 validate_efi_firmware() {
@@ -432,25 +451,27 @@ append_host_disk() {
   )
 }
 
+append_host_disks() {
+  host_disks_enabled || return 0
+
+  if [[ "$(boot_source_name)" == 'target-disks' ]]; then
+    append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0' '1'
+  else
+    append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
+  fi
+  append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
+  append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
+  append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
+}
+
 append_memory_drives() {
   local index=0
-  local drive_id drive_path drive_format drive_serial drive_model drive_bootindex
+  local drive_id drive_path drive_format drive_serial drive_model drive_bootindex drive_list
 
   [[ -n "${QEMU_MEMORY_DRIVES_FILE}" ]] || return 0
 
-  while IFS=$'\t' read -r drive_path drive_format drive_serial drive_model drive_bootindex; do
-    [[ -n "${drive_path}" ]] || continue
-    require_host_disk_ready "${drive_path}" "QEMU memory drive ${drive_serial:-memory-${index}}"
-    drive_id="memdrv${index}"
-    QEMU_CMD+=(-drive "if=none,id=${drive_id},file=${drive_path},format=${drive_format}")
-    if [[ -n "${drive_bootindex}" ]]; then
-      QEMU_CMD+=(-device "${drive_model},drive=${drive_id},serial=${drive_serial},bootindex=${drive_bootindex}")
-    else
-      QEMU_CMD+=(-device "${drive_model},drive=${drive_id},serial=${drive_serial}")
-    fi
-    index=$((index + 1))
-  done < <(
-    python3 - "${QEMU_MEMORY_DRIVES_FILE}" << 'PY'
+  drive_list="$(mktemp)"
+  python3 - "${QEMU_MEMORY_DRIVES_FILE}" > "${drive_list}" << 'PY'
 import json
 import sys
 
@@ -471,7 +492,20 @@ for drive in drives:
         )
     )
 PY
-  )
+
+  while IFS=$'\t' read -r drive_path drive_format drive_serial drive_model drive_bootindex; do
+    [[ -n "${drive_path}" ]] || continue
+    require_host_disk_ready "${drive_path}" "QEMU memory drive ${drive_serial:-memory-${index}}"
+    drive_id="memdrv${index}"
+    QEMU_CMD+=(-drive "if=none,id=${drive_id},file=${drive_path},format=${drive_format}")
+    if [[ -n "${drive_bootindex}" ]]; then
+      QEMU_CMD+=(-device "${drive_model},drive=${drive_id},serial=${drive_serial},bootindex=${drive_bootindex}")
+    else
+      QEMU_CMD+=(-device "${drive_model},drive=${drive_id},serial=${drive_serial}")
+    fi
+    index=$((index + 1))
+  done < "${drive_list}"
+  rm -f "${drive_list}"
 }
 
 append_boot_args() {
@@ -568,14 +602,7 @@ build_qemu_cmd() {
     )
   fi
 
-  if [[ "$(boot_source_name)" == 'target-disks' ]]; then
-    append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0' '1'
-  else
-    append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
-  fi
-  append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
-  append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
-  append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
+  append_host_disks
   append_memory_drives
   append_video_args
   append_spice_agent_args

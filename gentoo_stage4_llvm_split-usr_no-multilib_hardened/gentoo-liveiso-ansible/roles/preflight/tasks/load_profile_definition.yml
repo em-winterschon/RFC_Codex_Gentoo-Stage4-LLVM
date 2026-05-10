@@ -251,6 +251,14 @@
             recursive=True
           )
       }}
+    resolved_profile_nfs_storage_client: >-
+      {{
+        resolved_profile_nfs_storage_client
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.nfs_storage_client | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_binpkg_repo: >-
       {{
         resolved_profile_binpkg_repo

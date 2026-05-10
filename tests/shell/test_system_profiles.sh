@@ -38,6 +38,7 @@ for profile in \
   nfs-storage-client.yml \
   netbox-managed-inventory.yml \
   netbox-pathb-lab-ipam-plan.yml \
+  telemetry-collectd-client.yml \
   telemetry-elasticsearch-exporter.yml \
   telemetry-node-exporter-client.yml \
   telemetry-podman-exporter.yml \
@@ -52,6 +53,7 @@ for profile in \
   vm-guest-simple-ipxe.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-observability-victoriametrics.yml \
   vm-redfish-emulator.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
@@ -87,6 +89,7 @@ for metadata in \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
+  vm-observability-victoriametrics.metadata.yml \
   vm-redfish-emulator.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
@@ -114,6 +117,7 @@ for host_var in \
   vm-guest-simple.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-observability-victoriametrics.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml; do
@@ -135,6 +139,7 @@ for package_list in \
   stage5-metal-host-identity-controller.packages \
   stage5-storage-nfs-client.packages \
   stage5-observability-client.packages \
+  stage5-observability-metrics-collectd-client.packages \
   stage5-observability-metrics-client.packages \
   stage5-observability-metrics-elasticsearch-exporter.packages \
   stage5-observability-metrics-podman-exporter.packages \
@@ -150,6 +155,7 @@ for package_list in \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
+  stage5-virtual-host-observability-victoriametrics.packages \
   stage5-virtual-host-redfish-emulator.packages \
   stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages; do

@@ -1,0 +1,68 @@
+---
+- name: Resolve collectd telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_collectd_enabled: >-
+      {{
+        resolved_profile_telemetry.collectd.enabled
+        | default(telemetry_collectd_default_enabled)
+        | bool
+      }}
+    resolved_collectd_telemetry: >-
+      {{
+        {
+          'hostname': resolved_profile_telemetry.collectd.hostname | default(telemetry_collectd_default_hostname),
+          'interval': resolved_profile_telemetry.collectd.interval | default(telemetry_collectd_default_interval),
+          'read_threads': resolved_profile_telemetry.collectd.read_threads | default(telemetry_collectd_default_read_threads),
+          'write_threads': resolved_profile_telemetry.collectd.write_threads | default(telemetry_collectd_default_write_threads),
+          'base_dir': resolved_profile_telemetry.collectd.base_dir | default(telemetry_collectd_default_base_dir),
+          'plugin_dir': resolved_profile_telemetry.collectd.plugin_dir | default(telemetry_collectd_default_plugin_dir),
+          'include_dir': resolved_profile_telemetry.collectd.include_dir | default(telemetry_collectd_default_include_dir),
+          'plugins': resolved_profile_telemetry.collectd.plugins | default(telemetry_collectd_default_plugins),
+          'network_listen': resolved_profile_telemetry.collectd.network_listen | default(telemetry_collectd_default_network_listen),
+          'network_listen_host': resolved_profile_telemetry.collectd.network_listen_host | default(telemetry_collectd_default_network_listen_host),
+          'network_listen_port': resolved_profile_telemetry.collectd.network_listen_port | default(telemetry_collectd_default_network_listen_port),
+          'network_servers': resolved_profile_telemetry.collectd.network_servers | default(telemetry_collectd_default_network_servers),
+          'write_graphite_enabled': resolved_profile_telemetry.collectd.write_graphite.enabled | default(telemetry_collectd_default_write_graphite_enabled),
+          'write_graphite_host': resolved_profile_telemetry.collectd.write_graphite.host | default(telemetry_collectd_default_write_graphite_host),
+          'write_graphite_port': resolved_profile_telemetry.collectd.write_graphite.port | default(telemetry_collectd_default_write_graphite_port),
+          'write_graphite_prefix': resolved_profile_telemetry.collectd.write_graphite.prefix | default(telemetry_collectd_default_write_graphite_prefix),
+          'write_prometheus_enabled': resolved_profile_telemetry.collectd.write_prometheus.enabled | default(telemetry_collectd_default_write_prometheus_enabled),
+          'write_prometheus_host': resolved_profile_telemetry.collectd.write_prometheus.host | default(telemetry_collectd_default_write_prometheus_host),
+          'write_prometheus_port': resolved_profile_telemetry.collectd.write_prometheus.port | default(telemetry_collectd_default_write_prometheus_port)
+        }
+      }}
+
+- name: Ensure collectd directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ collectd_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/collectd.d
+    - /etc/conf.d
+    - "{{ resolved_collectd_telemetry.base_dir }}"
+  loop_control:
+    loop_var: collectd_dir
+  when: telemetry_collectd_enabled
+
+- name: Render collectd configuration
+  ansible.builtin.template:
+    src: collectd.conf.j2
+    dest: "{{ install_target_root }}/etc/collectd.conf"
+    mode: '0644'
+  when: telemetry_collectd_enabled
+
+- name: Render collectd OpenRC configuration
+  ansible.builtin.template:
+    src: collectd.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/collectd"
+    mode: '0644'
+  when: telemetry_collectd_enabled
+
+- name: Enable collectd service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['collectd']) | unique
+      }}
+  when: telemetry_collectd_enabled

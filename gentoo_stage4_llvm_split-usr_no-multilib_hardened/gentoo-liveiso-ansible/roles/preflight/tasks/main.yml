@@ -92,6 +92,7 @@
     resolved_profile_vm_redfish_emulator: "{{ profile_vm_redfish_emulator | default({}) }}"
     resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
     resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
+    resolved_profile_nfs_storage_client: "{{ profile_nfs_storage_client | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
     resolved_profile_nexus_repo: "{{ profile_nexus_repo | default({}) }}"
     resolved_profile_nscde_workstation: "{{ profile_nscde_workstation | default({}) }}"
@@ -196,6 +197,11 @@
       {{
         resolved_profile_telemetry
         | combine(profile_telemetry | default({}), recursive=True)
+      }}
+    resolved_profile_nfs_storage_client: >-
+      {{
+        resolved_profile_nfs_storage_client
+        | combine(profile_nfs_storage_client | default({}), recursive=True)
       }}
     resolved_profile_binpkg_repo: >-
       {{

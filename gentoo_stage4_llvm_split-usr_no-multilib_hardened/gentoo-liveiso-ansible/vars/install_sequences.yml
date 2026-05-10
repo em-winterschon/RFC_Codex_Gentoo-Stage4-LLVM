@@ -38,6 +38,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -106,6 +108,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -177,6 +181,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -242,6 +248,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana

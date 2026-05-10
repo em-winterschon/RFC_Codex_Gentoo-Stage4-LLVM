@@ -435,6 +435,8 @@ def assign_management_ip(
     ip_object = client.ensure(NetBoxObject("ipam/ip-addresses", "address", address, payload))
     if client.dry_run:
         return
+    if interface and not ip_object_is_assigned_to_interface(ip_object, interface):
+        return
     primary_payload = primary_ip_update_payload(address, ip_object["id"], interface is not None)
     if primary_payload is None:
         return
@@ -447,6 +449,22 @@ def primary_ip_update_payload(
     if not interface_bound:
         return None
     return {"primary_ip4": ip_id} if "." in address else {"primary_ip6": ip_id}
+
+
+def ip_object_is_assigned_to_interface(
+    ip_object: dict[str, Any], interface: dict[str, Any]
+) -> bool:
+    if ip_object.get("assigned_object_type") != "dcim.interface":
+        return False
+
+    assigned_id = ip_object.get("assigned_object_id")
+    if assigned_id is None and isinstance(ip_object.get("assigned_object"), dict):
+        assigned_id = ip_object["assigned_object"].get("id")
+
+    try:
+        return int(assigned_id) == int(interface["id"])
+    except (KeyError, TypeError, ValueError):
+        return False
 
 
 def ensure_power_port(

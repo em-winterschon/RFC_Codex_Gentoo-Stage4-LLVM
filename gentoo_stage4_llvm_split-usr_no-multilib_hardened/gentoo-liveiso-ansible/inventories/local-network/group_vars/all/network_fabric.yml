@@ -167,6 +167,52 @@ network_fabric_devices:
       - FreeRADIUS bridge is co-located initially for switch, router, firewall, WAP, and VPN AAA.
       - DNS remains external/static until RouterOS or NetBox-backed DNS is normalized.
       - FreeIPA, SSSD, and FreeRADIUS are validated; recovery snapshot is codex-freeipa-radius-live.
+  obs_sun99_prometheus_099064:
+    role: observability-prometheus
+    hypervisor: hasslehoff
+    proxmox_vmid: 1064
+    runtime: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.64
+    fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    dns_aliases:
+      - obs-sun99-prometheus.rfc1918.host
+    notes:
+      - Prometheus scrape scheduler for the SUN99 observability pipeline.
+      - Remote-write target is VictoriaMetrics on obs-sun99-vmetrics-099065.
+      - HTTPS access is intended behind the local HA-Proxy/private-CA path.
+  obs_sun99_vmetrics_099065:
+    role: observability-victoriametrics
+    hypervisor: hasslehoff
+    proxmox_vmid: 1065
+    runtime: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.65
+    fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    dns_aliases:
+      - obs-sun99-vmetrics.rfc1918.host
+    metrics_storage:
+      provider: hasslehoff
+      export: hasslehoff.rfc1918.host:/srv/exports/metrics/victoriametrics
+      mountpoint: /srv/metrics/victoriametrics
+      protocol_default: nfsv3_tcp
+    notes:
+      - VictoriaMetrics single-node retention store for Prometheus remote_write and collectd Graphite ingress.
+      - Metrics persistence is intentionally modeled as a Hasslehoff NFS export before live VM provisioning.
+      - Future storage upgrades should preserve the same client mountpoint to avoid service config churn.
+  obs_sun99_grafana_099066:
+    role: observability-grafana
+    hypervisor: hasslehoff
+    proxmox_vmid: 1066
+    runtime: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.66
+    fqdn: obs-sun99-grafana-099066.rfc1918.host
+    dns_aliases:
+      - obs-sun99-grafana.rfc1918.host
+    notes:
+      - Grafana dashboard VM for SUN99 metrics visibility.
+      - Default datasource is VictoriaMetrics with Prometheus kept as secondary.
 
 network_fabric_links:
   - endpoint_a:

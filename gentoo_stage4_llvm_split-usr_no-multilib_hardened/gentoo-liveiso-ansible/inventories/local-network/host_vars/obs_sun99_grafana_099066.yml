@@ -1,0 +1,72 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-observability-grafana.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: obs-sun99-grafana-099066
+
+profile_cloud_init:
+  enabled: true
+  instance_id: obs-sun99-grafana-099066
+  local_hostname: obs-sun99-grafana-099066
+  disable_root: false
+  ssh_pwauth: false
+
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: msg-sun99-ntfysys.rfc1918.host
+  forward_protocol: tcp
+  forward_port: 514
+
+profile_telemetry:
+  grafana:
+    domain: obs-sun99-grafana.rfc1918.host
+    root_url: https://obs-sun99-grafana.rfc1918.host/
+    admin_user: admin
+    admin_password: "{{ vault_grafana_admin_password | default('changeme') }}"
+    datasources:
+      - name: VictoriaMetrics
+        uid: VictoriaMetrics
+        type: prometheus
+        access: proxy
+        url: http://obs-sun99-vmetrics-099065.rfc1918.host:8428
+        isDefault: true
+      - name: Prometheus
+        uid: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://obs-sun99-prometheus-099064.rfc1918.host:9090
+        isDefault: false
+    dashboards:
+      - name: sun99-observability-overview
+        content:
+          title: SUN99 Observability Overview
+          uid: sun99-observability-overview
+          schemaVersion: 39
+          version: 1
+          refresh: 30s
+          time:
+            from: now-6h
+            to: now
+          panels:
+            - title: Scrape Availability
+              type: stat
+              datasource:
+                type: prometheus
+                uid: VictoriaMetrics
+              targets:
+                - expr: avg(up)
+                  refId: A
+              gridPos:
+                h: 8
+                w: 8
+                x: 0
+                y: 0

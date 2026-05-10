@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-05-10 - X12AGAIN Builder VM Isolation
+
+- Defined X12AGAIN as a stable hypervisor/resource provider and moved
+  heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
+  disposable high-resource builder VMs.
+- Added staged artifact promotion rules so active netboot paths remain
+  publish-only targets and failed builds can be discarded without poisoning the
+  host.
+- Added a Path B build-root recovery script for stale pseudo-filesystem mounts
+  and documented that blind `rm -rf` must not be used against potentially
+  mounted build roots.
+- Added `gentoo-virt-qemu/x12again-stagebuild-vm.sh` as the repo wrapper for
+  disposable high-resource X12AGAIN builder VMs.
+- Extended the observability stack with collectd aggregation, Prometheus
+  remote-write, a single-node VictoriaMetrics retention profile, NFS-backed
+  metrics persistence intent, Grafana dashboard provisioning, and a service
+  role to telemetry collector matrix.
+- Added SUN99 live observability deployment intent for Prometheus
+  `172.16.99.64`, VictoriaMetrics `172.16.99.65`, and Grafana `172.16.99.66`,
+  including local-network host vars, Hetzner DNS RRsets, NetBox intake rows,
+  fabric metadata, and Hasslehoff NFS metrics export intent.
+- Added `scripts/proxmox-materialize-gentoo-openrc-static-net.sh` for
+  Proxmox-hosted Gentoo Stage4 service VMs that do not consume Proxmox
+  cloud-init metadata inside the guest.
+- Applied the SUN99 observability DNS and NetBox inventory live, provisioned
+  Hasslehoff VMs `1064`-`1066`, exported VictoriaMetrics NFS persistence from
+  Hasslehoff, and converted NetBox plus the observability VMs to static OpenRC
+  networking after the cloned image exposed stale DHCP behavior.
+- Added a VictoriaMetrics service-VM build governor after the first live
+  collectd dependency build exposed `dev-libs/protobuf` using `ninja -j64` and
+  OOM-killing `clang++` inside the 8 GiB guest.
+- Disabled collectd `rrdtool` and `rrdcached` plugins for the
+  VictoriaMetrics/collectd profile because this pipeline uses Graphite and
+  Prometheus exporters, and the unnecessary `net-analyzer/rrdtool` dependency
+  failed with LLD version-script symbols when graph support was disabled.
+- Corrected the NFS storage-client OpenRC service set from the non-existent
+  `nfsmount` service to `rpcbind`, `rpc.statd`, `nfsclient`, and `netmount`
+  after the live NFSv3 metrics mount required lock-manager startup.
+- Brought the Prometheus VM service layer up with Prometheus, Alertmanager,
+  blackbox_exporter, snmp_exporter, node_exporter, remote_write to
+  VictoriaMetrics, and local exporter scrape validation.
+- Brought the Grafana VM service layer up with `grafana-bin`, node_exporter,
+  provisioned Prometheus/VictoriaMetrics datasources, and a baseline SUN99
+  observability dashboard.
+- Brought the VictoriaMetrics VM service layer up with NFS-backed persistence,
+  VictoriaMetrics HTTP/Graphite listeners, node_exporter, collectd
+  write_prometheus/write_graphite, Prometheus all-target health, VictoriaMetrics
+  remote_write visibility, direct collectd Graphite namespace visibility, and
+  Grafana datasource health validation.
+
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
 
