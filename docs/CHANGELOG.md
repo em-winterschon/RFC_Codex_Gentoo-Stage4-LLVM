@@ -22,6 +22,9 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Added K10 netboot-image manifest requirements for carrying the
   `aaa-domain-client` profile into the rebuilt rootfs so future validation can
   prove reboot-durable SSSD/RBAC behavior instead of one-time live mutation.
+- Added the `RFC99 Host E2ET Acceptance Pipeline` policy, wiki mirror, and
+  regression coverage defining transient validation, reboot-durable acceptance
+  gates, conformance tiers, and K10 release-gating semantics.
 
 ### Changed
 
