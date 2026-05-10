@@ -565,16 +565,21 @@ service_vips:
     listeners:
       - protocol: http
         port: 5601
-  - name: rsyslog-ingest-vip
+  - name: log-sun99-rsyslog-099093
     site: local-rfc1918-lab
-    address: 10.9.8.20
+    address: 172.16.99.93
+    fqdn: log-sun99-rsyslog-099093.rfc1918.host
+    aliases:
+      - log-sun99-rsyslog.rfc1918.host
     owners:
       - observability
+      - centralized-logging
     listeners:
       - protocol: tcp
-        port: 514
-      - protocol: udp
-        port: 514
+        port: 6514
+    notes:
+      - CCR2004 owns the SUN99 rsyslog service VIP and DNATs TCP/6514 to svc-container-services-safe-move-01 on 172.16.99.89.
+      - Keep this syslog path separate from the Elasticsearch/search VIP so log shipping survives search endpoint changes.
   - name: elasticsearch-vip
     site: local-rfc1918-lab
     address: 10.9.8.21

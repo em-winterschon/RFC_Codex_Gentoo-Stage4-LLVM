@@ -22,9 +22,9 @@ profile_cloud_init:
 
 profile_rsyslog:
   forward_enabled: true
-  forward_hostname: 10.9.8.89
+  forward_hostname: log-sun99-rsyslog.rfc1918.host
   forward_protocol: tcp
-  forward_port: 514
+  forward_port: 6514
 
 profile_kibana:
   enabled: true

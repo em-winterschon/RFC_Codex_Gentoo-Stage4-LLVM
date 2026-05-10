@@ -116,7 +116,19 @@ Initial SUN99 Elasticsearch/search VIP:
 | HAProxy host | `svc-container-services-safe-move-01` |
 | Backend path | HAProxy forwards to the Path B Elasticsearch test endpoint |
 
-The service VIP was applied live on `2026-05-10` after pre-change RouterOS
+Dedicated SUN99 rsyslog VIP:
+
+| Field | Value |
+| --- | --- |
+| VIP | `172.16.99.93/32` |
+| FQDN | `log-sun99-rsyslog-099093.rfc1918.host` |
+| Alias | `log-sun99-rsyslog.rfc1918.host` |
+| CCR2004 action | DNAT TCP/6514 to `172.16.99.89:6514` |
+| CCR2004 hairpin | SRCNAT LAN clients to the backend for symmetric replies |
+| HAProxy host | `svc-container-services-safe-move-01` |
+| Backend path | HAProxy forwards to the rsyslog collector TCP listener |
+
+The Elasticsearch service VIP was applied live on `2026-05-10` after pre-change RouterOS
 backup/export capture. Validation passed for ICMP reachability, TCP/9200
 readiness, RouterOS DNS A/CNAME resolution, Elasticsearch cluster health
 `green`, and syslog-to-Elasticsearch marker ingestion through the VIP.

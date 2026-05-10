@@ -82,7 +82,7 @@ The example cluster wiring uses:
 - `=app-misc/elasticsearch-9.3.1` as the native Gentoo-compatible Elasticsearch pin
 - `stage5-observability` as the cluster name
 - `elastic-vip.example.internal` as the client-facing Elasticsearch VIP
-- `log-vip.example.internal` as the syslog shipping target
+- `log-sun99-rsyslog.rfc1918.host` as the syslog shipping target
 
 The Path B single-node test profile uses:
 
@@ -93,6 +93,7 @@ The Path B single-node test profile uses:
 - a `stage5-syslog*` index template with one shard and zero replicas for
   single-node lab health
 - SUN99 Elasticsearch VIP `172.16.99.92:9200`, backed by HAProxy and the test node
+- SUN99 rsyslog VIP `172.16.99.93:6514`, backed by HAProxy and the collector
 - explicit `ES_JAVA_HOME=/opt/openjdk-bin-21.0.10_p7`
 - `localmount` ordering for ZFS-backed Elasticsearch paths
 
@@ -128,6 +129,13 @@ Elasticsearch/search VIP without moving HAProxy into RouterOS containers:
   `svc-container-services-safe-move-01` at `172.16.99.89:9200`
 - RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:9200`
   so same-subnet clients receive symmetric replies from the VIP path
+- Dedicated rsyslog service VIP: `172.16.99.93/32` on `br-lan`
+- Dedicated rsyslog DNS: `log-sun99-rsyslog-099093.rfc1918.host`
+- Dedicated rsyslog CNAME: `log-sun99-rsyslog.rfc1918.host`
+- RouterOS DNAT: `172.16.99.93:6514` to
+  `svc-container-services-safe-move-01` at `172.16.99.89:6514`
+- RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:6514`
+  so syslog traffic does not depend on Elasticsearch/search VIP changes
 - the former CCR2004 backend route exceptions through X12AGAIN were removed on
   `2026-05-10`; `10.9.8.91` is now directly reachable on VLAN1098 from
   Hasslehoff VM `1091`
@@ -167,8 +175,8 @@ Example:
 
 ```bash
 scripts/syslog_elasticsearch_validator.py \
-  --syslog-target 172.16.99.89 \
-  --syslog-port 514 \
+  --syslog-target 172.16.99.93 \
+  --syslog-port 6514 \
   --syslog-protocol tcp \
   --elasticsearch-url http://172.16.99.92:9200 \
   --index-pattern 'stage5-syslog*' \
@@ -178,7 +186,8 @@ scripts/syslog_elasticsearch_validator.py \
 
 The `service_readiness` role supports this as
 `type: syslog_elasticsearch`; the SUN99 container-services inventory now runs
-`rsyslog-elasticsearch-ingest` during `post_boot` validation.
+`rsyslog-elasticsearch-ingest` and `rsyslog-service-vip-ingest` during
+`post_boot` validation.
 
 Serial console helper mapping:
 
@@ -195,6 +204,8 @@ Live SUN99 container-services validation on `172.16.99.89` currently confirms:
 - rsyslog collector receives TCP messages on `172.16.99.89:514`.
 - HAProxy forwards syslog TCP from `172.16.99.89:6514` to the collector.
 - HAProxy exposes Elasticsearch through the SUN99 VIP on `172.16.99.92:9200`.
+- CCR2004 exposes dedicated syslog ingress through
+  `log-sun99-rsyslog.rfc1918.host` / `172.16.99.93:6514`.
 - rsyslog collector forwards TCP syslog into Elasticsearch through the
   `172.16.99.92:9200` HAProxy VIP; a unique `forge-rsyslog-es-smoke-*` marker was
   searchable in `stage5-syslog.message`.

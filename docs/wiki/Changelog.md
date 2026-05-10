@@ -62,6 +62,13 @@
   `1091`, preserving service IP `10.9.8.91` on VLAN1098, removing the
   temporary CCR2004 `/32` route exceptions via `172.16.99.108`, and validating
   CCR ARP, HAProxy/VIP health, and rsyslog-to-Elasticsearch marker ingestion.
+- Added a dedicated SUN99 rsyslog service VIP:
+  `log-sun99-rsyslog-099093.rfc1918.host` / `172.16.99.93:6514`, with
+  RouterOS DNS A/CNAME records, DNAT/SRCNAT hairpin to the container-services
+  HAProxy syslog listener, service-readiness coverage, and observability VM
+  rsyslog clients updated to ship to the stable syslog DNS name instead of
+  shared service/search VIP paths; Hetzner DNS apply created the rsyslog,
+  Elasticsearch VIP, and Kibana records with zero updates, deletes, or errors.
 - Added SUN99 Kibana deployment intent for
   `obs-sun99-kibana-099067.rfc1918.host` / `172.16.99.67`, wired to the live
   Elasticsearch HAProxy VIP `http://172.16.99.92:9200`.

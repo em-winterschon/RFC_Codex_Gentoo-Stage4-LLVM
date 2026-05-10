@@ -58,6 +58,24 @@ dns_hetzner_cloud_managed_rrsets:
     comment: codex ntfy service cname
   - token_group: rfc1918
     zone: rfc1918.host
+    name: log-sun99-rsyslog-099093
+    fqdn: log-sun99-rsyslog-099093.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.93
+    comment: codex rsyslog service vip
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: log-sun99-rsyslog
+    fqdn: log-sun99-rsyslog.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - log-sun99-rsyslog-099093.rfc1918.host.
+    comment: codex rsyslog service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
     name: obs-sun99-prometheus-099064
     fqdn: obs-sun99-prometheus-099064.rfc1918.host
     type: A

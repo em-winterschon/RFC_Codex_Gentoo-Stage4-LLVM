@@ -111,6 +111,18 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elas
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '10.9.8.91'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '6514:6514/tcp'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '9200:9200/tcp'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'forward_hostname: log-sun99-rsyslog.rfc1918.host'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'forward_port: 6514'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'rsyslog-service-vip-tcp'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'target: 172.16.99.93'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'rsyslog-service-vip-ingest'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'syslog_target: 172.16.99.93'
+if rg -q 'log-vip\.example\.internal|rsyslog-vip\.example\.internal' \
+  "${ANSIBLE_ROOT}/inventories/examples" \
+  "${ANSIBLE_ROOT}/profile-definitions"; then
+  printf 'FAIL: stale example syslog VIP placeholder remains\n' >&2
+  exit 1
+fi
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-jenkins-controller.yml" 'jenkins-http'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-identity-controller.yml" 'freeipa-ldaps'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-observability-prometheus.yml" 'prometheus-http'
