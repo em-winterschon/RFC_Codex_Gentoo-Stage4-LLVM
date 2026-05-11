@@ -703,15 +703,17 @@ install_bootstrap_script() {
 run_bootstrap() {
   log "Mounting chroot pseudo-filesystems"
   mkdir -p "${TARGET_ROOT_MNT}/dev" "${TARGET_ROOT_MNT}/dev/pts" "${TARGET_ROOT_MNT}/dev/shm"
-  run_cmd "${MOUNT_BIN}" -t devtmpfs devtmpfs "${TARGET_ROOT_MNT}/dev"
+  run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs -o mode=755,nosuid "${TARGET_ROOT_MNT}/dev"
   run_cmd "${MOUNT_BIN}" -t devpts devpts -o gid=5,mode=620,ptmxmode=666 "${TARGET_ROOT_MNT}/dev/pts"
   run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs -o mode=1777,nosuid,nodev "${TARGET_ROOT_MNT}/dev/shm"
-  rm -f "${TARGET_ROOT_MNT}/dev/null" "${TARGET_ROOT_MNT}/dev/zero" "${TARGET_ROOT_MNT}/dev/random" "${TARGET_ROOT_MNT}/dev/urandom" "${TARGET_ROOT_MNT}/dev/tty"
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/null" c 1 3
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/zero" c 1 5
+  mknod -m 666 "${TARGET_ROOT_MNT}/dev/full" c 1 7
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/random" c 1 8
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/urandom" c 1 9
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/tty" c 5 0
+  mknod -m 600 "${TARGET_ROOT_MNT}/dev/console" c 5 1
+  ln -sfn pts/ptmx "${TARGET_ROOT_MNT}/dev/ptmx"
   ln -sfn /proc/self/fd "${TARGET_ROOT_MNT}/dev/fd"
   ln -sfn fd/0 "${TARGET_ROOT_MNT}/dev/stdin"
   ln -sfn fd/1 "${TARGET_ROOT_MNT}/dev/stdout"

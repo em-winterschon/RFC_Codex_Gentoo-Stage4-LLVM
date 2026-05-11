@@ -250,6 +250,7 @@ EOF
   assert_contains "${output}" 'sgdisk --zap-all /dev/nbd0'
   assert_contains "${output}" 'sgdisk --new=1:0:+512MiB --typecode=1:ef00'
   assert_contains "${output}" 'partx -u /dev/nbd0'
+  assert_contains "${output}" 'tmpfs tmpfs -o mode=755'
   assert_contains "${output}" 'ptmxmode=666'
   assert_contains "${output}" 'mode=1777'
   assert_contains "${output}" 'chmod 0644'
@@ -265,6 +266,7 @@ EOF
   assert_contains "${bootstrap}" 'emerge --oneshot sys-apps/portage app-eselect/eselect-repository'
   assert_contains "${bootstrap}" 'rc-update add dhcpcd default'
   assert_contains "${bootstrap}" 'rc-update add sshd default'
+  assert_contains "$(cat "${BUILD_SCRIPT}")" 'ln -sfn pts/ptmx'
   PATH="${old_path}"
   rm -rf "${temp_dir}"
 }
