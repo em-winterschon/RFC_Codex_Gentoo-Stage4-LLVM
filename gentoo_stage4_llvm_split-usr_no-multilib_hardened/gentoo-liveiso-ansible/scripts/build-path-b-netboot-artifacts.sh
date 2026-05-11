@@ -400,8 +400,9 @@ install_pathb_bootstrap_script() {
 }
 
 run_pathb_bootstrap() {
-  mkdir -p "${TARGET_ROOT_MNT}/dev" "${TARGET_ROOT_MNT}/dev/pts" "${TARGET_ROOT_MNT}/dev/shm"
+  mkdir -p "${TARGET_ROOT_MNT}/dev"
   run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs -o mode=755,nosuid "${TARGET_ROOT_MNT}/dev"
+  mkdir -p "${TARGET_ROOT_MNT}/dev/pts" "${TARGET_ROOT_MNT}/dev/shm"
   run_cmd "${MOUNT_BIN}" -t devpts devpts -o gid=5,mode=620,ptmxmode=666 "${TARGET_ROOT_MNT}/dev/pts"
   run_cmd "${MOUNT_BIN}" -t tmpfs tmpfs "${TARGET_ROOT_MNT}/dev/shm"
   mknod -m 666 "${TARGET_ROOT_MNT}/dev/null" c 1 3
