@@ -45,6 +45,8 @@ assert_contains "${PATHB_PACKAGE_USE_APPEND}" 'net-fs/samba winbind'
 assert_contains "${PATHB_OPENRC_SERVICES_EXTRA}" 'sssd'
 
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_PROFILE_DEFINITION_FILES'
+assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_ACCEPT_LICENSE_APPEND'
+assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'linux-fw-redistributable'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'profile_definition_query'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'openrc-services-enable'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'rc-update add "\${pathb_extra_service}" default'
