@@ -1,0 +1,8 @@
+STAGE5_FIRSTBOOT_ENROLLMENT_ENABLED={{ secure_firstboot_enrollment_enabled | ternary('yes', 'no') | quote }}
+STAGE5_FIRSTBOOT_BUNDLE_URL={{ secure_firstboot_enrollment_bundle_url | quote }}
+STAGE5_FIRSTBOOT_AGE_IDENTITY={{ secure_firstboot_enrollment_age_identity | quote }}
+STAGE5_FIRSTBOOT_EXPECTED_FQDN={{ secure_firstboot_enrollment_expected_fqdn | quote }}
+STAGE5_FIRSTBOOT_STATE_DIR={{ secure_firstboot_enrollment_state_dir | quote }}
+STAGE5_FIRSTBOOT_VALIDATOR={{ secure_firstboot_enrollment_validator | quote }}
+STAGE5_FIRSTBOOT_REMOVE_BUNDLE_AFTER_SUCCESS={{ secure_firstboot_enrollment_bundle_remove_after_success | ternary('yes', 'no') | quote }}
+STAGE5_FIRSTBOOT_ENROLL_COMMAND={{ secure_firstboot_enrollment_command | quote }}

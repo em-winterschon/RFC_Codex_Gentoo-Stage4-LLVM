@@ -82,8 +82,9 @@ Current physical discovery state:
 - AAA durability caveat: the netboot rootfs is fetched over unauthenticated HTTP
   and must not embed `/etc/krb5.keytab`. The current safe model is package
   durability in the rootfs plus post-boot secure enrollment. Fully unattended
-  reboot-durable enrollment requires disk install or a secure first-boot
-  secret-delivery mechanism.
+  reboot-durable enrollment requires disk install or
+  `stage5-firstboot-enroll` consuming an age-encrypted FreeIPA host OTP bundle
+  so `/etc/krb5.keytab` is generated on the target.
 - SSSD package policy: the active Gentoo client requires `sys-auth/sssd samba`
   and `net-fs/samba winbind`; without those flags, the IPA provider module
   `/usr/lib64/sssd/libsss_ipa.so` is missing.
@@ -98,11 +99,12 @@ Current physical discovery state:
   command line, and Jenkins rebuild inputs for this K10 boot image.
 - Rebuild invocation: the Path B artifact builder now consumes profile
   definitions directly. For the K10 AAA-capable rootfs, run with
-  `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml`
-  so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy, and
-  the `sssd` OpenRC service are carried into the generated rootfs instead of
-  applied only as live mutations. Do not embed host keytabs in the public
-  netboot artifact set.
+  `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml,profile-definitions/secure-firstboot-enrollment.yml`
+  so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy,
+  `app-crypt/age`, `curl`, `jq`, the `sssd` OpenRC service, and the opt-in
+  secure first-boot enrollment scaffold are carried into the generated rootfs
+  instead of applied only as live mutations. Do not embed host keytabs in the
+  public netboot artifact set.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.
@@ -138,8 +140,9 @@ Once the host requests DHCP, record:
 11. Validate SSH, rsyslog, telemetry, and SSSD client enrollment. The K10
     Path B rootfs now includes the `aaa-domain-client` package layer and passes
     post-boot FreeIPA/SSSD apply, but unattended enrollment durability still
-    requires disk install or secure first-boot keytab delivery plus hostname,
-    offline cache, sudo policy, and break-glass behavior validation.
+    requires disk install or secure first-boot age-encrypted FreeIPA OTP bundle
+    delivery plus hostname, offline cache, sudo policy, and break-glass
+    behavior validation.
 12. Snapshot/capture final package and Portage state before considering X12AGAIN.
 
 ## Backout

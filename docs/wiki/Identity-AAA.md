@@ -198,12 +198,18 @@ The first live SSSD/RBAC workstation client gate is the GMKtek K10:
 - validation playbook: `playbooks/ipa-client-live-validate.yml`
 
 On 2026-05-09 the K10 live Gentoo image passed the repo-managed FreeIPA client
-gates before reboot. A later PDU reboot proved the current netboot rootfs does
-not persist the live mutation: the rebooted image returned without SSSD and
-without `/usr/lib64/sssd/libsss_ipa.so`. The root cause of the initial SSSD
-failure was package policy: Gentoo's `sys-auth/sssd-2.12.0-r2` did not install
-the IPA backend unless SSSD was built with `samba`, and Samba also required
-`winbind`. The AAA profile now applies:
+gates before reboot. A later PDU reboot proved the first rootfs did not persist
+the live mutation because it lacked SSSD and `/usr/lib64/sssd/libsss_ipa.so`.
+The promoted 2026-05-11 rootfs now reboots with SSSD, Samba, Kerberos,
+OpenLDAP, and `libsss_ipa.so`; post-boot `ipa-client-live-apply.yml` and
+`ipa-client-live-validate.yml` passed, and floating SSH as `codex-admin`
+resolved the expected UID/GID/group mappings. The remaining blocker is
+unattended durable enrollment without putting `/etc/krb5.keytab` into public
+HTTP netboot artifacts.
+
+The root cause of the initial SSSD failure was package policy: Gentoo's
+`sys-auth/sssd-2.12.0-r2` did not install the IPA backend unless SSSD was built
+with `samba`, and Samba also required `winbind`. The AAA profile now applies:
 
 - `sys-auth/sssd samba`
 - `net-fs/samba winbind`
@@ -231,13 +237,32 @@ ssh codex-admin@172.16.99.156 'id; hostname -f; pwd'
 ```
 
 It resolved `codex-admin` with UID `200100`, primary group `linux-admin`, and
-supplemental `ci-builder`, `network-admin`, and `power-admin` memberships. This
-is not yet reboot-durable. The live image still reports `hostname -f` as
-`gentoo-pathb` after reboot, and SSSD logs showed a non-blocking sudo refresh
-warning during the transient run. The next Stage5 gate must rebuild the K10
-rootfs or complete the disk install with `aaa-domain-client`, then validate
-hostname policy, offline cache, sudo rules, and local break-glass behavior
-across reboot before broad Linux enrollment.
+supplemental `ci-builder`, `network-admin`, and `power-admin` memberships.
+
+## Secure First-Boot Enrollment
+
+The approved durable enrollment path is FreeIPA one-time host password delivery
+through a short-lived encrypted first-boot bundle:
+
+- FreeIPA creates or resets the host OTP with `ipa host-add --random` or the
+  equivalent host OTP reset flow.
+- `scripts/render_secure_firstboot_bundle.py` renders a plaintext JSON bundle
+  from non-secret CLI input plus the OTP supplied through an environment
+  variable.
+- The bundle is encrypted to the target host with `age` and fetched by the
+  opt-in OpenRC `stage5-firstboot-enroll` service.
+- The first-boot script decrypts the bundle, validates expiry and FQDN with
+  `scripts/validate_secure_firstboot_bundle.py`, runs the configured enrollment
+  command, and requires `/etc/krb5.keytab` to be created on the target.
+- Tang/Clevis remains optional future work because Gentoo requires Guru repo
+  ebuilds for `clevis` and `tang`, newer Clevis ebuilds are masked for dracut
+  boot concerns, and Tang-only decryption proves network presence rather than
+  host identity.
+
+The K10 gate is still not reboot-durable until either disk install or this
+secure first-boot bundle path is applied live, then hostname policy, offline
+cache, sudo rules, and local break-glass behavior pass across reboot before
+broad Linux enrollment.
 
 ## Important Constraint
 

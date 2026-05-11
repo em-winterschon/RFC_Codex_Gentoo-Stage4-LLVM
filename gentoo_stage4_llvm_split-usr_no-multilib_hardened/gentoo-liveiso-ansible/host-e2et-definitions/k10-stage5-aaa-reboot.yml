@@ -41,10 +41,10 @@ gates:
       - name: FreeIPA SSH login works after live enrollment
         status: pass
         evidence: codex-admin SSH login resolved UID 200100, GID 201000, and expected supplemental groups.
-      - name: Host enrollment survives reboot without post-boot apply
+      - name: Host enrollment survives reboot through secure first-boot bundle
         status: fail
         hard_fail: true
-        evidence: Rebooted HTTP netboot rootfs intentionally does not embed /etc/krb5.keytab; unattended durable enrollment requires disk install or secure first-boot secret delivery.
+        evidence: Rebooted HTTP netboot rootfs intentionally does not embed /etc/krb5.keytab; unattended durable enrollment requires disk install or stage5-firstboot-enroll consuming an age-encrypted FreeIPA host OTP bundle so /etc/krb5.keytab is generated on the target.
   - name: Service Gate
     weight: 15
     hard_required: false

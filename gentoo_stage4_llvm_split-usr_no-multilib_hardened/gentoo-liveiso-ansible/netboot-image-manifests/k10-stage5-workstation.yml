@@ -33,8 +33,10 @@ builder:
   script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
   profile_definition_requirements:
     - profile-definitions/aaa-domain-client.yml
+    - profile-definitions/secure-firstboot-enrollment.yml
   rootfs_package_list_requirements:
     - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/stage5-secure-firstboot-enrollment.packages
   rootfs_package_use_requirements:
     - sys-auth/sssd samba
     - net-fs/samba winbind
@@ -44,6 +46,9 @@ builder:
     - net-fs/samba
     - app-crypt/mit-krb5
     - net-nds/openldap
+    - app-crypt/age
+    - net-misc/curl
+    - app-misc/jq
   dracut_modules:
     add:
       - network
@@ -73,6 +78,6 @@ validation:
   expected_result: Gentoo live login prompt on PiKVM video or serial-visible console.
   last_validated: "2026-05-11"
   transient_live_aaa_gate: passed before reboot with repo-managed apply playbook.
-  reboot_durable_aaa_gate: blocked on disk install or secure first-boot keytab delivery.
+  reboot_durable_aaa_gate: blocked on disk install or secure first-boot age-encrypted FreeIPA OTP bundle apply; /etc/krb5.keytab must be generated on the target, never embedded in HTTP netboot artifacts.
   last_reboot_observation: AP7901 outlet 6 reboot returned the promoted rootfs with SSSD, Samba, Kerberos, OpenLDAP, and libsss_ipa.so present; post-boot FreeIPA live apply and codex-admin SSH validation passed.
   backout: Remove K10 DHCP option 67 and leave CSS326 ge16 disconnected.

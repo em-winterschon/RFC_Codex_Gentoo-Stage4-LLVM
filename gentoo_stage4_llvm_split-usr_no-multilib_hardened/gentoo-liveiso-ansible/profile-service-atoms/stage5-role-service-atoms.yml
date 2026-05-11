@@ -179,6 +179,26 @@ role_service_atoms:
           - qemu-guest-agent
           - xdm
 
+  secure-firstboot-enrollment:
+    role_class: identity-overlay
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+    service_atoms:
+      - id: freeipa-otp-age-firstboot
+        package_atoms:
+          - app-crypt/age
+          - net-misc/curl
+          - app-misc/jq
+          - app-misc/ca-certificates
+        openrc_services:
+          - stage5-firstboot-enroll
+        protocol_ports:
+          - tcp/443
+        forbidden_artifacts:
+          - /etc/krb5.keytab
+
   vm-container-services:
     role_class: virtual-host
     extends:

@@ -2,6 +2,16 @@
 
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 
+- Added the `secure-firstboot-enrollment` profile, package list, role-service
+  atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
+  FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
+- Added `scripts/render_secure_firstboot_bundle.py` and
+  `scripts/validate_secure_firstboot_bundle.py` so OTP bundles can be rendered
+  from vault/runtime environment input, validated for expiry/FQDN, and rejected
+  if keytab-like secret fields appear.
+- Updated K10 E2ET, netboot manifest, identity docs, and roadmap entries so the
+  remaining durable-AAA blocker is disk install or secure first-boot OTP bundle
+  apply that generates `/etc/krb5.keytab` on the target.
 - Promoted the rebuilt K10 Path B AAA artifacts from the disposable X12AGAIN
   stagebuild VM to the Hasslehoff netboot publisher at `172.16.99.88`, with
   hardlinked rollback directories under `/opt/gentoo-netboot/path-b/artifacts`.

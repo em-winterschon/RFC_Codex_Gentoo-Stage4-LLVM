@@ -1,0 +1,46 @@
+---
+gentoo_system_profile_metadata:
+  id: secure-firstboot-enrollment
+  purpose: >-
+    Stage5 overlay for secure first-boot FreeIPA host enrollment without
+    embedding /etc/krb5.keytab in HTTP netboot artifacts.
+  profile_taxonomy:
+    stage: stage5
+    role_class: identity-overlay
+    role_name: secure-firstboot-enrollment
+    package_layers:
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+  base_profile:
+    intended_overlay_on:
+      - aaa-domain-client
+      - stage5-workstation-nscde
+      - virt-minimal
+      - base-minimal-nox
+  package_pins:
+    tracked_atoms:
+      - app-crypt/age
+      - net-misc/curl
+      - app-misc/jq
+  security_model:
+    default_transport: age-encrypted FreeIPA host OTP bundle
+    forbidden_artifacts:
+      - /etc/krb5.keytab
+    notes:
+      - Tang-only decryption is not sufficient because Tang proves network presence, not host identity.
+      - Clevis/Tang remains optional Guru-gated future work after package pinning and boot validation.
+      - aespipe is acceptable only for manual break-glass encrypted archives, not unattended enrollment.
+  guru_package_gap:
+    clevis_tang:
+      required_atoms:
+        - =app-crypt/clevis-19-r2::guru
+        - =app-crypt/tang-15-r1::guru
+      keywording:
+        - ~amd64
+      rationale: >-
+        Gentoo main tree does not carry clevis/tang; newer Guru clevis ebuilds
+        are masked for dracut boot concerns, so the first release uses age.
+  source_references:
+    - https://github.com/FiloSottile/age
+    - https://github.com/latchset/clevis
+    - https://github.com/latchset/tang
+    - https://loop-aes.sourceforge.net/aespipe.README
