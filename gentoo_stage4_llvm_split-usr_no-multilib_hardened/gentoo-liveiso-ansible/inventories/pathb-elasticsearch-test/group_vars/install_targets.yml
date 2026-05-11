@@ -66,7 +66,7 @@ root_authorized_keys:
 finalize_unmount_target: false
 finalize_reboot_host: false
 
-portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
+portage_accept_license: "*"
 portage_features:
   - buildpkg
   - parallel-install
