@@ -55,13 +55,17 @@ The remaining hard gate is a K10 reboot validation through the new publisher.
 10. Reboot K10 and validate PXE -> iPXE -> kernel/initramfs/rootfs through VM
     `1088`.
 11. Capture post-change RouterOS config backup with
-    `scripts/backup-network-device-configs.sh --skip-collect --sync-git` if
-    serial collection is unavailable in the exec environment.
+    `scripts/backup-network-device-configs.sh --skip-collect --sync-git` until
+    the Hasslehoff serial gateway execution path is promoted into automation.
 
 ## X12AGAIN Release Criteria
 
 X12AGAIN can be shut down for bare-metal reimage only after:
 
+- RouterOS router/switch serial consoles are reachable from Hasslehoff instead
+  of X12AGAIN. This is complete as of 2026-05-10 for CCR2004, CRS354, and
+  CRS309 through stable `/dev/serial/by-id` paths on the interim generic USB
+  hub.
 - K10 boots from `172.16.99.88` without any asset fetch from `172.16.99.108`.
 - RouterOS DHCP no longer references `172.16.99.108` for K10. This is complete
   for the CCR2004 management DHCP scope as of 2026-05-10.

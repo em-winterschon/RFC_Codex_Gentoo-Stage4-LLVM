@@ -19,6 +19,10 @@
   cut CCR2004 DHCP over to `next-server=172.16.99.88`, added the CCR2004
   netboot DNS A/CNAME records, and stored a final encrypted post-change CCR2004
   export in the network-device backup tree.
+- Moved live RouterOS serial-console access for CCR2004, CRS354, and CRS309
+  from X12AGAIN onto Hasslehoff through an interim generic VIA Labs USB hub.
+  Recorded stable FTDI `/dev/serial/by-id` paths in local-network inventory and
+  validated all three RouterOS prompts at `115200` baud.
 - Defined X12AGAIN as a stable hypervisor/resource provider and moved
   heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
   disposable high-resource builder VMs.

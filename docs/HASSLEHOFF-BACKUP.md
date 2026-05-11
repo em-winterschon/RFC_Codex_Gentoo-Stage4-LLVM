@@ -41,7 +41,8 @@ offline long enough that Codex cannot reach network services.
 Emergency objective:
 
 - keep local shell access on the Codex host
-- keep `/dev/ttyUSB2` serial access to the CCR2004 available
+- keep Hasslehoff serial access to the CCR2004 available through
+  `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`
 - bypass the failed primary gateway long enough to review, repair, or roll back
   RouterOS
 
@@ -50,6 +51,7 @@ Minimum emergency procedure:
 1. Patch the on-host emergency NIC directly to the AT&T gateway L2.
 2. Bring up a temporary host IP in the AT&T subnet if DHCP does not work.
 3. Confirm the host can reach `192.168.1.254`.
-4. Use local serial console on `/dev/ttyUSB2` to repair or roll back CCR2004.
+4. Use Hasslehoff serial console to repair or roll back CCR2004:
+   `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`.
 5. Do not remove the emergency cable until management reachability and default
    gateway behavior are stable through the planned fabric path.

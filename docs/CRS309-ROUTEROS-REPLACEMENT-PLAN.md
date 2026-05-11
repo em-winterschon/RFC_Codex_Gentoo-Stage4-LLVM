@@ -69,8 +69,14 @@ inventory. The initial expected hardware identity is:
 
 ## CCR2004 Serial Discovery
 
-Serial console is available at `/dev/ttyUSB2` with `115200` baud. The first
-serial discovery snapshot is archived outside the repository under:
+CCR2004 serial console was moved from X12AGAIN to Hasslehoff on 2026-05-10 and
+is validated at `115200` baud through:
+
+```text
+/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0
+```
+
+The first serial discovery snapshot is archived outside the repository under:
 
 ```text
 /root/operator-private/routeros/ccr2004-16g/20260504T013200Z/

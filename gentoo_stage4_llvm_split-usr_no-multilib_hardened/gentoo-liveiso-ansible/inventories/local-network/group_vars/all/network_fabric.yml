@@ -61,7 +61,11 @@ network_fabric_devices:
     role: distribution-switch
     management_ip: 172.16.99.7
     management_interface: ether49
-    serial_console: /dev/ttyUSB1
+    serial_console_host: hasslehoff
+    serial_console: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0
+    serial_console_by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.2.1:1.0-port0
+    serial_console_current_tty: /dev/ttyUSB1
+    serial_adapter_serial: AB0MRY3W
     serial_baud: 115200
     model: CRS354-48G-4S+2Q+
     serial_number: HJV0AWTYBCD
@@ -78,11 +82,16 @@ network_fabric_devices:
       - sfp-sfpplus1 and sfp-sfpplus2 are active LACP members toward CRS309 using 10G-SR over MMF.
       - sfp-sfpplus3 and sfp-sfpplus4 are already bond-qnap members for the QNAP TS435XEU archive server over 10G DAC.
       - QSFP 40G ports are disconnected and reserved for future RoCE-v2 RDMA fabric.
+      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10 and validated with prompt [admin@sw-mgmt-mkcrs354] >.
   sw_spine_crs309_rfc99:
     role: spine-aggregation-switch
     management_ip: 172.16.99.8
     management_interface: br-spine
-    serial_console: /dev/ttyUSB0
+    serial_console_host: hasslehoff
+    serial_console: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0
+    serial_console_by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.2.4:1.0-port0
+    serial_console_current_tty: /dev/ttyUSB2
+    serial_adapter_serial: AB0MRY3X
     serial_baud: 115200
     model: CRS309-1G-8S+
     observed_routeros_version: 7.22.2
@@ -97,6 +106,7 @@ network_fabric_devices:
       - CRS354 LACP is active on CRS309 sfp-sfpplus2 plus sfp-sfpplus3.
       - Hasslehoff QLogic QL41232HOCU LACP target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.
       - CSS326 10G aggregation target is CRS309 sfp-sfpplus8.
+      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10 and validated with prompt [admin@sw-spine-crs309-rfc99] >.
   qnap_archive_ts435xeu:
     role: archive-storage
     model: TS435XEU
@@ -115,7 +125,12 @@ network_fabric_devices:
     manufacturer: MikroTik
     status: planned
     replaces: gw_rfc99_mkcrs309
-    serial_console: /dev/ttyUSB2
+    serial_console_host: hasslehoff
+    serial_console: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0
+    serial_console_by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.1:1.0-port0
+    serial_console_current_tty: /dev/ttyUSB0
+    serial_adapter_serial: A9888PID
+    serial_baud: 115200
     observed_board_name: CCR2004-16G-2S+
     observed_routeros_version: 7.19.6
     observed_architecture: arm64
@@ -129,6 +144,7 @@ network_fabric_devices:
       - Admin bootstrap credential is stored only in Ansible Vault.
       - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
       - Factory default config has 192.168.88.1/24 on ether15 and broad management services enabled; do not expose it to production L2 before hardening.
+      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10 and validated with prompt [admin@gw-rfc99-mkccr2004-16g] >.
   ctbsd_rfc99_jailerprime_099099:
     role: retired-freebsd-jail-host
     hypervisor: hasslehoff

@@ -134,6 +134,53 @@ hasslehoff_qlogic_lacp:
     default: disabled
     reason: Use Linux bond and bridge for general VM connectivity; reserve SR-IOV VFs for explicit direct-path high-throughput VMs.
 
+hasslehoff_usb_serial_console_gateway:
+  captured_at: "2026-05-10T23:49:40Z"
+  status: interim-live
+  purpose: Move RouterOS router and switch serial consoles off X12AGAIN before bare-metal reimage.
+  upstream_host_controller: "0000:00:14.0"
+  interim_hub:
+    manufacturer: VIA Labs, Inc.
+    usb2_root_path: "1-11"
+    usb2_vid_pid: "2109:2811"
+    usb3_root_path: "2-2"
+    usb3_vid_pid: "2109:8110"
+    notes:
+      - Generic hub has no per-port power control.
+      - Replace with Coolgear CG-4PU3MGD managed hub after replacement power supply is available.
+  console_links:
+    - device: gw_rfc99_mkccr2004_16g
+      prompt: "[admin@gw-rfc99-mkccr2004-16g] >"
+      hub_port: 1
+      adapter: FTDI FT232R USB UART
+      adapter_serial: A9888PID
+      by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0
+      by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.1:1.0-port0
+      current_tty: /dev/ttyUSB0
+      baud: 115200
+    - device: sw_mgmt_mkcrs354
+      prompt: "[admin@sw-mgmt-mkcrs354] >"
+      hub_port: 2
+      adapter: FTDI FT232R USB UART via dual-RS232 internal hub
+      adapter_serial: AB0MRY3W
+      by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0
+      by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.2.1:1.0-port0
+      current_tty: /dev/ttyUSB1
+      baud: 115200
+    - device: sw_spine_crs309_rfc99
+      prompt: "[admin@sw-spine-crs309-rfc99] >"
+      hub_port: 2
+      adapter: FTDI FT232R USB UART via dual-RS232 internal hub
+      adapter_serial: AB0MRY3X
+      by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0
+      by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.2.4:1.0-port0
+      current_tty: /dev/ttyUSB2
+      baud: 115200
+  target_state:
+    - Replace generic hub with Coolgear CG-4PU3MGD managed hub when power supply is available.
+    - Move console access into a dedicated serial gateway VM after USB passthrough policy is implemented.
+    - Add a dedicated CCR2004 console path during a later Hasslehoff maintenance window if motherboard USB header access is required.
+
 gpu_compute_enabled: true
 gpu_host_policy_blacklisted_modules:
   - nouveau

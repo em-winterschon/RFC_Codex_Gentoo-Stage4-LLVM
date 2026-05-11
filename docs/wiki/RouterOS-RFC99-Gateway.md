@@ -186,10 +186,12 @@ path is now PXE/TFTP with filename `k10-ipxe.efi`.
 ## Live Apply Gate
 
 The first scoped live apply covered only the Elasticsearch/search service VIP.
-Before adding broader apply automation, keep serial console access available,
-export the current RouterOS config, review the rendered RSC, and validate SSH,
-HTTPS, API-SSL, WAN DHCP, default route, DNS, SNAT, and VLAN gateway
-reachability before retiring any existing gateway path.
+Before adding broader apply automation, keep Hasslehoff serial console access
+available through
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`, export the
+current RouterOS config, review the rendered RSC, and validate SSH, HTTPS,
+API-SSL, WAN DHCP, default route, DNS, SNAT, and VLAN gateway reachability
+before retiring any existing gateway path.
 
 Captured operator artifacts from the scoped service-VIP apply:
 

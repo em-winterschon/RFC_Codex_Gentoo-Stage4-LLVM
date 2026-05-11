@@ -202,7 +202,8 @@ path is now PXE/TFTP with filename `k10-ipxe.efi`.
 The first scoped live apply covered only the Elasticsearch/search service VIP.
 Before adding broader apply automation:
 
-1. Keep `/dev/ttyUSB2` serial console open.
+1. Keep the Hasslehoff CCR2004 serial console open:
+   `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`.
 2. Export current RouterOS config and binary backup.
 3. Review the rendered RSC line-by-line.
 4. Confirm cabling: `sfp-sfpplus1` WAN and `sfp-sfpplus2` LAN trunk.

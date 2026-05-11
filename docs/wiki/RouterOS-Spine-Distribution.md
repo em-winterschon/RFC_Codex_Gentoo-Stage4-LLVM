@@ -38,8 +38,10 @@ Files:
 
 Do not import rendered RSC files until these conditions are true:
 
-- serial console is attached for CRS309 on `/dev/ttyUSB0`
-- serial console is attached for CRS354 on `/dev/ttyUSB1`
+- serial console is attached for CRS309 through Hasslehoff at
+  `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`
+- serial console is attached for CRS354 through Hasslehoff at
+  `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`
 - fresh off-device exports/backups exist
 - current physical cabling matches NetBox/source inventory
 - operator has accepted the backout path
@@ -84,7 +86,7 @@ Example read-only CRS309 serial check:
 
 ```bash
 ROUTEROS_PASSWORD='...' scripts/routeros-serial-command.py \
-  --port /dev/ttyUSB0 \
+  --port /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0 \
   --username admin \
   --command '/system identity print'
 ```
@@ -117,5 +119,14 @@ Current live behavior:
 - CRS354 SSH snapshot is explicitly disabled for now; serial snapshots remain
   the authoritative capture path until CRS354 SSH command execution is
   normalized.
-- CCR2004-16G serial-discovered state is skipped until management SSH is
-  intentionally assigned.
+- RouterOS serial consoles were moved from X12AGAIN to a generic USB hub on
+  Hasslehoff on 2026-05-10 and validated at `115200` baud:
+  - CCR2004:
+    `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`
+  - CRS354:
+    `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`
+  - CRS309:
+    `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`
+- The generic hub has no per-port power control. Replace it with the planned
+  Coolgear `CG-4PU3MGD` managed hub after a replacement power supply is
+  available, then migrate console ownership into a dedicated serial gateway VM.
