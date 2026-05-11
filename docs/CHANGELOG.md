@@ -23,6 +23,12 @@
   from X12AGAIN onto Hasslehoff through an interim generic VIA Labs USB hub.
   Recorded stable FTDI `/dev/serial/by-id` paths in local-network inventory and
   validated all three RouterOS prompts at `115200` baud.
+- Added the X12AGAIN final de-load checklist after live readiness validation:
+  Hasslehoff replacements for NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, netboot, container-services HAProxy, Elasticsearch VIP,
+  rsyslog VIP, and ntfy HTTPS answer basic probes; remaining X12AGAIN blockers
+  are K10 boot validation, local QEMU guest shutdown, Path B bridge/tap removal,
+  and a post-shutdown delta backup for clean QCOW2 preservation.
 - Defined X12AGAIN as a stable hypervisor/resource provider and moved
   heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
   disposable high-resource builder VMs.

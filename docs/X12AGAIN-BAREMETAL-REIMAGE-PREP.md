@@ -32,6 +32,64 @@ Live status as of 2026-05-10:
 
 The remaining hard gate is a K10 reboot validation through the new publisher.
 
+## Replacement Service Validation
+
+Live low-impact validation from X12AGAIN on 2026-05-10 confirms these
+Hasslehoff replacements are reachable before the X12AGAIN reimage window:
+
+| Service | Endpoint | Validation |
+| --- | --- | --- |
+| NetBox | `http://172.16.99.62/` | HTTP `302` to `/login/` from nginx/NetBox |
+| FreeIPA / LDAP / Kerberos | `172.16.99.63` | TCP `80`, `443`, `389`, `636`, and `88` open |
+| Prometheus | `http://172.16.99.64:9090/-/ready` | `Prometheus Server is Ready.` |
+| VictoriaMetrics | `http://172.16.99.65:8428/health` | `OK` |
+| Grafana | `http://172.16.99.66:3000/api/health` | database `ok`, version `12.4.0` |
+| Kibana | `http://172.16.99.67:5601/api/status` | overall status `available` |
+| Netboot publisher | `http://172.16.99.88:8080/hosts/gmktek-k10-stage5.ipxe` | iPXE host script served with base URL `172.16.99.88` |
+| Container-services HAProxy | `172.16.99.89` | TCP `80`, `443`, `514`, `6514`, and `9200` reachable as applicable |
+| Elasticsearch service VIP | `http://172.16.99.92:9200/` | Elasticsearch `9.3.1` cluster metadata returned |
+| Rsyslog service VIP | `172.16.99.93:6514` | TCP listener open |
+| Local ntfy HTTPS | `https://msg-sun99-ntfysys.rfc1918.host/` | HTTP `200` |
+
+FreeRADIUS uses UDP `1812/1813`; a closed TCP probe on `1812` is not a
+service failure.
+
+## X12AGAIN Live Dependencies To Remove
+
+As of the 2026-05-10 readiness pass, X12AGAIN still has the following
+load-bearing or potentially load-bearing processes:
+
+| Local duty | Process / listener | Removal condition |
+| --- | --- | --- |
+| Old netboot publisher fallback | `python3 -m http.server 8080 --bind 10.9.8.108` | Remove after K10 boots through `172.16.99.88` with no asset fetch from X12AGAIN |
+| Legacy Path B RouterOS lab | `routeros-chr-pathb-fresh`, serial `127.0.0.1:5001`, taps `tap-ros` and `tap-ros-wan` | Remove after CCR2004/Hasslehoff paths are confirmed authoritative and no route/VIP depends on this lab |
+| Legacy local container-services VM | `container-services`, serial `127.0.0.1:5003`, tap `tap-container` | Remove after `svc-container-services-safe-move-01` at `172.16.99.89` remains authoritative |
+| Legacy local binpkg repository VM | `binpkg-repository`, serial `127.0.0.1:5004`, tap `tap-binpkg` | Stop only after binpkg/distfiles are copied to durable repo/NFS/Nexus storage or explicitly discarded |
+| Legacy local workstation VM | `vm-workstation-nscde-x12again`, serial `127.0.0.1:4562`, SPICE `127.0.0.1:5932`, SSH forward `127.0.0.1:2232` | Remove after Hasslehoff GPU workstation VM `1094` and copied QCOW artifacts are accepted |
+| Path B bridge stack | `br-pathb`, `br-ros-wan`, `tap-ros`, `tap-container`, `tap-binpkg`, stale `tap-client`, stale `tap-es-test` | Remove after the above QEMU guests are stopped and no production route uses `10.9.8.108` |
+
+The currently mounted root is a live-ISO overlay, so `/opt` and `/srv` must be
+treated as volatile until copied off-host. The preservation set is:
+
+- `/opt`
+- `/root`
+- `/etc`
+- `/srv`
+- `/var/lib/netboot`
+- `/var/cache/binpkgs`
+- `/var/cache/distfiles`
+- `/var/db/repos`
+- `/var/log`
+- `/home`
+- `/usr/local`
+- `/usr/src`
+- selected `/tmp/docs`, `/tmp/*.md`, `/tmp/*.tar`, `/tmp/*.cfg`,
+  `/tmp/*.tmp`, `/tmp/*creds*`, and `/tmp/*token*`
+
+Use `/root/operator-private/rsync-off-host-codex.sh` for the operator-run
+snapshot. After all QEMU guests are shut down, run a second delta snapshot so
+QCOW2 files are clean rather than merely crash-consistent.
+
 ## Cutover Sequence
 
 1. Provision Hasslehoff VM `1088` from the Stage4 service-VM path with static
@@ -74,3 +132,28 @@ X12AGAIN can be shut down for bare-metal reimage only after:
 - No QEMU process or tap bridge on X12AGAIN is serving production traffic.
 - Git has the latest encrypted network-device config backups and X12AGAIN
   offload docs committed and pushed.
+
+## Final De-Load Sequence
+
+Run this only after the off-host backup completes and K10 has booted from the
+Hasslehoff netboot publisher:
+
+1. Gracefully stop the local X12AGAIN workstation VM if no console validation is
+   in progress.
+2. Gracefully stop the local X12AGAIN container-services VM after validating
+   `172.16.99.89:80`, `172.16.99.89:443`, `172.16.99.89:6514`, and
+   `172.16.99.92:9200`.
+3. Gracefully stop the local X12AGAIN binpkg repository VM only after the
+   package/cache preservation target is accepted.
+4. Stop the local Path B RouterOS lab VM after confirming CCR2004 owns the live
+   WAN, DHCP, DNS, VIP, and routing duties.
+5. Stop the local `10.9.8.108:8080` Python netboot publisher.
+6. Remove stale tap devices and bridges: `tap-client`, `tap-es-test`,
+   `tap-ros`, `tap-container`, `tap-binpkg`, `tap-ros-wan`, `br-pathb`, and
+   `br-ros-wan`.
+7. Run a small second `rsync-off-host-codex.sh` snapshot or targeted delta for
+   `/opt/gentoo-netboot/path-b`, `/opt/gentoo-virt-qemu`, `/opt/routeros`,
+   `/srv`, and `/var/lib/netboot`.
+8. Re-run the endpoint validation table above.
+9. Confirm no route, DNS record, DHCP option, HAProxy backend, or NetBox record
+   still references `172.16.99.108` or `10.9.8.108` for active service duties.
