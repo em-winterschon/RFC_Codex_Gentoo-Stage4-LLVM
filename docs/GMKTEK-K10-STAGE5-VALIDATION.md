@@ -50,21 +50,28 @@ Current physical discovery state:
 - Observed status: DHCP requests from `84:47:09:5F:21:64` reached `eno1`, and
   `172.16.99.1` offered `172.16.99.156` during the 2026-05-07 reboot window
 - DHCP handoff: RouterOS static lease now scopes option 67 `k10-ipxe.efi` and
-  network `next-server=172.16.99.108`
-- TFTP handoff: on-host listener serves `/var/lib/netboot/path-b` on
-  `172.16.99.108:69`; local TFTP fetch of `k10-ipxe.efi` has been validated
+  network `next-server=172.16.99.88`
+- TFTP handoff: Hasslehoff VM `1088`
+  `boot-sun99-netboot-099088.rfc1918.host` serves
+  `/var/lib/netboot/path-b` on `172.16.99.88:69` through the repo-managed
+  OpenRC `netboot-tftp` service
 - iPXE handoff: K10 fetched `hosts/gmktek-k10-stage5.ipxe`,
-  `roles/installer-k10.ipxe`, `g/vmlinuz`, and `g/initramfs-gz.img`
+  generated `roles/workstation-validation.ipxe`, `g/vmlinuz`, and
+  `g/initramfs-gz.img`
 - Kernel handoff: K10 requires iPXE UEFI Linux boot with
-  `initrd=initrd.magic`; direct `boot vmlinuz` or a non-magic initrd argument
-  causes the kernel to miss dracut and panic on `root=live:http://...`.
+  `initrd=initrd.magic` while the initramfs image is loaded under the normal
+  `initramfs-gz.img` name. Generated roles must run `imgfree` before loading
+  kernel/initramfs images; without it, iPXE can fetch kernel/initramfs but
+  Linux never requests `rootfs.img`.
 - HTTPBoot note: native UEFI HTTPBoot accepted DHCP only after option 60
   `HTTPClient`, but then failed to issue ARP/TCP toward `172.16.99.108`;
   PXE IPv4 is the active fallback because it did ARP and attempt TFTP
-- Current status: K10 loads the patched initramfs, loads
-  `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img` from
-  `http://172.16.99.108:8080`, mounts `LiveOS_rootfs`, switches root, and
-  reaches the Gentoo login prompt on the PiKVM video console.
+- Current status: AP7901 outlet 6 PDU reboot validated the repo-generated
+  `workstation-validation.ipxe` path from `172.16.99.88`: K10 loads the
+  patched initramfs, loads `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img`,
+  mounts `LiveOS_rootfs`, switches root, and accepts SSH as `root` on
+  `172.16.99.156`. OpenRC `netmount`, `sshd`, and `local` were started after
+  boot.
 - FreeIPA/SSSD status: K10 was transiently enrolled on the live Gentoo image as
   `gmktek-k10-stage5.rfc1918.host` on 2026-05-09. The live validation gates
   passed for the IPA backend module, `sssctl config-check`, NSS lookup,

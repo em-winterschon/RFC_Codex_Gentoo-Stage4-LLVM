@@ -17,7 +17,9 @@ Cutover gates:
   static OpenRC networking at `172.16.99.88/24`.
 - `/var/lib/netboot/path-b/` and `/opt/gentoo-netboot/path-b/artifacts/` have
   been copied from X12AGAIN.
-- HTTP `:8080` and TFTP `k10-ipxe.efi` validate from `172.16.99.88`.
+- HTTP `:8080` and TFTP `k10-ipxe.efi` validate from `172.16.99.88`; the
+  embedded iPXE binary SHA256 is
+  `0df096d92166a9c7e958fa719de9d31b3dfacecc70d33829b74ba615c4e74ed4`.
 - CCR2004 DHCP now advertises `next-server=172.16.99.88`.
 - CCR2004 DNS resolves `boot-sun99-netboot-099088.rfc1918.host` and the
   `boot-sun99-netboot.rfc1918.host` alias.
@@ -25,9 +27,14 @@ Cutover gates:
   of X12AGAIN. This is complete as of 2026-05-10 for CCR2004, CRS354, and
   CRS309 through stable `/dev/serial/by-id` paths on the interim generic USB
   hub.
-- Reboot K10 and prove PXE -> iPXE -> rootfs without `172.16.99.108`.
-- Move `/srv/build-cache`, `/srv/vm-images`, binpkg, and distfiles caches to
-  durable storage before X12AGAIN shutdown.
+- K10 AP7901 outlet 6 reboot validated generated PXE -> iPXE -> kernel ->
+  initramfs -> `rootfs.img` from `172.16.99.88`, with SSH reachable on
+  `172.16.99.156` and OpenRC `netmount`, `sshd`, and `local` started.
+- The completed full backup is `eva@172.16.99.33:/home/x12again-root/20260510-173024`.
+- The clean post-shutdown QCOW2 delta is
+  `eva@172.16.99.33:/home/x12again-root/20260510-192925`, linked against the
+  full backup and covering the binpkg repository, container-services, and
+  workstation QCOW2 images.
 
 Replacement services validated from X12AGAIN on 2026-05-10:
 
@@ -40,15 +47,17 @@ Replacement services validated from X12AGAIN on 2026-05-10:
   `172.16.99.92:9200`, rsyslog VIP `172.16.99.93:6514`, and local ntfy HTTPS
   all answer basic readiness probes.
 
-Remaining X12AGAIN live dependencies to remove after backup and K10 validation:
+X12AGAIN live dependencies removed after backup and K10 validation:
 
-- Stop old `10.9.8.108:8080` Python netboot publisher.
-- Stop legacy local QEMU guests: `routeros-chr-pathb-fresh`,
+- Stopped old `10.9.8.108:8080` Python netboot publisher.
+- Stopped legacy local QEMU guests: `routeros-chr-pathb-fresh`,
   `container-services`, `binpkg-repository`, and `vm-workstation-nscde`.
-- Remove old Path B networking: `br-pathb`, `br-ros-wan`, `tap-ros`,
+- Removed old Path B networking: `br-pathb`, `br-ros-wan`, `tap-ros`,
   `tap-container`, `tap-binpkg`, `tap-ros-wan`, stale `tap-client`, and stale
-  `tap-es-test`.
-- Run a second small post-shutdown rsync so QCOW2 images are clean rather than
+  `tap-es-test`; `eno2` was detached from `br-ros-wan` and left unaddressed.
+- Verified no active `qemu-system-*` or old `python3 -m http.server` process,
+  no `10.9.8.0/24` bridge address, and no listeners on the old local serial,
+  SPICE, SSH-forward, or HTTP ports.
+- Completed a post-shutdown link-dest rsync against the verified
+  `20260510-173024` off-host snapshot so QCOW2 images are clean rather than
   only crash-consistent.
-- Re-run service endpoint checks and confirm no active DHCP/DNS/VIP/route
-  reference still depends on `172.16.99.108` or `10.9.8.108`.

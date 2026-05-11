@@ -2,6 +2,10 @@
 netboot_publish_root: /var/lib/netboot/path-b
 netboot_public_base_url: http://172.16.99.88:8080
 netboot_tftp_autoexec_chain_url: http://172.16.99.88:8080/hosts/gmktek-k10-stage5.ipxe
+netboot_first_stage_binaries:
+  - src: /opt/gentoo-netboot/path-b/k10-ipxe-172.16.99.88-snponly.efi
+    dest: k10-ipxe.efi
+netboot_tftp_service_enabled: true
 
 netboot_roles_extra:
   workstation-validation:

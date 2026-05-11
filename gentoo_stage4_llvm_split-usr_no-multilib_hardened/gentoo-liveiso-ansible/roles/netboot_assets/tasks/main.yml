@@ -120,6 +120,38 @@
   loop_control:
     loop_var: netboot_initramfs_alias
 
+- name: Install Path B first-stage boot binaries
+  ansible.builtin.copy:
+    src: "{{ netboot_first_stage_binary.src }}"
+    dest: "{{ netboot_publish_root }}/{{ netboot_first_stage_binary.dest }}"
+    mode: "{{ netboot_first_stage_binary.mode | default('0644') }}"
+  loop: "{{ netboot_first_stage_binaries }}"
+  loop_control:
+    loop_var: netboot_first_stage_binary
+
+- name: Install RFC99 netboot TFTP server
+  ansible.builtin.copy:
+    src: rfc99-tftp-server.py
+    dest: "{{ netboot_tftp_server_script_path }}"
+    mode: '0755'
+  notify: Restart netboot tftp
+  when: netboot_tftp_service_enabled | bool
+
+- name: Install RFC99 netboot TFTP OpenRC service
+  ansible.builtin.template:
+    src: netboot-tftp.initd.j2
+    dest: "/etc/init.d/{{ netboot_tftp_service_name }}"
+    mode: '0755'
+  notify: Restart netboot tftp
+  when: netboot_tftp_service_enabled | bool
+
+- name: Ensure RFC99 netboot TFTP service is enabled and running
+  ansible.builtin.service:
+    name: "{{ netboot_tftp_service_name }}"
+    enabled: true
+    state: started
+  when: netboot_tftp_service_enabled | bool
+
 - name: Render Path B bootstrap iPXE script
   ansible.builtin.template:
     src: bootstrap.ipxe.j2

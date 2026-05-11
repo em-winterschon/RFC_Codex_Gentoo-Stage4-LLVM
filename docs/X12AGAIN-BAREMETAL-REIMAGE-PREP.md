@@ -25,12 +25,19 @@ Live status as of 2026-05-10:
   `/opt/gentoo-netboot/path-b/artifacts/` are copied from X12AGAIN.
 - HTTP `:8080` validates for K10 host scripts, `g/vmlinuz`, and `g/rootfs.img`.
 - TFTP validates for `k10-ipxe.efi` with SHA256
-  `a3b9d117b69bb9f6387093011f7ace0e5f5ea2c76f679707f0229da634cd3e75`.
+  `0df096d92166a9c7e958fa719de9d31b3dfacecc70d33829b74ba615c4e74ed4`.
 - CCR2004 DHCP now advertises `next-server=172.16.99.88`.
 - CCR2004 DNS resolves `boot-sun99-netboot-099088.rfc1918.host` to
   `172.16.99.88` and `boot-sun99-netboot.rfc1918.host` as a CNAME.
+- AP7901 outlet 6 PDU reboot validated the generated K10
+  `workstation-validation.ipxe` path through TFTP, iPXE, kernel, initramfs,
+  `g/rootfs.img`, SSH on `172.16.99.156`, and OpenRC `netmount`, `sshd`, and
+  `local` service checks.
 
-The remaining hard gate is a K10 reboot validation through the new publisher.
+The netboot hard gate is passed. The post-shutdown QCOW2 preservation gate is
+also passed: the clean delta snapshot is
+`eva@172.16.99.33:/home/x12again-root/20260510-192925`, linked against the
+completed `20260510-173024` off-host backup.
 
 ## Replacement Service Validation
 
@@ -61,12 +68,18 @@ load-bearing or potentially load-bearing processes:
 
 | Local duty | Process / listener | Removal condition |
 | --- | --- | --- |
-| Old netboot publisher fallback | `python3 -m http.server 8080 --bind 10.9.8.108` | Remove after K10 boots through `172.16.99.88` with no asset fetch from X12AGAIN |
-| Legacy Path B RouterOS lab | `routeros-chr-pathb-fresh`, serial `127.0.0.1:5001`, taps `tap-ros` and `tap-ros-wan` | Remove after CCR2004/Hasslehoff paths are confirmed authoritative and no route/VIP depends on this lab |
-| Legacy local container-services VM | `container-services`, serial `127.0.0.1:5003`, tap `tap-container` | Remove after `svc-container-services-safe-move-01` at `172.16.99.89` remains authoritative |
-| Legacy local binpkg repository VM | `binpkg-repository`, serial `127.0.0.1:5004`, tap `tap-binpkg` | Stop only after binpkg/distfiles are copied to durable repo/NFS/Nexus storage or explicitly discarded |
-| Legacy local workstation VM | `vm-workstation-nscde-x12again`, serial `127.0.0.1:4562`, SPICE `127.0.0.1:5932`, SSH forward `127.0.0.1:2232` | Remove after Hasslehoff GPU workstation VM `1094` and copied QCOW artifacts are accepted |
-| Path B bridge stack | `br-pathb`, `br-ros-wan`, `tap-ros`, `tap-container`, `tap-binpkg`, stale `tap-client`, stale `tap-es-test` | Remove after the above QEMU guests are stopped and no production route uses `10.9.8.108` |
+| Old netboot publisher fallback | `python3 -m http.server 8080 --bind 10.9.8.108` | Removed after K10 booted through `172.16.99.88` with no asset fetch from X12AGAIN |
+| Legacy Path B RouterOS lab | `routeros-chr-pathb-fresh`, serial `127.0.0.1:5001`, taps `tap-ros` and `tap-ros-wan` | Removed after CCR2004/Hasslehoff paths were confirmed authoritative |
+| Legacy local container-services VM | `container-services`, serial `127.0.0.1:5003`, tap `tap-container` | Stopped after `svc-container-services-safe-move-01` at `172.16.99.89` remained authoritative |
+| Legacy local binpkg repository VM | `binpkg-repository`, serial `127.0.0.1:5004`, tap `tap-binpkg` | Stopped after pre-shutdown off-host preservation captured `/opt`, caches, and QCOW2 state |
+| Legacy local workstation VM | `vm-workstation-nscde-x12again`, serial `127.0.0.1:4562`, SPICE `127.0.0.1:5932`, SSH forward `127.0.0.1:2232` | Stopped after Hasslehoff GPU workstation VM `1094` and copied QCOW artifacts were accepted |
+| Path B bridge stack | `br-pathb`, `br-ros-wan`, `tap-ros`, `tap-container`, `tap-binpkg`, stale `tap-client`, stale `tap-es-test` | Removed after all local QEMU guests were stopped; `eno2` was detached from `br-ros-wan` and left unaddressed |
+
+Post-removal validation on 2026-05-10 showed no `qemu-system-*` or old
+`python3 -m http.server` process, no listeners on `:5001`, `:5003`, `:5004`,
+`:4562`, `:2232`, `:5932`, or `10.9.8.108:8080`, no `10.9.8.0/24` bridge
+address, and no stale Path B tap devices. X12AGAIN keeps `eno1` at
+`172.16.99.108/24` for management reachability.
 
 The currently mounted root is a live-ISO overlay, so `/opt` and `/srv` must be
 treated as volatile until copied off-host. The preservation set is:
@@ -87,8 +100,13 @@ treated as volatile until copied off-host. The preservation set is:
   `/tmp/*.tmp`, `/tmp/*creds*`, and `/tmp/*token*`
 
 Use `/root/operator-private/rsync-off-host-codex.sh` for the operator-run
-snapshot. After all QEMU guests are shut down, run a second delta snapshot so
-QCOW2 files are clean rather than merely crash-consistent.
+snapshot. The post-shutdown targeted delta captured the clean QCOW2 set below
+under `eva@172.16.99.33:/home/x12again-root/20260510-192925`, using
+`20260510-173024` as `--link-dest`:
+
+- `/opt/gentoo-netboot/path-b/vms/binpkg-repository/binpkg-repository-root.qcow2`
+- `/opt/gentoo-netboot/path-b/vms/container-services-profile/container-services-root.qcow2`
+- `/opt/gentoo-virt-qemu/workstation-nscde/images/vm-workstation-nscde.qcow2`
 
 ## Cutover Sequence
 
@@ -127,8 +145,8 @@ X12AGAIN can be shut down for bare-metal reimage only after:
 - K10 boots from `172.16.99.88` without any asset fetch from `172.16.99.108`.
 - RouterOS DHCP no longer references `172.16.99.108` for K10. This is complete
   for the CCR2004 management DHCP scope as of 2026-05-10.
-- `/srv/build-cache`, `/srv/vm-images`, and any binpkg/distfiles caches are
-  copied to Hasslehoff, Nexus, or NFS-backed storage.
+- `/opt`, `/root`, selected volatile state, and the clean post-shutdown QCOW2
+  delta set are copied off-host to `eva@172.16.99.33`.
 - No QEMU process or tap bridge on X12AGAIN is serving production traffic.
 - Git has the latest encrypted network-device config backups and X12AGAIN
   offload docs committed and pushed.

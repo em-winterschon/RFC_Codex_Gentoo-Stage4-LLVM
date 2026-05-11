@@ -2,6 +2,26 @@
 
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 
+- Promoted the K10 netboot path to repo-managed Hasslehoff publisher state:
+  `k10-ipxe.efi` is now an embedded iPXE `snponly.efi` chained to
+  `http://172.16.99.88:8080`, `netboot-tftp` is an OpenRC-managed threaded
+  TFTP service, and a PDU reboot validated the generated
+  `workstation-validation.ipxe` path through kernel, initramfs, `rootfs.img`,
+  SSH, and OpenRC service checks on `172.16.99.156`.
+- Fixed the K10 UEFI iPXE handoff by preserving the historical
+  `initrd=initrd.magic` kernel argument while loading the initramfs under its
+  normal `initramfs-gz.img` image name, adding `imgfree` before role boot, and
+  using `boot || shell` so future iPXE boot failures remain inspectable.
+- Completed the X12AGAIN live runtime de-load after K10 validation: stopped the
+  legacy local netboot HTTP publisher, container-services VM, binpkg repo VM,
+  RouterOS Path B lab VM, and workstation test VM; removed stale `br-pathb`,
+  `br-ros-wan`, and Path B tap devices while leaving `eno1` management at
+  `172.16.99.108/24` intact.
+- Captured a post-shutdown off-host QCOW2 delta snapshot under
+  `eva@172.16.99.33:/home/x12again-root/20260510-192925`, using the completed
+  `20260510-173024` backup as `--link-dest`; the targeted preservation set
+  reconciled `binpkg-repository-root.qcow2`,
+  `container-services-root.qcow2`, and `vm-workstation-nscde.qcow2`.
 - Added a network-device post-change backup workflow that collects RouterOS
   `show-sensitive` exports over SSH or serial console and SwOS `backup.swb`
   snapshots to operator-private storage, encrypts selected artifacts with
