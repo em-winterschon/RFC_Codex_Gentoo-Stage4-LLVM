@@ -21,6 +21,9 @@
 - Ensured the shared cache root parent is executable during builder prep,
   matching the live X12AGAIN correction from `/srv` mode `0750` to traversal
   mode `0751`.
+- Fixed the actual chroot-side cache mountpoint issue caused by root umask
+  `0027`: guest `/srv` and `/srv/build-cache` parents are now made traversable
+  before bind-mounting host distfiles/binpkg caches.
 
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 

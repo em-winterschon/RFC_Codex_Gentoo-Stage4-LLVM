@@ -338,6 +338,24 @@ prepare_host_cache_permissions() {
   fi
 }
 
+prepare_guest_cache_mountpoint() {
+  local guest_path="$1"
+  local target_path="${TARGET_ROOT_MNT}${guest_path}"
+  local relative_path="${guest_path#/}"
+  local current_path="${TARGET_ROOT_MNT}"
+  local path_parts=()
+  local index
+
+  mkdir -p "${target_path}"
+
+  IFS='/' read -r -a path_parts <<< "${relative_path}"
+  for ((index = 0; index < ${#path_parts[@]} - 1; index++)); do
+    [[ -n "${path_parts[index]}" ]] || continue
+    current_path="${current_path}/${path_parts[index]}"
+    chmod a+x "${current_path}" || true
+  done
+}
+
 resolve_stage3_artifacts() {
   local info_text
 
@@ -541,7 +559,7 @@ mount_host_cache_dir() {
 
   log "Bind-mounting host cache ${host_path} at ${guest_path}"
   prepare_host_cache_permissions "${host_path}"
-  mkdir -p "${target_path}"
+  prepare_guest_cache_mountpoint "${guest_path}"
   run_cmd "${MOUNT_BIN}" --bind "${host_path}" "${target_path}"
 }
 

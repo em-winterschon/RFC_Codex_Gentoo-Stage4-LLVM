@@ -380,6 +380,26 @@ test_prepare_host_cache_permissions_marks_cache_root_portage_writable() {
   rm -rf "${temp_dir}"
 }
 
+test_prepare_guest_cache_mountpoint_marks_parents_traversable() {
+  local temp_dir rootfs srv_mode cache_mode old_umask
+  temp_dir="$(mktemp -d)"
+
+  reset_builder_state
+  rootfs="${temp_dir}/rootfs"
+  TARGET_ROOT_MNT="${rootfs}"
+  old_umask="$(umask)"
+  umask 0027
+
+  prepare_guest_cache_mountpoint '/srv/build-cache/distfiles'
+  umask "${old_umask}"
+
+  srv_mode="$(stat -c '%a' "${rootfs}/srv")"
+  cache_mode="$(stat -c '%a' "${rootfs}/srv/build-cache")"
+  [[ "${srv_mode}" == *1 || "${srv_mode}" == *5 || "${srv_mode}" == *7 ]] || fail "guest /srv did not gain execute permission: ${srv_mode}"
+  [[ "${cache_mode}" == *1 || "${cache_mode}" == *5 || "${cache_mode}" == *7 ]] || fail "guest cache parent did not gain execute permission: ${cache_mode}"
+  rm -rf "${temp_dir}"
+}
+
 test_render_bootstrap_script_includes_extra_portage_fragments() {
   local temp_dir bootstrap
   temp_dir="$(mktemp -d)"
@@ -447,6 +467,7 @@ test_hardened_profile_preset_renders_profile_specific_portage_config
 test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs
 test_mount_host_cache_dirs_renders_bind_mounts
 test_prepare_host_cache_permissions_marks_cache_root_portage_writable
+test_prepare_guest_cache_mountpoint_marks_parents_traversable
 test_render_bootstrap_script_includes_extra_portage_fragments
 test_resolve_host_tool_paths_falls_back_to_command_v
 
