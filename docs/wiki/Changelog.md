@@ -15,6 +15,9 @@
 - Added `sys-fs/squashfs-tools` and `dev-python/pyyaml` to the disposable
   X12AGAIN stagebuild VM baseline so Path B artifact generation has
   `mksquashfs` and YAML profile parsing available inside the builder.
+- Normalized the shared stagebuild cache root permissions before bind mounts so
+  the Portage sandbox user can traverse `/srv/build-cache` and write staged
+  distfile downloads under the group-writable cache directories.
 
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 

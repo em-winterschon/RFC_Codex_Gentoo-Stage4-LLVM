@@ -51,6 +51,8 @@ STAGE3_HOST_DISTFILES_DIR="${STAGE3_HOST_DISTFILES_DIR-}"
 STAGE3_HOST_BINPKG_DIR="${STAGE3_HOST_BINPKG_DIR-}"
 STAGE3_GUEST_DISTFILES_DIR="${STAGE3_GUEST_DISTFILES_DIR:-/srv/build-cache/distfiles}"
 STAGE3_GUEST_BINPKG_DIR="${STAGE3_GUEST_BINPKG_DIR:-/srv/build-cache/binpkgs}"
+STAGE3_HOST_CACHE_ROOT="${STAGE3_HOST_CACHE_ROOT:-/srv/build-cache}"
+STAGE3_HOST_CACHE_GROUP="${STAGE3_HOST_CACHE_GROUP:-portage}"
 VM_HOSTNAME="${VM_HOSTNAME:-${INSTANCE_NAME}}"
 VM_TIMEZONE="${VM_TIMEZONE:-UTC}"
 VM_LOCALE="${VM_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -311,6 +313,28 @@ ensure_dirs() {
   mkdir -p "${STAGE3_CACHE_DIR}" "${STAGE3_IMAGE_OUTPUT_DIR}" "${STAGE3_BUILD_DIR}" "${TARGET_ROOT_MNT}" "${TARGET_EFI_MNT}"
 }
 
+prepare_host_cache_permissions() {
+  local host_path="$1"
+
+  [[ -n "${host_path}" ]] || return 0
+  mkdir -p "${host_path}"
+
+  if getent group "${STAGE3_HOST_CACHE_GROUP}" > /dev/null 2>&1; then
+    chgrp "${STAGE3_HOST_CACHE_GROUP}" "${host_path}" || true
+    chmod 2775 "${host_path}" || true
+
+    case "${host_path}" in
+    "${STAGE3_HOST_CACHE_ROOT}"|"${STAGE3_HOST_CACHE_ROOT}"/*)
+      mkdir -p "${STAGE3_HOST_CACHE_ROOT}"
+      chgrp "${STAGE3_HOST_CACHE_GROUP}" "${STAGE3_HOST_CACHE_ROOT}" || true
+      chmod 2775 "${STAGE3_HOST_CACHE_ROOT}" || true
+      ;;
+    esac
+  else
+    chmod 0755 "${host_path}" || true
+  fi
+}
+
 resolve_stage3_artifacts() {
   local info_text
 
@@ -513,7 +537,8 @@ mount_host_cache_dir() {
   [[ -n "${host_path}" ]] || return 0
 
   log "Bind-mounting host cache ${host_path} at ${guest_path}"
-  mkdir -p "${host_path}" "${target_path}"
+  prepare_host_cache_permissions "${host_path}"
+  mkdir -p "${target_path}"
   run_cmd "${MOUNT_BIN}" --bind "${host_path}" "${target_path}"
 }
 

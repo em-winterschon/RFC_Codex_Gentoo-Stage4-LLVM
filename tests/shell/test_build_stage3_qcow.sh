@@ -46,6 +46,8 @@ mark_stage3_builder_globals_used() {
     "${STAGE3_HOST_BINPKG_DIR-}" \
     "${STAGE3_GUEST_DISTFILES_DIR-}" \
     "${STAGE3_GUEST_BINPKG_DIR-}" \
+    "${STAGE3_HOST_CACHE_ROOT-}" \
+    "${STAGE3_HOST_CACHE_GROUP-}" \
     "${STAGE3_LATEST_TXT-}" \
     "${STAGE3_LLVM_TARGETS-}" \
     "${STAGE3_STAGE_TARBALL_NAME-}" \
@@ -122,6 +124,8 @@ reset_builder_state() {
   STAGE3_HOST_BINPKG_DIR=''
   STAGE3_GUEST_DISTFILES_DIR='/srv/build-cache/distfiles'
   STAGE3_GUEST_BINPKG_DIR='/srv/build-cache/binpkgs'
+  STAGE3_HOST_CACHE_ROOT='/srv/build-cache'
+  STAGE3_HOST_CACHE_GROUP='portage'
   STAGE3_RELEASE_ARCH=''
   STAGE3_CURRENT_DIR=''
   STAGE3_LATEST_TXT=''
@@ -354,6 +358,24 @@ test_mount_host_cache_dirs_renders_bind_mounts() {
   rm -rf "${temp_dir}"
 }
 
+test_prepare_host_cache_permissions_marks_cache_root_portage_writable() {
+  local temp_dir cache_root cache_dir
+  temp_dir="$(mktemp -d)"
+
+  reset_builder_state
+  cache_root="${temp_dir}/build-cache"
+  cache_dir="${cache_root}/distfiles"
+  STAGE3_HOST_CACHE_ROOT="${cache_root}"
+  STAGE3_HOST_CACHE_GROUP='portage'
+
+  prepare_host_cache_permissions "${cache_dir}"
+
+  [[ -d "${cache_dir}" ]] || fail "cache dir was not created"
+  [[ -x "${cache_root}" ]] || fail "cache root is not traversable"
+  [[ -w "${cache_dir}" ]] || fail "cache dir is not writable"
+  rm -rf "${temp_dir}"
+}
+
 test_render_bootstrap_script_includes_extra_portage_fragments() {
   local temp_dir bootstrap
   temp_dir="$(mktemp -d)"
@@ -420,6 +442,7 @@ test_main_dry_run_prints_stage3_build_plan
 test_hardened_profile_preset_renders_profile_specific_portage_config
 test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs
 test_mount_host_cache_dirs_renders_bind_mounts
+test_prepare_host_cache_permissions_marks_cache_root_portage_writable
 test_render_bootstrap_script_includes_extra_portage_fragments
 test_resolve_host_tool_paths_falls_back_to_command_v
 
