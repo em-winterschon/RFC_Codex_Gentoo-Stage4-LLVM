@@ -76,23 +76,12 @@ STAGE3_STAGE_SHA256_URL=''
 STAGE3_STAGE_TARBALL_PATH=''
 STAGE3_STAGE_SHA256_PATH=''
 STAGE3_STAGE_SHA256=''
+STAGE3_DEFAULT_HOST_TOOL_VARS='QEMU_IMG_BIN QEMU_NBD_BIN MODPROBE_BIN MKNOD_BIN SGDISK_BIN PARTPROBE_BIN PARTX_BIN MKFS_VFAT_BIN MKFS_EXT4_BIN MOUNT_BIN UMOUNT_BIN TAR_BIN CHROOT_BIN'
+STAGE3_HOST_TOOL_VARS="${STAGE3_HOST_TOOL_VARS:-${STAGE3_DEFAULT_HOST_TOOL_VARS}}"
 resolve_host_tool_paths() {
   local tool_name resolved_path
 
-  for tool_name in \
-    QEMU_IMG_BIN \
-    QEMU_NBD_BIN \
-    MODPROBE_BIN \
-    MKNOD_BIN \
-    SGDISK_BIN \
-    PARTPROBE_BIN \
-    PARTX_BIN \
-    MKFS_VFAT_BIN \
-    MKFS_EXT4_BIN \
-    MOUNT_BIN \
-    UMOUNT_BIN \
-    TAR_BIN \
-    CHROOT_BIN; do
+  for tool_name in ${STAGE3_HOST_TOOL_VARS}; do
     resolved_path="${!tool_name}"
     if [[ -x "${resolved_path}" ]]; then
       continue

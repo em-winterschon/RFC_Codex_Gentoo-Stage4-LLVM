@@ -56,6 +56,9 @@ mark_stage3_builder_globals_used() {
     "${STAGE3_STAGE_TARBALL_PATH-}" \
     "${STAGE3_STAGE_SHA256_PATH-}" \
     "${STAGE3_STAGE_SHA256-}" \
+    "${STAGE3_DEFAULT_HOST_TOOL_VARS-}" \
+    "${STAGE3_HOST_TOOL_VARS-}" \
+    "${QEMU_IMG_BIN-}" \
     "${QEMU_NBD_BIN-}" \
     "${MODPROBE_BIN-}" \
     "${MKNOD_BIN-}" \
@@ -138,6 +141,7 @@ reset_builder_state() {
   STAGE3_STAGE_TARBALL_PATH=''
   STAGE3_STAGE_SHA256_PATH=''
   STAGE3_STAGE_SHA256=''
+  STAGE3_HOST_TOOL_VARS="${STAGE3_DEFAULT_HOST_TOOL_VARS}"
   QEMU_IMG_BIN='/usr/bin/qemu-img'
   QEMU_NBD_BIN='/usr/bin/qemu-nbd'
   MODPROBE_BIN='/sbin/modprobe'
@@ -459,6 +463,33 @@ test_resolve_host_tool_paths_falls_back_to_command_v() {
   rm -rf "${temp_dir}"
 }
 
+test_resolve_host_tool_paths_respects_custom_tool_subset() {
+  local temp_dir tool_dir old_path
+  temp_dir="$(mktemp -d)"
+  tool_dir="$(make_fake_host_tools "${temp_dir}")"
+  old_path="${PATH}"
+  PATH="${tool_dir}:${PATH}"
+
+  reset_builder_state
+  STAGE3_HOST_TOOL_VARS='MOUNT_BIN UMOUNT_BIN TAR_BIN CHROOT_BIN'
+  QEMU_IMG_BIN='/not-real/qemu-img'
+  QEMU_NBD_BIN='/not-real/qemu-nbd'
+  MOUNT_BIN='/not-real/mount'
+  UMOUNT_BIN='/not-real/umount'
+  TAR_BIN='/not-real/tar'
+  CHROOT_BIN='/not-real/chroot'
+
+  resolve_host_tool_paths
+
+  [[ "${QEMU_IMG_BIN}" == '/not-real/qemu-img' ]] || fail "QEMU_IMG_BIN should not be resolved for a custom tool subset"
+  [[ "${MOUNT_BIN}" == */mount ]] || fail "MOUNT_BIN was not resolved"
+  [[ "${UMOUNT_BIN}" == */umount ]] || fail "UMOUNT_BIN was not resolved"
+  [[ "${TAR_BIN}" == */tar ]] || fail "TAR_BIN was not resolved"
+  [[ "${CHROOT_BIN}" == */chroot ]] || fail "CHROOT_BIN was not resolved"
+  PATH="${old_path}"
+  rm -rf "${temp_dir}"
+}
+
 test_resolve_stage3_target_maps_supported_enums
 test_resolve_stage3_target_rejects_invalid_enum
 test_validate_stage3_profile_preset_rejects_invalid_enum
@@ -468,6 +499,7 @@ test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs
 test_mount_host_cache_dirs_renders_bind_mounts
 test_prepare_host_cache_permissions_marks_cache_root_portage_writable
 test_prepare_guest_cache_mountpoint_marks_parents_traversable
+test_resolve_host_tool_paths_respects_custom_tool_subset
 test_render_bootstrap_script_includes_extra_portage_fragments
 test_resolve_host_tool_paths_falls_back_to_command_v
 

@@ -476,6 +476,7 @@ create_rootfs_artifacts() {
 main() {
   trap cleanup EXIT
 
+  STAGE3_HOST_TOOL_VARS="${PATHB_HOST_TOOL_VARS:-MODPROBE_BIN MKNOD_BIN MOUNT_BIN UMOUNT_BIN TAR_BIN CHROOT_BIN}"
   resolve_host_tool_paths
   validate_stage3_profile_preset
   resolve_stage3_target
