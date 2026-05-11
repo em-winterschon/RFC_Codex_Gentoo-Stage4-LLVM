@@ -14,7 +14,7 @@
     ipa_client_live_controller_inventory_host: "{{ freeipa_client_controller_inventory_host | default('svc_identity_ipa01') }}"
     ipa_client_live_fqdn: "{{ freeipa_client_fqdn | default(inventory_hostname ~ '.' ~ ipa_client_live_domain) }}"
     ipa_client_live_short_hostname: "{{ freeipa_client_short_hostname | default(ipa_client_live_fqdn.split('.')[0]) }}"
-    ipa_client_live_package_atoms: "{{ freeipa_client_package_atoms | default(['sys-auth/sssd', 'app-crypt/mit-krb5', 'net-nds/openldap', 'app-misc/ca-certificates']) }}"
+    ipa_client_live_package_atoms: "{{ freeipa_client_package_atoms | default(['sys-auth/sssd', 'net-fs/samba', 'app-crypt/mit-krb5', 'net-nds/openldap', 'app-misc/ca-certificates']) }}"
     ipa_client_live_package_use_file: /etc/portage/package.use/30-aaa-domain-client-sssd
     ipa_client_live_keytab_tmp: "/tmp/{{ ipa_client_live_fqdn }}.krb5.keytab"
     ipa_client_live_keytab_dest: /etc/krb5.keytab

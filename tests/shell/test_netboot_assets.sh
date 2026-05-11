@@ -61,6 +61,9 @@ test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "Built Path B netboot artifacts"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "sys-kernel/linux-firmware"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_PACKAGE_USE_APPEND"
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_PROFILE_DEFINITION_FILES"
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_PROFILE_PACKAGE_LIST_FILES"
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_OPENRC_SERVICES_EXTRA"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_STAGE3_CACHE_DIR_EXPLICIT"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "cleanup_mounts"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "findmnt -Rrn -o TARGET"
@@ -75,6 +78,7 @@ test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'print \$4'
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'print \$5'
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "rtl_nic/rtl8125b-2.fw"
+  assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-domain-client.packages" "net-fs/samba"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/group_vars/netboot_publishers.yml" "netboot_host_map_extra:"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" "netboot_machine_type: qemu"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_protocol_flow: pxe-to-ipxe"

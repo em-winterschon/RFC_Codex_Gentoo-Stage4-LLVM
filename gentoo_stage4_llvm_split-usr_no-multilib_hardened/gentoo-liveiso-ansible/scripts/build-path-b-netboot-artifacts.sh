@@ -7,6 +7,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+ANSIBLE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 HELPER_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/build-stage3-qcow.sh"
 PATHB_STAGE3_CACHE_DIR_EXPLICIT="${STAGE3_CACHE_DIR+x}"
 
@@ -48,6 +49,10 @@ PATHB_REUSE_INITRAMFS_NETWORK="${PATHB_REUSE_INITRAMFS_NETWORK:-1}"
 PATHB_SSH_SERVICE="${PATHB_SSH_SERVICE:-sshd}"
 PATHB_EXTRA_PACKAGES="${PATHB_EXTRA_PACKAGES:-app-admin/sudo dev-lang/python sys-apps/iproute2 sys-kernel/linux-firmware sys-fs/zfs sys-fs/zfs-kmod sys-fs/dosfstools sys-block/parted sys-apps/pciutils sys-apps/usbutils sys-apps/kmod}"
 PATHB_PACKAGE_USE_APPEND="${PATHB_PACKAGE_USE_APPEND:-}"
+PATHB_PROFILE_DEFINITION_FILES="${PATHB_PROFILE_DEFINITION_FILES:-}"
+PATHB_PROFILE_PACKAGE_LIST_FILES="${PATHB_PROFILE_PACKAGE_LIST_FILES:-}"
+PATHB_OPENRC_SERVICES_EXTRA="${PATHB_OPENRC_SERVICES_EXTRA:-}"
+PATHB_PROFILE_PYTHON="${PATHB_PROFILE_PYTHON:-python3}"
 PATHB_HOSTNAME="${PATHB_HOSTNAME:-gentoo-pathb}"
 PATHB_TIMEZONE="${PATHB_TIMEZONE:-UTC}"
 PATHB_LOCALE="${PATHB_LOCALE:-en_US.UTF-8 UTF-8}"
@@ -80,6 +85,139 @@ cleanup_mounts() {
     "${UMOUNT_BIN}" "${mount_target}" > /dev/null 2>&1 || "${UMOUNT_BIN}" -l "${mount_target}" > /dev/null 2>&1 || true
   done < "${mount_list}"
   rm -f "${mount_list}"
+}
+
+resolve_ansible_path() {
+  local input_path="$1"
+
+  case "${input_path}" in
+  /*)
+    printf '%s\n' "${input_path}"
+    ;;
+  *)
+    printf '%s\n' "${ANSIBLE_ROOT}/${input_path}"
+    ;;
+  esac
+}
+
+profile_definition_query() {
+  local query="$1"
+  shift
+
+  "${PATHB_PROFILE_PYTHON}" - "${ANSIBLE_ROOT}" "${query}" "$@" <<'PY'
+import pathlib
+import sys
+
+try:
+    import yaml
+except ImportError as exc:
+    raise SystemExit("PyYAML is required to read Path B profile definition files") from exc
+
+root = pathlib.Path(sys.argv[1])
+query = sys.argv[2]
+profile_paths = sys.argv[3:]
+
+for raw_path in profile_paths:
+    path = pathlib.Path(raw_path)
+    if not path.is_absolute():
+        path = root / path
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    profile = data.get("gentoo_profile_definition") or {}
+    if query == "package-list-files":
+        for item in profile.get("package_list_files", []) or []:
+            print(item)
+    elif query == "package-atoms":
+        for item in profile.get("package_atoms", []) or []:
+            print(item)
+    elif query == "package-use-files":
+        for name, content in (profile.get("package_use_files", {}) or {}).items():
+            print(f"# {path.name}:{name}")
+            print(str(content).rstrip())
+    elif query == "openrc-services-enable":
+        for item in profile.get("openrc_services_enable", []) or []:
+            print(item)
+    else:
+        raise SystemExit(f"Unsupported profile definition query: {query}")
+PY
+}
+
+read_pathb_package_list_atoms() {
+  local package_list_file
+  local package_list_path
+  local line
+
+  for package_list_file in "$@"; do
+    package_list_path="$(resolve_ansible_path "${package_list_file}")"
+    [[ -f "${package_list_path}" ]] || fail "Path B profile package list is missing: ${package_list_file}"
+    while IFS= read -r line || [[ -n "${line}" ]]; do
+      line="${line%%#*}"
+      line="${line#"${line%%[![:space:]]*}"}"
+      line="${line%"${line##*[![:space:]]}"}"
+      [[ -n "${line}" ]] || continue
+      printf '%s\n' "${line}"
+    done < "${package_list_path}"
+  done
+}
+
+append_multiline_value() {
+  local variable_name="$1"
+  local addition="$2"
+  local current_value="${!variable_name}"
+
+  [[ -n "${addition}" ]] || return 0
+
+  if [[ -n "${current_value}" ]]; then
+    printf -v "${variable_name}" '%s\n%s' "${current_value}" "${addition}"
+  else
+    printf -v "${variable_name}" '%s' "${addition}"
+  fi
+}
+
+append_word_list_value() {
+  local variable_name="$1"
+  local addition="$2"
+  local current_value="${!variable_name}"
+
+  [[ -n "${addition}" ]] || return 0
+
+  addition="$(printf '%s\n' "${addition}" | awk 'NF { print }' | tr '\n' ' ')"
+  addition="${addition%"${addition##*[![:space:]]}"}"
+  [[ -n "${addition}" ]] || return 0
+
+  if [[ -n "${current_value}" ]]; then
+    printf -v "${variable_name}" '%s %s' "${current_value}" "${addition}"
+  else
+    printf -v "${variable_name}" '%s' "${addition}"
+  fi
+}
+
+resolve_pathb_profile_inputs() {
+  local profile_files=()
+  local package_list_files=()
+  local profile_package_lists
+  local profile_package_atoms
+  local profile_package_use
+  local profile_openrc_services
+  local package_list_atoms
+
+  if [[ -n "${PATHB_PROFILE_DEFINITION_FILES}" ]]; then
+    read -r -a profile_files <<< "${PATHB_PROFILE_DEFINITION_FILES}"
+    profile_package_lists="$(profile_definition_query package-list-files "${profile_files[@]}")"
+    profile_package_atoms="$(profile_definition_query package-atoms "${profile_files[@]}")"
+    profile_package_use="$(profile_definition_query package-use-files "${profile_files[@]}")"
+    profile_openrc_services="$(profile_definition_query openrc-services-enable "${profile_files[@]}")"
+
+    append_word_list_value PATHB_PROFILE_PACKAGE_LIST_FILES "${profile_package_lists}"
+    append_word_list_value PATHB_EXTRA_PACKAGES "${profile_package_atoms}"
+    append_multiline_value PATHB_PACKAGE_USE_APPEND "${profile_package_use}"
+    append_word_list_value PATHB_OPENRC_SERVICES_EXTRA "${profile_openrc_services}"
+  fi
+
+  if [[ -n "${PATHB_PROFILE_PACKAGE_LIST_FILES}" ]]; then
+    read -r -a package_list_files <<< "${PATHB_PROFILE_PACKAGE_LIST_FILES}"
+    package_list_atoms="$(read_pathb_package_list_atoms "${package_list_files[@]}")"
+    append_word_list_value PATHB_EXTRA_PACKAGES "${package_list_atoms}"
+  fi
 }
 
 reset_rootfs() {
@@ -233,6 +371,9 @@ if [[ "${PATHB_REUSE_INITRAMFS_NETWORK}" != '1' ]]; then
   rc-update add ${PATHB_NETWORK_SERVICE} default
 fi
 rc-update add ${PATHB_SSH_SERVICE} default
+for pathb_extra_service in ${PATHB_OPENRC_SERVICES_EXTRA}; do
+  rc-update add "\${pathb_extra_service}" default
+done
 
 cat > /etc/dracut.conf.d/path-b-live.conf <<'DRACUT'
 hostonly="no"
@@ -340,6 +481,7 @@ main() {
   resolve_stage3_target
   validate_host_arch
   ensure_pathb_dirs
+  resolve_pathb_profile_inputs
   reset_rootfs
   resolve_stage3_artifacts
   ensure_stage3_downloads

@@ -51,6 +51,7 @@ assert_file_not_contains "${apply_playbook}" 'config_file_version = 2'
 
 assert_file_contains "${profile_definition}" 'sys-auth/sssd samba'
 assert_file_contains "${profile_definition}" 'net-fs/samba winbind'
+assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-domain-client.packages" 'net-fs/samba'
 assert_file_not_contains "${sssd_template}" 'config_file_version = 2'
 assert_file_contains "${netboot_manifest}" 'profile-definitions/aaa-domain-client.yml'
 assert_file_contains "${netboot_manifest}" 'profile-package-lists/stage5-domain-client.packages'

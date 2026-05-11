@@ -91,10 +91,6 @@ resolve_nonempty_file() {
 
   for candidate in "$@"; do
     [[ -n "${candidate}" ]] || continue
-    if [[ "${QEMU_LAUNCH_DRY_RUN}" == '1' && -f "${candidate}" ]]; then
-      printf '%s' "${candidate}"
-      return 0
-    fi
     if [[ -f "${candidate}" && -s "${candidate}" ]]; then
       printf '%s' "${candidate}"
       return 0
@@ -641,7 +637,7 @@ probe_ssh_banner() {
 wait_for_ssh_ready() {
   local deadline
 
-  if [[ "${WAIT_FOR_SSH}" != '1' || "${QEMU_DAEMONIZE}" != '1' ]]; then
+  if [[ "${WAIT_FOR_SSH}" != '1' || "${QEMU_DAEMONIZE}" != '1' || "${QEMU_LAUNCH_DRY_RUN}" == '1' ]]; then
     return 0
   fi
 

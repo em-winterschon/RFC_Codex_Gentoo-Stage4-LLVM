@@ -24,6 +24,7 @@ freeipa_client_install_packages: true
 freeipa_client_build_binary_packages: true
 freeipa_client_package_atoms:
   - sys-auth/sssd
+  - net-fs/samba
   - app-crypt/mit-krb5
   - net-nds/openldap
   - app-misc/ca-certificates
