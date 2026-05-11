@@ -91,6 +91,12 @@ Current physical discovery state:
   `gentoo-liveiso-ansible/netboot-image-manifests/k10-stage5-workstation.yml`
   records the kernel, initramfs, rootfs, dracut firmware requirements, static
   command line, and Jenkins rebuild inputs for this K10 boot image.
+- Rebuild invocation: the Path B artifact builder now consumes profile
+  definitions directly. For the K10 reboot-durable AAA rootfs, run with
+  `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml`
+  so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy, and
+  the `sssd` OpenRC service are carried into the generated rootfs instead of
+  applied only as live mutations.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.
@@ -110,7 +116,7 @@ Once the host requests DHCP, record:
 ## Validation Gates
 
 1. Reboot K10 with UEFI PXE IPv4 and confirm DHCP offer includes option 67
-   `k10-ipxe.efi` and `next-server=172.16.99.108`.
+   `k10-ipxe.efi` and `next-server=172.16.99.88`.
 2. Confirm firmware fetches `k10-ipxe.efi` over TFTP.
 3. Confirm embedded iPXE fetches `hosts/gmktek-k10-stage5.ipxe`.
 4. Confirm EFI/iPXE attaches and executes `g/initramfs-gz.img`.

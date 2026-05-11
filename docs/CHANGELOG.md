@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
+
+- Fixed the X12AGAIN stagebuild dry-run launcher so it does not wait for SSH
+  during dry-run and resolves the same non-empty OVMF firmware path that real
+  launches require.
+- Extended the Path B netboot artifact builder so it can consume profile
+  definition files, expand profile package-list atoms, apply inline
+  `package.use` policy, and enable profile-declared OpenRC services such as
+  `sssd`.
+- Updated the K10 domain-client package set so `net-fs/samba` is explicitly
+  included with `sys-auth/sssd`, matching the required `samba` and `winbind`
+  USE policy for Gentoo's SSSD IPA provider.
+
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 
 - Promoted the K10 netboot path to repo-managed Hasslehoff publisher state:

@@ -50,6 +50,16 @@ gentoo-virt-qemu/x12again-stagebuild-vm.sh --build
 gentoo-virt-qemu/x12again-stagebuild-vm.sh --launch
 ```
 
+For K10 reboot-durable AAA artifact rebuilds, pass the profile definition into
+the Path B builder inside the disposable VM:
+
+```bash
+PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml \
+PATHB_INSTANCE_NAME=gmktek-k10-stage5 \
+PATHB_ROOT=/var/lib/netboot/staging/path-b/gmktek-k10-stage5 \
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
+```
+
 Defaults:
 
 - instance name: `x12again-stagebuild-k10`
