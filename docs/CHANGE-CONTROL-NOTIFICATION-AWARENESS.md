@@ -145,13 +145,13 @@ Producers
 
 Initial topics:
 
-- `forge.change`: change-control prompts and approvals
-- `forge.build`: build start, failure, retry, and completion events
-- `forge.e2et`: host validation and conformance results
-- `forge.net`: network config backup, router/switch changes, link-state gates
-- `forge.obs`: observability pipeline readiness and alerting system status
-- `forge.security`: auth, vault, certificate, and RBAC/AAA-sensitive events
-- `forge.emergency`: paging-grade operator interruption path
+- `forge-change`: change-control prompts and approvals
+- `forge-build`: build start, failure, retry, and completion events
+- `forge-e2et`: host validation and conformance results
+- `forge-net`: network config backup, router/switch changes, link-state gates
+- `forge-obs`: observability pipeline readiness and alerting system status
+- `forge-security`: auth, vault, certificate, and RBAC/AAA-sensitive events
+- `forge-emergency`: paging-grade operator interruption path
 
 Topic access defaults:
 
@@ -214,7 +214,7 @@ Topic access defaults:
 3. Revert producers to direct local ntfy publish.
 4. Preserve ntfy cache/auth data for forensic review.
 5. Revoke experimental tokens from vault-generated ntfy config.
-6. Keep `forge.emergency` local ntfy path available unless ntfy itself is the
+6. Keep `forge-emergency` local ntfy path available unless ntfy itself is the
    failed component.
 
 ## Open Decisions

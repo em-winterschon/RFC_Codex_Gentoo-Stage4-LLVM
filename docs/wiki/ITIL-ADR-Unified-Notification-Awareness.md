@@ -25,13 +25,13 @@ Primary service:
 
 Initial topics:
 
-- `forge.change`
-- `forge.build`
-- `forge.e2et`
-- `forge.net`
-- `forge.obs`
-- `forge.security`
-- `forge.emergency`
+- `forge-change`
+- `forge-build`
+- `forge-e2et`
+- `forge-net`
+- `forge-obs`
+- `forge-security`
+- `forge-emergency`
 
 Implementation order:
 
