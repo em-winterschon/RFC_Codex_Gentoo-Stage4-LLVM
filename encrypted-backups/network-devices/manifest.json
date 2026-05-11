@@ -1,5 +1,5 @@
 {
-  "generated_at_epoch": 1778451762,
+  "generated_at_epoch": 1778462515,
   "records": [
     {
       "device_type": "routeros",
@@ -57,21 +57,21 @@
     },
     {
       "device_type": "routeros-manual",
-      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004/post-netboot-vm1088-dns-cutover-20260510T222724Z.rsc.vault",
-      "encrypted_size_bytes": 60625,
-      "inventory_host": "ccr2004",
-      "snapshot_timestamp": "netboot-vm1088-dns-cutover-20260510T222724Z",
-      "source_file": "/root/operator-private/routeros/ccr2004/post-netboot-vm1088-dns-cutover-20260510T222724Z.rsc",
-      "source_size_bytes": 14891
-    },
-    {
-      "device_type": "routeros-manual",
       "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004/post-rsyslog-vip-20260510T211510Z.rsc.vault",
       "encrypted_size_bytes": 59199,
       "inventory_host": "ccr2004",
       "snapshot_timestamp": "rsyslog-vip-20260510T211510Z",
       "source_file": "/root/operator-private/routeros/ccr2004/post-rsyslog-vip-20260510T211510Z.rsc",
       "source_size_bytes": 14539
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-k10-netboot-clean-20260511T012132Z.rsc.vault",
+      "encrypted_size_bytes": 61078,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "k10-netboot-clean-20260511T012132Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-k10-netboot-clean-20260511T012132Z.rsc",
+      "source_size_bytes": 15002
     }
   ],
   "schema": "rfc1918.network-device-config-backups.v1"
