@@ -73,12 +73,17 @@ Current physical discovery state:
   `172.16.99.156`. OpenRC `netmount`, `sshd`, and `local` were started after
   boot.
 - FreeIPA/SSSD status: K10 was transiently enrolled on the live Gentoo image as
-  `gmktek-k10-stage5.rfc1918.host` on 2026-05-09. The live validation gates
-  passed for the IPA backend module, `sssctl config-check`, NSS lookup,
+  `gmktek-k10-stage5.rfc1918.host` on 2026-05-09. On 2026-05-11 the promoted
+  Path B rootfs rebooted with SSSD, Samba, Kerberos, OpenLDAP, and
+  `/usr/lib64/sssd/libsss_ipa.so` present. A post-boot
+  `ipa-client-live-apply.yml` run then passed `sssctl config-check`, NSS lookup,
   FreeIPA SSH-key lookup, PAM account checks, and floating SSH login as
-  `codex-admin` before reboot. A later AP7901 outlet 6 PDU reboot proved this
-  is not yet reboot-durable because the original netboot rootfs returned
-  without SSSD or `/usr/lib64/sssd/libsss_ipa.so`.
+  `codex-admin`.
+- AAA durability caveat: the netboot rootfs is fetched over unauthenticated HTTP
+  and must not embed `/etc/krb5.keytab`. The current safe model is package
+  durability in the rootfs plus post-boot secure enrollment. Fully unattended
+  reboot-durable enrollment requires disk install or a secure first-boot
+  secret-delivery mechanism.
 - SSSD package policy: the active Gentoo client requires `sys-auth/sssd samba`
   and `net-fs/samba winbind`; without those flags, the IPA provider module
   `/usr/lib64/sssd/libsss_ipa.so` is missing.
@@ -92,11 +97,12 @@ Current physical discovery state:
   records the kernel, initramfs, rootfs, dracut firmware requirements, static
   command line, and Jenkins rebuild inputs for this K10 boot image.
 - Rebuild invocation: the Path B artifact builder now consumes profile
-  definitions directly. For the K10 reboot-durable AAA rootfs, run with
+  definitions directly. For the K10 AAA-capable rootfs, run with
   `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml`
   so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy, and
   the `sssd` OpenRC service are carried into the generated rootfs instead of
-  applied only as live mutations.
+  applied only as live mutations. Do not embed host keytabs in the public
+  netboot artifact set.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.
@@ -129,10 +135,11 @@ Once the host requests DHCP, record:
 9. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
 10. Validate Intel display stack: Mesa, libdrm, libva, Vulkan loader/tools, and
     Xorg driver behavior.
-11. Validate SSH, rsyslog, telemetry, and SSSD client enrollment. The transient
-    live FreeIPA/SSSD enrollment gate passed on 2026-05-09, but reboot-durable
-    Stage5 still must include `aaa-domain-client` in the rootfs or disk install
-    and persist hostname, offline cache, sudo policy, and break-glass behavior.
+11. Validate SSH, rsyslog, telemetry, and SSSD client enrollment. The K10
+    Path B rootfs now includes the `aaa-domain-client` package layer and passes
+    post-boot FreeIPA/SSSD apply, but unattended enrollment durability still
+    requires disk install or secure first-boot keytab delivery plus hostname,
+    offline cache, sudo policy, and break-glass behavior validation.
 12. Snapshot/capture final package and Portage state before considering X12AGAIN.
 
 ## Backout

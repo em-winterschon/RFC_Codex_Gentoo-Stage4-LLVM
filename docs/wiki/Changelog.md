@@ -2,6 +2,24 @@
 
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 
+- Promoted the rebuilt K10 Path B AAA artifacts from the disposable X12AGAIN
+  stagebuild VM to the Hasslehoff netboot publisher at `172.16.99.88`, with
+  hardlinked rollback directories under `/opt/gentoo-netboot/path-b/artifacts`.
+- Validated live `/g` and `/r` HTTP payload hashes after promotion:
+  `vmlinuz` `a9ae6fb8...`, `initramfs.img` `ed326992...`, and `rootfs.img`
+  `2cbdb11e...`.
+- Rebooted K10 through AP7901 outlet 6 and confirmed the promoted rootfs boots
+  kernel `6.18.28-gentoo-dist`, returns root SSH at `172.16.99.156`, and
+  includes `/usr/lib64/sssd/libsss_ipa.so`.
+- Re-applied live FreeIPA client enrollment after acquiring a Kerberos ticket
+  on `svc_identity_ipa01`, then validated SSSD config, NSS lookup, FreeIPA SSH
+  key lookup, PAM account checks, and floating `codex-admin` SSH login.
+- Updated K10 E2ET evidence to mark package/rootfs durability fixed while
+  keeping unattended host-enrollment durability blocked until disk install or a
+  secure first-boot keytab/secret-delivery mechanism exists.
+- Added the `metal-time-authority-stratum1` profile, package list, service atom
+  registry entries, ITIL change-control ADR, wiki page, and shell regression
+  test for the CM4 plus U-Blox MAX-M8Q Stratum 1 NTP authority design.
 - Fixed the X12AGAIN stagebuild dry-run launcher so it does not wait for SSH
   during dry-run and resolves the same non-empty OVMF firmware path that real
   launches require.
@@ -68,6 +86,12 @@
   from X12AGAIN onto Hasslehoff through an interim generic VIA Labs USB hub.
   Recorded stable FTDI `/dev/serial/by-id` paths in local-network inventory and
   validated all three RouterOS prompts at `115200` baud.
+- Added the X12AGAIN final de-load checklist after live readiness validation:
+  Hasslehoff replacements for NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, netboot, container-services HAProxy, Elasticsearch VIP,
+  rsyslog VIP, and ntfy HTTPS answer basic probes; remaining X12AGAIN blockers
+  are K10 boot validation, local QEMU guest shutdown, Path B bridge/tap removal,
+  and a post-shutdown delta backup for clean QCOW2 preservation.
 - Defined X12AGAIN as a stable hypervisor/resource provider and moved
   heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
   disposable high-resource builder VMs.

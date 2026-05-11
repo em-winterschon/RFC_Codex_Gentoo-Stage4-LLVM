@@ -202,3 +202,42 @@ role_service_atoms:
           - overlay
           - tun
           - veth
+
+  metal-time-authority-stratum1:
+    role_class: baremetal-infrastructure
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-metal-host-time-authority-stratum1.packages
+    service_atoms:
+      - id: chrony-stratum1
+        package_atoms:
+          - net-misc/chrony
+          - app-metrics/chrony_exporter
+        openrc_services:
+          - chronyd
+        protocol_ports:
+          - udp/123
+          - tcp/9123
+      - id: gnss-pps
+        package_atoms:
+          - sci-geosciences/gpsd
+          - sys-apps/pps-tools
+          - sys-apps/i2c-tools
+        openrc_services:
+          - gpsd
+        kernel_modules:
+          - i2c-dev
+          - pps-gpio
+          - pps_ldisc
+      - id: ptp-grandmaster-candidate
+        package_atoms:
+          - net-misc/linuxptp
+          - sys-apps/ethtool
+        kernel_modules:
+          - ptp
+          - ptp_ocp
+        protocol_ports:
+          - udp/319
+          - udp/320

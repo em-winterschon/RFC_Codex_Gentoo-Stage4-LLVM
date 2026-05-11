@@ -1,8 +1,8 @@
 ---
 run:
-  id: k10-stage5-aaa-reboot-20260510
-  phase: post-reboot
-  timestamp: "2026-05-10T02:00:00-07:00"
+  id: k10-stage5-aaa-reboot-20260511
+  phase: post-reboot-post-apply
+  timestamp: "2026-05-11T15:49:18-07:00"
 host:
   name: gmktek_nucbox_k10_stage5_candidate
   fqdn: gmktek-k10-stage5.rfc1918.host
@@ -24,29 +24,34 @@ gates:
     checks:
       - name: PXE chainload reaches Gentoo live root
         status: pass
-        evidence: PXE to iPXE with static dracut networking reaches the Gentoo login prompt.
+        evidence: AP7901 outlet 6 reboot returned SSH on 172.16.99.156 from the promoted 2026-05-11 Path B image.
       - name: Rebuilt rootfs contains aaa-domain-client
-        status: fail
-        hard_fail: true
-        evidence: AP7901 outlet 6 reboot returned the original rootfs without SSSD; rebuild or disk install must include aaa-domain-client.
+        status: pass
+        evidence: Rebooted rootfs contains sys-auth/sssd, net-fs/samba, app-crypt/mit-krb5, net-nds/openldap, and /usr/lib64/sssd/libsss_ipa.so.
   - name: Identity Gate
     weight: 30
     hard_required: true
     checks:
       - name: SSSD IPA backend persists after reboot
+        status: pass
+        evidence: /usr/lib64/sssd/libsss_ipa.so exists after AP7901 outlet 6 reboot into the promoted rootfs.
+      - name: FreeIPA live enrollment applies after reboot
+        status: pass
+        evidence: ipa-client-live-apply passed after acquiring a controller Kerberos ticket and installing the host keytab.
+      - name: FreeIPA SSH login works after live enrollment
+        status: pass
+        evidence: codex-admin SSH login resolved UID 200100, GID 201000, and expected supplemental groups.
+      - name: Host enrollment survives reboot without post-boot apply
         status: fail
         hard_fail: true
-        evidence: /usr/lib64/sssd/libsss_ipa.so was missing after AP7901 outlet 6 reboot.
-      - name: FreeIPA SSH login is transiently validated
-        status: warn
-        evidence: codex-admin SSH worked before reboot but is not yet durable.
+        evidence: Rebooted HTTP netboot rootfs intentionally does not embed /etc/krb5.keytab; unattended durable enrollment requires disk install or secure first-boot secret delivery.
   - name: Service Gate
     weight: 15
     hard_required: false
     checks:
       - name: SSH management path returns after reboot
         status: pass
-        evidence: root SSH returned after PDU reboot and live image boot.
+        evidence: root SSH returned at attempt 8 after AP7901 outlet 6 immediateReboot.
   - name: Performance Gate
     weight: 10
     hard_required: false
