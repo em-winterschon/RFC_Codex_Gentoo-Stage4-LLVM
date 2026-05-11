@@ -18,6 +18,9 @@
 - Normalized the shared stagebuild cache root permissions before bind mounts so
   the Portage sandbox user can traverse `/srv/build-cache` and write staged
   distfile downloads under the group-writable cache directories.
+- Ensured the shared cache root parent is executable during builder prep,
+  matching the live X12AGAIN correction from `/srv` mode `0750` to traversal
+  mode `0751`.
 
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 

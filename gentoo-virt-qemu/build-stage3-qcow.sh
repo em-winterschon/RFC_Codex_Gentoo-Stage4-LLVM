@@ -315,6 +315,7 @@ ensure_dirs() {
 
 prepare_host_cache_permissions() {
   local host_path="$1"
+  local cache_root_parent
 
   [[ -n "${host_path}" ]] || return 0
   mkdir -p "${host_path}"
@@ -325,6 +326,8 @@ prepare_host_cache_permissions() {
 
     case "${host_path}" in
     "${STAGE3_HOST_CACHE_ROOT}"|"${STAGE3_HOST_CACHE_ROOT}"/*)
+      cache_root_parent="$(dirname "${STAGE3_HOST_CACHE_ROOT}")"
+      chmod a+x "${cache_root_parent}" || true
       mkdir -p "${STAGE3_HOST_CACHE_ROOT}"
       chgrp "${STAGE3_HOST_CACHE_GROUP}" "${STAGE3_HOST_CACHE_ROOT}" || true
       chmod 2775 "${STAGE3_HOST_CACHE_ROOT}" || true
