@@ -72,6 +72,9 @@ Defaults:
 - Cache bind mounts: host `/srv/build-cache/distfiles` and
   `/srv/build-cache/binpkgs` are mounted into the builder chroot at the same
   guest paths so distfiles and built packages persist outside disposable QCOWs
+- Builder tools: the disposable VM baseline includes `sys-fs/squashfs-tools`
+  for Path B rootfs image creation and `dev-python/pyyaml` for profile
+  definition parsing
 - Portage signing: local binpkg signature enforcement is disabled until the
   internal package-signing key/trust workflow is provisioned
 - SSH forwarding: `127.0.0.1:2230`

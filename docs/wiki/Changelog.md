@@ -12,6 +12,9 @@
 - Updated the K10 domain-client package set so `net-fs/samba` is explicitly
   included with `sys-auth/sssd`, matching the required `samba` and `winbind`
   USE policy for Gentoo's SSSD IPA provider.
+- Added `sys-fs/squashfs-tools` and `dev-python/pyyaml` to the disposable
+  X12AGAIN stagebuild VM baseline so Path B artifact generation has
+  `mksquashfs` and YAML profile parsing available inside the builder.
 
 ## 2026-05-10 - X12AGAIN Builder VM Isolation
 

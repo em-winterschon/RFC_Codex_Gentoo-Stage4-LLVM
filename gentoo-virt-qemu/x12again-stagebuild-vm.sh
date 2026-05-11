@@ -111,7 +111,7 @@ EMERGE_DEFAULT_OPTS=\"${X12_STAGEBUILD_EMERGE_DEFAULT_OPTS}\"
 PKGDIR=\"${STAGE3_GUEST_BINPKG_DIR}\"
 DISTDIR=\"${STAGE3_GUEST_DISTFILES_DIR}\"
 PORTAGE_TMPDIR=\"/var/tmp/portage\"}"
-  export STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod app-portage/gentoolkit app-portage/eix net-misc/rsync app-misc/tmux}"
+  export STAGE3_EXTRA_PACKAGES="${STAGE3_EXTRA_PACKAGES:-sys-fs/dosfstools sys-apps/gptfdisk sys-block/parted sys-fs/zfs sys-fs/zfs-kmod sys-fs/squashfs-tools app-portage/gentoolkit app-portage/eix dev-python/pyyaml net-misc/rsync app-misc/tmux}"
 }
 
 print_environment() {
