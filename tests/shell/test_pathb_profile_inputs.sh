@@ -54,4 +54,24 @@ assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh"
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'openrc-services-enable'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'rc-update add "\${pathb_extra_service}" default'
 
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+cat > "${temp_dir}/mksquashfs-gzip-only" <<'FAKEMKSQUASHFS'
+#!/usr/bin/env bash
+if [[ "$1" == "-help-section" && "$2" == "compression" ]]; then
+  cat <<'EOF'
+Filesystem compression options:
+			Compressors available:
+				gzip (default)
+EOF
+  exit 0
+fi
+exit 1
+FAKEMKSQUASHFS
+chmod +x "${temp_dir}/mksquashfs-gzip-only"
+
+MKSQUASHFS_BIN="${temp_dir}/mksquashfs-gzip-only"
+PATHB_SQUASHFS_COMPRESSOR="zstd"
+assert_contains "$(resolve_mksquashfs_compressor)" 'gzip'
+
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -442,7 +442,7 @@ copy_variant_artifacts() {
 resolve_mksquashfs_compressor() {
   local supported
 
-  supported="$("${MKSQUASHFS_BIN}" -help 2>&1 || true)"
+  supported="$("${MKSQUASHFS_BIN}" -help-section compression 2>&1 || "${MKSQUASHFS_BIN}" -help 2>&1 || true)"
   if printf '%s\n' "${supported}" | grep -Eq "\\b${PATHB_SQUASHFS_COMPRESSOR}\\b"; then
     printf '%s\n' "${PATHB_SQUASHFS_COMPRESSOR}"
     return
