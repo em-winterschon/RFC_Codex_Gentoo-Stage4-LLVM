@@ -2,6 +2,19 @@
 
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 
+- Added secure firstboot producer staging around
+  `stage_secure_firstboot_bundle.py` and `secure-firstboot-bundle-stage.yml`,
+  with repo-output refusal, `no_log` coverage, and tests for age-encrypted OTP
+  bundle generation.
+- Added mutation-gated Tang/Clevis NBDE scaffolding: `vm-tang-nbde-server`,
+  `secure-firstboot-nbde-client`, package lists, service atoms, and OpenRC
+  Tang role templates.
+- Normalized Portage license defaults to `ACCEPT_LICENSE="*.*"` and wired
+  persistent Path B binpkg/distfile cache binds plus buildpkg defaults into the
+  K10 rebuild path.
+- Added planning docs for agent analytics/shared memory, Coherence-CE service
+  role packaging, RDMA storage fabric design, AI/ML HPC supercomputer trends,
+  and X12AGAIN workstation/hypervisor reimage gates.
 - Fixed the K10 Path B artifact generation failure where the `mksquashfs`
   compressor fallback helper wrote a log line to stdout and produced an invalid
   compressor string. The fallback warning now goes to stderr and the regression

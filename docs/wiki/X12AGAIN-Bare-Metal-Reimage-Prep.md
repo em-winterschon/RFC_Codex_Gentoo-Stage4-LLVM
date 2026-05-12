@@ -61,3 +61,29 @@ X12AGAIN live dependencies removed after backup and K10 validation:
 - Completed a post-shutdown link-dest rsync against the verified
   `20260510-173024` off-host snapshot so QCOW2 images are clean rather than
   only crash-consistent.
+
+Target installed profile:
+
+- LOX Stage4 amd64 LLVM/OpenRC base.
+- Stage5 workstation Xorg/NsCDE policy.
+- AMDGPU display support first through the regular Portage Mesa/amdgpu stack;
+  AMDGPU-PRO is added only if a specific application requires it.
+- Optane Persistent Memory kernel support, userspace tools, and namespace
+  inspection scripts.
+- QEMU plus libvirt hypervisor overlay; Xen remains separately gated until the
+  base host is stable.
+- NFSv3, NFSv4, NFS over TCP, NFS-RDMA, iSER, NVMe-RDMA, and multipath client
+  readiness where hardware supports it.
+- FreeIPA/SSSD, rsyslog, observability exporters, ntfy client, and host E2ET
+  conformance tooling.
+
+Hard gates before imaging:
+
+- K10 E2ET has produced a conformance report from the current Path B builder
+  and publisher flow.
+- The disposable builder VM can rebuild and stage K10 artifacts without using
+  X12AGAIN as a mutable chroot workspace.
+- All live service duties currently needed from X12AGAIN are reachable on
+  Hasslehoff or another durable host.
+- Off-host backup and backout media are verified.
+- A rollback decision point is defined before wiping local disks.

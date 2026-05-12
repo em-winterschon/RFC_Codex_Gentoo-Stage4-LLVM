@@ -151,6 +151,37 @@ X12AGAIN can be shut down for bare-metal reimage only after:
 - Git has the latest encrypted network-device config backups and X12AGAIN
   offload docs committed and pushed.
 
+## Target Installed Profile
+
+The first installed X12AGAIN profile should be a workstation plus hypervisor
+host, not another live-ISO operating state.
+
+Required profile overlays:
+
+- LOX Stage4 amd64 LLVM/OpenRC base
+- Stage5 workstation Xorg/NsCDE policy
+- AMDGPU display support; use the regular Portage `amdgpu`/Mesa stack first,
+  and add AMDGPU-PRO only if a specific application requires it
+- Optane Persistent Memory support: kernel config, userspace management tools,
+  and scripts for namespace inspection
+- hypervisor overlay for QEMU plus libvirt; Xen remains a separately gated
+  subtype until the base host is stable
+- NFSv3, NFSv4, NFS over TCP, NFS-RDMA, iSER, NVMe-RDMA, and multipath client
+  package/kernel readiness where hardware supports it
+- FreeIPA/SSSD client profile, rsyslog, observability exporters, ntfy client,
+  and host E2ET conformance tooling
+
+Hard gates before image:
+
+- K10 E2ET has produced a conformance report from the current Path B builder
+  and publisher flow.
+- The disposable builder VM can rebuild and stage K10 artifacts without using
+  X12AGAIN as a mutable chroot workspace.
+- All live service duties currently needed from X12AGAIN are reachable on
+  Hasslehoff or another durable host.
+- Off-host backup and backout media are verified.
+- A rollback decision point is defined before wiping local disks.
+
 ## Final De-Load Sequence
 
 Run this only after the off-host backup completes and K10 has booted from the
