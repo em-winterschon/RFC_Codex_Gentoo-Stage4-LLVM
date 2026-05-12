@@ -25,6 +25,7 @@
 - [Binpkg Repository](Binpkg-Repository)
 - [Nexus Repository](Nexus-Repository)
 - [NFS Storage Client](NFS-Storage-Client)
+- [Kernel Config Architecture](Kernel-Config-Architecture)
 - [Package Version Pinning](Package-Version-Pinning)
 - [Workstation Package Capture](Workstation-Package-Capture)
 - [Workstation NsCDE](Workstation-NsCDE)

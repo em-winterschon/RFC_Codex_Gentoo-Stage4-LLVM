@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-12 - Kernel Config Layering Registry
+
+- Added a declarative `kernel-config/` registry with a baseline
+  `basic-minimal` fragment plus machine, hardware, storage, RDMA, ZFS, GPU,
+  and observability overlays for review.
+- Separated Optane NVDIMM support into the `optane-nvdimm` hardware subprofile,
+  with X12AGAIN / `prinzessin` modeled as a workstation exception rather than a
+  generic workstation default.
+- Added CPU tuning policy metadata and a candidate architecture registry keyed
+  from `/tmp/docs/cpu-arch/RFC1918-CPU-Architectures.md`, while keeping existing
+  live Portage CPU profiles stable until `cpuid2cpuflags` captures are
+  committed with provenance.
+- Documented the kernel config gap analysis and next renderer/validator work for
+  Path-B and installed-host E2ET integration.
+
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 
 - Added secure firstboot producer staging around

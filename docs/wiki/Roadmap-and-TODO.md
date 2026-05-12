@@ -171,6 +171,15 @@ Dependency:
 | --- | --- | --- | --- | --- |
 | `NAS-001` | pending | Inventory QNAP TS435XEU and prepare NFS home-directory service | `AAA-006`, `PNR-021`, `PNR-022` | Operator is powering on the QNAP NAS with roughly 16TB raw storage, 2x 2.5GbE, and 2x 10GbE currently expected on CRS354 `sfp-plus3/4`. First pass should discover firmware, storage pools, NIC MACs, link mode, LACP state, NFS capabilities, LDAP/RADIUS/SSSD integration options, and safe backup/export settings before enabling floating home directories. |
 
+### Kernel And CPU Profiles
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `KERN-001` | scaffolded | Normalize kernel config fragments by baseline, machine role, hardware subprofile, and service overlay | profile taxonomy | `kernel-config/kernel-profile-map.yml` and initial fragments exist for baseline, metal, virtual, hypervisors, Optane NVDIMM, GPU Xorg, NFS, RDMA, NVMe-oF, ZFS, RoCE-v2, and BMC observability. |
+| `KERN-002` | pending | Build kernel profile renderer and symbol validator | `KERN-001` | Must merge selected fragments against exact kernel source, fail on unknown symbols, and record kernel atom plus config hash in E2ET output. |
+| `KERN-003` | pending | Migrate inline profile kernel requirements into named overlays | `KERN-001`, `KERN-002` | Move `kernel_config` and `kernel_config_requirements` from profile YAML to the normalized registry. |
+| `CPU-001` | scaffolded | Capture CPU tuning policy and candidate architecture map | CPU architecture docs | `vars/cpu_profiles.yml` now records capture policy and candidate `-march`/`-mtune` mappings; live profiles are unchanged until `cpuid2cpuflags` output is captured from hardware. |
+
 ### Observability, Logs, And Telemetry
 
 | ID | Status | Task | Depends On | Notes |
