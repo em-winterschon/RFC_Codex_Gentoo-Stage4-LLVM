@@ -6,6 +6,7 @@ local_network_role: baremetal-workstation-validation
 
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"
 
 install_target_root: /
 install_hostname: gmktek-k10-stage5

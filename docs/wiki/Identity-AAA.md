@@ -239,6 +239,76 @@ ssh codex-admin@172.16.99.156 'id; hostname -f; pwd'
 It resolved `codex-admin` with UID `200100`, primary group `linux-admin`, and
 supplemental `ci-builder`, `network-admin`, and `power-admin` memberships.
 
+## Secure First-Boot Enrollment Producer
+
+The safe enrollment model is now split into two sides:
+
+- operator-side bundle production and encryption
+- host-side first-boot consumption and FreeIPA enrollment
+
+The producer side is intentionally not part of the public HTTP netboot rootfs.
+It renders a short-lived FreeIPA host OTP bundle, validates its hostname and
+expiry, encrypts it with `age`, and refuses to write the encrypted artifact
+inside the git repository unless explicitly overridden. The primary command
+wrapper is:
+
+```bash
+SECURE_FIRSTBOOT_BUNDLE_APPLY=1 \
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/secure-firstboot-bundle-stage.yml
+```
+
+The playbook must receive vault-backed values for:
+
+- target FQDN
+- FreeIPA realm, domain, and server
+- bundle expiry
+- generation ID
+- host OTP
+- target host `age` recipient
+
+The corresponding low-level producer is:
+
+```bash
+scripts/stage_secure_firstboot_bundle.py \
+  --bundle /root/operator-private/secure-firstboot/bundle.json \
+  --expected-fqdn gmktek-k10-stage5.rfc1918.host \
+  --recipient "${AGE_RECIPIENT}" \
+  --output /root/operator-private/secure-firstboot/bundle.json.age \
+  --apply
+```
+
+Secrets are protected by three gates:
+
+- plaintext OTP bundles remain under operator-private paths only
+- `no_log: true` wraps Ansible tasks that handle OTP or encrypted bundle data
+- encrypted bundles are denied under the repo tree by default
+
+## Tang And Clevis NBDE Policy
+
+Tang/Clevis is tracked as optional hardening for disk-installed hosts, not as a
+replacement for host-bound identity. Tang-only decryption is not sufficient for
+first-boot enrollment because any host that can reach the Tang advertisement can
+recover the secret. The only approved NBDE policy for this path is:
+
+```text
+tpm2+tang
+```
+
+The initial Tang service role is mutation-gated:
+
+- profile: `vm-tang-nbde-server`
+- role: `tang_nbde_server`
+- service atom: `tang-advertisement`
+- default state: disabled
+- package source: Guru overlay until `app-crypt/tang` and `app-crypt/clevis`
+  are available in the base package policy
+
+The client package overlay is `secure-firstboot-nbde-client` and includes
+Clevis plus TPM2 tooling. It should be enabled only for disk-install profiles
+that have a real TPM, a measured boot plan, and an E2ET gate proving that
+unlock and FreeIPA enrollment still work after power loss.
+
 ## Secure First-Boot Enrollment
 
 The approved durable enrollment path is FreeIPA one-time host password delivery

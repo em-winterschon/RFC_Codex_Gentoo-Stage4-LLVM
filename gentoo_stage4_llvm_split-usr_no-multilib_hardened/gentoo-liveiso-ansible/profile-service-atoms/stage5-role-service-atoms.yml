@@ -199,6 +199,41 @@ role_service_atoms:
         forbidden_artifacts:
           - /etc/krb5.keytab
 
+  secure-firstboot-nbde-client:
+    role_class: identity-overlay
+    extends:
+      - secure-firstboot-enrollment
+    package_lists:
+      - profile-package-lists/stage5-secure-firstboot-nbde-client.packages
+    service_atoms:
+      - id: clevis-tpm2-tang-client
+        package_atoms:
+          - app-crypt/clevis
+          - app-crypt/tpm2-tools
+          - app-crypt/tpm2-tss
+        kernel_modules:
+          - tpm
+          - tpm_tis
+        forbidden_policies:
+          - tang-only
+        required_policies:
+          - tpm2+tang
+
+  vm-tang-nbde-server:
+    role_class: virtual-host
+    extends:
+      - virt-minimal
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-tang-nbde-server.packages
+    service_atoms:
+      - id: tang-advertisement
+        package_atoms:
+          - app-crypt/tang
+        openrc_services:
+          - tangd
+        protocol_ports:
+          - tcp/7500
+
   vm-container-services:
     role_class: virtual-host
     extends:

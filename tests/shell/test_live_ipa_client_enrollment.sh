@@ -32,6 +32,7 @@ assert_file_contains "${inventory}" 'gmktek_nucbox_k10_stage5_candidate:'
 test -f "${host_vars}"
 assert_file_contains "${host_vars}" 'ansible_host: 172.16.99.156'
 assert_file_contains "${host_vars}" 'profile-definitions/aaa-domain-client.yml'
+assert_file_contains "${host_vars}" 'profile-definitions/secure-firstboot-enrollment.yml'
 assert_file_contains "${host_vars}" 'freeipa_client_fqdn: gmktek-k10-stage5.rfc1918.host'
 assert_file_contains "${host_vars}" 'freeipa_client_controller_inventory_host: svc_identity_ipa01'
 

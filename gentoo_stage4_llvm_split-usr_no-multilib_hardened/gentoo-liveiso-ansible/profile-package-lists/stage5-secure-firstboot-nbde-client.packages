@@ -1,0 +1,4 @@
+app-crypt/clevis
+app-crypt/tpm2-tools
+app-crypt/tpm2-tss
+sys-apps/util-linux

@@ -1,0 +1,8 @@
+---
+tang_nbde_server_enabled: false
+tang_nbde_server_mutation_enabled: false
+tang_nbde_server_service_name: tangd
+tang_nbde_server_state_dir: /var/lib/tang
+tang_nbde_server_listen_url: http://0.0.0.0:7500
+tang_nbde_server_command: /usr/libexec/tangd
+tang_nbde_server_extra_args: []

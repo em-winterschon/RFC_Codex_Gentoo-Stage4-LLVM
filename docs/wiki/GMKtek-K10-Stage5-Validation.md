@@ -145,6 +145,34 @@ Once the host requests DHCP, record:
     behavior validation.
 12. Snapshot/capture final package and Portage state before considering X12AGAIN.
 
+## E2ET Rebuild Timing Sequence
+
+Use this timing model when K10 is rebuilt as the bare-metal E2ET candidate:
+
+1. Pre-change capture: confirm RouterOS static lease, AP7901 outlet mapping,
+   NetBox device/interface/IPAM data, and current publisher artifact checksums.
+2. Image build: run the Path B artifact builder with
+   `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml,profile-definitions/secure-firstboot-enrollment.yml`.
+   Expected duration depends on binpkg cache state; record start, finish, and
+   elapsed wall time in the E2ET log.
+3. Publish: sync kernel, initramfs, rootfs, iPXE host script, and generated role
+   script to `boot-sun99-netboot-099088.rfc1918.host:/var/lib/netboot/path-b`.
+4. Power cycle: use AP7901 outlet 6 only after the publisher has the complete
+   artifact set and RouterOS still advertises `next-server=172.16.99.88`.
+5. Firmware and iPXE gates: validate DHCP, TFTP `k10-ipxe.efi`, host iPXE
+   script fetch, kernel fetch, initramfs fetch, Realtek firmware load, and
+   rootfs fetch in order. Stop on the first missing handoff.
+6. Rootfs smoke: validate SSH as root, hostname intent, OpenRC state, network
+   route, DNS, NTP/chrony readiness, rsyslog readiness, and exporter readiness.
+7. AAA smoke: validate package presence, SSSD config, NSS lookup, PAM account,
+   FreeIPA SSH-key lookup, and floating SSH for `codex-admin`.
+8. Durable enrollment gate: netboot-only evidence is insufficient. Mark the
+   durable E2ET gate complete only after disk install or another persistent
+   identity path proves `/etc/krb5.keytab`, SSSD cache, hostname, sudo policy,
+   and break-glass behavior survive a power-cycle.
+9. Conformance report: write pass/fail, timings, artifact IDs, package profile
+   IDs, and observed deviations before any X12AGAIN reimage action.
+
 ## Backout
 
 Do not modify X12AGAIN until the K10 has completed the install and workstation

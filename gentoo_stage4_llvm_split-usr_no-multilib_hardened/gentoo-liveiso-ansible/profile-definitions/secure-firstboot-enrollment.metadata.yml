@@ -27,6 +27,7 @@ gentoo_system_profile_metadata:
       - /etc/krb5.keytab
     notes:
       - Tang-only decryption is not sufficient because Tang proves network presence, not host identity.
+      - The only approved Clevis/Tang firstboot policy is host-bound tpm2+tang.
       - Clevis/Tang remains optional Guru-gated future work after package pinning and boot validation.
       - aespipe is acceptable only for manual break-glass encrypted archives, not unattended enrollment.
   guru_package_gap:
