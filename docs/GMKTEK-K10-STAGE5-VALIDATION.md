@@ -98,8 +98,9 @@ Current physical discovery state:
   records the kernel, initramfs, rootfs, dracut firmware requirements, static
   command line, and Jenkins rebuild inputs for this K10 boot image.
 - Rebuild invocation: the Path B artifact builder now consumes profile
-  definitions directly. For the K10 AAA-capable rootfs, run with
-  `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml,profile-definitions/secure-firstboot-enrollment.yml`
+  definitions directly. For the K10 AAA-capable rootfs, run with the
+  whitespace-separated shell list
+  `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`
   so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy,
   `app-crypt/age`, `curl`, `jq`, the `sssd` OpenRC service, and the opt-in
   secure first-boot enrollment scaffold are carried into the generated rootfs
@@ -152,7 +153,7 @@ Use this timing model when K10 is rebuilt as the bare-metal E2ET candidate:
 1. Pre-change capture: confirm RouterOS static lease, AP7901 outlet mapping,
    NetBox device/interface/IPAM data, and current publisher artifact checksums.
 2. Image build: run the Path B artifact builder with
-   `PATHB_PROFILE_DEFINITION_FILES=profile-definitions/aaa-domain-client.yml,profile-definitions/secure-firstboot-enrollment.yml`.
+   `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`.
    Expected duration depends on binpkg cache state; record start, finish, and
    elapsed wall time in the E2ET log.
 3. Publish: sync kernel, initramfs, rootfs, iPXE host script, and generated role
