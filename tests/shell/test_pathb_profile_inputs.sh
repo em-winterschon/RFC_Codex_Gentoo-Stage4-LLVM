@@ -46,6 +46,7 @@ assert_contains "${PATHB_OPENRC_SERVICES_EXTRA}" 'sssd'
 
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_PROFILE_DEFINITION_FILES'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_ACCEPT_LICENSE'
+assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_ACCEPT_LICENSE="${PATHB_ACCEPT_LICENSE:-*.*}"'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'ACCEPT_LICENSE="${PATHB_ACCEPT_LICENSE}"'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'mode=755,nosuid'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'ptmxmode=666'
