@@ -58,6 +58,7 @@ class IssueRecord:
     url: str
     body: str
     labels: tuple[str, ...]
+    state: str
 
 
 def load_yaml(path: Path) -> Any:
@@ -75,6 +76,13 @@ def normalize_status(status: str) -> str:
     if normalized in {"active", "ready", "blocked", "review", "done", "backlog"}:
         return normalized
     return "backlog"
+
+
+def status_from_labels(labels: tuple[str, ...], default: str = "backlog") -> str:
+    for label in labels:
+        if label.startswith("status:"):
+            return normalize_status(label.split(":", 1)[1])
+    return normalize_status(default)
 
 
 def roadmap_prefix(roadmap_id: str) -> str:
@@ -194,6 +202,7 @@ def explicit_catalog_issues(config: dict[str, Any]) -> list[PlannedIssue]:
         issue_id = item["id"]
         title = item["title"]
         labels = tuple(item.get("labels", ["type:roadmap-task", "status:backlog"]))
+        status = normalize_status(item.get("status") or status_from_labels(labels, "ready"))
         body = str(item.get("body", "")).strip()
         if issue_id and not title.startswith(f"[{issue_id}]"):
             title = f"[{issue_id}] {title}"
@@ -205,7 +214,7 @@ def explicit_catalog_issues(config: dict[str, Any]) -> list[PlannedIssue]:
                 milestone=item.get("milestone"),
                 roadmap_id=issue_id,
                 source="catalog",
-                status=normalize_status(item.get("status", "ready")),
+                status=status,
                 depends_on=tuple(item.get("depends_on", [])),
                 parent_id=item.get("parent_id"),
                 issue_type=item.get("issue_type", "task"),
@@ -436,7 +445,7 @@ def fetch_issue_records(repo: str) -> list[IssueRecord]:
             "--limit",
             "1000",
             "--json",
-            "number,title,url,body,labels",
+            "number,title,url,body,labels,state",
         ]
     )
     records = []
@@ -448,6 +457,7 @@ def fetch_issue_records(repo: str) -> list[IssueRecord]:
                 url=item["url"],
                 body=item.get("body") or "",
                 labels=tuple(label["name"] for label in item.get("labels", [])),
+                state=item.get("state", "OPEN"),
             )
         )
     return records
@@ -764,6 +774,31 @@ def roadmap_status_label(status: str | None) -> str:
     }.get(status, "Backlog")
 
 
+def kanban_status_label(status: str | None, issue_state: str | None = None) -> str:
+    if str(issue_state or "").upper() == "CLOSED":
+        return "Complete"
+    status = normalize_status(status or "backlog")
+    return {
+        "backlog": "Backlog",
+        "ready": "Scoping",
+        "active": "In-Progress",
+        "blocked": "Blocked",
+        "review": "Review-Ready",
+        "done": "Complete",
+    }.get(status, "Backlog")
+
+
+def roadmap_status_from_kanban(kanban_status: str) -> str:
+    return {
+        "Backlog": "Backlog",
+        "Scoping": "Ready",
+        "In-Progress": "Active",
+        "Blocked": "Blocked",
+        "Review-Ready": "Review",
+        "Complete": "Done",
+    }[kanban_status]
+
+
 def single_select_option_id(field_obj: dict[str, Any], option_name: str) -> str | None:
     for option in field_obj.get("options", []):
         if option["name"] == option_name:
@@ -771,19 +806,24 @@ def single_select_option_id(field_obj: dict[str, Any], option_name: str) -> str 
     return None
 
 
-def update_project_item_fields(project_number: str, owner: str, issues: list[PlannedIssue]) -> None:
+def update_project_item_fields(
+    project_number: str, owner: str, repo: str, issues: list[PlannedIssue]
+) -> None:
     project = gh_json(["project", "view", project_number, "--owner", owner, "--format", "json"])
     project_id = project["id"]
     roadmap_id_field = project_field_by_name(project_number, owner, "Roadmap ID")
     roadmap_status_field = project_field_by_name(project_number, owner, "Roadmap Status")
+    kanban_status_field = project_field_by_name(project_number, owner, "Kanban Status")
     if not roadmap_id_field or not roadmap_status_field:
         print("skipped project field sync: missing Roadmap ID or Roadmap Status", file=sys.stderr)
         return
     items = project_items_by_title(project_number, owner)
+    records_by_title = issue_records_by_title(repo)
     for issue in issues:
         item = items.get(issue.title)
         if not item:
             continue
+        issue_state = records_by_title.get(issue.title).state if issue.title in records_by_title else None
         if issue.roadmap_id:
             gh_run(
                 [
@@ -801,9 +841,8 @@ def update_project_item_fields(project_number: str, owner: str, issues: list[Pla
                     "json",
                 ]
             )
-        option_id = single_select_option_id(
-            roadmap_status_field, roadmap_status_label(issue.status)
-        )
+        kanban_status = kanban_status_label(issue.status, issue_state)
+        option_id = single_select_option_id(roadmap_status_field, roadmap_status_from_kanban(kanban_status))
         if option_id:
             gh_run(
                 [
@@ -821,9 +860,26 @@ def update_project_item_fields(project_number: str, owner: str, issues: list[Pla
                     "json",
                 ]
             )
+        if kanban_status_field:
+            option_id = single_select_option_id(kanban_status_field, kanban_status)
+            if option_id:
+                gh_run(
+                    [
+                        "project",
+                        "item-edit",
+                        "--id",
+                        item["id"],
+                        "--project-id",
+                        project_id,
+                        "--field-id",
+                        kanban_status_field["id"],
+                        "--single-select-option-id",
+                        option_id,
+                        "--format",
+                        "json",
+                    ]
+                )
         print(f"updated project fields: {issue.title}")
-
-
 def create_project(owner: str, title: str) -> str:
     projects = gh_json(["project", "list", "--owner", owner, "--format", "json", "--limit", "100"])
     for project in projects.get("projects", []):
@@ -848,10 +904,17 @@ def ensure_project(
         "SINGLE_SELECT",
         ("Backlog", "Ready", "Active", "Blocked", "Review", "Done"),
     )
+    ensure_project_field(
+        project_number,
+        owner,
+        "Kanban Status",
+        "SINGLE_SELECT",
+        ("Backlog", "Scoping", "In-Progress", "Blocked", "Review-Ready", "Complete"),
+    )
     ensure_project_field(project_number, owner, "Roadmap ID", "TEXT")
     add_issues_to_project(project_number, owner, repo, issues)
     if sync_fields:
-        update_project_item_fields(project_number, owner, issues)
+        update_project_item_fields(project_number, owner, repo, issues)
 
 
 def verify_project_scope(owner: str) -> None:
