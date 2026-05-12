@@ -72,6 +72,8 @@ chmod +x "${temp_dir}/mksquashfs-gzip-only"
 
 MKSQUASHFS_BIN="${temp_dir}/mksquashfs-gzip-only"
 PATHB_SQUASHFS_COMPRESSOR="zstd"
-assert_contains "$(resolve_mksquashfs_compressor)" 'gzip'
+compressor_output="$(resolve_mksquashfs_compressor 2> "${temp_dir}/mksquashfs-compressor.stderr")"
+[[ "${compressor_output}" == "gzip" ]] || fail "expected compressor fallback stdout to be exactly gzip"
+assert_file_contains "${temp_dir}/mksquashfs-compressor.stderr" "falling back to gzip"
 
 printf 'PASS: %s\n' "$(basename "$0")"

@@ -322,6 +322,44 @@ def power_port_by_device_and_name(
     )
 
 
+def cable_has_termination(cable: dict[str, Any], object_type: str, object_id: int) -> bool:
+    for side in ("a_terminations", "b_terminations"):
+        for termination in cable.get(side, []) or []:
+            if not isinstance(termination, dict):
+                continue
+            termination_type = termination.get("object_type")
+            termination_id = termination.get("object_id")
+            if termination_id is None and isinstance(termination.get("object"), dict):
+                termination_id = termination["object"].get("id")
+            try:
+                if termination_type == object_type and int(termination_id) == int(object_id):
+                    return True
+            except (TypeError, ValueError):
+                continue
+    return False
+
+
+def cable_between_terminations(
+    client: NetBoxClient,
+    left_type: str,
+    left_id: int,
+    right_type: str,
+    right_id: int,
+) -> dict[str, Any] | None:
+    result = client.request_json("GET", "dcim/cables", query={"limit": "0"})
+    rows = result.get("results", [])
+    if not isinstance(rows, list):
+        return None
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        left_matches = cable_has_termination(row, left_type, left_id)
+        right_matches = cable_has_termination(row, right_type, right_id)
+        if left_matches and right_matches:
+            return row
+    return None
+
+
 def ensure_device_interface(
     client: NetBoxClient,
     device: dict[str, Any],
@@ -477,7 +515,7 @@ def ensure_power_port(
         "name": name,
         "type": "nema-5-15p",
         "description": "Power input tracked from inventory intake.",
-        "mark_connected": True,
+        "mark_connected": False,
     }
     if client.dry_run:
         return client.ensure(
@@ -521,7 +559,7 @@ def ensure_power_outlet(
         "label": str(outlet.get("label", "")),
         "type": "nema-5-15r",
         "description": target_description,
-        "mark_connected": bool(target_power_port),
+        "mark_connected": False,
     }
 
     if client.dry_run:
@@ -551,6 +589,66 @@ def ensure_power_outlet(
     return created
 
 
+def ensure_power_cable(
+    client: NetBoxClient,
+    source_device: dict[str, Any],
+    source_outlet: dict[str, Any],
+    source_outlet_payload: dict[str, Any],
+    target_device: dict[str, Any],
+    target_power_port: dict[str, Any],
+) -> dict[str, Any]:
+    source_name = str(source_outlet_payload["name"])
+    target_name = str(target_power_port["name"])
+    lookup_value = f"{source_device['name']}:{source_name}->{target_device['name']}:{target_name}"
+    payload = {
+        "a_terminations": [
+            {
+                "object_type": "dcim.poweroutlet",
+                "object_id": source_outlet["id"],
+            }
+        ],
+        "b_terminations": [
+            {
+                "object_type": "dcim.powerport",
+                "object_id": target_power_port["id"],
+            }
+        ],
+        "status": "connected",
+        "label": lookup_value,
+        "description": "Power-chain cable tracked from inventory intake.",
+    }
+
+    if client.dry_run:
+        return client.ensure(
+            NetBoxObject(
+                "dcim/cables",
+                "label",
+                lookup_value,
+                payload,
+            )
+        )
+
+    existing = cable_between_terminations(
+        client,
+        "dcim.poweroutlet",
+        int(source_outlet["id"]),
+        "dcim.powerport",
+        int(target_power_port["id"]),
+    )
+    label = f"dcim/cables:{lookup_value}"
+    if existing:
+        client.existing.append(label)
+        if client.update_existing:
+            updated = client.request_json("PATCH", f"dcim/cables/{existing['id']}", payload)
+            client.updated.append(label)
+            return updated
+        return existing
+
+    created = client.request_json("POST", "dcim/cables", payload)
+    client.created.append(label)
+    return created
+
+
 def apply_power_outlets(
     client: NetBoxClient,
     device: dict[str, Any],
@@ -569,7 +667,9 @@ def apply_power_outlets(
                     target_device,
                     str(outlet.get("target_power_port", "power0")),
                 )
-        ensure_power_outlet(client, device, outlet, target_power_port)
+        netbox_outlet = ensure_power_outlet(client, device, outlet, target_power_port)
+        if target_power_port and target_device:
+            ensure_power_cable(client, device, netbox_outlet, outlet, target_device, target_power_port)
 
 
 def apply_prefixes(

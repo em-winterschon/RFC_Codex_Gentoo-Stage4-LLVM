@@ -376,7 +376,7 @@ devices:
     notes:
       - GMKtek NucBox K10 bare-metal Stage5 workstation validation host.
       - CPU Intel Core i9-13900HK; GPU Intel Iris Xe for display-only workstation validation.
-      - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.108.
+      - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
       - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
       - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
   - name: lap_sun99_chonkers

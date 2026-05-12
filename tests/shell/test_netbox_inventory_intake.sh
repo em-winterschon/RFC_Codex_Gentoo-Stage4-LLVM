@@ -18,6 +18,16 @@ assert_file_contains() {
   grep -Fq "${pattern}" "${file}" || fail "expected ${file} to contain ${pattern}"
 }
 
+assert_file_not_contains() {
+  local file="$1"
+  local pattern="$2"
+
+  [[ -f "${file}" ]] || fail "missing file ${file}"
+  if grep -Fq "${pattern}" "${file}"; then
+    fail "expected ${file} not to contain ${pattern}"
+  fi
+}
+
 validator="${REPO_ROOT}/scripts/validate_netbox_inventory_intake.py"
 apply_script="${REPO_ROOT}/scripts/netbox_apply_inventory_intake.py"
 example="${ANSIBLE_ROOT}/inventory-intake/sites/local-rfc1918-lab.yml"
@@ -71,6 +81,7 @@ assert_file_contains "${example}" "172.16.99.66"
 assert_file_contains "${example}" "172.16.99.241"
 assert_file_contains "${example}" "84:5C:31:A5:CF:51"
 assert_file_contains "${example}" "ipxe-httpv4-with-pxe-fallback"
+assert_file_not_contains "${example}" "172.16.99.108"
 assert_file_contains "${example}" "outlet_index: 4"
 assert_file_contains "${example}" "host_gmktec_k10"
 assert_file_contains "${example}" "power_outlets:"
@@ -123,8 +134,12 @@ grep -Fq 'ipam/ip-addresses:172.16.99.241/24' /tmp/netbox-intake-apply-plan.json
 grep -Fq 'dcim/interfaces:gmktek_nucbox_k10_stage5_candidate:eth0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 interface"
 grep -Fq 'dcim/interfaces:lap_sun99_chonkers:LOM' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers LOM interface"
 grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 management interface"
+grep -Fq 'dcim/power-ports:lap_sun99_chonkers:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers power port"
+grep -Fq 'dcim/power-ports:gmktek_nucbox_k10_stage5_candidate:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 power port"
 grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet4' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 4"
 grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 6"
+grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet4->lap_sun99_chonkers:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers PDU cable"
+grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet6->gmktek_nucbox_k10_stage5_candidate:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 PDU cable"
 
 python3 - "${apply_script}" << 'PY'
 import importlib.util

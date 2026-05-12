@@ -222,8 +222,17 @@ resolve_pathb_profile_inputs() {
 }
 
 reset_rootfs() {
+  local stale_target
+
   cleanup_mounts
-  rm -rf "${TARGET_ROOT_MNT}"
+  if [[ -e "${TARGET_ROOT_MNT}" ]]; then
+    stale_target="${TARGET_ROOT_MNT}.stale.$(date -u +%Y%m%dT%H%M%SZ)"
+    if mv "${TARGET_ROOT_MNT}" "${stale_target}"; then
+      printf '[build-path-b-netboot-artifacts] WARN: quarantined stale rootfs at %s\n' "${stale_target}" >&2
+    else
+      rm -rf "${TARGET_ROOT_MNT}"
+    fi
+  fi
   mkdir -p "${TARGET_ROOT_MNT}"
 }
 
@@ -449,7 +458,7 @@ resolve_mksquashfs_compressor() {
   fi
 
   if printf '%s\n' "${supported}" | grep -Eq "\\bgzip\\b"; then
-    log "mksquashfs compressor '${PATHB_SQUASHFS_COMPRESSOR}' is unavailable; falling back to gzip"
+    log "mksquashfs compressor '${PATHB_SQUASHFS_COMPRESSOR}' is unavailable; falling back to gzip" >&2
     printf '%s\n' "gzip"
     return
   fi
