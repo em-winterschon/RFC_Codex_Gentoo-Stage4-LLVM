@@ -37,3 +37,17 @@
 3. Run the next K10 firstboot/E2ET validation sequence.
 4. Continue NetBox deep DCIM modeling and X12AGAIN reimage preparation.
 
+## Overnight Follow-Up
+
+- Added the secure firstboot producer/apply workflow, including
+  `stage_secure_firstboot_bundle.py`, `secure-firstboot-bundle-stage.yml`,
+  encrypted bundle repo-output refusal, and `no_log` coverage.
+- Added Tang/Clevis NBDE scaffolding with required `tpm2+tang` policy.
+- Normalized Portage defaults to `ACCEPT_LICENSE="*.*"`.
+- Wired Path B persistent distfile/binpkg cache binds and buildpkg defaults.
+- Started a fresh K10 rebuild inside `x12again-stagebuild-k10`; current log is
+  `/var/log/k10-pathb-rebuild-current.log` on the builder VM.
+- Added agent-memory, Coherence-CE, RDMA storage fabric, HPC meta-analysis, and
+  X12AGAIN reimage planning docs.
+- Added masked, mutation-gated Coherence-CE service scaffolding with a local
+  overlay placeholder and Jenkins-pinned build requirement.

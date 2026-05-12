@@ -137,3 +137,46 @@
    documents as the durable project-memory sink until the structured analytics
    store exists.
 
+## Overnight Follow-Up
+
+- Added and pushed the secure firstboot producer/apply workflow:
+  - `scripts/stage_secure_firstboot_bundle.py`
+  - `playbooks/secure-firstboot-bundle-stage.yml`
+  - repo-output refusal for encrypted bundles unless explicitly overridden
+  - `no_log: true` coverage on OTP/encrypted bundle handling
+- Added optional Tang/Clevis NBDE scaffolding:
+  - `vm-tang-nbde-server`
+  - `secure-firstboot-nbde-client`
+  - `tang_nbde_server` role
+  - required policy: `tpm2+tang`, not Tang-only
+- Normalized Portage license defaults to `ACCEPT_LICENSE="*.*"`.
+- Wired Path B builds for persistent `/srv/build-cache` distfile/binpkg binds
+  and buildpkg defaults.
+- Started a fresh K10 Path B rebuild inside `x12again-stagebuild-k10`:
+  - builder SSH: `127.0.0.1:2230`
+  - log: `/var/log/k10-pathb-rebuild-current.log`
+  - first failed gate: missing root SSH key source
+  - fix: `SSH_AUTHORIZED_KEY_FILE=/root/.ssh/authorized_keys`
+  - status at last check: emerge running, `30/103` package phase reached
+- Added planning docs and wiki pages for:
+  - agent memory and analytics
+  - Coherence-CE service role
+  - RDMA storage fabric
+  - AI/ML HPC supercomputer meta-analysis
+  - X12AGAIN target installed workstation/hypervisor profile
+- Added masked, mutation-gated Coherence-CE service scaffolding:
+  - `vm-coherence-ce-node`
+  - `coherence_ce_service` role
+  - `dev-java/oracle-coherence-ce` local overlay placeholder
+  - Jenkins-pinned build requirement before unmasking
+
+Follow-up commits after the initial EOD report:
+
+- `77a3b08 Record 2026-05-11 EOD and roadmap updates`
+- `03cd288 Add secure firstboot NBDE staging scaffolds`
+- `c390f04 Clarify Path B multi-profile rebuild command`
+- `5e4a838 Default Portage license acceptance to all licenses`
+- `5a66c99 Enable persistent Path B build caches`
+- `f9ec19c Document Path B SSH key bootstrap gate`
+- `cf5f0af Add agent memory and RDMA planning docs`
+- `be329ac Add Coherence CE service role scaffold`
