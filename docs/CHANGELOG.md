@@ -2,6 +2,19 @@
 
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 
+- Fixed the K10 Path B artifact generation failure where the `mksquashfs`
+  compressor fallback helper wrote a log line to stdout and produced an invalid
+  compressor string. The fallback warning now goes to stderr and the regression
+  test requires stdout to be exactly `gzip`.
+- Promoted the rebuilt K10 Path B artifacts from the X12AGAIN disposable
+  builder to the Hasslehoff netboot publisher at `172.16.99.88`; HTTP readback
+  validated the promoted `vmlinuz`, `initramfs.img`, and `rootfs.img` hashes.
+- Rebooted K10 through AP7901 outlet 6, validated kernel
+  `6.18.28-gentoo-dist`, confirmed the SSSD IPA backend and required tools are
+  present, then re-applied and validated live FreeIPA client enrollment.
+- Extended NetBox intake/apply logic to create real DCIM power cable objects
+  between AP7901 outlets and host power ports, then applied and verified
+  `outlet6 -> K10` and `outlet4 -> Chonkers` with pre/post NetBox snapshots.
 - Added the `secure-firstboot-enrollment` profile, package list, role-service
   atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
   FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
