@@ -157,7 +157,8 @@
   - log: `/var/log/k10-pathb-rebuild-current.log`
   - first failed gate: missing root SSH key source
   - fix: `SSH_AUTHORIZED_KEY_FILE=/root/.ssh/authorized_keys`
-  - status at last check: emerge running, `30/103` package phase reached
+  - status at `2026-05-12T05:33:54Z`: emerge running, `96/103` package phase
+    reached; `openldap` completed and `gentoo-kernel-6.18.29` was emerging
 - Added planning docs and wiki pages for:
   - agent memory and analytics
   - Coherence-CE service role

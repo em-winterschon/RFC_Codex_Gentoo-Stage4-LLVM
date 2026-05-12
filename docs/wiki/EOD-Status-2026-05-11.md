@@ -47,6 +47,9 @@
 - Wired Path B persistent distfile/binpkg cache binds and buildpkg defaults.
 - Started a fresh K10 rebuild inside `x12again-stagebuild-k10`; current log is
   `/var/log/k10-pathb-rebuild-current.log` on the builder VM.
+- At `2026-05-12T05:33:54Z`, the K10 rebuild was still running, had reached
+  `96/103` package phase, had completed `openldap`, and was emerging
+  `gentoo-kernel-6.18.29`.
 - Added agent-memory, Coherence-CE, RDMA storage fabric, HPC meta-analysis, and
   X12AGAIN reimage planning docs.
 - Added masked, mutation-gated Coherence-CE service scaffolding with a local
