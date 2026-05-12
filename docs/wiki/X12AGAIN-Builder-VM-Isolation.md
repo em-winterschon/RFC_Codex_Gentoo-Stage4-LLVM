@@ -55,6 +55,7 @@ the Path B builder inside the disposable VM:
 
 ```bash
 PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml" \
+SSH_AUTHORIZED_KEY_FILE=/root/.ssh/authorized_keys \
 PATHB_INSTANCE_NAME=gmktek-k10-stage5 \
 PATHB_ROOT=/var/lib/netboot/staging/path-b/gmktek-k10-stage5 \
 gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
@@ -72,6 +73,9 @@ Defaults:
 - Cache bind mounts: host `/srv/build-cache/distfiles` and
   `/srv/build-cache/binpkgs` are mounted into the builder chroot at the same
   guest paths so distfiles and built packages persist outside disposable QCOWs
+- Root SSH access: the builder must pass `SSH_AUTHORIZED_KEY_FILE` or
+  `SSH_AUTHORIZED_KEY` into the Path B script, otherwise rootfs bootstrap stops
+  before package mutation begins
 - Builder tools: the disposable VM baseline includes `sys-fs/squashfs-tools`
   for Path B rootfs image creation and `dev-python/pyyaml` for profile
   definition parsing
