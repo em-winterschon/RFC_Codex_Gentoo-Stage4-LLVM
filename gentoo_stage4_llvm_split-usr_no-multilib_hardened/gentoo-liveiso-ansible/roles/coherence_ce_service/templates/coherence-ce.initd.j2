@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+
+description="Coherence-CE experimental cache node"
+command="${COHERENCE_CE_JAVA_BIN:-/usr/bin/java}"
+command_user="${COHERENCE_CE_USER:-coherence}:${COHERENCE_CE_GROUP:-coherence}"
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="${COHERENCE_CE_LOG_DIR:-/var/log/coherence-ce}/${RC_SVCNAME}.log"
+error_log="${COHERENCE_CE_LOG_DIR:-/var/log/coherence-ce}/${RC_SVCNAME}.err"
+start_stop_daemon_args="--make-pidfile"
+
+depend() {
+  need net
+  after firewall
+}
+
+start_pre() {
+  checkpath -d -m 0750 -o "${COHERENCE_CE_USER:-coherence}:${COHERENCE_CE_GROUP:-coherence}" "${COHERENCE_CE_HOME:-/var/lib/coherence-ce}"
+  checkpath -d -m 0750 -o "${COHERENCE_CE_USER:-coherence}:${COHERENCE_CE_GROUP:-coherence}" "${COHERENCE_CE_LOG_DIR:-/var/log/coherence-ce}"
+}
+
+command_args="
+  ${COHERENCE_CE_EXTRA_JAVA_OPTS:-}
+  -Dcoherence.cluster=${COHERENCE_CE_CLUSTER_NAME:-rfc-codex-memory}
+  -Dcoherence.localhost=${COHERENCE_CE_LISTEN_ADDRESS:-0.0.0.0}
+  -Dcoherence.clusterport=${COHERENCE_CE_CLUSTER_PORT:-7574}
+  -Dcoherence.management=all
+  -Dcoherence.management.remote=true
+  -Dcoherence.management.http=all
+  -Dcoherence.management.http.port=${COHERENCE_CE_MANAGEMENT_PORT:-30000}
+  -jar ${COHERENCE_CE_ARTIFACT:-/opt/coherence-ce/lib/coherence.jar}
+"

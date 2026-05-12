@@ -1,0 +1,18 @@
+---
+gentoo_system_profile_metadata:
+  profile: vm-coherence-ce-node
+  status: scaffolded
+  lifecycle_stage: experimental
+  purpose: >
+    Provides a VM profile scaffold for Oracle Coherence Community Edition
+    experiments. The durable source of truth for shared agent memory remains
+    S3-compatible object storage; Coherence-CE is only a derived index/cache
+    candidate until a repeatable build and readiness workflow exists.
+  upstream:
+    repository: https://github.com/oracle/coherence
+    docs: https://docs.oracle.com/en/middleware/standalone/coherence/
+  gates:
+    - role is disabled by default
+    - live service mutation requires coherence_ce_service_mutation_enabled=true
+    - local overlay ebuild is masked and intentionally non-live until Jenkins pins a build
+    - service-readiness checks must prove cluster membership and metrics before HAProxy exposure

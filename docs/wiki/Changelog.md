@@ -15,6 +15,9 @@
 - Added planning docs for agent analytics/shared memory, Coherence-CE service
   role packaging, RDMA storage fabric design, AI/ML HPC supercomputer trends,
   and X12AGAIN workstation/hypervisor reimage gates.
+- Added a masked, mutation-gated `vm-coherence-ce-node` service scaffold with
+  profile/package-list/service-atom coverage, OpenRC role templates, and a
+  placeholder local overlay ebuild for future Jenkins-pinned builds.
 - Fixed the K10 Path B artifact generation failure where the `mksquashfs`
   compressor fallback helper wrote a log line to stdout and produced an invalid
   compressor string. The fallback warning now goes to stderr and the regression

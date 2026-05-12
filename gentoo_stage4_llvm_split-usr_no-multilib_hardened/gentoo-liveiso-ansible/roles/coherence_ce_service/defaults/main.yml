@@ -1,0 +1,15 @@
+---
+coherence_ce_service_enabled: false
+coherence_ce_service_mutation_enabled: false
+coherence_ce_service_name: coherence-ce
+coherence_ce_service_user: coherence
+coherence_ce_service_group: coherence
+coherence_ce_service_home: /var/lib/coherence-ce
+coherence_ce_service_log_dir: /var/log/coherence-ce
+coherence_ce_service_java_bin: /usr/bin/java
+coherence_ce_service_artifact: /opt/coherence-ce/lib/coherence.jar
+coherence_ce_service_cluster_name: rfc-codex-memory
+coherence_ce_service_listen_address: 0.0.0.0
+coherence_ce_service_cluster_port: 7574
+coherence_ce_service_management_port: 30000
+coherence_ce_service_extra_java_opts: []

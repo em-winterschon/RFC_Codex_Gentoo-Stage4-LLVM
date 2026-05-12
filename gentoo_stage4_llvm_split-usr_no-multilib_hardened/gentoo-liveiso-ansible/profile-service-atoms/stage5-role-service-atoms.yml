@@ -234,6 +234,24 @@ role_service_atoms:
         protocol_ports:
           - tcp/7500
 
+  vm-coherence-ce-node:
+    role_class: virtual-host
+    extends:
+      - virt-minimal
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-coherence-ce-node.packages
+    service_atoms:
+      - id: coherence-ce-cache-node
+        package_atoms:
+          - virtual/jre
+        openrc_services:
+          - coherence-ce
+        protocol_ports:
+          - tcp/7574
+          - tcp/30000
+        mutation_gate:
+          - coherence_ce_service_mutation_enabled
+
   vm-container-services:
     role_class: virtual-host
     extends:

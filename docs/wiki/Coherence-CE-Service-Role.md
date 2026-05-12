@@ -20,6 +20,15 @@ Initial service-role taxonomy:
 - `container-coherence-ce-node`: future containerized member profile
 - `service-coherence-ce-client`: app-side client library/runtime dependency
 
+Current repo scaffolding:
+
+- profile: `profile-definitions/vm-coherence-ce-node.yml`
+- package list: `profile-package-lists/stage5-virtual-host-coherence-ce-node.packages`
+- Ansible role: `roles/coherence_ce_service`
+- service atom: `vm-coherence-ce-node`
+- overlay placeholder: `dev-java/oracle-coherence-ce`
+- default state: masked and mutation-gated
+
 Initial package/build path:
 
 - Prefer upstream source build through Jenkins until a repeatable Gentoo package

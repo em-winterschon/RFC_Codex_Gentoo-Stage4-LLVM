@@ -1,0 +1,3 @@
+# Experimental placeholder only. Coherence-CE must be built through the pinned
+# Jenkins workflow before this package can be unmasked for live systems.
+dev-java/oracle-coherence-ce
