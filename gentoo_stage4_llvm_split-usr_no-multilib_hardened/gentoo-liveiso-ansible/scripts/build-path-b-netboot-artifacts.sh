@@ -50,6 +50,15 @@ PATHB_SSH_SERVICE="${PATHB_SSH_SERVICE:-sshd}"
 PATHB_EXTRA_PACKAGES="${PATHB_EXTRA_PACKAGES:-app-admin/sudo dev-lang/python sys-apps/iproute2 sys-kernel/linux-firmware sys-fs/zfs sys-fs/zfs-kmod sys-fs/dosfstools sys-block/parted sys-apps/pciutils sys-apps/usbutils sys-apps/kmod}"
 PATHB_PACKAGE_USE_APPEND="${PATHB_PACKAGE_USE_APPEND:-}"
 PATHB_ACCEPT_LICENSE="${PATHB_ACCEPT_LICENSE:-*.*}"
+PATHB_FEATURES="${PATHB_FEATURES:-buildpkg -binpkg-request-signature -network-sandbox}"
+PATHB_MAKEOPTS="${PATHB_MAKEOPTS:--j56 -l64}"
+PATHB_EMERGE_DEFAULT_OPTS="${PATHB_EMERGE_DEFAULT_OPTS:---buildpkg=y --usepkg=y --with-bdeps=y --complete-graph=y --autounmask=y --autounmask-backtrack=y --autounmask-continue=y --autounmask-unrestricted-atoms=y --autounmask-use=y --autounmask-write=y --binpkg-respect-use=y --jobs=8 --load-average=64}"
+PATHB_PORTAGE_TMPDIR="${PATHB_PORTAGE_TMPDIR:-/var/tmp/portage}"
+PATHB_ENABLE_HOST_CACHE_BINDS="${PATHB_ENABLE_HOST_CACHE_BINDS:-1}"
+PATHB_HOST_DISTFILES_DIR="${PATHB_HOST_DISTFILES_DIR:-/srv/build-cache/distfiles}"
+PATHB_HOST_BINPKG_DIR="${PATHB_HOST_BINPKG_DIR:-/srv/build-cache/binpkgs}"
+PATHB_GUEST_DISTFILES_DIR="${PATHB_GUEST_DISTFILES_DIR:-/srv/build-cache/distfiles}"
+PATHB_GUEST_BINPKG_DIR="${PATHB_GUEST_BINPKG_DIR:-/srv/build-cache/binpkgs}"
 PATHB_PROFILE_DEFINITION_FILES="${PATHB_PROFILE_DEFINITION_FILES:-}"
 PATHB_PROFILE_PACKAGE_LIST_FILES="${PATHB_PROFILE_PACKAGE_LIST_FILES:-}"
 PATHB_OPENRC_SERVICES_EXTRA="${PATHB_OPENRC_SERVICES_EXTRA:-}"
@@ -273,7 +282,19 @@ COMMON_FLAGS="-O2 -pipe"
 COMMON_CFLAGS="\${COMMON_FLAGS}"
 COMMON_CXXFLAGS="\${COMMON_FLAGS}"
 ACCEPT_LICENSE="${PATHB_ACCEPT_LICENSE}"
+FEATURES="${PATHB_FEATURES}"
+MAKEOPTS="${PATHB_MAKEOPTS}"
+EMERGE_DEFAULT_OPTS="${PATHB_EMERGE_DEFAULT_OPTS}"
+PKGDIR="${PATHB_GUEST_BINPKG_DIR}"
+DISTDIR="${PATHB_GUEST_DISTFILES_DIR}"
+PORTAGE_TMPDIR="${PATHB_PORTAGE_TMPDIR}"
 MAKECONF
+
+mkdir -p \
+  "${PATHB_GUEST_DISTFILES_DIR}" \
+  "${PATHB_GUEST_BINPKG_DIR}" \
+  "${PATHB_PORTAGE_TMPDIR}"
+chmod 1777 "${PATHB_PORTAGE_TMPDIR}"
 
 cat > /etc/portage/package.use/path-b-dracut <<'PKGUSE'
 sys-kernel/installkernel dracut -systemd
@@ -428,6 +449,15 @@ run_pathb_bootstrap() {
   ln -sfn fd/2 "${TARGET_ROOT_MNT}/dev/stderr"
   run_cmd "${MOUNT_BIN}" --bind /proc "${TARGET_ROOT_MNT}/proc"
   run_cmd "${MOUNT_BIN}" --bind /sys "${TARGET_ROOT_MNT}/sys"
+  if [[ "${PATHB_ENABLE_HOST_CACHE_BINDS}" == '1' ]]; then
+    mkdir -p \
+      "${PATHB_HOST_DISTFILES_DIR}" \
+      "${PATHB_HOST_BINPKG_DIR}" \
+      "${TARGET_ROOT_MNT}${PATHB_GUEST_DISTFILES_DIR}" \
+      "${TARGET_ROOT_MNT}${PATHB_GUEST_BINPKG_DIR}"
+    run_cmd "${MOUNT_BIN}" --bind "${PATHB_HOST_DISTFILES_DIR}" "${TARGET_ROOT_MNT}${PATHB_GUEST_DISTFILES_DIR}"
+    run_cmd "${MOUNT_BIN}" --bind "${PATHB_HOST_BINPKG_DIR}" "${TARGET_ROOT_MNT}${PATHB_GUEST_BINPKG_DIR}"
+  fi
   run_cmd "${CHROOT_BIN}" "${TARGET_ROOT_MNT}" /bin/bash /root/bootstrap-path-b.sh
 }
 
