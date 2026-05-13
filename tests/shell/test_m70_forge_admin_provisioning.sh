@@ -26,6 +26,7 @@ assert_file "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.me
 assert_file "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-forge-automation-admin.packages"
 assert_file "${ANSIBLE_ROOT}/profile-service-atoms/stage5-role-service-atoms.yml"
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml"
+assert_file "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml"
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml"
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml"
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml"
@@ -61,6 +62,10 @@ assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_p
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_bootfile_name: m70-forge-ipxe.efi"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_interface_name: netboot0"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_operational_bootstrap: local-esp-ipxe-chainloader"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "install_hostname: admin-sun99-forge-099070"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "freeipa_client_apply_required: false"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "secure_firstboot_enrollment_expected_fqdn: admin-sun99-forge-099070.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml" "admin-sun99-forge-099070.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml" "admin-sun99-forge.rfc1918.host"
 

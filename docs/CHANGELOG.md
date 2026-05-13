@@ -14,8 +14,9 @@
 - Reboot-validated the corrected M70 `netboot0` dracut cmdline; the live OS now
   returns SSH with the primary interface named `netboot0`.
 - Recorded the remaining live-rootfs acceptance blockers: K10 hostname leakage,
-  missing `sssd.conf`, crashed `dhcpcd` on the live rootfs, and observed 32 GiB
-  memory versus the planned 64 GiB inventory expectation.
+  missing `sssd.conf`, missing FreeIPA host principal or OTP, crashed `dhcpcd`
+  on the live rootfs, and observed 32 GiB memory versus the planned 64 GiB
+  inventory expectation.
 - Documented the X12AGAIN migration acceptance gates: restored Forge/Codex
   state, GitHub/vault/Ansible tooling, service reachability, and working
   `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` SoL before any Prinzessin

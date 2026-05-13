@@ -25,6 +25,7 @@ OS now exposes the management NIC as `netboot0`.
 
 Current blockers before this can replace X12AGAIN: rebuild or overlay the rootfs
 so hostname is `admin-sun99-forge-099070` instead of the K10 hostname, render
-host-specific `sssd.conf` and secure firstboot enrollment, fix installed-system
+host-specific `sssd.conf` and secure firstboot enrollment, create the missing
+FreeIPA host principal through an admin ticket or host OTP, fix installed-system
 networking so `dhcpcd` is not crashed after boot, and resolve the observed
 32 GiB memory report against the planned 64 GiB inventory.

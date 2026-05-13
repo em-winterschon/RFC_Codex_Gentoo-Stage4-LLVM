@@ -1,0 +1,45 @@
+---
+ansible_host: 172.16.99.70
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+local_network_role: automation-admin
+
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-forge-automation-admin.yml"
+
+install_target_root: /
+install_hostname: admin-sun99-forge-099070
+freeipa_client_apply_required: false
+freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host
+freeipa_client_short_hostname: admin-sun99-forge-099070
+freeipa_client_realm: RFC1918.HOST
+freeipa_client_domain: rfc1918.host
+freeipa_client_server: ipa01.rfc1918.host
+freeipa_client_server_ip: 172.16.99.63
+freeipa_client_controller_inventory_host: svc_identity_ipa01
+freeipa_client_validate_user: codex-admin
+freeipa_client_pam_validate_user: codex-admin
+freeipa_client_manage_hostname: true
+freeipa_client_manage_hosts_fallback: true
+freeipa_client_install_packages: false
+freeipa_client_build_binary_packages: true
+freeipa_client_package_atoms:
+  - sys-auth/sssd
+  - net-fs/samba
+  - app-crypt/mit-krb5
+  - net-nds/openldap
+  - app-misc/ca-certificates
+
+secure_firstboot_enrollment_enabled: false
+secure_firstboot_enrollment_expected_fqdn: admin-sun99-forge-099070.rfc1918.host
+secure_firstboot_enrollment_command: >-
+  ipa-client-install
+  --unattended
+  --domain="${STAGE5_ENROLL_DOMAIN}"
+  --realm="${STAGE5_ENROLL_REALM}"
+  --server="${STAGE5_ENROLL_IPA_SERVER}"
+  --hostname="${STAGE5_ENROLL_FQDN}"
+  --password="${STAGE5_ENROLL_OTP}"
+  --mkhomedir

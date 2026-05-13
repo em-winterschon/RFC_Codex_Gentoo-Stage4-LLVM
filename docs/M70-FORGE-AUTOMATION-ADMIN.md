@@ -58,6 +58,10 @@ before scheduling memory-heavy workloads on this node.
 - `sssd` is installed but `/etc/sssd/sssd.conf` is absent, so RBAC/AAA
   acceptance is blocked until the automation-admin image gets its own firstboot
   identity/enrollment overlay or rebuilt rootfs.
+- FreeIPA currently has no `admin-sun99-forge-099070.rfc1918.host` host entry.
+  The IPA controller host keytab can authenticate but does not have permission
+  to add the host principal; an admin ticket or generated host OTP is required
+  before live or firstboot enrollment can complete.
 - `dhcpcd` is marked crashed after boot even though the dracut-provided static
   management route is up on `netboot0`; installed-system networking should be
   rendered by the automation-admin profile instead of relying on this live-rootfs
