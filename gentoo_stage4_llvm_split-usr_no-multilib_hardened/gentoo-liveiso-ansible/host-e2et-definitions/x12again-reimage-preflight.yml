@@ -1,0 +1,62 @@
+---
+run:
+  id: x12again-reimage-preflight-20260513
+  phase: pre-destructive-mutation
+  timestamp: "2026-05-13T09:00:00-07:00"
+host:
+  name: x12again_workstation_xen_coherent
+  fqdn: x12again.rfc1918.host
+  profile: metal-x12again-workstation-xen-coherent
+baseline:
+  name: RFC99 X12AGAIN reimage preflight
+  target_tier: p99
+gates:
+  - name: Inventory Gate
+    weight: 10
+    hard_required: true
+    checks:
+      - name: X12AGAIN reimage candidate is modeled outside active install groups
+        status: pass
+        evidence: x12again_workstation_xen_coherent is tracked as a reimage candidate with stage5_profile metal-x12again-workstation-xen-coherent.
+      - name: SLURM admission is disabled before installed-host E2ET
+        status: pass
+        evidence: Host vars set x12again_reimage_slurm_admission_allowed=false and profile keeps worker_enabled=false.
+  - name: Backup Gate
+    weight: 25
+    hard_required: true
+    checks:
+      - name: Off-host backup artifact is verified
+        status: fail
+        hard_fail: true
+        evidence: Destructive disk mutation is blocked until operator records the off-host rsync backup path and checksum manifest.
+  - name: Service Continuity Gate
+    weight: 20
+    hard_required: true
+    checks:
+      - name: Netboot, identity, scheduler, observability, and logging are off X12AGAIN
+        status: fail
+        hard_fail: true
+        evidence: Live preflight must confirm all required off-host services respond before X12AGAIN is powered down or reimaged.
+  - name: Serial And OOB Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: Emergency serial/OOB access is verified
+        status: fail
+        hard_fail: true
+        evidence: X12AGAIN must have a confirmed emergency console path before destructive install action.
+  - name: Profile Safety Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: Profile defaults to no production storage mutation
+        status: pass
+        evidence: metal-x12again-workstation-xen-coherent declares no_production_storage_mutation=true and mutation_policy enabled_by_default=false.
+  - name: Mutation Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: Explicit destructive apply is not enabled
+        status: fail
+        hard_fail: true
+        evidence: x12again_reimage_apply_required remains false by default; this is correct until a live change window is approved.
