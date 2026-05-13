@@ -12,6 +12,19 @@
     slurm_pilot_live_run_smoke: "{{ slurm_pilot_run_smoke | default(true) | bool }}"
     slurm_pilot_accept_keywords_file: /etc/portage/package.accept_keywords/30-slurm-pilot
     slurm_pilot_package_use_file: /etc/portage/package.use/30-slurm-pilot
+    slurm_pilot_slurm_patch_file: /etc/portage/patches/sys-cluster/slurm/slurm-24.05.3-r1-gres-sysmacros.patch
+    slurm_pilot_slurm_gres_sysmacros_patch: |
+      --- a/src/interfaces/gres.c
+      +++ b/src/interfaces/gres.c
+      @@ -52,6 +52,9 @@ typedef cpuset_t cpu_set_t;
+       #include <sys/stat.h>
+       #include <sys/types.h>
+      +#ifdef __linux__
+      +#  include <sys/sysmacros.h>
+      +#endif
+       #ifdef MAJOR_IN_MKDEV
+       #  include <sys/mkdev.h>
+       #endif
     slurm_pilot_controller_package_use: |
       sys-cluster/slurm munge mysql slurmdbd
       sys-auth/munge gcrypt
@@ -128,6 +141,7 @@
       loop:
         - /etc/portage/package.accept_keywords
         - /etc/portage/package.use
+        - "{{ slurm_pilot_slurm_patch_file | dirname }}"
       when: slurm_pilot_live_install_packages | bool
 
     - name: Accept targeted SLURM unstable keyword for the pilot only
@@ -143,6 +157,13 @@
         dest: "{{ slurm_pilot_package_use_file }}"
         mode: '0644'
         content: "{{ slurm_pilot_controller_package_use if inventory_hostname in groups.get('slurm_controllers', []) else slurm_pilot_worker_package_use }}"
+      when: slurm_pilot_live_install_packages | bool
+
+    - name: Install SLURM clang sysmacros user patch
+      ansible.builtin.copy:
+        dest: "{{ slurm_pilot_slurm_patch_file }}"
+        mode: '0644'
+        content: "{{ slurm_pilot_slurm_gres_sysmacros_patch }}"
       when: slurm_pilot_live_install_packages | bool
 
     - name: Install live SLURM package set with binary package capture

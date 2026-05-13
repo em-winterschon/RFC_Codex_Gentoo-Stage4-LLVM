@@ -35,6 +35,7 @@ ALLOWED_PROFILE_KEYS = {
     "package_mask_files",
     "package_unmask_files",
     "package_mask_symlinks",
+    "patch_files",
     "kernel_config_fragment_files",
     "kernel_config",
     "kernel_config_requirements",

@@ -10,6 +10,19 @@ gentoo_profile_definition:
       sys-cluster/slurm munge
       sys-auth/munge gcrypt
       sys-cluster/pmix munge
+  patch_files:
+    sys-cluster/slurm/slurm-24.05.3-r1-gres-sysmacros.patch: |
+      --- a/src/interfaces/gres.c
+      +++ b/src/interfaces/gres.c
+      @@ -52,6 +52,9 @@ typedef cpuset_t cpu_set_t;
+       #include <sys/stat.h>
+       #include <sys/types.h>
+      +#ifdef __linux__
+      +#  include <sys/sysmacros.h>
+      +#endif
+       #ifdef MAJOR_IN_MKDEV
+       #  include <sys/mkdev.h>
+       #endif
   slurm_cluster:
     enabled: true
     cluster_name: rfc99
