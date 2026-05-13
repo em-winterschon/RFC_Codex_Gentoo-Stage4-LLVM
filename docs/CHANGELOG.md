@@ -8,6 +8,13 @@
 - Reserved `admin-sun99-forge-099070.rfc1918.host` at `172.16.99.70` with
   primary MAC `00:07:32:78:65:C6`, RouterOS DNS desired state, and a static
   PXE-to-iPXE DHCP handoff using `m70-forge-ipxe.efi`.
+- Rebuilt and published the M70-specific iPXE first-stage EFI binary, then
+  validated local SATADOM ESP chainload through HTTP rootfs boot and SSH at
+  `172.16.99.70` over CSS326 `ge14`.
+- Recorded the remaining live-rootfs acceptance blockers: K10 hostname leakage,
+  missing `sssd.conf`, next-boot validation for the corrected `netboot0`
+  dracut cmdline, and observed 32 GiB memory versus the planned 64 GiB
+  inventory expectation.
 - Documented the X12AGAIN migration acceptance gates: restored Forge/Codex
   state, GitHub/vault/Ansible tooling, service reachability, and working
   `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` SoL before any Prinzessin

@@ -14,3 +14,14 @@ and restored `/root`, `/opt`, `/var/lib/ansible`, `/var/lib/codex`,
 Provisioning is tracked as UEFI PXE to iPXE with static DHCP address
 `172.16.99.70`, boot file `m70-forge-ipxe.efi`, and netboot publisher
 `172.16.99.88`.
+
+2026-05-13 live validation uses Hasslehoff `/dev/ttyUSB3` for serial console
+and a local SATADOM ESP iPXE chainloader because the firmware did not expose a
+usable UEFI PXE NIC entry. The M70-specific iPXE binary successfully chained the
+published HTTP role and reached SSH at `172.16.99.70`.
+
+Current blockers before this can replace X12AGAIN: rebuild or overlay the rootfs
+so hostname is `admin-sun99-forge-099070` instead of the K10 hostname, render
+host-specific `sssd.conf` and secure firstboot enrollment, validate the updated
+`netboot0` dracut cmdline on the next reboot, and resolve the observed 32 GiB
+memory report against the planned 64 GiB inventory.

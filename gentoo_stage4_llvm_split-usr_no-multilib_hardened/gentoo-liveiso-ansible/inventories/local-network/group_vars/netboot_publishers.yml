@@ -5,7 +5,7 @@ netboot_tftp_autoexec_chain_url: http://172.16.99.88:8080/hosts/by-mac.ipxe
 netboot_first_stage_binaries:
   - src: /opt/gentoo-netboot/path-b/k10-ipxe-172.16.99.88-snponly.efi
     dest: k10-ipxe.efi
-  - src: /opt/gentoo-netboot/path-b/k10-ipxe-172.16.99.88-snponly.efi
+  - src: /opt/gentoo-netboot/path-b/m70-forge-ipxe-172.16.99.88-ipxe.efi
     dest: m70-forge-ipxe.efi
 netboot_tftp_service_enabled: true
 
@@ -32,9 +32,9 @@ netboot_roles_extra:
     initrd_boot_name: "{{ netboot_initramfs_short_name }}"
     rootfs_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img"
     extra_cmdline: >-
-      bootdev=eth0
-      ifname=eth0:00:07:32:78:65:c6
-      ip=172.16.99.70::172.16.99.1:255.255.255.0:admin-sun99-forge-099070:eth0:none
+      bootdev=netboot0
+      ifname=netboot0:00:07:32:78:65:c6
+      ip=172.16.99.70::172.16.99.1:255.255.255.0:admin-sun99-forge-099070:netboot0:none
       nameserver=9.9.9.9
       rd.neednet=1
       rd.net.timeout.carrier=60

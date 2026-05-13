@@ -21,6 +21,7 @@ environment.
 | Primary MAC | `00:07:32:78:65:C6` |
 | Switch port | `sw_mgmt_css326 ge14` |
 | PDU outlet | `pdu-rfc99-corectrl-099241 outlet 4` |
+| Serial console | Hasslehoff `/dev/ttyUSB3` |
 | Stage5 profile | `metal-forge-automation-admin` |
 
 ## Provisioning Plan
@@ -29,10 +30,32 @@ The M70 is tracked as a UEFI-only `pxe-to-ipxe` install target. RouterOS desired
 state reserves a static DHCP lease for `172.16.99.70` and sends boot file
 `m70-forge-ipxe.efi` from the SUN99 netboot publisher at `172.16.99.88`.
 
-The current first-stage binary is intentionally sourced from the already
-validated `172.16.99.88` snponly artifact and published under the M70-specific
-name. Follow-up work should rebuild a generic first-stage binary name so the
-source artifact is no longer K10-labeled.
+The current first-stage binary is the M70-specific
+`/opt/gentoo-netboot/path-b/m70-forge-ipxe-172.16.99.88-ipxe.efi` artifact,
+published as `m70-forge-ipxe.efi`.
+
+Live validation on 2026-05-13 found that the firmware can put `Network` first
+in the fixed UEFI boot order, but did not expose a usable UEFI PXE NIC entry.
+The operational workaround is a local SATADOM ESP chainloader: the original
+BSDRP `BOOTX64.EFI` was backed up on the ESP, then replaced with the
+M70-specific iPXE binary. That path successfully DHCPs, chains
+`hosts/admin-sun99-forge-099070.ipxe`, downloads the Gentoo kernel/initramfs and
+`rootfs.img`, and reaches SSH at `172.16.99.70`.
+
+Observed hardware note: Linux/BSDRP serial validation reported 32 GiB available
+memory, while the planned inventory expected 64 GiB. Validate DIMM population
+before scheduling memory-heavy workloads on this node.
+
+## Current Blockers
+
+- The live HTTP rootfs still carries `/etc/conf.d/hostname` from the K10 image:
+  `gmktek-k10-stage5`.
+- `sssd` is installed but `/etc/sssd/sssd.conf` is absent, so RBAC/AAA
+  acceptance is blocked until the automation-admin image gets its own firstboot
+  identity/enrollment overlay or rebuilt rootfs.
+- The validated boot used `ifname=eth0`, which worked but warned because it
+  used a kernel namespace name. Desired state now uses `netboot0` for the next
+  M70 boot and needs one reboot validation.
 
 ## Acceptance Gates
 
