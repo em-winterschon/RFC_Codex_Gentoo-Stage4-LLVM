@@ -12,6 +12,7 @@
     slurm_pilot_live_run_smoke: "{{ slurm_pilot_run_smoke | default(true) | bool }}"
     slurm_pilot_accept_keywords_file: /etc/portage/package.accept_keywords/30-slurm-pilot
     slurm_pilot_package_use_file: /etc/portage/package.use/30-slurm-pilot
+    slurm_pilot_munge_service_name: munged
     slurm_pilot_slurm_patch_file: /etc/portage/patches/sys-cluster/slurm/slurm-24.05.3-r1-gres-sysmacros.patch
     slurm_pilot_slurm_gres_sysmacros_patch: |
       --- a/src/interfaces/gres.c
@@ -40,11 +41,11 @@
       - sys-process/numactl
       - sys-cluster/rdma-core
     slurm_pilot_controller_services:
-      - munge
+      - munged
       - slurmdbd
       - slurmctld
     slurm_pilot_worker_services:
-      - munge
+      - munged
       - slurmd
 
   pre_tasks:
@@ -295,7 +296,7 @@
           - add
           - "{{ item }}"
           - default
-      loop: "{{ ['munge'] + ([slurm_pilot_db_service_name] if inventory_hostname in groups.get('slurm_controllers', []) else []) }}"
+      loop: "{{ [slurm_pilot_munge_service_name] + ([slurm_pilot_db_service_name] if inventory_hostname in groups.get('slurm_controllers', []) else []) }}"
       register: slurm_pilot_native_rc_update
       changed_when: "'already installed' not in (slurm_pilot_native_rc_update.stdout ~ slurm_pilot_native_rc_update.stderr)"
       failed_when:
@@ -306,7 +307,7 @@
       ansible.builtin.command:
         argv:
           - rc-service
-          - munge
+          - "{{ slurm_pilot_munge_service_name }}"
           - restart
       register: slurm_pilot_munge_restart
       changed_when: true
