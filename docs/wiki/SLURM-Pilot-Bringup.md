@@ -72,6 +72,8 @@ The playbook writes targeted Portage policy for the pilot:
   `sys-cluster/slurm ~amd64`.
 - `/etc/portage/package.use/30-slurm-pilot` with controller-only
   `sys-cluster/slurm munge mysql slurmdbd`.
+- Both controller and worker force `sys-auth/munge gcrypt`; this avoids the
+  observed OpenSSL crypto probe failure on the current Stage4 base image.
 - Worker nodes keep the narrower `sys-cluster/slurm munge` USE policy.
 
 Controller runtime services:

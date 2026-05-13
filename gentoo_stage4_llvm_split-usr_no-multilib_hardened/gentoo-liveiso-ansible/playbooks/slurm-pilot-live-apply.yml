@@ -14,9 +14,11 @@
     slurm_pilot_package_use_file: /etc/portage/package.use/30-slurm-pilot
     slurm_pilot_controller_package_use: |
       sys-cluster/slurm munge mysql slurmdbd
+      sys-auth/munge gcrypt
       sys-cluster/pmix munge
     slurm_pilot_worker_package_use: |
       sys-cluster/slurm munge
+      sys-auth/munge gcrypt
       sys-cluster/pmix munge
     slurm_pilot_controller_packages:
       - sys-cluster/slurm

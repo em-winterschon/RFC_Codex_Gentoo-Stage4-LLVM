@@ -8,6 +8,7 @@ gentoo_profile_definition:
   package_use_files:
     30-slurm-pilot: |
       sys-cluster/slurm munge
+      sys-auth/munge gcrypt
       sys-cluster/pmix munge
   slurm_cluster:
     enabled: true
