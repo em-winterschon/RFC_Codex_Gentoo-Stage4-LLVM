@@ -147,4 +147,3 @@ Run:
 git add docs gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible scripts tests/shell/test_secure_firstboot_enrollment.sh
 git commit -m "Scaffold secure first-boot IPA enrollment"
 ```
-

@@ -75,4 +75,3 @@ as a break-glass/manual archive option, not the unattended enrollment default.
   host opts in.
 - K10 E2ET can change the durable-enrollment blocker from "no design" to
   "requires disk install or secure first-boot bundle apply".
-

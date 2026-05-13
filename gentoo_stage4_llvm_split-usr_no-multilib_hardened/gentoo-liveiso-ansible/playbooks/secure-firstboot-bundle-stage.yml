@@ -67,4 +67,3 @@
         path: "{{ secure_firstboot_bundle_plaintext }}"
         state: absent
       no_log: true
-
