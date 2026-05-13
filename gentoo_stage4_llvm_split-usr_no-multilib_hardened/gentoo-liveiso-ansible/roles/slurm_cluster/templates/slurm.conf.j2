@@ -4,6 +4,8 @@ SlurmctldHost={{ resolved_slurm_cluster.control_machine }}({{ resolved_slurm_clu
 SlurmUser={{ resolved_slurm_cluster.user }}
 StateSaveLocation={{ resolved_slurm_cluster.state_save_location }}
 SlurmdSpoolDir={{ resolved_slurm_cluster.slurmd_spool_dir }}
+SlurmctldPidFile=/run/slurmctld-daemon.pid
+SlurmdPidFile=/run/slurmd-daemon.pid
 SlurmctldPort=6817
 SlurmdPort=6818
 AuthType=auth/munge
@@ -16,9 +18,10 @@ AccountingStorageHost={{ resolved_slurm_cluster.control_machine }}
 ReturnToService=2
 SlurmctldLogFile={{ resolved_slurm_cluster.log_dir }}/slurmctld.log
 SlurmdLogFile={{ resolved_slurm_cluster.log_dir }}/slurmd.log
+MailProg=/bin/true
 
 {% for node in resolved_slurm_cluster.nodes %}
-NodeName={{ node.name }} CPUs={{ node.cpus | default(1) }} RealMemory={{ node.real_memory | default(1024) }} State={{ node.state | default('UNKNOWN') }}{% if node.features | default([]) | length > 0 %} Feature={{ node.features | join(',') }}{% endif %}
+NodeName={{ node.name }}{% if node.hostname | default('') | length > 0 %} NodeHostname={{ node.hostname }}{% endif %}{% if node.addr | default('') | length > 0 %} NodeAddr={{ node.addr }}{% endif %} CPUs={{ node.cpus | default(1) }} RealMemory={{ node.real_memory | default(1024) }} State={{ node.state | default('UNKNOWN') }}{% if node.features | default([]) | length > 0 %} Feature={{ node.features | join(',') }}{% endif %}
 {% endfor %}
 {% if resolved_slurm_cluster.nodes | length == 0 %}
 NodeName=DEFAULT CPUs=1 RealMemory=1024 State=UNKNOWN

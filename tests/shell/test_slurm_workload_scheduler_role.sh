@@ -19,6 +19,18 @@ assert_file_contains() {
   grep -q -- "${pattern}" "${file}"
 }
 
+assert_task_block_contains() {
+  local file=$1
+  local task_name=$2
+  local pattern=$3
+
+  awk -v task_name="${task_name}" '
+    $0 == "- name: " task_name { in_task = 1; next }
+    in_task && /^- name: / { exit }
+    in_task { print }
+  ' "${file}" | grep -q -- "${pattern}"
+}
+
 for file in \
   "${PROFILE_DIR}/vm-slurm-controller.yml" \
   "${PROFILE_DIR}/vm-slurm-controller.metadata.yml" \
@@ -40,9 +52,11 @@ assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" '^gentoo_profile_d
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'slurm_cluster:'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'controller_enabled: true'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'dbd_enabled: true'
+assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'munge_key_b64: "{{ vault_slurm_munge_key_b64'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'partitions:'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'rdma-test'
 assert_file_contains "${PROFILE_DIR}/slurm-worker-node.yml" 'worker_enabled: true'
+assert_file_contains "${PROFILE_DIR}/slurm-worker-node.yml" 'munge_key_b64: "{{ vault_slurm_munge_key_b64'
 assert_file_contains "${PROFILE_DIR}/slurm-worker-node.yml" 'node_features:'
 
 for package_atom in \
@@ -62,16 +76,35 @@ for package_atom in \
 done
 
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'slurm_cluster_default_enabled: false'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'slurm_cluster_default_munge_key_b64: ""'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'slurm_cluster_default_partitions:'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'resolved_profile_slurm_cluster'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" '/etc/munge'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'b64decode'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'no_log: true'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'openrc_action_services'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" "'user': 'root'"
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmctld'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmd'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmdbd'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" "'command': '/usr/sbin/slurmdbd -D'"
+if grep -q "'command': '/usr/sbin/slurmdbd -D -f " "${ROLE_DIR}/tasks/main.yml"; then
+  printf 'FAIL: slurmdbd must not be launched with unsupported -f option\n' >&2
+  exit 1
+fi
+assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Register SLURM worker OpenRC action service' "'cgroup_v2_system_slice': true"
+assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Register SLURM worker OpenRC action service' "'cgroup_v2_controllers': \\['cpuset', 'cpu', 'memory'\\]"
 assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'ClusterName='
+assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'SlurmctldPidFile=/run/slurmctld-daemon.pid'
+assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'SlurmdPidFile=/run/slurmd-daemon.pid'
 assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'PartitionName='
 assert_file_contains "${ROLE_DIR}/templates/slurmdbd.conf.j2" 'StorageType=accounting_storage/mysql'
+assert_file_contains "${ROLE_DIR}/templates/slurmdbd.conf.j2" 'PidFile=/run/slurmdbd-daemon.pid'
+assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Render SLURM accounting daemon configuration' 'owner: "{{ resolved_slurm_cluster.user }}"'
+assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Render SLURM accounting daemon configuration' 'group: "{{ resolved_slurm_cluster.group }}"'
 assert_file_contains "${ROLE_DIR}/templates/cgroup.conf.j2" 'ConstrainCores=yes'
+assert_file_contains "${ROLE_DIR}/templates/cgroup.conf.j2" 'IgnoreSystemd=yes'
+assert_file_contains "${ROLE_DIR}/templates/cgroup.conf.j2" 'ConstrainSwapSpace=no'
 
 assert_file_contains "${SERVICE_ATOMS}" 'vm-slurm-controller:'
 assert_file_contains "${SERVICE_ATOMS}" 'slurm-worker-node:'

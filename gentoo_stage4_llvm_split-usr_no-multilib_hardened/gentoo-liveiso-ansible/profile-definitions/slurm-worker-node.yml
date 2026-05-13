@@ -2,6 +2,23 @@
 gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-slurm-worker-node.packages
+  package_accept_keywords_files:
+    30-slurm-pilot: |
+      sys-cluster/slurm ~amd64
+  package_use_files:
+    30-slurm-pilot: |
+      sys-cluster/slurm munge
+      sys-auth/munge gcrypt
+      sys-cluster/pmix munge
+  patch_files:
+    sys-cluster/slurm/slurm-24.05.3-r1-gres-sysmacros.patch: |
+      --- a/src/interfaces/gres.c
+      +++ b/src/interfaces/gres.c
+      @@ -59 +59,4 @@
+       #include <sys/types.h>
+      +#ifdef __linux__
+      +#  include <sys/sysmacros.h>
+      +#endif
   slurm_cluster:
     enabled: true
     cluster_name: rfc99
@@ -10,6 +27,7 @@ gentoo_profile_definition:
     controller_enabled: false
     dbd_enabled: false
     worker_enabled: true
+    munge_key_b64: "{{ vault_slurm_munge_key_b64 | default('') }}"
     node_features:
       - build
       - validation

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-13 - SLURM Pilot Live Validation
+
+- Brought the first RFC99 SLURM pilot online on Hasslehoff VMs:
+  `sched-sun99-slurmctl-099071` (`172.16.99.71`) as controller/accounting and
+  `sched-sun99-slurmwkr-099072` (`172.16.99.72`) as the first worker.
+- Fixed Gentoo/OpenRC runtime blockers found during live apply:
+  `slurmdbd.conf` ownership, unsupported `slurmdbd -f`, OpenRC cgroup-v2
+  `system.slice` creation/controller enablement, and unsupported swap cgroup
+  constraint.
+- Validated `sinfo`, `scontrol show nodes`, and
+  `srun --nodes=1 --ntasks=1 hostname`; full shell validation passed with
+  `bash tests/shell/run-tests.sh`.
+- Updated SLURM pilot docs and roadmap status so X12AGAIN can remain offline or
+  be reimaged without blocking the scheduler control plane.
+
 ## 2026-05-12 - Kernel Config Layering Registry
 
 - Added a declarative `kernel-config/` registry with a baseline

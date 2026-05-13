@@ -341,6 +341,46 @@ devices:
         status: planned
     notes:
       - SUN99 Grafana dashboard endpoint backed by VictoriaMetrics and Prometheus datasources.
+  - name: sched_sun99_slurmctl_099071
+    site: local-rfc1918-lab
+    role: slurm-controller
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.71
+    fqdn: sched-sun99-slurmctl-099071.rfc1918.host
+    dns_aliases:
+      - sched-sun99-slurmctl.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1071
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: slurm-control-plane
+        status: planned
+    notes:
+      - RFC99 SLURM pilot controller with local MUNGE, MariaDB, slurmdbd, and slurmctld.
+      - Must remain independent of X12AGAIN reimage state.
+  - name: slurm_worker_node01
+    site: local-rfc1918-lab
+    role: slurm-worker
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.72
+    fqdn: sched-sun99-slurmwkr-099072.rfc1918.host
+    dns_aliases:
+      - sched-sun99-slurmwkr01.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1072
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: slurm-first-worker
+        status: planned
+    notes:
+      - Disposable first worker for SLURM pilot smoke validation.
+      - Replace or expand with K10/X12AGAIN only after host E2ET passes.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging
@@ -463,6 +503,8 @@ clusters:
       - obs_sun99_prometheus_099064
       - obs_sun99_vmetrics_099065
       - obs_sun99_grafana_099066
+      - sched_sun99_slurmctl_099071
+      - slurm_worker_node01
       - svc_container_services_safe_move_01
 
 service_vips:
@@ -565,6 +607,32 @@ service_vips:
     listeners:
       - protocol: http
         port: 5601
+  - name: sched-sun99-slurmctl
+    site: local-rfc1918-lab
+    address: 172.16.99.71
+    fqdn: sched-sun99-slurmctl-099071.rfc1918.host
+    aliases:
+      - sched-sun99-slurmctl.rfc1918.host
+    owners:
+      - scheduler
+      - build-farm
+    listeners:
+      - protocol: tcp
+        port: 6817
+      - protocol: tcp
+        port: 6819
+  - name: sched-sun99-slurmwkr01
+    site: local-rfc1918-lab
+    address: 172.16.99.72
+    fqdn: sched-sun99-slurmwkr-099072.rfc1918.host
+    aliases:
+      - sched-sun99-slurmwkr01.rfc1918.host
+    owners:
+      - scheduler
+      - build-farm
+    listeners:
+      - protocol: tcp
+        port: 6818
   - name: log-sun99-rsyslog-099093
     site: local-rfc1918-lab
     address: 172.16.99.93

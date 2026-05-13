@@ -12,3 +12,5 @@ openrc_action_retry={{ (openrc_action_service.retry | default('TERM/30/KILL/5'))
 openrc_action_respawn_delay={{ (openrc_action_service.respawn_delay | default('5')) | quote }}
 openrc_action_respawn_max={{ (openrc_action_service.respawn_max | default('0')) | quote }}
 openrc_action_reload_signal={{ (openrc_action_service.reload_signal | default('HUP')) | quote }}
+openrc_action_cgroup_v2_system_slice={{ ('yes' if openrc_action_service.cgroup_v2_system_slice | default(false) else 'no') | quote }}
+openrc_action_cgroup_v2_controllers={{ (openrc_action_service.cgroup_v2_controllers | default([]) | join(' ')) | quote }}

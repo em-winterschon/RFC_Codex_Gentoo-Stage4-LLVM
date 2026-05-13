@@ -2,6 +2,23 @@
 gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-virtual-host-slurm-controller.packages
+  package_accept_keywords_files:
+    30-slurm-pilot: |
+      sys-cluster/slurm ~amd64
+  package_use_files:
+    30-slurm-pilot: |
+      sys-cluster/slurm munge mysql slurmdbd
+      sys-auth/munge gcrypt
+      sys-cluster/pmix munge
+  patch_files:
+    sys-cluster/slurm/slurm-24.05.3-r1-gres-sysmacros.patch: |
+      --- a/src/interfaces/gres.c
+      +++ b/src/interfaces/gres.c
+      @@ -59 +59,4 @@
+       #include <sys/types.h>
+      +#ifdef __linux__
+      +#  include <sys/sysmacros.h>
+      +#endif
   slurm_cluster:
     enabled: true
     cluster_name: rfc99
@@ -14,6 +31,7 @@ gentoo_profile_definition:
     accounting_storage_database: slurm_acct_db
     accounting_storage_user: slurm
     accounting_storage_password_ref: "{{ vault_slurmdbd_storage_password }}"
+    munge_key_b64: "{{ vault_slurm_munge_key_b64 | default('') }}"
     state_save_location: /var/lib/slurm/slurmctld
     slurmd_spool_dir: /var/lib/slurm/slurmd
     partitions:

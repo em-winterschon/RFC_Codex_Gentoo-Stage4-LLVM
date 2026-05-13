@@ -10,6 +10,7 @@ slurm_cluster_default_user: slurm
 slurm_cluster_default_group: slurm
 slurm_cluster_default_munge_user: munge
 slurm_cluster_default_munge_group: munge
+slurm_cluster_default_munge_key_b64: ""
 slurm_cluster_default_state_save_location: /var/lib/slurm/slurmctld
 slurm_cluster_default_slurmd_spool_dir: /var/lib/slurm/slurmd
 slurm_cluster_default_log_dir: /var/log/slurm

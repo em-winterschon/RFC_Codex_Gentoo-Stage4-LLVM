@@ -26,6 +26,12 @@
             | default(slurm_cluster_default_user),
           'group': (resolved_profile_slurm_cluster | default({})).group
             | default(slurm_cluster_default_group),
+          'munge_user': (resolved_profile_slurm_cluster | default({})).munge_user
+            | default(slurm_cluster_default_munge_user),
+          'munge_group': (resolved_profile_slurm_cluster | default({})).munge_group
+            | default(slurm_cluster_default_munge_group),
+          'munge_key_b64': (resolved_profile_slurm_cluster | default({})).munge_key_b64
+            | default(slurm_cluster_default_munge_key_b64),
           'state_save_location': (resolved_profile_slurm_cluster | default({})).state_save_location
             | default(slurm_cluster_default_state_save_location),
           'slurmd_spool_dir': (resolved_profile_slurm_cluster | default({})).slurmd_spool_dir
@@ -62,10 +68,42 @@
     - /var/lib/slurm
     - "{{ resolved_slurm_cluster.state_save_location }}"
     - "{{ resolved_slurm_cluster.slurmd_spool_dir }}"
+    - /etc/munge
     - /var/lib/slurm/slurmdbd
     - /var/lib/munge
   loop_control:
     loop_var: slurm_cluster_dir
+  when: slurm_cluster_enabled
+
+- name: Ensure SLURM runtime directories are writable by the SLURM daemon
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_runtime_dir }}"
+    state: directory
+    owner: "{{ resolved_slurm_cluster.user }}"
+    group: "{{ resolved_slurm_cluster.group }}"
+    mode: '0755'
+  loop:
+    - "{{ resolved_slurm_cluster.log_dir }}"
+    - /var/lib/slurm
+    - "{{ resolved_slurm_cluster.state_save_location }}"
+    - "{{ resolved_slurm_cluster.slurmd_spool_dir }}"
+    - /var/lib/slurm/slurmdbd
+  loop_control:
+    loop_var: slurm_cluster_runtime_dir
+  when: slurm_cluster_enabled
+
+- name: Ensure MUNGE runtime directories are owned by MUNGE
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_munge_dir }}"
+    state: directory
+    owner: "{{ resolved_slurm_cluster.munge_user }}"
+    group: "{{ resolved_slurm_cluster.munge_group }}"
+    mode: "{{ '0700' if slurm_cluster_munge_dir == '/etc/munge' else '0755' }}"
+  loop:
+    - /etc/munge
+    - /var/lib/munge
+  loop_control:
+    loop_var: slurm_cluster_munge_dir
   when: slurm_cluster_enabled
 
 - name: Render SLURM cluster configuration
@@ -86,10 +124,25 @@
   ansible.builtin.template:
     src: slurmdbd.conf.j2
     dest: "{{ install_target_root }}{{ resolved_slurm_cluster.config_dir }}/slurmdbd.conf"
+    owner: "{{ resolved_slurm_cluster.user }}"
+    group: "{{ resolved_slurm_cluster.group }}"
     mode: '0600'
+  no_log: true
   when:
     - slurm_cluster_enabled
     - resolved_slurm_cluster.dbd_enabled | bool
+
+- name: Install vaulted MUNGE key when provided
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/munge/munge.key"
+    mode: '0400'
+    owner: "{{ resolved_slurm_cluster.munge_user }}"
+    group: "{{ resolved_slurm_cluster.munge_group }}"
+    content: "{{ resolved_slurm_cluster.munge_key_b64 | b64decode }}"
+  no_log: true
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.munge_key_b64 | length > 0
 
 - name: Render MUNGE key policy note
   ansible.builtin.copy:
@@ -113,8 +166,8 @@
               'command': '/usr/sbin/slurmctld -D -f ' + resolved_slurm_cluster.config_dir + '/slurm.conf',
               'runlevel': 'default',
               'enabled': true,
-              'user': resolved_slurm_cluster.user,
-              'group': resolved_slurm_cluster.group,
+              'user': 'root',
+              'group': 'root',
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmctld.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmctld.err'
@@ -137,8 +190,10 @@
               'command': '/usr/sbin/slurmd -D -f ' + resolved_slurm_cluster.config_dir + '/slurm.conf',
               'runlevel': 'default',
               'enabled': true,
-              'user': resolved_slurm_cluster.user,
-              'group': resolved_slurm_cluster.group,
+              'user': 'root',
+              'group': 'root',
+              'cgroup_v2_system_slice': true,
+              'cgroup_v2_controllers': ['cpuset', 'cpu', 'memory'],
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmd.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmd.err'
@@ -158,11 +213,11 @@
             {
               'name': 'slurmdbd',
               'description': 'SLURM accounting daemon',
-              'command': '/usr/sbin/slurmdbd -D -f ' + resolved_slurm_cluster.config_dir + '/slurmdbd.conf',
+              'command': '/usr/sbin/slurmdbd -D',
               'runlevel': 'default',
               'enabled': true,
-              'user': resolved_slurm_cluster.user,
-              'group': resolved_slurm_cluster.group,
+              'user': 'root',
+              'group': 'root',
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmdbd.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmdbd.err'
