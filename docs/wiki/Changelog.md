@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-13 - X12AGAIN Reimage And Coherent Scale Model
+
+- Added host-specific `metal-x12again-workstation-xen-coherent` profile intent
+  for X12AGAIN as a LOX workstation, Xen/QEMU hypervisor, AAA/RDMA/NFS client,
+  gated SLURM worker, Optane NVDIMM host, BlueField2 lab system, and Project
+  Coherent Flash scale-model target.
+- Added ITIL-style X12AGAIN reimage/change-control docs with hard gates,
+  backout, SLURM admission, BlueField2/RDMA admission, and no production
+  storage mutation policy.
+- Added the Project Coherent Flash SLURM scale-model plan mapping ADR-001
+  through ADR-009 to simulation-only job classes, metrics, and conformance
+  artifacts.
+
 ## 2026-05-13 - SLURM Pilot Live Validation
 
 - Brought the first RFC99 SLURM pilot online on Hasslehoff VMs:
