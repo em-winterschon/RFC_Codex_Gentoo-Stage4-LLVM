@@ -42,6 +42,11 @@ M70-specific iPXE binary. That path successfully DHCPs, chains
 `hosts/admin-sun99-forge-099070.ipxe`, downloads the Gentoo kernel/initramfs and
 `rootfs.img`, and reaches SSH at `172.16.99.70`.
 
+The follow-up reboot validation also passed with the corrected dracut interface
+name: `bootdev=netboot0`, `ifname=netboot0:00:07:32:78:65:c6`, and static
+`ip=...:netboot0:none`. The live OS now exposes the primary management
+interface as `netboot0`.
+
 Observed hardware note: Linux/BSDRP serial validation reported 32 GiB available
 memory, while the planned inventory expected 64 GiB. Validate DIMM population
 before scheduling memory-heavy workloads on this node.
@@ -53,9 +58,10 @@ before scheduling memory-heavy workloads on this node.
 - `sssd` is installed but `/etc/sssd/sssd.conf` is absent, so RBAC/AAA
   acceptance is blocked until the automation-admin image gets its own firstboot
   identity/enrollment overlay or rebuilt rootfs.
-- The validated boot used `ifname=eth0`, which worked but warned because it
-  used a kernel namespace name. Desired state now uses `netboot0` for the next
-  M70 boot and needs one reboot validation.
+- `dhcpcd` is marked crashed after boot even though the dracut-provided static
+  management route is up on `netboot0`; installed-system networking should be
+  rendered by the automation-admin profile instead of relying on this live-rootfs
+  behavior.
 
 ## Acceptance Gates
 

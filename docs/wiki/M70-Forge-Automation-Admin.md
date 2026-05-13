@@ -20,8 +20,11 @@ and a local SATADOM ESP iPXE chainloader because the firmware did not expose a
 usable UEFI PXE NIC entry. The M70-specific iPXE binary successfully chained the
 published HTTP role and reached SSH at `172.16.99.70`.
 
+The follow-up reboot validated the corrected `netboot0` dracut cmdline. The live
+OS now exposes the management NIC as `netboot0`.
+
 Current blockers before this can replace X12AGAIN: rebuild or overlay the rootfs
 so hostname is `admin-sun99-forge-099070` instead of the K10 hostname, render
-host-specific `sssd.conf` and secure firstboot enrollment, validate the updated
-`netboot0` dracut cmdline on the next reboot, and resolve the observed 32 GiB
-memory report against the planned 64 GiB inventory.
+host-specific `sssd.conf` and secure firstboot enrollment, fix installed-system
+networking so `dhcpcd` is not crashed after boot, and resolve the observed
+32 GiB memory report against the planned 64 GiB inventory.
