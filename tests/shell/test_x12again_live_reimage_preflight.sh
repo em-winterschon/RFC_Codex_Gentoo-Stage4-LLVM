@@ -69,8 +69,8 @@ assert_file_contains "${DOC}" 'Destructive disk mutation is blocked'
 assert_file_contains "${WIKI}" 'No-Mutation Default'
 assert_file_contains "${WIKI}" 'Required Live Gates'
 
-if command -v ansible-playbook >/dev/null 2>&1; then
-  ansible-playbook -i "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "${PLAYBOOK}" --syntax-check >/dev/null
+if command -v ansible-playbook > /dev/null 2>&1; then
+  ansible-playbook -i "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "${PLAYBOOK}" --syntax-check > /dev/null
 fi
 
 printf 'PASS: %s\n' "$(basename "$0")"
