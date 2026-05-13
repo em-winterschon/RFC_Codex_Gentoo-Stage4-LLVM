@@ -117,6 +117,29 @@ Expected result:
 - `srun hostname` returns the worker hostname.
 - The wrapped `sbatch` job reaches `COMPLETED`.
 
+## Live Validation 2026-05-13
+
+The first pilot pass is online and validated:
+
+- Controller: `sched-sun99-slurmctl-099071.rfc1918.host` / `172.16.99.71`.
+- Worker: `sched-sun99-slurmwkr-099072.rfc1918.host` / `172.16.99.72`.
+- `sinfo` lists `build`, `validation`, `gpu-test`, and drained `rdma-test`.
+- `scontrol show nodes` reports the first worker `IDLE` with 8 CPUs and 15000M
+  configured memory.
+- `srun --nodes=1 --ntasks=1 hostname` returns
+  `sched-sun99-slurmwkr-099072`.
+- Full repo shell validation passed with `bash tests/shell/run-tests.sh`.
+
+Runtime fixes proven by the live pass:
+
+- `slurmdbd` must be launched as `/usr/sbin/slurmdbd -D`; Gentoo's
+  `slurmdbd` does not accept the `-f` option.
+- `/etc/slurm/slurmdbd.conf` must be owned by `slurm:slurm` with mode `0600`.
+- OpenRC cgroup-v2 workers must create `/sys/fs/cgroup/system.slice` and enable
+  `cpuset`, `cpu`, and `memory` on that subtree before starting `slurmd`.
+- `ConstrainSwapSpace=no` is required on the current cgroup-v2 hierarchy
+  because the memory controller reports no swap support.
+
 ## Project Coherent Flash Gate
 
 Project Coherent Flash scale modeling starts after the pilot controller can run
