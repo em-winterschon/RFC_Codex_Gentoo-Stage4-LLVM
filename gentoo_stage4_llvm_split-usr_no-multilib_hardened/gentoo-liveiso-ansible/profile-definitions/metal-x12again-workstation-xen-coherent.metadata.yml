@@ -1,0 +1,45 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-x12again-workstation-xen-coherent
+  purpose: Host-specific X12AGAIN installed profile for LOX workstation use, Xen/QEMU hypervisor duties, BlueField-2 RDMA/NVMe-oF experiments, Intel Optane Persistent Memory 200 validation, and Project Coherent Flash scale modeling.
+  profile_taxonomy:
+    stage: stage5
+    role_class: metal-host
+    role_name: x12again-workstation-xen-coherent
+    host_scope: x12again
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+      - profile-package-lists/stage5-metal-host-hypervisor.packages
+      - profile-package-lists/stage5-storage-nfs-client.packages
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-observability-client.packages
+      - profile-package-lists/stage5-slurm-worker-node.packages
+  package_pins:
+    tracked_atoms:
+      - app-emulation/libvirt
+      - app-emulation/qemu
+      - app-emulation/xen
+      - app-emulation/xen-tools
+      - media-libs/mesa
+      - net-fs/nfs-utils
+      - sys-block/ndctl
+      - sys-cluster/rdma-core
+      - sys-cluster/slurm
+      - sys-fs/zfs
+      - x11-base/xorg-server
+      - x11-drivers/nvidia-drivers
+  host_hardware:
+    persistent_memory: Intel Optane Persistent Memory 200
+    dpu_smartnic: BlueField-2
+    gpu_policy: gpu-universal-xorg
+    rdma_policy: gated-roce-v2
+  deployment_gates:
+    - K10 E2ET conformance passes from the Hasslehoff netboot publisher.
+    - X12AGAIN off-host backup and rollback media are verified.
+    - Live service duties remain offloaded from X12AGAIN.
+    - BlueField-2 and Optane inventory are captured after install.
+    - SLURM worker admission remains disabled until host E2ET passes.
+  project_scope:
+    - Project Coherent Flash is simulation-first on this host.
+    - No production storage mutation is allowed until ADR gates and rollback are complete.
+    - SLURM `rdma-test` is the first partition for scale-model probes.
