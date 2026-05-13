@@ -72,7 +72,9 @@ test -f "${WIKI_FILE}"
 assert_file_contains "${DOC_FILE}" 'NFSv3 over TCP remains the default'
 assert_file_contains "${DOC_FILE}" 'NFSv4 requires centralized AAA'
 assert_file_contains "${DOC_FILE}" 'NFS-RDMA'
+assert_file_contains "${DOC_FILE}" 'Issue #117'
 assert_file_contains "${DOC_FILE}" 'Containers do not inherit this profile by default'
 assert_file_contains "${WIKI_FILE}" 'NFSv3 over TCP remains the default'
+assert_file_contains "${WIKI_FILE}" 'Issue #117'
 
 printf 'PASS: %s\n' "$(basename "$0")"

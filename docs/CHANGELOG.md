@@ -18,6 +18,9 @@
 - Extended the gated `nvidia_doca_ofed` role with read-only BlueField-2 /
   ConnectX-5 PCI detection, required mlx5/RDMA module intent, RoCE validation
   command planning, and an apply-time detection gate for RDMA issue #111.
+- Created issue #117 for `RDMA-002` and linked the NFS/RDMA storage-client
+  baseline docs to the existing `nfs-storage-client` profile, package atoms,
+  and tests.
 - Added an overnight execution plan and BigNetwork issue #114 readiness runbook
   so repo-only work can continue safely while X12AGAIN backup I/O is active,
   with explicit live-mutation deferral and evidence-bundle requirements.

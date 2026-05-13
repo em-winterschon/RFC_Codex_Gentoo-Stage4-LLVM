@@ -3,6 +3,12 @@
 The `nfs-storage-client` Stage5 overlay defines the baseline NFS client policy
 for bare-metal and VM systems. Containers do not inherit this profile by default.
 
+Roadmap tracking:
+
+- Issue #117: `RDMA-002`, host RDMA storage client baseline.
+- Issue #111: `RDMA-003`, DOCA/OFED deployment consumes this baseline after
+  fabric and client policy are ready.
+
 NFSv3 over TCP remains the default for compatibility and rescue workflows.
 NFSv4 requires centralized AAA, SSSD, and consistent UID/GID mapping from the
 `aaa-domain-client` overlay. NFS-RDMA is opt-in and requires validated RDMA/RoCE

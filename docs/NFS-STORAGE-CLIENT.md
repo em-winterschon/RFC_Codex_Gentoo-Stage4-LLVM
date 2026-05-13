@@ -6,6 +6,12 @@ because mounting NFS inside containers adds host namespace, credential, and
 restart-order problems; container workloads should consume host-mounted volumes
 unless there is a service-specific exception.
 
+Roadmap tracking:
+
+- Issue #117: `RDMA-002`, host RDMA storage client baseline.
+- Issue #111: `RDMA-003`, DOCA/OFED deployment consumes this baseline after
+  fabric and client policy are ready.
+
 ## Protocol Policy
 
 NFSv3 over TCP remains the default. It is the least surprising option for early
