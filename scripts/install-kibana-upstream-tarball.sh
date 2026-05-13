@@ -21,7 +21,7 @@ pkg_url="${KIBANA_BASE_URL}/${pkg}"
 pkg_dir="${KIBANA_INSTALL_ROOT}/kibana-${KIBANA_VERSION}"
 
 json_hosts() {
-  python3 - "$@" <<'PY'
+  python3 - "$@" << 'PY'
 import json
 import sys
 
@@ -38,11 +38,11 @@ require_root() {
 }
 
 ensure_user() {
-  if ! getent group "${KIBANA_SERVICE_USER}" >/dev/null; then
+  if ! getent group "${KIBANA_SERVICE_USER}" > /dev/null; then
     groupadd --system "${KIBANA_SERVICE_USER}"
   fi
 
-  if ! id "${KIBANA_SERVICE_USER}" >/dev/null 2>&1; then
+  if ! id "${KIBANA_SERVICE_USER}" > /dev/null 2>&1; then
     useradd --system --gid "${KIBANA_SERVICE_USER}" --home-dir /var/lib/kibana --shell /sbin/nologin "${KIBANA_SERVICE_USER}"
   fi
 }
@@ -73,7 +73,7 @@ render_config() {
   mkdir -p /etc/kibana /var/lib/kibana /var/log/kibana /run/kibana "${KIBANA_INSTALL_ROOT}/current/data"
   chown -R "${KIBANA_SERVICE_USER}:${KIBANA_SERVICE_USER}" /var/lib/kibana /var/log/kibana /run/kibana "${KIBANA_INSTALL_ROOT}/current/data"
 
-  cat > /etc/kibana/kibana.yml <<EOF
+  cat > /etc/kibana/kibana.yml << EOF
 # Managed by RFC_Codex_Gentoo-Stage4-LLVM.
 server.name: "${KIBANA_SERVER_NAME}"
 server.host: "${KIBANA_SERVER_HOST}"
@@ -97,7 +97,7 @@ EOF
     printf 'server.publicBaseUrl: "%s"\n' "${KIBANA_PUBLIC_BASE_URL}" >> /etc/kibana/kibana.yml
   fi
 
-  cat > /etc/init.d/kibana <<EOF
+  cat > /etc/init.d/kibana << EOF
 #!/sbin/openrc-run
 
 name="Kibana"
@@ -134,7 +134,7 @@ main() {
   ensure_user
   install_artifact
   render_config
-  rc-update add kibana default >/dev/null || true
+  rc-update add kibana default > /dev/null || true
   rc-service kibana restart || rc-service kibana start
 }
 

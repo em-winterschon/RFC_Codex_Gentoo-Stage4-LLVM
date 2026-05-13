@@ -10,9 +10,9 @@ if [[ "$(id -u)" != 0 ]]; then
   exit 2
 fi
 
-sysctl -w net.ipv4.ip_forward=1 >/dev/null
+sysctl -w net.ipv4.ip_forward=1 > /dev/null
 
-if ! iptables -t nat -C POSTROUTING -s "${SUN99_CIDR}" -d "${PATHB_CIDR}" -o "${PATHB_IFACE}" -j MASQUERADE 2>/dev/null; then
+if ! iptables -t nat -C POSTROUTING -s "${SUN99_CIDR}" -d "${PATHB_CIDR}" -o "${PATHB_IFACE}" -j MASQUERADE 2> /dev/null; then
   iptables -t nat -A POSTROUTING -s "${SUN99_CIDR}" -d "${PATHB_CIDR}" -o "${PATHB_IFACE}" -j MASQUERADE
 fi
 

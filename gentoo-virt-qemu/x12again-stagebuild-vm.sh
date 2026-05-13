@@ -26,7 +26,7 @@ X12_STAGEBUILD_SSH_PORT="${X12_STAGEBUILD_SSH_PORT:-2230}"
 X12_STAGEBUILD_SERIAL_PORT="${X12_STAGEBUILD_SERIAL_PORT:-4566}"
 
 usage() {
-  cat <<EOF
+  cat << EOF
 Usage: $(basename "$0") [--print-env|--build|--launch|--full|--help]
 
 Modes:
@@ -63,7 +63,7 @@ parse_args() {
     --full)
       X12_STAGEBUILD_MODE='full'
       ;;
-    --help|-h)
+    --help | -h)
       usage
       exit 0
       ;;
@@ -115,7 +115,7 @@ PORTAGE_TMPDIR=\"/var/tmp/portage\"}"
 }
 
 print_environment() {
-  cat <<EOF
+  cat << EOF
 X12_STAGEBUILD_INSTANCE_NAME=${X12_STAGEBUILD_INSTANCE_NAME}
 X12_STAGEBUILD_ROOT=${X12_STAGEBUILD_ROOT}
 X12_STAGEBUILD_BASE_DIR=${X12_STAGEBUILD_BASE_DIR}

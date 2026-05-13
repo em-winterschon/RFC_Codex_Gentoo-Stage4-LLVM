@@ -140,9 +140,9 @@ require_grep 'sw_mgmt_css326' "${output_root}/manifest.json"
 require_grep '\$ANSIBLE_VAULT' "${output_root}/routeros/sw_spine_crs309_rfc99/20260510T211510Z/export-show-sensitive.txt.vault"
 
 NETWORK_CONFIG_BACKUP_ROUTEROS_ROOT="${routeros_root}" \
-NETWORK_CONFIG_BACKUP_ROUTEROS_MANUAL_ROOT="${routeros_manual_root}" \
-NETWORK_CONFIG_BACKUP_SWOS_ROOT="${swos_root}" \
-NETWORK_CONFIG_BACKUP_OUTPUT_ROOT="${tmpdir}/dry-run-output" \
+  NETWORK_CONFIG_BACKUP_ROUTEROS_MANUAL_ROOT="${routeros_manual_root}" \
+  NETWORK_CONFIG_BACKUP_SWOS_ROOT="${swos_root}" \
+  NETWORK_CONFIG_BACKUP_OUTPUT_ROOT="${tmpdir}/dry-run-output" \
   "${BACKUP_WRAPPER}" --skip-collect --dry-run > "${tmpdir}/wrapper-dry-run.txt"
 
 require_grep 'skipping live collection' "${tmpdir}/wrapper-dry-run.txt"

@@ -44,7 +44,8 @@ test -d "${tang_role}"
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "${tmp_dir}"' EXIT
 
-future_expiry="$(python3 - <<'PY'
+future_expiry="$(
+  python3 - << 'PY'
 from datetime import datetime, timedelta, timezone
 print((datetime.now(timezone.utc) + timedelta(hours=2)).replace(microsecond=0).isoformat().replace("+00:00", "Z"))
 PY
@@ -52,14 +53,14 @@ PY
 
 STAGE5_FIRSTBOOT_OTP='test-otp-not-for-real-use' \
   "${renderer}" \
-    --fqdn gmktek-k10-stage5.rfc1918.host \
-    --realm RFC1918.HOST \
-    --domain rfc1918.host \
-    --ipa-server ipa01.rfc1918.host \
-    --expires-at "${future_expiry}" \
-    --generation-id k10-e2et-test \
-    --otp-env STAGE5_FIRSTBOOT_OTP \
-    > "${tmp_dir}/bundle.json"
+  --fqdn gmktek-k10-stage5.rfc1918.host \
+  --realm RFC1918.HOST \
+  --domain rfc1918.host \
+  --ipa-server ipa01.rfc1918.host \
+  --expires-at "${future_expiry}" \
+  --generation-id k10-e2et-test \
+  --otp-env STAGE5_FIRSTBOOT_OTP \
+  > "${tmp_dir}/bundle.json"
 
 "${stager}" \
   --bundle "${tmp_dir}/bundle.json" \
@@ -73,7 +74,7 @@ assert_file_contains "${tmp_dir}/plan.json" '"dry_run": true'
 assert_file_contains "${tmp_dir}/plan.json" '"would_write":'
 test ! -e "${tmp_dir}/bundle.json.age" || fail "dry-run wrote encrypted bundle"
 
-cat > "${tmp_dir}/fake-age" <<'SH'
+cat > "${tmp_dir}/fake-age" << 'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 out=""

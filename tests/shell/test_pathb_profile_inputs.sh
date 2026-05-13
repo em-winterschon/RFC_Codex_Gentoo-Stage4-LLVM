@@ -64,7 +64,7 @@ assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh"
 
 temp_dir="$(mktemp -d)"
 trap 'rm -rf "${temp_dir}"' EXIT
-cat > "${temp_dir}/mksquashfs-gzip-only" <<'FAKEMKSQUASHFS'
+cat > "${temp_dir}/mksquashfs-gzip-only" << 'FAKEMKSQUASHFS'
 #!/usr/bin/env bash
 if [[ "$1" == "-help-section" && "$2" == "compression" ]]; then
   cat <<'EOF'

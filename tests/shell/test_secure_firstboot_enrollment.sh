@@ -30,12 +30,14 @@ test -x "${renderer}"
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "${tmp_dir}"' EXIT
 
-future_expiry="$(python3 - <<'PY'
+future_expiry="$(
+  python3 - << 'PY'
 from datetime import datetime, timedelta, timezone
 print((datetime.now(timezone.utc) + timedelta(hours=2)).replace(microsecond=0).isoformat().replace("+00:00", "Z"))
 PY
 )"
-expired_at="$(python3 - <<'PY'
+expired_at="$(
+  python3 - << 'PY'
 from datetime import datetime, timedelta, timezone
 print((datetime.now(timezone.utc) - timedelta(hours=2)).replace(microsecond=0).isoformat().replace("+00:00", "Z"))
 PY
@@ -43,14 +45,14 @@ PY
 
 STAGE5_FIRSTBOOT_OTP='test-otp-not-for-real-use' \
   "${renderer}" \
-    --fqdn gmktek-k10-stage5.rfc1918.host \
-    --realm RFC1918.HOST \
-    --domain rfc1918.host \
-    --ipa-server ipa01.rfc1918.host \
-    --expires-at "${future_expiry}" \
-    --generation-id k10-e2et-test \
-    --otp-env STAGE5_FIRSTBOOT_OTP \
-    > "${tmp_dir}/valid.json"
+  --fqdn gmktek-k10-stage5.rfc1918.host \
+  --realm RFC1918.HOST \
+  --domain rfc1918.host \
+  --ipa-server ipa01.rfc1918.host \
+  --expires-at "${future_expiry}" \
+  --generation-id k10-e2et-test \
+  --otp-env STAGE5_FIRSTBOOT_OTP \
+  > "${tmp_dir}/valid.json"
 
 "${validator}" "${tmp_dir}/valid.json" --expected-fqdn gmktek-k10-stage5.rfc1918.host
 
@@ -67,7 +69,7 @@ if "${renderer}" \
 fi
 assert_file_contains "${tmp_dir}/missing-otp.err" 'missing OTP environment variable'
 
-python3 - "${tmp_dir}/valid.json" "${tmp_dir}/expired.json" "${expired_at}" <<'PY'
+python3 - "${tmp_dir}/valid.json" "${tmp_dir}/expired.json" "${expired_at}" << 'PY'
 import json
 import sys
 src, dst, expired_at = sys.argv[1:4]
@@ -82,7 +84,7 @@ if "${validator}" "${tmp_dir}/expired.json" > "${tmp_dir}/expired.out" 2> "${tmp
 fi
 assert_file_contains "${tmp_dir}/expired.err" 'bundle expired'
 
-python3 - "${tmp_dir}/valid.json" "${tmp_dir}/keytab.json" <<'PY'
+python3 - "${tmp_dir}/valid.json" "${tmp_dir}/keytab.json" << 'PY'
 import json
 import sys
 src, dst = sys.argv[1:3]

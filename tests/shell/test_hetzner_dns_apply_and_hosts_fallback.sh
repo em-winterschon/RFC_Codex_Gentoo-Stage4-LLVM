@@ -166,7 +166,7 @@ if python3 "${PLANNER}" \
   "${tmpdir}/bad-inventory.yml" \
   --zone-groups-file "${tmpdir}/zone-groups.json" \
   --required-domain rfc1918.host \
-  --format json > "${tmpdir}/bad-plan.json" 2>"${tmpdir}/bad-plan.err"; then
+  --format json > "${tmpdir}/bad-plan.json" 2> "${tmpdir}/bad-plan.err"; then
   fail "conflicting required-domain DNS plan unexpectedly succeeded"
 fi
 grep -Fq "conflicting_rrset_values" "${tmpdir}/bad-plan.err" || fail "missing conflict diagnostic"

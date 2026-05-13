@@ -102,13 +102,15 @@ for _ in $(seq 1 50); do
 done
 [ -s "${ready_file}" ] || fail "fixture did not become ready"
 
-syslog_port="$(python3 - "${ready_file}" << 'PY'
+syslog_port="$(
+  python3 - "${ready_file}" << 'PY'
 import json
 import sys
 print(json.load(open(sys.argv[1]))["syslog_port"])
 PY
 )"
-elasticsearch_port="$(python3 - "${ready_file}" << 'PY'
+elasticsearch_port="$(
+  python3 - "${ready_file}" << 'PY'
 import json
 import sys
 print(json.load(open(sys.argv[1]))["elasticsearch_port"])

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-PYTHONPATH="${REPO_ROOT}/scripts/mcp_servers" python3 - <<'PY'
+PYTHONPATH="${REPO_ROOT}/scripts/mcp_servers" python3 - << 'PY'
 import json
 import os
 import tempfile

@@ -33,7 +33,7 @@ trap 'rm -rf "${tmpdir}"' EXIT
 event_file="${tmpdir}/agents/forge/sessions/session-night-001/events.jsonl"
 test -f "${event_file}" || fail "missing event log"
 
-python3 - "${event_file}" "${tmpdir}/append.json" <<'PY'
+python3 - "${event_file}" "${tmpdir}/append.json" << 'PY'
 import json
 import sys
 from pathlib import Path
@@ -70,7 +70,7 @@ if "${SPOOLER}" append-event \
   fail "secret-looking payload was accepted"
 fi
 grep -qi 'secret' "${tmpdir}/secret.stderr" || fail "secret rejection did not explain the cause"
-! grep -R "must-not-land-in-memory" "${tmpdir}" >/dev/null || fail "secret value leaked into spool"
+! grep -R "must-not-land-in-memory" "${tmpdir}" > /dev/null || fail "secret value leaked into spool"
 
 "${SPOOLER}" closeout \
   --spool-root "${tmpdir}" \
@@ -79,7 +79,7 @@ grep -qi 'secret' "${tmpdir}/secret.stderr" || fail "secret rejection did not ex
   --summary "Nightly continuity checkpoint" \
   > "${tmpdir}/closeout.json"
 
-python3 - "${tmpdir}/closeout.json" "${event_file}" <<'PY'
+python3 - "${tmpdir}/closeout.json" "${event_file}" << 'PY'
 import hashlib
 import json
 import sys
@@ -108,7 +108,7 @@ PY
   --limit 5 \
   > "${tmpdir}/sessions.json"
 
-python3 - "${tmpdir}/sessions.json" "${event_file}" <<'PY'
+python3 - "${tmpdir}/sessions.json" "${event_file}" << 'PY'
 import json
 import sys
 from pathlib import Path

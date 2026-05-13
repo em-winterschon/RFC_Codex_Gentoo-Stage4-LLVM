@@ -323,7 +323,7 @@ test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs() {
   printf '%s\n' '43:0' > "${temp_dir}/sys/class/block/nbd0/dev"
   printf '%s\n' '43:1' > "${temp_dir}/sys/class/block/nbd0p1/dev"
   printf '%s\n' '43:2' > "${temp_dir}/sys/class/block/nbd0p2/dev"
-  cat > "${temp_dir}/mknod" <<'EOF'
+  cat > "${temp_dir}/mknod" << 'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${MKNOD_LOG}"
 : > "$1"
@@ -383,6 +383,28 @@ test_prepare_host_cache_permissions_marks_cache_root_portage_writable() {
   [[ "${parent_mode}" == *1 || "${parent_mode}" == *5 || "${parent_mode}" == *7 ]] || fail "cache parent did not gain execute permission: ${parent_mode}"
   [[ -x "${cache_root}" ]] || fail "cache root is not traversable"
   [[ -w "${cache_dir}" ]] || fail "cache dir is not writable"
+  rm -rf "${temp_dir}"
+}
+
+test_prepare_host_cache_permissions_marks_cache_root_traversable_without_portage_group() {
+  local temp_dir cache_root cache_dir
+  local parent_mode
+  temp_dir="$(mktemp -d)"
+
+  reset_builder_state
+  chmod 0750 "${temp_dir}"
+  cache_root="${temp_dir}/build-cache"
+  cache_dir="${cache_root}/distfiles"
+  STAGE3_HOST_CACHE_ROOT="${cache_root}"
+  STAGE3_HOST_CACHE_GROUP='definitely-not-a-real-group'
+
+  prepare_host_cache_permissions "${cache_dir}"
+
+  [[ -d "${cache_dir}" ]] || fail "cache dir was not created without portage group"
+  parent_mode="$(stat -c '%a' "${temp_dir}")"
+  [[ "${parent_mode}" == *1 || "${parent_mode}" == *5 || "${parent_mode}" == *7 ]] || fail "cache parent did not gain execute permission without portage group: ${parent_mode}"
+  [[ -x "${cache_root}" ]] || fail "cache root is not traversable without portage group"
+  [[ -w "${cache_dir}" ]] || fail "cache dir is not writable without portage group"
   rm -rf "${temp_dir}"
 }
 
@@ -500,6 +522,7 @@ test_hardened_profile_preset_renders_profile_specific_portage_config
 test_ensure_nbd_device_nodes_creates_missing_dev_nodes_from_sysfs
 test_mount_host_cache_dirs_renders_bind_mounts
 test_prepare_host_cache_permissions_marks_cache_root_portage_writable
+test_prepare_host_cache_permissions_marks_cache_root_traversable_without_portage_group
 test_prepare_guest_cache_mountpoint_marks_parents_traversable
 test_resolve_host_tool_paths_respects_custom_tool_subset
 test_render_bootstrap_script_includes_extra_portage_fragments

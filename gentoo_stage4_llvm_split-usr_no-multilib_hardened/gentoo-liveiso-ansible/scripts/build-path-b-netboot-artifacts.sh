@@ -114,7 +114,7 @@ profile_definition_query() {
   local query="$1"
   shift
 
-  "${PATHB_PROFILE_PYTHON}" - "${ANSIBLE_ROOT}" "${query}" "$@" <<'PY'
+  "${PATHB_PROFILE_PYTHON}" - "${ANSIBLE_ROOT}" "${query}" "$@" << 'PY'
 import pathlib
 import sys
 

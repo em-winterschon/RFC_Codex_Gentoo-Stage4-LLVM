@@ -309,15 +309,21 @@ prepare_host_cache_permissions() {
   [[ -n "${host_path}" ]] || return 0
   mkdir -p "${host_path}"
 
+  case "${host_path}" in
+  "${STAGE3_HOST_CACHE_ROOT}" | "${STAGE3_HOST_CACHE_ROOT}"/*)
+    cache_root_parent="$(dirname "${STAGE3_HOST_CACHE_ROOT}")"
+    chmod a+x "${cache_root_parent}" || true
+    mkdir -p "${STAGE3_HOST_CACHE_ROOT}"
+    chmod a+x "${STAGE3_HOST_CACHE_ROOT}" || true
+    ;;
+  esac
+
   if getent group "${STAGE3_HOST_CACHE_GROUP}" > /dev/null 2>&1; then
     chgrp "${STAGE3_HOST_CACHE_GROUP}" "${host_path}" || true
     chmod 2775 "${host_path}" || true
 
     case "${host_path}" in
-    "${STAGE3_HOST_CACHE_ROOT}"|"${STAGE3_HOST_CACHE_ROOT}"/*)
-      cache_root_parent="$(dirname "${STAGE3_HOST_CACHE_ROOT}")"
-      chmod a+x "${cache_root_parent}" || true
-      mkdir -p "${STAGE3_HOST_CACHE_ROOT}"
+    "${STAGE3_HOST_CACHE_ROOT}" | "${STAGE3_HOST_CACHE_ROOT}"/*)
       chgrp "${STAGE3_HOST_CACHE_GROUP}" "${STAGE3_HOST_CACHE_ROOT}" || true
       chmod 2775 "${STAGE3_HOST_CACHE_ROOT}" || true
       ;;

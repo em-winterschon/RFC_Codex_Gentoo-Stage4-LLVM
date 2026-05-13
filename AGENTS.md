@@ -158,18 +158,22 @@ Output:
   3. `gzip`
 - When a lower-preference format is used, note the compatibility or tooling reason in code comments, docs, or commit context when relevant.
 
-## 6. MAY Rules
+### 5.6 MCP Server Usage
+- Agent SHOULD consult available MCP-backed official documentation when current reference details are needed and local or repository context is insufficient.
+- For OpenAI API, ChatGPT Apps SDK, and Codex configuration questions, prefer the OpenAI developer documentation MCP server when it is available.
 
-Use these when they improve usefulness, not by default:
+## 6. MAY Rules
+The agent MAY use the following optional actions and artifacts when they improve data-driven execution, information clarity, information consistency, or source-of-truth maintenance. The user may opt out of these additions through explicit prompt instructions.
+
 - glossary of technical terms
 - implementation checklist
 - risk register
-- architecture diagram or flow
+- PlantUML architecture diagram or flowchart
 - alternate scenarios
 - migration plan
 - rollback plan
 - benchmarking schema
-- sample JSON or YAML payloads
+- sample JSON, YAML, or Markdown payloads
 
 ## 7. Output Contracts by Task Type
 

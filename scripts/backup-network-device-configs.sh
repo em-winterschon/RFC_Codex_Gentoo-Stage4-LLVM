@@ -66,43 +66,46 @@ run() {
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    --skip-collect)
-      COLLECT=0
-      ;;
-    --include-all)
-      INCLUDE_ALL=1
-      ;;
-    --git-add)
-      GIT_ADD=1
-      ;;
-    --git-commit)
-      GIT_COMMIT=1
-      ;;
-    --git-push)
-      GIT_PUSH=1
-      ;;
-    --sync-git)
-      GIT_ADD=1
-      GIT_COMMIT=1
-      GIT_PUSH=1
-      ;;
-    --message)
-      shift
-      [[ "$#" -gt 0 ]] || { printf 'ERROR: --message requires text\n' >&2; exit 2; }
-      COMMIT_MESSAGE="$1"
-      ;;
-    --dry-run)
-      DRY_RUN=1
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      printf 'ERROR: unknown option: %s\n' "$1" >&2
-      usage >&2
+  --skip-collect)
+    COLLECT=0
+    ;;
+  --include-all)
+    INCLUDE_ALL=1
+    ;;
+  --git-add)
+    GIT_ADD=1
+    ;;
+  --git-commit)
+    GIT_COMMIT=1
+    ;;
+  --git-push)
+    GIT_PUSH=1
+    ;;
+  --sync-git)
+    GIT_ADD=1
+    GIT_COMMIT=1
+    GIT_PUSH=1
+    ;;
+  --message)
+    shift
+    [[ "$#" -gt 0 ]] || {
+      printf 'ERROR: --message requires text\n' >&2
       exit 2
-      ;;
+    }
+    COMMIT_MESSAGE="$1"
+    ;;
+  --dry-run)
+    DRY_RUN=1
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: unknown option: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
   shift
 done

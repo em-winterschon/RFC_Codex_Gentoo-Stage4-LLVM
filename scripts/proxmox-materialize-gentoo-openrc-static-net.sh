@@ -21,7 +21,7 @@ PROXMOX_APPLY="${PROXMOX_APPLY:-0}"
 DRY_RUN=1
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage: proxmox-materialize-gentoo-openrc-static-net.sh [--dry-run|--apply]
 
 Writes static OpenRC network configuration directly into a stopped Gentoo VM
@@ -114,7 +114,7 @@ validate_inputs() {
 }
 
 render_remote_script() {
-  cat <<EOF
+  cat << EOF
 set -euo pipefail
 
 vmid=$(shell_quote "${VMID}")
