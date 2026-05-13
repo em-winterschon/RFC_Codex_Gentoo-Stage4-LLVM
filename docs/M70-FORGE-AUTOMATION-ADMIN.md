@@ -19,6 +19,8 @@ environment.
 | Gateway | `172.16.99.1` |
 | Primary NIC | `eth0` |
 | Primary MAC | `00:07:32:78:65:C6` |
+| Switch port | `sw_mgmt_css326 ge14` |
+| PDU outlet | `pdu-rfc99-corectrl-099241 outlet 4` |
 | Stage5 profile | `metal-forge-automation-admin` |
 
 ## Provisioning Plan

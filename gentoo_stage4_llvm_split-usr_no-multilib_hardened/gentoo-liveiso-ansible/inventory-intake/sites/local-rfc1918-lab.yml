@@ -99,6 +99,9 @@ devices:
       - name: ge6
         lag: hasslehoff-bond0
         status: active
+      - name: ge14
+        purpose: admin-sun99-forge-099070-primary
+        status: active
       - name: ge15
         purpose: lap-sun99-chonkers-lom
         status: active
@@ -444,6 +447,33 @@ devices:
       - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
       - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
       - Realtek RTL8111H 1GbE LOM is connected to CSS326 ge15.
+      - PDU outlet assignment superseded by admin_sun99_forge_099070; re-inventory before remote power control.
+  - name: admin_sun99_forge_099070
+    site: local-rfc1918-lab
+    role: automation-admin
+    manufacturer: M70
+    model: Atom C3758 appliance
+    status: planned
+    management_ip: 172.16.99.70
+    management_interface: eth0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    dns_aliases:
+      - admin-sun99-forge.rfc1918.host
+    interfaces:
+      - name: eth0
+        type: 1000base-t
+        purpose: uefi-pxe-ipxe-netboot
+        mac_address: "00:07:32:78:65:C6"
+        connected_device: sw_mgmt_css326
+        connected_interface: ge14
+        netboot_type: static
+        netboot_protocol_flow: pxe-to-ipxe
+        status: active
+    notes:
+      - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
+      - CPU Intel Atom C3758; 64 GiB ECC RAM; six 1GbE NICs; 32GB SATADOM OS target; two 512GB NVMe devices for mirrored data or service state.
+      - UEFI PXE/TFTP loads m70-forge-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
+      - Primary NIC eth0 MAC 00:07:32:78:65:C6 is connected to CSS326 ge14.
       - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab
@@ -462,9 +492,9 @@ devices:
         status: active
     power_outlets:
       - name: outlet4
-        label: host_lap_sun99_chonkers
+        label: host_admin_sun99_forge_099070
         outlet_index: 4
-        target_device: lap_sun99_chonkers
+        target_device: admin_sun99_forge_099070
         target_power_port: power0
         status: active
       - name: outlet6
@@ -477,7 +507,7 @@ devices:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
       - Operator/control-panel name is pdu-rfc99-corectrl-099241.
-      - Outlet 4 maps to lap_sun99_chonkers.
+      - Outlet 4 maps to admin_sun99_forge_099070.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
       - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
 

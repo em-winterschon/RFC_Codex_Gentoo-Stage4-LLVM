@@ -52,6 +52,8 @@ assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "ansible_h
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "fqdn: admin-sun99-forge-099070.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "stage5_profile: metal-forge-automation-admin"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "primary_nic_mac: \"00:07:32:78:65:C6\""
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "connected_switch_port: ge14"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "pdu_outlet: \"4\""
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "automation_admin_migration_source: x12again"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_protocol_flow: pxe-to-ipxe"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "netboot_bootfile_name: m70-forge-ipxe.efi"

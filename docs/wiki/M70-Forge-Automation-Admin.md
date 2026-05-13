@@ -2,7 +2,9 @@
 
 The first M70 node is reserved as `admin-sun99-forge-099070.rfc1918.host`
 (`172.16.99.70`, MAC `00:07:32:78:65:C6`) and uses the
-`metal-forge-automation-admin` Stage5 profile.
+`metal-forge-automation-admin` Stage5 profile. Its primary NIC is connected to
+CSS326 `ge14`, and its remote power path is AP7901 outlet 4 on
+`pdu-rfc99-corectrl-099241`.
 
 It is the migration target for Forge/Codex, Ansible, vault workflows, GitHub
 CLI, X12AGAIN SoL access through `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin`,
