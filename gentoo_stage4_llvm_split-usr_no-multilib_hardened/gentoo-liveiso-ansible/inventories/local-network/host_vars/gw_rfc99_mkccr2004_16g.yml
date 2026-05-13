@@ -52,6 +52,16 @@ routeros_rfc99_gateway_dns_static_records:
     cname: boot-sun99-netboot-099088.rfc1918.host
     ttl: 5m
     comment: codex netboot publisher cname
+  - name: admin-sun99-forge-099070.rfc1918.host
+    type: A
+    address: 172.16.99.70
+    ttl: 5m
+    comment: codex automation admin host
+  - name: admin-sun99-forge.rfc1918.host
+    type: CNAME
+    cname: admin-sun99-forge-099070.rfc1918.host
+    ttl: 5m
+    comment: codex automation admin cname
 routeros_rfc99_gateway_service_vips:
   - name: obs-sun99-esvip-099092
     address: 172.16.99.92/32
@@ -98,9 +108,18 @@ routeros_rfc99_gateway_dhcp_options:
     code: 67
     value: k10-ipxe.efi
     purpose: UEFI PXE/TFTP handoff for GMKtek K10 Stage5 validation
+  - name: m70-forge-pxe-bootfile
+    code: 67
+    value: m70-forge-ipxe.efi
+    purpose: UEFI PXE/TFTP handoff for M70 Forge automation-admin provisioning
 routeros_rfc99_gateway_dhcp_static_leases:
   - comment: gmktek-k10-stage5-ipxe
     address: 172.16.99.156
     mac_address: "84:47:09:5F:21:64"
     dhcp_options:
       - k10-pxe-bootfile
+  - comment: admin-sun99-forge-099070-ipxe
+    address: 172.16.99.70
+    mac_address: "00:07:32:78:65:C6"
+    dhcp_options:
+      - m70-forge-pxe-bootfile

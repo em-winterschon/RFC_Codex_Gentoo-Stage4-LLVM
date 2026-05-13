@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-13 - M70 Automation Admin Provisioning
+
+- Added the `metal-forge-automation-admin` Stage5 profile, package list,
+  metadata, service atoms, and local-network inventory entry for the first M70
+  automation-admin host.
+- Reserved `admin-sun99-forge-099070.rfc1918.host` at `172.16.99.70` with
+  primary MAC `00:07:32:78:65:C6`, RouterOS DNS desired state, and a static
+  PXE-to-iPXE DHCP handoff using `m70-forge-ipxe.efi`.
+- Documented the X12AGAIN migration acceptance gates: restored Forge/Codex
+  state, GitHub/vault/Ansible tooling, service reachability, and working
+  `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` SoL before any Prinzessin
+  reimage starts.
+
 ## 2026-05-12 - FastMCP And Scheduler Planning
 
 - Added the FastMCP infrastructure control-plane promotion plan for NetBox,

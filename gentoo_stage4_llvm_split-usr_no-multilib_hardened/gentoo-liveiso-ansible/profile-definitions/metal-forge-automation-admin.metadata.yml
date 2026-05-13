@@ -1,0 +1,47 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-forge-automation-admin
+  purpose: >-
+    Bare-metal Forge automation-admin host for running Codex, Ansible,
+    infrastructure control tooling, off-host continuity restores, and
+    X12AGAIN SoL operations before Prinzessin is reimaged.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-infrastructure
+    role_name: forge-automation-admin
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-storage-nfs-client.packages
+      - profile-package-lists/stage5-observability-metrics-client.packages
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+      - profile-package-lists/stage5-metal-forge-automation-admin.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  base_profile:
+    intended_overlay_on:
+      - hardened-llvm-stage4-merged-usr
+      - base-minimal-nox
+      - aaa-domain-client
+      - nfs-storage-client
+      - telemetry-node-exporter-client
+      - secure-firstboot-enrollment
+  package_pins:
+    automation_packages:
+      - app-admin/ansible
+      - dev-vcs/git
+      - dev-vcs/github-cli
+      - net-analyzer/nmap
+      - net-analyzer/tcpdump
+      - sys-apps/ipmitool
+      - sys-fs/zfs
+  openrc_services:
+    - chronyd
+    - nfsmount
+    - rpcbind
+    - rsyslog
+    - sshd
+    - sssd
+  acceptance_gates:
+    - reaches Hasslehoff, CCR2004, NetBox, FreeIPA, local ntfy, GitHub, and off-host backup target
+    - can run /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin to open X12AGAIN SoL
+    - preserves /root, /opt, Forge memory spool, Ansible, Git, and Codex state from X12AGAIN backup

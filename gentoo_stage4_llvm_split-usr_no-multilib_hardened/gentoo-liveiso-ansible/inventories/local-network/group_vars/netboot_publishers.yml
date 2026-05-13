@@ -1,10 +1,12 @@
 ---
 netboot_publish_root: /var/lib/netboot/path-b
 netboot_public_base_url: http://172.16.99.88:8080
-netboot_tftp_autoexec_chain_url: http://172.16.99.88:8080/hosts/gmktek-k10-stage5.ipxe
+netboot_tftp_autoexec_chain_url: http://172.16.99.88:8080/hosts/by-mac.ipxe
 netboot_first_stage_binaries:
   - src: /opt/gentoo-netboot/path-b/k10-ipxe-172.16.99.88-snponly.efi
     dest: k10-ipxe.efi
+  - src: /opt/gentoo-netboot/path-b/k10-ipxe-172.16.99.88-snponly.efi
+    dest: m70-forge-ipxe.efi
 netboot_tftp_service_enabled: true
 
 netboot_roles_extra:
@@ -18,6 +20,21 @@ netboot_roles_extra:
       bootdev=eth0
       ifname=eth0:84:47:09:5f:21:64
       ip=172.16.99.156::172.16.99.1:255.255.255.0:gmktek-k10-stage5:eth0:none
+      nameserver=9.9.9.9
+      rd.neednet=1
+      rd.net.timeout.carrier=60
+      rd.live.image
+      root=live:{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img
+  forge-automation-admin:
+    description: Boot the first M70 Forge automation-admin provisioning environment.
+    kernel_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/vmlinuz"
+    initrd_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/{{ netboot_initramfs_short_name }}"
+    initrd_boot_name: "{{ netboot_initramfs_short_name }}"
+    rootfs_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img"
+    extra_cmdline: >-
+      bootdev=eth0
+      ifname=eth0:00:07:32:78:65:c6
+      ip=172.16.99.70::172.16.99.1:255.255.255.0:admin-sun99-forge-099070:eth0:none
       nameserver=9.9.9.9
       rd.neednet=1
       rd.net.timeout.carrier=60

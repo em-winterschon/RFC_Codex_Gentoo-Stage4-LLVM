@@ -94,6 +94,14 @@ Dependency:
 | `ST-015` | completed | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Generated Podman wrappers emit `--pull`; package-backed GHCR profiles default to `missing`, and the live Path B `ntfy` override uses `never` while the upstream-image path is blocked. |
 | `ST-016` | active | Safe-move container-services workload to Hasslehoff Stage4 VM | `PNR-014`, `ST-013` | Staging VM `svc-container-services-safe-move-01` is live at `172.16.99.89`; Podman/Buildah/Skopeo bootstrap completed; rsyslog, nginx, HAProxy, and ntfy are running. ntfy is exposed on service VIP `172.16.99.96` as `msg-sun99-ntfysys-099096.rfc1918.host` with RouterOS, Hetzner, and NetBox tracking. CCR2004 owns the scoped Elasticsearch/search VIP `obs-sun99-esvip-099092.rfc1918.host` / `172.16.99.92` and the dedicated rsyslog VIP `log-sun99-rsyslog-099093.rfc1918.host` / `172.16.99.93` with RouterOS DNS, Hetzner DNS, DNAT, and hairpin SRCNAT. Elasticsearch now runs on Hasslehoff VM `1091` at `10.9.8.91` on VLAN1098; temporary `/32` Path-B backend routes via X12AGAIN were removed after validation. |
 
+## Automation Admin Continuity
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `ADM-001` | active | Provision first M70 as Forge automation-admin host | M70 serial BIOS setup, SUN99 netboot publisher, CCR2004 DHCP/DNS desired state | Reserved `admin-sun99-forge-099070.rfc1918.host` / `172.16.99.70` for MAC `00:07:32:78:65:C6`; profile `metal-forge-automation-admin` includes Ansible, GitHub CLI, vault, ipmitool, NFS/ZFS, netboot, and Forge continuity tooling. |
+| `ADM-002` | pending | Restore Forge/Codex continuity data from X12AGAIN backup | `ADM-001`, off-host backup availability | Restore `/root`, `/opt`, `/var/lib/ansible`, `/var/lib/codex`, `/var/lib/forge-memory`, and `/var/lib/git`; verify no unencrypted secrets are newly introduced into the repo. |
+| `ADM-003` | pending | Prove X12AGAIN SoL and infrastructure reachability from M70 | `ADM-002` | Acceptance requires `ipmi-prinzessin` SoL, Hasslehoff SSH/API, CCR2004 RouterOS, NetBox, FreeIPA, local ntfy HTTPS, GitHub, and off-host backup target reachability before X12AGAIN reimage. |
+
 ## Proxmox, NetBox, And RouterOS
 
 | ID | Status | Task | Depends On | Notes |

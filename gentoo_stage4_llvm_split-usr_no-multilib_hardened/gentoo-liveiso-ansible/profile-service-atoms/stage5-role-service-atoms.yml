@@ -333,6 +333,44 @@ role_service_atoms:
           - tun
           - veth
 
+  metal-forge-automation-admin:
+    role_class: baremetal-infrastructure
+    extends:
+      - base-minimal-nox
+      - aaa-domain-client
+      - nfs-storage-client
+      - telemetry-node-exporter-client
+      - secure-firstboot-enrollment
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-storage-nfs-client.packages
+      - profile-package-lists/stage5-observability-metrics-client.packages
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+      - profile-package-lists/stage5-metal-forge-automation-admin.packages
+    service_atoms:
+      - id: forge-control-plane
+        package_atoms:
+          - app-admin/ansible
+          - dev-vcs/git
+          - dev-vcs/github-cli
+          - sys-apps/ipmitool
+        protocol_ports:
+          - tcp/22
+      - id: network-validation-toolkit
+        package_atoms:
+          - net-analyzer/nmap
+          - net-analyzer/tcpdump
+          - net-dns/bind-tools
+      - id: continuity-storage-client
+        package_atoms:
+          - net-fs/nfs-utils
+          - net-misc/rsync
+          - sys-fs/zfs
+        openrc_services:
+          - nfsmount
+          - rpcbind
+
   metal-time-authority-stratum1:
     role_class: baremetal-infrastructure
     extends:

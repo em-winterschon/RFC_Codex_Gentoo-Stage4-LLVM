@@ -87,6 +87,7 @@ ALLOWED_PROFILE_KEYS = {
     "time_authority",
     "vm_redfish_emulator",
     "workstation_session_stack",
+    "automation_admin",
 }
 
 
