@@ -6,6 +6,10 @@
   for X12AGAIN as a LOX workstation, Xen/QEMU hypervisor, AAA/RDMA/NFS client,
   gated SLURM worker, Optane NVDIMM host, BlueField2 lab system, and Project
   Coherent Flash scale-model target.
+- Added the no-mutation X12AGAIN live reimage preflight playbook, local-network
+  reimage-candidate inventory, host E2ET manifest, and docs. Destructive
+  mutation remains blocked until backup, service continuity, emergency console,
+  and human change-window gates are all explicitly true.
 - Added ITIL-style X12AGAIN reimage/change-control docs with hard gates,
   backout, SLURM admission, BlueField2/RDMA admission, and no production
   storage mutation policy.
