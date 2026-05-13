@@ -5,9 +5,14 @@
 - Added the FastMCP infrastructure control-plane promotion plan for NetBox,
   Proxmox, RouterOS, Trac, and internal-infra MCP wrappers, with LAN-only
   routing, vault-only credentials, mutation gates, and audit requirements.
+- Added initial FastMCP common helpers and a NetBox MCP skeleton with
+  read/plan/apply tool boundaries, mutation gating, and JSON audit artifacts.
 - Added the SLURM-first HPC workload scheduler plan, separating deterministic
   build/validation scheduling from later HTCondor, Galaxy, UNICORE, ARC, and
   CVMFS evaluation layers.
+- Added tomorrow planning items for BlueField-2/ConnectX-5 OFED deployment,
+  coherent-storage and heterogeneous-compute ADR import, and BigNetwork FMT2
+  link bring-up.
 
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 

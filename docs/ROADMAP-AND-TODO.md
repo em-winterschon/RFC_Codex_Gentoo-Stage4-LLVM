@@ -209,6 +209,7 @@ Dependency:
 | `FMT2-002` | active | Validate FMT2 transport path from RFC99/SUN99 | BigNetwork SDN or compatibility OpenVPN VM | BigNetwork is the first implementation path. Devuan smoke-test netboot assets and `bignetwork_edge` role scaffolding exist; Forge/Codexian BigNetwork token import is vaulted. Preferred steady-state is re-onboarding the local NanoPi R6S Edge Lite as a transparent L2 bridge; removal condition is repeatable bidirectional reachability to one FMT2 management prefix plus DNS resolution for legacy monitoring names. |
 | `FMT2-003` | pending | Promote verified FMT2 prefixes, racks, and devices into NetBox | `FMT2-001`, `FMT2-002` | Import prefixes and racks first, then routers/switches, then hosts/BMCs, then services. All records should be tagged to the old wiki source commit until independently verified. |
 | `FMT2-004` | pending | Reconnect FMT2 Check_MK to managed observability | `FMT2-002`, `FMT2-003` | Confirm `app-sfo200-monitoring-9927.vernetzen.io`, `/vernetzen/`, API endpoint, agents path, and return routing before adding targets or alert dependencies. |
+| `FMT2-005` | planned | Bring up BigNetwork L2 path for FMT2/SFO-200 discovery | `FMT2-002`, BigNetwork portal/device access | Tomorrow action item: finish the BigNetwork link so SUN99/RFC99 can reach FMT2 management networks and 100GbE-connected hosts. Once reachable, run connectivity discovery, promote verified records into NetBox, and feed Check_MK/observability onboarding. |
 
 ### DNS Automation
 
@@ -239,6 +240,7 @@ Dependency:
 | `MCP-002` | pending | Validate live Nginx-UI MCP service on LAN | `MCP-001`, AAA apply path | Validate HTTPS, `/mcp` SSE behavior, `node_secret` auth, no Docker socket mount, and OpenAI-compatible config without exposing tokens in logs. |
 | `MCP-003` | ready | Evaluate self-hosted MCP runtime and safe Trac integration | `PM-001`, `MCP-001` | Keep Trac write access blocked until a custom allowlisted MCP wrapper or equivalent control plane exists. |
 | `MCP-004` | planned | Implement FastMCP infrastructure service wrappers | `MCP-001`, `MCP-002`, `DNS-003`, `AAA-009` | Promotion order is Nginx-UI native validation, then `netbox-mcp`, `proxmox-mcp`, `routeros-mcp`, `trac-mcp`, and `infra-mcp`. Every mutation requires `MCP_ALLOW_MUTATIONS`, vaulted credentials, an idempotency key, and an audit artifact. See `docs/FASTMCP-INFRA-CONTROL-PLANE.md`. |
+| `MCP-005` | scaffolded | Add FastMCP common safety helpers and NetBox wrapper skeleton | `MCP-004` | `scripts/mcp_servers/` now has shared settings, mutation gate, audit artifact helpers, and a NetBox MCP skeleton with read/plan/apply boundaries. Backend NetBox client wiring remains gated follow-up work. |
 
 ### Agent Analytics And Shared Memory
 
@@ -255,11 +257,14 @@ Dependency:
 | --- | --- | --- | --- | --- |
 | `RDMA-001` | planned | Define RoCE-v2 switch tuning profiles | CRS309/CRS354/CRS354 leaf-spine model, NIC inventory | Track PFC/ECN/DSCP, MTU, queueing, LAG behavior, lossless class boundaries, and rollback for mixed storage/VM traffic. |
 | `RDMA-002` | planned | Define host RDMA storage client baseline | `RDMA-001`, NFS/NVMe-oF/iSER requirements | Cover `rdma-core`, OFED/DOCA alignment, NFS-RDMA, iSER, NVMe-RDMA, multipath, ZFS consumers, and telemetry gates for bare-metal and VM roles. |
+| `RDMA-003` | planned | Deploy OFED driver path for BlueField-2 and ConnectX-5 hosts | `RDMA-001`, `RDMA-002`, host PCI inventory | Tomorrow action item: define Ansible detection and deployment policy for NVIDIA/Mellanox OFED or DOCA-aligned drivers on BlueField-2 and ConnectX-5 NICs so RoCEv2, RDMA, and NVMe-oF subnets are ready for medium-term storage and compute work. |
 | `STOR-001` | planned | Model NVMe-oF/ZFS storage fabric datasets | `RDMA-001`, `RDMA-002`, QNAP/array inventory | Inventory dual-port NVMe-oF drives, ZFS dataset ownership, export protocols, IOPS/latency SLOs, and filesystem CRUD semantics before live mutation. |
+| `STOR-002` | planned | Import coherent storage ADR reference set | `STOR-001`, `MEM-001`, `LLM-004` | Tomorrow action item: review `/tmp/docs/ADRs/RFC_Proj-Coherent-Storage-ADRs.2026-Q2.v1` and map storage, K/V cache, prompt-caching, scale-up, and scale-out decisions into repo ADRs and implementation tasks. |
 | `HPC-001` | planned | Produce AI/ML HPC supercomputer hardware and network meta-analysis | workload taxonomy and reference designs | Compare upward trends across GPU, accelerator, CPU, memory, storage, and interconnect specialization. Output should separate verified facts from inference and map designs to workload classes. |
 | `HPC-002` | planned | Build SLURM-first workload scheduler pilot | `AAA-009`, `DNS-003`, `E2ET-002`, `BUILD-VM-001`, observability baseline | SLURM is the first scheduler for deterministic build, validation, GPU-test, and RDMA-test partitions. HTCondor, Galaxy, UNICORE, ARC, and CVMFS remain later evaluation layers. See `docs/HPC-WORKLOAD-SCHEDULER-PLAN.md`. |
 | `HPC-003` | planned | Add scheduler node health and feature inventory | `HPC-002`, NetBox host inventory, `RDMA-002` | Generate SLURM node features from NetBox and Ansible inventory: CPU generation, ISA flags, memory class, GPU model, RDMA capability, storage locality, and power-control method. Integrate NHC, E2ET, and observability. |
 | `HPC-004` | planned | Evaluate HTCondor opportunistic overlay | `HPC-002`, stable AAA, scheduler telemetry | Test HTCondor only after SLURM can reliably run build and validation jobs. Target mixed, opportunistic, or federated workloads rather than replacing the first local scheduler. |
+| `HPC-005` | planned | Import heterogeneous compute ADR reference set | `HPC-001`, `HPC-002`, `LLM-004` | Tomorrow action item: review `/tmp/docs/ADRs/RFC_Proj-Heterogeneous-Compute-ADRs.2026-Q2` and map heterogeneous compute, scale-up/scale-out, GPU/RDMA, scheduler, and FMT2 100GbE implications into repo ADRs and Kanban tasks. |
 
 ### Host E2ET And Release Acceptance
 
