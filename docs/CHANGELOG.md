@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-12 - FastMCP And Scheduler Planning
+
+- Added the FastMCP infrastructure control-plane promotion plan for NetBox,
+  Proxmox, RouterOS, Trac, and internal-infra MCP wrappers, with LAN-only
+  routing, vault-only credentials, mutation gates, and audit requirements.
+- Added the SLURM-first HPC workload scheduler plan, separating deterministic
+  build/validation scheduling from later HTCondor, Galaxy, UNICORE, ARC, and
+  CVMFS evaluation layers.
+
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 
 - Added secure firstboot producer staging around

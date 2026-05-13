@@ -63,6 +63,17 @@ References:
 - Live apply should be gated through the same explicit mutation pattern used for
   RouterOS, NetBox, and AAA apply work.
 
+## FastMCP Service Promotion
+
+Custom infrastructure MCP services should be implemented as FastMCP wrappers
+behind HAProxy, not as unrestricted API mirrors. The initial promotion order is
+NetBox, Proxmox, RouterOS, Trac, and then an internal infrastructure wrapper for
+repo playbooks and validators. Nginx-UI remains on its native `/mcp` endpoint.
+
+See:
+
+- [FastMCP Infrastructure Control Plane](FastMCP-Infra-Control-Plane)
+
 ## Validation
 
 Run:

@@ -238,6 +238,7 @@ Dependency:
 | `MCP-001` | active | Add generic MCP and Nginx-UI control-plane services behind HAProxy | container-services stable, private CA, vault workflow | `vm-mcp-control-plane` scaffolds Nginx-UI MCP routing, OpenAI-compatible env references, and a disabled-by-default generic MCP backend. Live deployment waits for vaulted Nginx-UI secrets, DNS/IPAM records, and TLS certificate material. |
 | `MCP-002` | pending | Validate live Nginx-UI MCP service on LAN | `MCP-001`, AAA apply path | Validate HTTPS, `/mcp` SSE behavior, `node_secret` auth, no Docker socket mount, and OpenAI-compatible config without exposing tokens in logs. |
 | `MCP-003` | ready | Evaluate self-hosted MCP runtime and safe Trac integration | `PM-001`, `MCP-001` | Keep Trac write access blocked until a custom allowlisted MCP wrapper or equivalent control plane exists. |
+| `MCP-004` | planned | Implement FastMCP infrastructure service wrappers | `MCP-001`, `MCP-002`, `DNS-003`, `AAA-009` | Promotion order is Nginx-UI native validation, then `netbox-mcp`, `proxmox-mcp`, `routeros-mcp`, `trac-mcp`, and `infra-mcp`. Every mutation requires `MCP_ALLOW_MUTATIONS`, vaulted credentials, an idempotency key, and an audit artifact. See `docs/FASTMCP-INFRA-CONTROL-PLANE.md`. |
 
 ### Agent Analytics And Shared Memory
 
@@ -256,6 +257,9 @@ Dependency:
 | `RDMA-002` | planned | Define host RDMA storage client baseline | `RDMA-001`, NFS/NVMe-oF/iSER requirements | Cover `rdma-core`, OFED/DOCA alignment, NFS-RDMA, iSER, NVMe-RDMA, multipath, ZFS consumers, and telemetry gates for bare-metal and VM roles. |
 | `STOR-001` | planned | Model NVMe-oF/ZFS storage fabric datasets | `RDMA-001`, `RDMA-002`, QNAP/array inventory | Inventory dual-port NVMe-oF drives, ZFS dataset ownership, export protocols, IOPS/latency SLOs, and filesystem CRUD semantics before live mutation. |
 | `HPC-001` | planned | Produce AI/ML HPC supercomputer hardware and network meta-analysis | workload taxonomy and reference designs | Compare upward trends across GPU, accelerator, CPU, memory, storage, and interconnect specialization. Output should separate verified facts from inference and map designs to workload classes. |
+| `HPC-002` | planned | Build SLURM-first workload scheduler pilot | `AAA-009`, `DNS-003`, `E2ET-002`, `BUILD-VM-001`, observability baseline | SLURM is the first scheduler for deterministic build, validation, GPU-test, and RDMA-test partitions. HTCondor, Galaxy, UNICORE, ARC, and CVMFS remain later evaluation layers. See `docs/HPC-WORKLOAD-SCHEDULER-PLAN.md`. |
+| `HPC-003` | planned | Add scheduler node health and feature inventory | `HPC-002`, NetBox host inventory, `RDMA-002` | Generate SLURM node features from NetBox and Ansible inventory: CPU generation, ISA flags, memory class, GPU model, RDMA capability, storage locality, and power-control method. Integrate NHC, E2ET, and observability. |
+| `HPC-004` | planned | Evaluate HTCondor opportunistic overlay | `HPC-002`, stable AAA, scheduler telemetry | Test HTCondor only after SLURM can reliably run build and validation jobs. Target mixed, opportunistic, or federated workloads rather than replacing the first local scheduler. |
 
 ### Host E2ET And Release Acceptance
 
