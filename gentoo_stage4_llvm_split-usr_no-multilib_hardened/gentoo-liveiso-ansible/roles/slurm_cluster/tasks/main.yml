@@ -124,6 +124,8 @@
   ansible.builtin.template:
     src: slurmdbd.conf.j2
     dest: "{{ install_target_root }}{{ resolved_slurm_cluster.config_dir }}/slurmdbd.conf"
+    owner: "{{ resolved_slurm_cluster.user }}"
+    group: "{{ resolved_slurm_cluster.group }}"
     mode: '0600'
   no_log: true
   when:
