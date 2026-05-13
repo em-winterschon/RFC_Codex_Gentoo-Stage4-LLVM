@@ -7,10 +7,9 @@ import argparse
 import json
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 SCHEMA = "rfc99.secure-firstboot-enrollment.v1"
 METHOD = "freeipa-otp"
@@ -46,7 +45,7 @@ def parse_timestamp(value: str, label: str, result: BundleValidationResult) -> d
     if parsed.tzinfo is None:
         result.errors.append(f"{label}: must include timezone")
         return None
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def required_string(payload: dict[str, Any], key: str, result: BundleValidationResult) -> str:
@@ -57,7 +56,9 @@ def required_string(payload: dict[str, Any], key: str, result: BundleValidationR
     return value.strip()
 
 
-def reject_forbidden_secret_fields(payload: Any, result: BundleValidationResult, path: str = "") -> None:
+def reject_forbidden_secret_fields(
+    payload: Any, result: BundleValidationResult, path: str = ""
+) -> None:
     if isinstance(payload, dict):
         for key, value in payload.items():
             current_path = f"{path}.{key}" if path else key
@@ -76,7 +77,7 @@ def validate_bundle(
     now: datetime | None = None,
 ) -> BundleValidationResult:
     result = BundleValidationResult()
-    now_utc = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    now_utc = (now or datetime.now(UTC)).astimezone(UTC)
     reject_forbidden_secret_fields(payload, result)
 
     if payload.get("schema") != SCHEMA:

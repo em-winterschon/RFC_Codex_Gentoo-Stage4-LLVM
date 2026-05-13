@@ -11,7 +11,6 @@ from pathlib import Path
 
 from validate_secure_firstboot_bundle import load_bundle, validate_bundle
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 

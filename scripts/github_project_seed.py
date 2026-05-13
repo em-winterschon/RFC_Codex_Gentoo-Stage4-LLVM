@@ -823,7 +823,9 @@ def update_project_item_fields(
         item = items.get(issue.title)
         if not item:
             continue
-        issue_state = records_by_title.get(issue.title).state if issue.title in records_by_title else None
+        issue_state = (
+            records_by_title.get(issue.title).state if issue.title in records_by_title else None
+        )
         if issue.roadmap_id:
             gh_run(
                 [
@@ -842,7 +844,9 @@ def update_project_item_fields(
                 ]
             )
         kanban_status = kanban_status_label(issue.status, issue_state)
-        option_id = single_select_option_id(roadmap_status_field, roadmap_status_from_kanban(kanban_status))
+        option_id = single_select_option_id(
+            roadmap_status_field, roadmap_status_from_kanban(kanban_status)
+        )
         if option_id:
             gh_run(
                 [
@@ -880,6 +884,8 @@ def update_project_item_fields(
                     ]
                 )
         print(f"updated project fields: {issue.title}")
+
+
 def create_project(owner: str, title: str) -> str:
     projects = gh_json(["project", "list", "--owner", owner, "--format", "json", "--limit", "100"])
     for project in projects.get("projects", []):

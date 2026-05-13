@@ -669,7 +669,9 @@ def apply_power_outlets(
                 )
         netbox_outlet = ensure_power_outlet(client, device, outlet, target_power_port)
         if target_power_port and target_device:
-            ensure_power_cable(client, device, netbox_outlet, outlet, target_device, target_power_port)
+            ensure_power_cable(
+                client, device, netbox_outlet, outlet, target_device, target_power_port
+            )
 
 
 def apply_prefixes(

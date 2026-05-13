@@ -501,7 +501,9 @@ def apply_dns_plan(
             result["result"] = "updated" if apply else "planned_update"
             if apply and fixture is None:
                 try:
-                    update_rrset(api_endpoint, zone["api_token"], zone["id"], existing["id"], record)
+                    update_rrset(
+                        api_endpoint, zone["api_token"], zone["id"], existing["id"], record
+                    )
                     summary["updated"] += 1
                 except RuntimeError as exc:
                     result["result"] = "error"
@@ -574,7 +576,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--plan-file", required=True)
     parser.add_argument("--token-groups-json", default="")
     parser.add_argument("--token-groups-file", default="")
-    parser.add_argument("--api-endpoint", default=os.getenv("HETZNER_DNS_API_ENDPOINT", "https://api.hetzner.cloud/v1"))
+    parser.add_argument(
+        "--api-endpoint",
+        default=os.getenv("HETZNER_DNS_API_ENDPOINT", "https://api.hetzner.cloud/v1"),
+    )
     parser.add_argument("--fixture-file", default="")
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--allow-delete", action="store_true")
@@ -607,9 +612,7 @@ def main() -> int:
         for key, value in result["summary"].items():
             lines.append(f"{key}={value}")
         for action in result["actions"]:
-            lines.append(
-                f"{action['result']} {action['zone']} {action['name']} {action['type']}"
-            )
+            lines.append(f"{action['result']} {action['zone']} {action['name']} {action['type']}")
         output = "\n".join(lines) + "\n"
 
     if args.output:

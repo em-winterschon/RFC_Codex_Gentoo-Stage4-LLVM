@@ -14,8 +14,8 @@ import json
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -132,7 +132,9 @@ def routeros_command_returncodes(snapshot_dir: Path) -> dict[str, int]:
 
 def candidate_artifacts(kind: str, snapshot_dir: Path) -> list[Path]:
     filenames = ROUTEROS_ARTIFACTS if kind == "routeros" else SWOS_ARTIFACTS
-    artifacts = [snapshot_dir / filename for filename in filenames if (snapshot_dir / filename).is_file()]
+    artifacts = [
+        snapshot_dir / filename for filename in filenames if (snapshot_dir / filename).is_file()
+    ]
 
     # RouterOS should prefer full exports when present, but retain hide-sensitive
     # exports as a fallback for devices that do not support show-sensitive.
@@ -145,16 +147,16 @@ def candidate_artifacts(kind: str, snapshot_dir: Path) -> list[Path]:
         ]
         has_sensitive = any(path.name == "export-show-sensitive.txt" for path in artifacts)
         if has_sensitive:
-            artifacts = [
-                path for path in artifacts if path.name != "export-hide-sensitive.txt"
-            ]
+            artifacts = [path for path in artifacts if path.name != "export-hide-sensitive.txt"]
         has_config = any(path.name != "manifest.json" for path in artifacts)
         if not has_config:
             return []
     return artifacts
 
 
-def encrypted_dest(output_root: Path, kind: str, host: str, snapshot_dir: Path, source: Path) -> Path:
+def encrypted_dest(
+    output_root: Path, kind: str, host: str, snapshot_dir: Path, source: Path
+) -> Path:
     return (
         output_root
         / kind
@@ -208,7 +210,9 @@ def stage_kind(
                     "inventory_host": host,
                     "snapshot_timestamp": snapshot_dir.name,
                     "source_file": str(source),
-                    "encrypted_file": str(dest.relative_to(REPO_ROOT) if dest.is_relative_to(REPO_ROOT) else dest),
+                    "encrypted_file": str(
+                        dest.relative_to(REPO_ROOT) if dest.is_relative_to(REPO_ROOT) else dest
+                    ),
                     "source_size_bytes": source.stat().st_size,
                 }
                 if dry_run:
@@ -251,7 +255,9 @@ def stage_manual_routeros_exports(
                 "inventory_host": host_dir.name,
                 "snapshot_timestamp": source.stem.removeprefix("post-"),
                 "source_file": str(source),
-                "encrypted_file": str(dest.relative_to(REPO_ROOT) if dest.is_relative_to(REPO_ROOT) else dest),
+                "encrypted_file": str(
+                    dest.relative_to(REPO_ROOT) if dest.is_relative_to(REPO_ROOT) else dest
+                ),
                 "source_size_bytes": source.stat().st_size,
             }
             if dry_run:

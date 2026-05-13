@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 _SAFE_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
 
@@ -25,7 +24,7 @@ def write_audit_artifact(
     payload: dict[str, Any],
 ) -> Path:
     audit_dir.mkdir(parents=True, exist_ok=True)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     document = {
         "timestamp_utc": now.isoformat(),
         "service": service,

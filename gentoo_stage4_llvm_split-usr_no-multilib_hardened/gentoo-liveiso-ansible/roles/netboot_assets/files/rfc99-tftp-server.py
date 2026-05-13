@@ -83,13 +83,15 @@ def send_file(server_root, client_addr, filename, mode, opts, bind_addr):
         sock.bind((bind_addr, 0))
         sock.settimeout(3)
         if reply_opts:
-            payload = b"".join(k.encode() + b"\0" + v.encode() + b"\0" for k, v in reply_opts.items())
+            payload = b"".join(
+                k.encode() + b"\0" + v.encode() + b"\0" for k, v in reply_opts.items()
+            )
             oack = struct.pack("!H", OP_OACK) + payload
             sock.sendto(oack, client_addr)
             for _ in range(5):
                 try:
                     ack, addr = sock.recvfrom(2048)
-                except socket.timeout:
+                except TimeoutError:
                     sock.sendto(oack, client_addr)
                     continue
                 if addr != client_addr:
@@ -110,7 +112,7 @@ def send_file(server_root, client_addr, filename, mode, opts, bind_addr):
                     sock.sendto(pkt, client_addr)
                     try:
                         ack, addr = sock.recvfrom(2048)
-                    except socket.timeout:
+                    except TimeoutError:
                         continue
                     if addr != client_addr:
                         continue

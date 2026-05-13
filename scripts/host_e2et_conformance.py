@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -72,9 +71,7 @@ class GateResult:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Render RFC99 host E2ET conformance reports."
-    )
+    parser = argparse.ArgumentParser(description="Render RFC99 host E2ET conformance reports.")
     parser.add_argument("--manifest", required=True, help="JSON or YAML host E2ET manifest.")
     parser.add_argument("--json-output", help="Optional JSON report output path.")
     parser.add_argument("--markdown-output", help="Optional Markdown report output path.")
@@ -326,9 +323,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     if report["hard_failures"]:
         lines.extend(["## Hard Failures", ""])
         for failure in report["hard_failures"]:
-            lines.append(
-                f"- `{failure['gate']}` / `{failure['check']}`: {failure['evidence']}"
-            )
+            lines.append(f"- `{failure['gate']}` / `{failure['check']}`: {failure['evidence']}")
         lines.append("")
     return "\n".join(lines)
 

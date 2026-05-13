@@ -233,9 +233,7 @@ def add_address_record(
     try:
         ip_address = parse_ip_address(address)
     except ValueError:
-        errors.append(
-            {"fqdn": fqdn, "type": "A", "source": source, "reason": "invalid_address"}
-        )
+        errors.append({"fqdn": fqdn, "type": "A", "source": source, "reason": "invalid_address"})
         return
     record_type = "A" if ip_address.version == 4 else "AAAA"
     add_record(
@@ -333,7 +331,7 @@ def generate_hosts_entries(records: list[dict[str, Any]]) -> list[dict[str, Any]
     entries: list[dict[str, Any]] = []
     for address, names_by_source in sorted(address_records.items(), key=lambda item: item[0]):
         hostnames: list[str] = []
-        for fqdn, source in sorted(
+        for fqdn, _source in sorted(
             names_by_source.items(), key=lambda item: (source_priority(item[1]), item[0])
         ):
             append_hostname(hostnames, fqdn)
@@ -344,9 +342,10 @@ def generate_hosts_entries(records: list[dict[str, Any]]) -> list[dict[str, Any]
 
 
 def render_hosts_file(entries: list[dict[str, Any]]) -> str:
-    return "\n".join(
-        f"{entry['address']} {' '.join(entry['names'])}" for entry in entries
-    ).rstrip() + "\n"
+    return (
+        "\n".join(f"{entry['address']} {' '.join(entry['names'])}" for entry in entries).rstrip()
+        + "\n"
+    )
 
 
 def generate_dns_plan(
@@ -457,15 +456,15 @@ def main() -> int:
         else (args.required_domain or [args.default_domain])
     )
     required_domains = [
-        normalize_dns_name(domain)
-        for domain in required_domain_inputs
-        if str(domain).strip()
+        normalize_dns_name(domain) for domain in required_domain_inputs if str(domain).strip()
     ]
     managed_domain_inputs = (
         json.loads(args.managed_domains_json) if args.managed_domains_json else args.managed_domain
     )
     managed_domains = [
-        normalize_dns_name(domain) for domain in (managed_domain_inputs or []) if str(domain).strip()
+        normalize_dns_name(domain)
+        for domain in (managed_domain_inputs or [])
+        if str(domain).strip()
     ]
     plan = generate_dns_plan(
         payloads=[load_yaml_file(path) for path in paths],
@@ -489,7 +488,9 @@ def main() -> int:
         return 1
 
     if args.hosts_output:
-        Path(args.hosts_output).write_text(render_hosts_file(plan["hosts_entries"]), encoding="utf-8")
+        Path(args.hosts_output).write_text(
+            render_hosts_file(plan["hosts_entries"]), encoding="utf-8"
+        )
 
     if args.format == "json":
         output = json.dumps(plan, indent=2, sort_keys=True) + "\n"

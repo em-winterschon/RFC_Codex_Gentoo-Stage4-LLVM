@@ -7,7 +7,6 @@ import argparse
 import datetime as dt
 import json
 import socket
-import sys
 import time
 import urllib.error
 import urllib.parse
@@ -81,7 +80,7 @@ def build_marker(args: argparse.Namespace) -> str:
 
 
 def build_syslog_line(args: argparse.Namespace, marker: str) -> bytes:
-    timestamp = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    timestamp = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat()
     if timestamp.endswith("+00:00"):
         timestamp = timestamp[:-6] + "Z"
     message = f"{marker} {args.message_suffix}".strip()

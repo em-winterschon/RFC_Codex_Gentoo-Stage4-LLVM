@@ -7,8 +7,9 @@ tool contract on hosts where the runtime dependency is not installed yet.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from rfc1918_mcp_common.audit import write_audit_artifact
 from rfc1918_mcp_common.gates import MutationGate

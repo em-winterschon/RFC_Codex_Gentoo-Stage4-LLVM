@@ -10,7 +10,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-
 SCHEMA = "rfc99.secure-firstboot-enrollment.v1"
 METHOD = "freeipa-otp"
 

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ class ServiceSettings:
         service_default: str = "rfc1918-mcp",
         backend_url_var: str = "NETBOX_URL",
         token_file_var: str = "NETBOX_TOKEN_FILE",
-    ) -> "ServiceSettings":
+    ) -> ServiceSettings:
         token_file = env.get(token_file_var, "").strip()
         audit_dir = env.get("MCP_AUDIT_DIR", "").strip()
         return cls(

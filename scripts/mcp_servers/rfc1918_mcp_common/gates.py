@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 
 
 class MutationRejected(RuntimeError):
@@ -17,7 +17,7 @@ class MutationGate:
     allow_mutations: bool = False
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str]) -> "MutationGate":
+    def from_env(cls, env: Mapping[str, str]) -> MutationGate:
         value = env.get("MCP_ALLOW_MUTATIONS", "").strip().lower()
         return cls(allow_mutations=value in {"1", "true", "yes", "on"})
 

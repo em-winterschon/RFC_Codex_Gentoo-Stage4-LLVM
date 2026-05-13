@@ -133,9 +133,7 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
             )
         idrange_type = freeipa_local_idrange.get("type", "ipa-local")
         if idrange_type != "ipa-local":
-            result.errors.append(
-                "uid_gid_policy.freeipa_local_idrange.type must be ipa-local"
-            )
+            result.errors.append("uid_gid_policy.freeipa_local_idrange.type must be ipa-local")
         base_id = freeipa_local_idrange.get("base_id")
         range_size = freeipa_local_idrange.get("range_size")
         if isinstance(base_id, int) and isinstance(range_size, int):
@@ -165,10 +163,14 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
             known_groups.add(name)
             if gid is not None:
                 if gid in seen_gids:
-                    result.errors.append(f"{label}: duplicate gid {gid} also used by {seen_gids[gid]}")
+                    result.errors.append(
+                        f"{label}: duplicate gid {gid} also used by {seen_gids[gid]}"
+                    )
                 seen_gids[gid] = name or label
-                if idrange_base is not None and idrange_limit is not None and not (
-                    idrange_base <= gid < idrange_limit
+                if (
+                    idrange_base is not None
+                    and idrange_limit is not None
+                    and not (idrange_base <= gid < idrange_limit)
                 ):
                     result.errors.append(
                         f"{label}: gid {gid} is outside freeipa_local_idrange "
@@ -200,8 +202,10 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
                         f"{label}: duplicate uid {uid} also used by {seen_uids[uid]}"
                     )
                 seen_uids[uid] = name or label
-                if idrange_base is not None and idrange_limit is not None and not (
-                    idrange_base <= uid < idrange_limit
+                if (
+                    idrange_base is not None
+                    and idrange_limit is not None
+                    and not (idrange_base <= uid < idrange_limit)
                 ):
                     result.errors.append(
                         f"{label}: uid {uid} is outside freeipa_local_idrange "

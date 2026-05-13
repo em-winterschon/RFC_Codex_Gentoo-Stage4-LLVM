@@ -9,10 +9,9 @@ import json
 import re
 import socket
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-
 
 EVENT_SCHEMA = "rfc-codex.forge-memory-event.v1"
 MANIFEST_SCHEMA = "rfc-codex.forge-memory-manifest.v1"
@@ -29,7 +28,7 @@ class SpoolError(RuntimeError):
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def require_safe_id(value: str, field: str) -> str:
@@ -152,7 +151,9 @@ def closeout(args: argparse.Namespace) -> dict[str, Any]:
     event_count = count_jsonl_lines(event_path)
     event_hash = sha256_file(event_path) if event_path.exists() else hashlib.sha256(b"").hexdigest()
     date_path = closed_at[:10].split("-")
-    manifest_path = spool_root / "manifests" / date_path[0] / date_path[1] / date_path[2] / f"{session_id}.json"
+    manifest_path = (
+        spool_root / "manifests" / date_path[0] / date_path[1] / date_path[2] / f"{session_id}.json"
+    )
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
 
     manifest = {
@@ -169,7 +170,9 @@ def closeout(args: argparse.Namespace) -> dict[str, Any]:
         "signature": None,
     }
     reject_secret_keys(manifest)
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     return {
         "manifest_file": str(manifest_path),
@@ -183,7 +186,9 @@ def manifest_files_for(spool_root: Path, session_id: str) -> list[str]:
     manifest_root = spool_root / "manifests"
     if not manifest_root.exists():
         return []
-    return sorted(str(path) for path in manifest_root.glob(f"**/{session_id}.json") if path.is_file())
+    return sorted(
+        str(path) for path in manifest_root.glob(f"**/{session_id}.json") if path.is_file()
+    )
 
 
 def list_sessions(args: argparse.Namespace) -> dict[str, Any]:
