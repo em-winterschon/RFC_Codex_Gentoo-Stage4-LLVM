@@ -61,6 +61,24 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def read_jsonl_events(path: Path) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    if not path.exists():
+        return events
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise SpoolError(f"{path}:{line_number}: invalid JSONL event: {exc.msg}") from exc
+            if not isinstance(event, dict):
+                raise SpoolError(f"{path}:{line_number}: JSONL event must be an object")
+            events.append(event)
+    return events
+
+
 def parse_extra_json(raw: str | None) -> dict[str, Any]:
     if not raw:
         return {}
@@ -161,6 +179,67 @@ def closeout(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def manifest_files_for(spool_root: Path, session_id: str) -> list[str]:
+    manifest_root = spool_root / "manifests"
+    if not manifest_root.exists():
+        return []
+    return sorted(str(path) for path in manifest_root.glob(f"**/{session_id}.json") if path.is_file())
+
+
+def list_sessions(args: argparse.Namespace) -> dict[str, Any]:
+    spool_root = Path(args.spool_root)
+    agent_id = require_safe_id(args.agent_id, "agent-id")
+    limit = args.limit
+    if limit < 1:
+        raise SpoolError("limit must be at least 1")
+
+    sessions_root = spool_root / "agents" / agent_id / "sessions"
+    session_summaries: list[dict[str, Any]] = []
+    if sessions_root.exists():
+        for event_path in sorted(sessions_root.glob("*/events.jsonl")):
+            session_id = event_path.parent.name
+            events = read_jsonl_events(event_path)
+            if events:
+                first_event = events[0]
+                last_event = events[-1]
+                first_timestamp = str(first_event.get("timestamp_utc", ""))
+                last_timestamp = str(last_event.get("timestamp_utc", ""))
+                last_event_type = str(last_event.get("event_type", ""))
+                last_intent = str(last_event.get("intent", ""))
+            else:
+                first_timestamp = ""
+                last_timestamp = ""
+                last_event_type = ""
+                last_intent = ""
+            manifest_files = manifest_files_for(spool_root, session_id)
+            session_summaries.append(
+                {
+                    "session_id": session_id,
+                    "event_file": str(event_path),
+                    "event_count": len(events),
+                    "event_sha256": sha256_file(event_path),
+                    "first_timestamp_utc": first_timestamp,
+                    "last_timestamp_utc": last_timestamp,
+                    "last_event_type": last_event_type,
+                    "last_intent": last_intent,
+                    "closed": bool(manifest_files),
+                    "manifest_files": manifest_files,
+                }
+            )
+
+    session_summaries.sort(
+        key=lambda item: (str(item["last_timestamp_utc"]), str(item["session_id"])),
+        reverse=True,
+    )
+    limited_sessions = session_summaries[:limit]
+    return {
+        "agent_id": agent_id,
+        "session_count": len(limited_sessions),
+        "total_session_count": len(session_summaries),
+        "sessions": limited_sessions,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -186,6 +265,12 @@ def build_parser() -> argparse.ArgumentParser:
     close.add_argument("--agent-id", default="forge")
     close.add_argument("--summary", required=True)
     close.set_defaults(func=closeout)
+
+    list_parser = subparsers.add_parser("list-sessions", help="summarize local continuity sessions")
+    list_parser.add_argument("--spool-root", required=True)
+    list_parser.add_argument("--agent-id", default="forge")
+    list_parser.add_argument("--limit", type=int, default=10)
+    list_parser.set_defaults(func=list_sessions)
 
     return parser
 

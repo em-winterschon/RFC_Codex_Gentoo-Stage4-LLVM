@@ -20,6 +20,9 @@
 - Added `scripts/forge_memory_spool.py` as the first Forge continuity
   write-ahead spool, with append-only JSONL events, unsigned closeout manifests,
   and secret-looking JSON key rejection before writes.
+- Added `forge_memory_spool.py list-sessions` so new Forge runtimes can
+  summarize local event streams and closeout manifests before object-store/MCP
+  continuity is online.
 - Added initial SLURM workload-scheduler scaffolding: `vm-slurm-controller`,
   `slurm-worker-node`, package lists, service atoms, and a render-first
   `slurm_cluster` role for controller, worker, and accounting daemon config;

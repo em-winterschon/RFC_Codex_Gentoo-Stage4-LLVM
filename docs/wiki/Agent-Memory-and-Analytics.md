@@ -122,6 +122,9 @@ Implemented operations:
   `agents/<agent-id>/sessions/<session-id>/events.jsonl`
 - `closeout`: writes an unsigned closeout manifest under
   `manifests/<yyyy>/<mm>/<dd>/<session-id>.json`
+- `list-sessions`: summarizes local continuity sessions for bootstrap,
+  including event count, event hash, last event type, last intent, and whether
+  a closeout manifest exists
 
 The CLI records session, agent, repo, branch, commit, host, timestamp, intent,
 actions, artifact references, and notes. It rejects secret-looking JSON keys
@@ -143,6 +146,20 @@ scripts/forge_memory_spool.py append-event \
   --action "reconcile repo state" \
   --artifact "issue:115"
 ```
+
+Bootstrap inspection example:
+
+```bash
+scripts/forge_memory_spool.py list-sessions \
+  --spool-root /var/lib/forge-memory/spool \
+  --agent-id forge \
+  --limit 10
+```
+
+Use this before live infrastructure work when object storage is unavailable or
+not yet selected. It gives a new Forge runtime enough local continuity context
+to find recent session streams and closeout manifests, then reconcile those
+artifact references against GitHub issues and committed docs.
 
 Current limitations:
 

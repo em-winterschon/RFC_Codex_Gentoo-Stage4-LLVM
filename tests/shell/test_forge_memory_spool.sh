@@ -102,4 +102,32 @@ assert data["closed_at_utc"].endswith("Z")
 assert closeout["event_count"] == 1
 PY
 
+"${SPOOLER}" list-sessions \
+  --spool-root "${tmpdir}" \
+  --agent-id "forge" \
+  --limit 5 \
+  > "${tmpdir}/sessions.json"
+
+python3 - "${tmpdir}/sessions.json" "${event_file}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+sessions = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+event_file = Path(sys.argv[2])
+assert sessions["agent_id"] == "forge"
+assert sessions["session_count"] == 1
+assert len(sessions["sessions"]) == 1
+session = sessions["sessions"][0]
+assert session["session_id"] == "session-night-001"
+assert session["event_count"] == 1
+assert session["event_file"] == str(event_file)
+assert session["last_event_type"] == "session-start"
+assert session["last_intent"] == "recover-continuity"
+assert session["closed"] is True
+assert len(session["manifest_files"]) == 1
+assert session["last_timestamp_utc"].endswith("Z")
+assert session["event_sha256"]
+PY
+
 printf 'PASS: %s\n' "$(basename "$0")"
