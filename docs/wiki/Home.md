@@ -62,6 +62,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)
+- [Bootloader References](Bootloader-References)
 - [Workstation NsCDE](Workstation-NsCDE)
 - [GMKtek K10 Stage5 Validation](GMKtek-K10-Stage5-Validation)
 - [Container Building](Container-Building)
