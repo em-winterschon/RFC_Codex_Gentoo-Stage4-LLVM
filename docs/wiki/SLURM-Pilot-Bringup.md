@@ -21,7 +21,7 @@ usable while X12AGAIN is offline, being reimaged, or being validated.
 | Role | Hostname | Address | Notes |
 | --- | --- | --- | --- |
 | Controller | `sched-sun99-slurmctl-099071.rfc1918.host` | `172.16.99.71` | Runs `slurmctld`, local `slurmdbd`, MUNGE, and MariaDB for the pilot. |
-| First worker | `slurm-worker-node` profile target | NetBox assigned | Disposable VM or K10 after E2ET pass. |
+| First worker | `sched-sun99-slurmwkr-099072.rfc1918.host` | `172.16.99.72` | Disposable VM using the `slurm-worker-node` profile. |
 | Future worker | X12AGAIN | `172.16.99.108` after install | Add only after workstation+hypervisor+RDMA E2ET passes. |
 
 ## Partitions
@@ -55,6 +55,24 @@ inventory alone is not enough to publish RDMA-capable features.
 - No MUNGE key, MariaDB password, or Kerberos material is committed to the repo.
 
 ### 3. Runtime Services
+
+Live mutation uses a direct-host playbook, not the LiveISO chroot installer:
+
+```bash
+ansible-playbook \
+  -i inventories/local-network/hosts.yml \
+  playbooks/slurm-pilot-live-apply.yml \
+  --limit 'sched_sun99_slurmctl_099071:slurm_worker_node01' \
+  -e slurm_pilot_apply_required=true
+```
+
+The playbook writes targeted Portage policy for the pilot:
+
+- `/etc/portage/package.accept_keywords/30-slurm-pilot` with
+  `sys-cluster/slurm ~amd64`.
+- `/etc/portage/package.use/30-slurm-pilot` with controller-only
+  `sys-cluster/slurm munge mysql slurmdbd`.
+- Worker nodes keep the narrower `sys-cluster/slurm munge` USE policy.
 
 Controller runtime services:
 

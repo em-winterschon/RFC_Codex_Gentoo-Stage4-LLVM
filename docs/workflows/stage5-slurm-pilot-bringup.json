@@ -83,7 +83,7 @@
     },
     {
       "id": "controller-profile-render",
-      "summary": "Render the vm-slurm-controller profile and SLURM controller OpenRC service intent.",
+      "summary": "Render the vm-slurm-controller profile and verify SLURM controller service intent.",
       "cwd": "${ansible_root}",
       "command": [
         "bash",
@@ -104,7 +104,7 @@
     },
     {
       "id": "first-worker-profile-render",
-      "summary": "Render the first slurm-worker-node profile and slurmd OpenRC service intent.",
+      "summary": "Render the first slurm-worker-node profile and verify slurmd service intent.",
       "cwd": "${ansible_root}",
       "command": [
         "bash",
@@ -118,6 +118,24 @@
         "--checkpoint",
         "--control-flow-path",
         "${control_flow_root}/${worker_target}.target-integration.jsonl"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "slurm-live-apply",
+      "summary": "Apply the live SLURM pilot playbook to the controller and first worker.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/slurm-pilot-live-apply.yml",
+        "--limit",
+        "${controller_target}:${worker_target}",
+        "-e",
+        "slurm_pilot_apply_required=true"
       ],
       "expectedExitCodes": [
         0

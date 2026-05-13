@@ -18,7 +18,7 @@ SlurmctldLogFile={{ resolved_slurm_cluster.log_dir }}/slurmctld.log
 SlurmdLogFile={{ resolved_slurm_cluster.log_dir }}/slurmd.log
 
 {% for node in resolved_slurm_cluster.nodes %}
-NodeName={{ node.name }} CPUs={{ node.cpus | default(1) }} RealMemory={{ node.real_memory | default(1024) }} State={{ node.state | default('UNKNOWN') }}{% if node.features | default([]) | length > 0 %} Feature={{ node.features | join(',') }}{% endif %}
+NodeName={{ node.name }}{% if node.hostname | default('') | length > 0 %} NodeHostname={{ node.hostname }}{% endif %}{% if node.addr | default('') | length > 0 %} NodeAddr={{ node.addr }}{% endif %} CPUs={{ node.cpus | default(1) }} RealMemory={{ node.real_memory | default(1024) }} State={{ node.state | default('UNKNOWN') }}{% if node.features | default([]) | length > 0 %} Feature={{ node.features | join(',') }}{% endif %}
 {% endfor %}
 {% if resolved_slurm_cluster.nodes | length == 0 %}
 NodeName=DEFAULT CPUs=1 RealMemory=1024 State=UNKNOWN

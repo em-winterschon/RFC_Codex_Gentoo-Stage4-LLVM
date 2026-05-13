@@ -75,6 +75,37 @@
     loop_var: slurm_cluster_dir
   when: slurm_cluster_enabled
 
+- name: Ensure SLURM runtime directories are writable by the SLURM daemon
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_runtime_dir }}"
+    state: directory
+    owner: "{{ resolved_slurm_cluster.user }}"
+    group: "{{ resolved_slurm_cluster.group }}"
+    mode: '0755'
+  loop:
+    - "{{ resolved_slurm_cluster.log_dir }}"
+    - /var/lib/slurm
+    - "{{ resolved_slurm_cluster.state_save_location }}"
+    - "{{ resolved_slurm_cluster.slurmd_spool_dir }}"
+    - /var/lib/slurm/slurmdbd
+  loop_control:
+    loop_var: slurm_cluster_runtime_dir
+  when: slurm_cluster_enabled
+
+- name: Ensure MUNGE runtime directories are owned by MUNGE
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_munge_dir }}"
+    state: directory
+    owner: "{{ resolved_slurm_cluster.munge_user }}"
+    group: "{{ resolved_slurm_cluster.munge_group }}"
+    mode: "{{ '0700' if slurm_cluster_munge_dir == '/etc/munge' else '0755' }}"
+  loop:
+    - /etc/munge
+    - /var/lib/munge
+  loop_control:
+    loop_var: slurm_cluster_munge_dir
+  when: slurm_cluster_enabled
+
 - name: Render SLURM cluster configuration
   ansible.builtin.template:
     src: slurm.conf.j2
@@ -94,6 +125,7 @@
     src: slurmdbd.conf.j2
     dest: "{{ install_target_root }}{{ resolved_slurm_cluster.config_dir }}/slurmdbd.conf"
     mode: '0600'
+  no_log: true
   when:
     - slurm_cluster_enabled
     - resolved_slurm_cluster.dbd_enabled | bool

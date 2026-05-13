@@ -2,6 +2,13 @@
 gentoo_profile_definition:
   package_list_files:
     - profile-package-lists/stage5-virtual-host-slurm-controller.packages
+  package_accept_keywords_files:
+    30-slurm-pilot: |
+      sys-cluster/slurm ~amd64
+  package_use_files:
+    30-slurm-pilot: |
+      sys-cluster/slurm munge mysql slurmdbd
+      sys-cluster/pmix munge
   slurm_cluster:
     enabled: true
     cluster_name: rfc99

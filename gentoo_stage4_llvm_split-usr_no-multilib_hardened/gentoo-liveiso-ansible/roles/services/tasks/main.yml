@@ -54,8 +54,15 @@
 
 - name: Enable managed OpenRC action services
   ansible.builtin.command: >-
-    {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('rc-update add ' + openrc_action_service.name + ' ' + (openrc_action_service.runlevel | default('default'))) | quote }}
+    {{
+      ('rc-update add ' + openrc_action_service.name + ' ' + (openrc_action_service.runlevel | default('default')))
+      if openrc_action_services_live | bool
+      else
+      (
+        liveiso_work_dir + '/chroot-runner.sh '
+        + ('rc-update add ' + openrc_action_service.name + ' ' + (openrc_action_service.runlevel | default('default'))) | quote
+      )
+    }}
   loop: "{{ openrc_action_services }}"
   loop_control:
     loop_var: openrc_action_service
