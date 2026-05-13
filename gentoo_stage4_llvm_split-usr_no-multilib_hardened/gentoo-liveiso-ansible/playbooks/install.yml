@@ -47,6 +47,7 @@
       - platform_profile
       - identity
       - memory_storage
+      - slurm_cluster
       - jenkins_controller
       - distcc_farm
       - container_host

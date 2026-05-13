@@ -1,0 +1,44 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-slurm-controller.packages
+  slurm_cluster:
+    enabled: true
+    cluster_name: rfc99
+    control_machine: sched-sun99-slurmctl-099071
+    control_addr: 172.16.99.71
+    controller_enabled: true
+    dbd_enabled: true
+    worker_enabled: false
+    accounting_storage_host: 127.0.0.1
+    accounting_storage_database: slurm_acct_db
+    accounting_storage_user: slurm
+    accounting_storage_password_ref: "{{ vault_slurmdbd_storage_password }}"
+    state_save_location: /var/lib/slurm/slurmctld
+    slurmd_spool_dir: /var/lib/slurm/slurmd
+    partitions:
+      - name: build
+        default: true
+        nodes: ALL
+        max_time: 2-00:00:00
+        state: UP
+      - name: validation
+        default: false
+        nodes: ALL
+        max_time: 12:00:00
+        state: UP
+      - name: gpu-test
+        default: false
+        nodes: ALL
+        max_time: 12:00:00
+        state: UP
+      - name: rdma-test
+        default: false
+        nodes: ALL
+        max_time: 12:00:00
+        state: DRAIN
+    nodes: []
+    telemetry:
+      prometheus_exporter_required: true
+      rsyslog_required: true
+      e2et_required: true

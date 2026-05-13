@@ -8,6 +8,10 @@
 - Added `scripts/forge_memory_spool.py` as the first Forge continuity
   write-ahead spool, with append-only JSONL events, unsigned closeout manifests,
   and secret-looking JSON key rejection before writes.
+- Added initial SLURM workload-scheduler scaffolding: `vm-slurm-controller`,
+  `slurm-worker-node`, package lists, service atoms, and a render-first
+  `slurm_cluster` role for controller, worker, and accounting daemon config;
+  opened issue #116 as the SLURM pilot tracking anchor.
 - Normalized recovered roadmap issues #111-#115 with RDMA/storage/HPC,
   FMT2, and Agent Memory labels and milestones after the Codex session-memory
   loss window.

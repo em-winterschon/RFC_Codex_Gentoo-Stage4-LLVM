@@ -252,6 +252,63 @@ role_service_atoms:
         mutation_gate:
           - coherence_ce_service_mutation_enabled
 
+  vm-slurm-controller:
+    role_class: scheduler-controller
+    extends:
+      - virt-minimal
+      - aaa-domain-client
+      - nfs-storage-client
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-slurm-controller.packages
+    service_atoms:
+      - id: slurm-control-plane
+        package_atoms:
+          - sys-cluster/slurm
+          - sys-auth/munge
+          - dev-db/mariadb
+        openrc_services:
+          - munged
+          - slurmctld
+          - slurmdbd
+        protocol_ports:
+          - tcp/6817
+          - tcp/6819
+      - id: slurm-accounting-db
+        package_atoms:
+          - dev-db/mariadb
+        openrc_services:
+          - mariadb
+        protocol_ports:
+          - tcp/3306
+
+  slurm-worker-node:
+    role_class: scheduler-worker
+    extends:
+      - base-minimal-nox
+      - aaa-domain-client
+      - nfs-storage-client
+    package_lists:
+      - profile-package-lists/stage5-slurm-worker-node.packages
+    service_atoms:
+      - id: slurm-worker
+        package_atoms:
+          - sys-cluster/slurm
+          - sys-auth/munge
+          - sys-process/numactl
+        openrc_services:
+          - munged
+          - slurmd
+        protocol_ports:
+          - tcp/6818
+      - id: slurm-rdma-worker-capability
+        package_atoms:
+          - sys-cluster/rdma-core
+        kernel_modules:
+          - ib_uverbs
+          - rdma_cm
+          - mlx5_core
+          - mlx5_ib
+
   vm-container-services:
     role_class: virtual-host
     extends:

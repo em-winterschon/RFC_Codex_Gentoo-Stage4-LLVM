@@ -105,9 +105,29 @@ Then evaluate:
 - CVMFS for large read-only datasets, toolchains, and reproducible payloads.
 - Object storage for agent memory and immutable build artifacts.
 
+## Repo Scaffold State
+
+Initial SLURM profile scaffolding is now repo-managed:
+
+- Controller profile: `vm-slurm-controller`
+- Worker overlay: `slurm-worker-node`
+- Role: `slurm_cluster`
+- Controller package list:
+  `profile-package-lists/stage5-virtual-host-slurm-controller.packages`
+- Worker package list:
+  `profile-package-lists/stage5-slurm-worker-node.packages`
+- Service atoms: `vm-slurm-controller` and `slurm-worker-node`
+
+The scaffold is intentionally render-first. It writes `slurm.conf`,
+`slurmdbd.conf`, and `cgroup.conf`, registers OpenRC action-service intent for
+`slurmctld`, `slurmd`, and `slurmdbd`, and refuses to store MUNGE key material
+in the repository. Live deployment still requires vaulted MUNGE/database
+secret delivery, DNS/IPAM records, NetBox node features, and a non-production
+controller VM.
+
 ## Immediate Action Items
 
-- Create a SLURM pilot service role and inventory group.
+- Create the first non-production SLURM controller VM from `vm-slurm-controller`.
 - Add a scheduler service profile to the roadmap.
 - Model scheduler nodes and partitions in NetBox.
 - Add Ansible variables for node features and partition membership.

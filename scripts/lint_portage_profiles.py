@@ -82,6 +82,7 @@ ALLOWED_PROFILE_KEYS = {
     "storage_protocols",
     "jenkins_controller",
     "distcc_farm",
+    "slurm_cluster",
     "time_authority",
     "vm_redfish_emulator",
     "workstation_session_stack",

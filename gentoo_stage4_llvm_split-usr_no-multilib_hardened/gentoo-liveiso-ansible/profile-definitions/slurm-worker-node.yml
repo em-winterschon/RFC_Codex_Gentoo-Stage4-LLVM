@@ -1,0 +1,22 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-slurm-worker-node.packages
+  slurm_cluster:
+    enabled: true
+    cluster_name: rfc99
+    control_machine: sched-sun99-slurmctl-099071
+    control_addr: 172.16.99.71
+    controller_enabled: false
+    dbd_enabled: false
+    worker_enabled: true
+    node_features:
+      - build
+      - validation
+    rdma_validation_required: false
+    gpu_validation_required: false
+    slurmd_spool_dir: /var/lib/slurm/slurmd
+    telemetry:
+      prometheus_exporter_required: true
+      rsyslog_required: true
+      e2et_required: true
