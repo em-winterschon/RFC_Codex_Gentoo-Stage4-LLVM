@@ -49,6 +49,7 @@
 - [Coherence CE Service Role](Coherence-CE-Service-Role)
 - [RDMA Storage Fabric Plan](RDMA-Storage-Fabric-Plan)
 - [HPC Workload Scheduler Plan](HPC-Workload-Scheduler-Plan)
+- [SLURM Pilot Bringup](SLURM-Pilot-Bringup)
 - [HPC AI/ML Supercomputer Meta Analysis](HPC-AIML-Supercomputer-Meta-Analysis)
 - [Changelog](Changelog)
 - [SITREP Status 2026-05-03](SITREP-Status-2026-05-03)

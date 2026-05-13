@@ -1,0 +1,166 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "stage5-slurm-pilot-bringup",
+    "description": "Bring up the first RFC99 SLURM controller and one first worker without depending on X12AGAIN reimage.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible root containing profile definitions, roles, and inventory."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/examples/hosts.yml",
+      "description": "Inventory containing the SLURM controller and first worker targets."
+    },
+    {
+      "name": "controller_target",
+      "required": true,
+      "default": "vm_slurm_controller",
+      "description": "Controller target for sched-sun99-slurmctl-099071.rfc1918.host at 172.16.99.71."
+    },
+    {
+      "name": "worker_target",
+      "required": true,
+      "default": "slurm_worker_node01",
+      "description": "First disposable worker target for initial SLURM validation."
+    },
+    {
+      "name": "control_flow_root",
+      "required": false,
+      "default": "/tmp/ansible-control-flow",
+      "description": "Directory for checkpoint JSONL control-flow output."
+    }
+  ],
+  "stages": [
+    {
+      "id": "preflight-no-x12again-dependency",
+      "summary": "Confirm SLURM pilot does not depend on X12AGAIN before controller work starts.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Gate: Do not block SLURM on X12AGAIN reimage; X12AGAIN joins only after workstation+hypervisor+RDMA E2ET.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "dns-netbox-preflight",
+      "summary": "Validate DNS and NetBox intent for sched-sun99-slurmctl-099071 at 172.16.99.71.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Validate DNS A/CNAME and NetBox VM/service records for sched-sun99-slurmctl-099071.rfc1918.host 172.16.99.71 before runtime mutation.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "vault-secret-preflight",
+      "summary": "Confirm MUNGE and slurmdbd secrets are delivered by vault and not committed in plaintext.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Validate vault_slurm_munge_key and vault_slurmdbd_storage_password before starting munge, slurmdbd, slurmctld, or slurmd.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "controller-profile-render",
+      "summary": "Render the vm-slurm-controller profile and SLURM controller OpenRC service intent.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${controller_target}",
+        "--sequence",
+        "target-integration",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_root}/${controller_target}.target-integration.jsonl"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "first-worker-profile-render",
+      "summary": "Render the first slurm-worker-node profile and slurmd OpenRC service intent.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "scripts/run-install-sequence.sh",
+        "--inventory",
+        "${inventory}",
+        "--limit",
+        "${worker_target}",
+        "--sequence",
+        "target-integration",
+        "--checkpoint",
+        "--control-flow-path",
+        "${control_flow_root}/${worker_target}.target-integration.jsonl"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "observability-readiness",
+      "summary": "Confirm Prometheus, VictoriaMetrics, Grafana, rsyslog, and Elasticsearch targets are defined for the pilot.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Validate scheduler telemetry targets: Prometheus scrape, VictoriaMetrics storage, Grafana dashboard, rsyslog log routing, Elasticsearch full-text log search.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "slurm-runtime-smoke",
+      "summary": "Run the first runtime smoke checks after controller and worker are online.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Runtime smoke: sinfo; scontrol show nodes; srun hostname; sbatch --wrap=\"hostname; date -u\"; verify slurmctld slurmdbd slurmd services.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "project-coherent-flash-model-gate",
+      "summary": "Hold Project Coherent Flash to simulation modeling until SLURM can submit repeatable jobs.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Project Coherent Flash modeling gate: KV prefix cache, object/model tier, RAG vector tier, synthetic RDMA/NVMe-oF/NFS probes, BlueField2 DPU boundary on X12AGAIN after reimage.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}
