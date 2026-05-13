@@ -7,11 +7,28 @@
       register: nvidia_doca_ofed_uname
       changed_when: false
 
+    - name: Detect NVIDIA/Mellanox PCI devices
+      ansible.builtin.shell: >-
+        set -o pipefail;
+        lspci -Dnn |
+        grep -Ei '{{ (nvidia_doca_ofed_supported_pci_vendor_ids + nvidia_doca_ofed_supported_device_markers) | join("|") }}'
+        || true
+      args:
+        executable: /bin/bash
+      register: nvidia_doca_ofed_detected_devices
+      changed_when: false
+      failed_when: false
+
     - name: Publish DOCA/OFED plan when apply is disabled
       ansible.builtin.debug:
         msg:
           apply_required: "{{ nvidia_doca_ofed_apply }}"
           kernel: "{{ nvidia_doca_ofed_uname.stdout }}"
+          detected_devices: "{{ nvidia_doca_ofed_detected_devices.stdout_lines }}"
+          supported_pci_vendor_ids: "{{ nvidia_doca_ofed_supported_pci_vendor_ids }}"
+          supported_device_markers: "{{ nvidia_doca_ofed_supported_device_markers }}"
+          required_kernel_modules: "{{ nvidia_doca_ofed_required_kernel_modules }}"
+          roce_validation_commands: "{{ nvidia_doca_ofed_roce_validation_commands }}"
           repo_deb_url: "{{ nvidia_doca_ofed_repo_deb_url }}"
           repo_deb_path: "{{ nvidia_doca_ofed_repo_deb_path }}"
           packages: "{{ nvidia_doca_ofed_install_packages }}"
@@ -22,6 +39,15 @@
     - name: Stop before mutation when DOCA/OFED apply is disabled
       ansible.builtin.meta: end_host
       when: not (nvidia_doca_ofed_apply | bool)
+
+    - name: Assert NVIDIA/Mellanox device detection before apply
+      ansible.builtin.assert:
+        that:
+          - (nvidia_doca_ofed_detected_devices.stdout_lines | length > 0) or (nvidia_doca_ofed_skip_device_detection | bool)
+        fail_msg: >-
+          Refusing DOCA/OFED apply because no supported NVIDIA/Mellanox PCI device
+          was detected via lspci -Dnn. Set nvidia_doca_ofed_skip_device_detection
+          only for a documented lab exception.
 
     - name: Check kernel headers/build tree
       ansible.builtin.stat:

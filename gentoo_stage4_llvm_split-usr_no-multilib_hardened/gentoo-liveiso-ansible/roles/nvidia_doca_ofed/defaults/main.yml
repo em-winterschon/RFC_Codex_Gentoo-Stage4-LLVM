@@ -11,3 +11,22 @@ nvidia_doca_ofed_kernel_headers_required: true
 nvidia_doca_ofed_allow_custom_kernel: false
 nvidia_doca_ofed_custom_kernel_ack: ""
 nvidia_doca_ofed_apt_update_after_repo: true
+nvidia_doca_ofed_skip_device_detection: false
+nvidia_doca_ofed_supported_pci_vendor_ids:
+  - "15b3"
+nvidia_doca_ofed_supported_device_markers:
+  - BlueField
+  - BlueField-2
+  - ConnectX-5
+  - ConnectX-6
+  - ConnectX-7
+nvidia_doca_ofed_required_kernel_modules:
+  - mlx5_core
+  - mlx5_ib
+  - ib_uverbs
+  - rdma_cm
+nvidia_doca_ofed_roce_validation_commands:
+  - ibv_devinfo
+  - rdma link show
+  - rdma resource show
+  - ethtool -i "{{ item }}"

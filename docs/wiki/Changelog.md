@@ -24,6 +24,9 @@
   `slurm-worker-node`, package lists, service atoms, and a render-first
   `slurm_cluster` role for controller, worker, and accounting daemon config;
   opened issue #116 as the SLURM pilot tracking anchor.
+- Extended the gated `nvidia_doca_ofed` role with read-only BlueField-2 /
+  ConnectX-5 PCI detection, required mlx5/RDMA module intent, RoCE validation
+  command planning, and an apply-time detection gate for RDMA issue #111.
 - Normalized recovered roadmap issues #111-#115 with RDMA/storage/HPC,
   FMT2, and Agent Memory labels and milestones after the Codex session-memory
   loss window.
