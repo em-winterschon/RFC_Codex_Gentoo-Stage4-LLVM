@@ -82,6 +82,9 @@ assert_file_contains "${INSTALL_SEQUENCE}" 'slurm_cluster'
 assert_file_contains "${INSTALL_PLAYBOOK}" 'slurm_cluster'
 assert_file_contains "${DOC}" 'Repo Scaffold State'
 assert_file_contains "${DOC}" 'vm-slurm-controller'
+assert_file_contains "${DOC}" 'Issue #118'
+assert_file_contains "${DOC}" 'scheduler_node_feature_taxonomy'
 assert_file_contains "${WIKI}" 'Repo Scaffold State'
+assert_file_contains "${WIKI}" 'Issue #118'
 
 printf 'PASS: %s\n' "$(basename "$0")"

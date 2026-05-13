@@ -33,6 +33,9 @@
 - Created issue #117 for `RDMA-002` and linked the NFS/RDMA storage-client
   baseline docs to the existing `nfs-storage-client` profile, package atoms,
   and tests.
+- Created issue #118 for `HPC-003` and added the first scheduler node-feature
+  taxonomy for CPU, memory, GPU, RDMA, storage-locality, and power-control
+  constraints.
 - Added an overnight execution plan and BigNetwork issue #114 readiness runbook
   so repo-only work can continue safely while X12AGAIN backup I/O is active,
   with explicit live-mutation deferral and evidence-bundle requirements.

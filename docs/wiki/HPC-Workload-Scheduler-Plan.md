@@ -85,6 +85,42 @@ These features allow jobs to request constraints such as `intel`, `amd`,
 `nvidia`, `rdma`, `large-mem`, or future CPU microarchitecture labels without
 hardcoding hostnames.
 
+Issue #118 tracks this as `HPC-003`.
+
+Initial feature taxonomy key:
+
+```yaml
+scheduler_node_feature_taxonomy:
+  cpu_vendor:
+    examples: [intel, amd, ibm-power]
+    source: NetBox platform, Ansible facts, cpuid2cpuflags capture
+  cpu_generation:
+    examples: [raptor-lake, alder-lake, zen4, power9]
+    source: CPU architecture registry and host facts
+  isa_flags:
+    examples: [avx2, avx512, aes, sha, fma]
+    source: cpuid2cpuflags or equivalent architecture capture
+  memory_class:
+    examples: [standard-mem, large-mem, huge-mem]
+    source: NetBox inventory and Ansible memory facts
+  gpu_class:
+    examples: [nvidia-compute, amd-display, intel-display]
+    source: PCI inventory, driver policy, workstation role metadata
+  rdma_class:
+    examples: [rdma-none, roce-v2, nvme-rdma, nfs-rdma]
+    source: RDMA-002/RDMA-003 validation and NIC inventory
+  storage_locality:
+    examples: [local-nvme, nfs-client, nvmeof-client]
+    source: storage client profiles and mounted-filesystem E2ET evidence
+  power_control:
+    examples: [pdu-apc, ipmi-redfish, pikvm, manual]
+    source: NetBox power-chain and BMC inventory
+```
+
+Do not mark a worker node eligible for `rdma-test` or storage-sensitive
+partitions from static inventory alone. Require live E2ET or role validation
+evidence before publishing the feature into generated `slurm.conf` intent.
+
 ## Phase 4: HTCondor And Grid Layer Review
 
 Evaluate HTCondor after SLURM can run build and validation jobs reliably.
