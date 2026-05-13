@@ -23,6 +23,14 @@ published HTTP role and reached SSH at `172.16.99.70`.
 The follow-up reboot validated the corrected `netboot0` dracut cmdline. The live
 OS now exposes the management NIC as `netboot0`.
 
+Later on 2026-05-13 the M70 stopped answering ARP from X12AGAIN and Hasslehoff
+while CSS326 `ge14` still reported link up and the serial console remained at a
+Linux login prompt. A PDU outlet-4 reboot restored the iPXE chainload and SSH.
+Post-boot evidence showed this is a live-rootfs profile durability problem:
+`netboot0` was correct after reboot, but hostname was still
+`gmktek-k10-stage5`, `dhcpcd` was marked crashed, and `sssd` lacked
+`/etc/sssd/sssd.conf`.
+
 Current blockers before this can replace X12AGAIN: rebuild or overlay the rootfs
 so hostname is `admin-sun99-forge-099070` instead of the K10 hostname, render
 host-specific `sssd.conf` and secure firstboot enrollment, create the missing

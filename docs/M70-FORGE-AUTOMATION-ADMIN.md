@@ -47,6 +47,15 @@ name: `bootdev=netboot0`, `ifname=netboot0:00:07:32:78:65:c6`, and static
 `ip=...:netboot0:none`. The live OS now exposes the primary management
 interface as `netboot0`.
 
+On 2026-05-13 a later reachability check found `172.16.99.70` not answering
+ARP from X12AGAIN or Hasslehoff while CSS326 `ge14` still reported link up and
+the serial console was at a live Linux login prompt. A PDU outlet-4 reboot
+restored iPXE chainload and SSH. Post-boot evidence showed `netboot0` up with
+`172.16.99.70/24`, default route via `172.16.99.1`, `sshd` running, `dhcpcd`
+marked crashed, hostname still `gmktek-k10-stage5`, and `sssd` stopped due to a
+missing `/etc/sssd/sssd.conf`. Treat this as a live-rootfs profile durability
+defect, not an SSH source filter or switch/VLAN defect.
+
 Observed hardware note: Linux/BSDRP serial validation reported 32 GiB available
 memory, while the planned inventory expected 64 GiB. Validate DIMM population
 before scheduling memory-heavy workloads on this node.
