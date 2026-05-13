@@ -28,6 +28,11 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/devuan_netboot_assets/templates/devu
 assert_file_contains "${ANSIBLE_ROOT}/roles/devuan_netboot_assets/templates/devuan-bignetwork-smoketest.preseed.j2" "pkgsel/include"
 assert_file_contains "${ANSIBLE_ROOT}/playbooks/devuan-bignetwork-smoketest-netboot.yml" "hosts: netboot_publishers"
 assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "Devuan smoke-test first"
+assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "Issue #114 Readiness Runbook"
+assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "No live BigNetwork, RouterOS, NetBox, or Check_MK mutation while X12AGAIN off-host backup is active."
+assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "Evidence bundle for issue #114"
+assert_file_contains "${REPO_ROOT}/docs/wiki/BigNetwork-FMT2-Smoke-Test.md" "Issue #114 Readiness Runbook"
+assert_file_contains "${REPO_ROOT}/docs/wiki/BigNetwork-FMT2-Smoke-Test.md" "Evidence bundle for issue #114"
 
 (
   cd "${ANSIBLE_ROOT}"

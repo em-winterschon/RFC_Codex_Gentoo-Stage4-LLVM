@@ -27,6 +27,9 @@
 - Extended the gated `nvidia_doca_ofed` role with read-only BlueField-2 /
   ConnectX-5 PCI detection, required mlx5/RDMA module intent, RoCE validation
   command planning, and an apply-time detection gate for RDMA issue #111.
+- Added an overnight execution plan and BigNetwork issue #114 readiness runbook
+  so repo-only work can continue safely while X12AGAIN backup I/O is active,
+  with explicit live-mutation deferral and evidence-bundle requirements.
 - Normalized recovered roadmap issues #111-#115 with RDMA/storage/HPC,
   FMT2, and Agent Memory labels and milestones after the Codex session-memory
   loss window.

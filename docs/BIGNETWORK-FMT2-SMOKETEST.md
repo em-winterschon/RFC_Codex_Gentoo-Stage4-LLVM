@@ -121,6 +121,89 @@ Minimum acceptance gates:
 6. Targeted TCP checks reach Check_MK HTTPS and agent ports where expected.
 7. Route and interface state is captured before making NetBox imports.
 
+## Issue #114 Readiness Runbook
+
+Issue #114 is the tracking anchor for promoting BigNetwork from repo scaffold
+to a validated FMT2/SFO-200 transport. This runbook is intentionally split into
+backup-safe overnight work and live morning work so X12AGAIN preservation does
+not compete with transport experiments.
+
+### Backup-Safe Overnight Scope
+
+No live BigNetwork, RouterOS, NetBox, or Check_MK mutation while X12AGAIN off-host backup is active.
+
+Safe actions during the backup window:
+
+1. Keep repo documentation, tests, roadmap entries, and GitHub issue comments
+   current.
+2. Validate that the Devuan smoke-test role, `bignetwork_edge` role, and
+   smoke-test helper syntax still pass local tests.
+3. Confirm the BigNetwork token is vaulted by variable name only; do not print
+   or copy token material into logs, docs, or issue comments.
+4. Prepare the evidence bundle paths and acceptance checklist before running
+   the transport.
+
+### Morning Live Preconditions
+
+Do not start the BigNetwork service or modify routes until these are true:
+
+1. The off-host X12AGAIN backup has completed successfully.
+2. A disposable Devuan or Gentoo transport VM is snapshotted or trivially
+   destroyable.
+3. The VM has RFC99/SUN99 internet egress and DNS resolution before `bn`
+   starts.
+4. BigNetwork portal state shows the expected Forge/Codexian account and target
+   FMT2/SFO-200 network association.
+5. The first live run has a rollback path: stop `bn`, remove temporary routes,
+   revert VM snapshot, and leave CCR2004 state unchanged.
+
+### Evidence Bundle For Issue #114
+
+Evidence bundle for issue #114:
+
+```text
+/var/log/rfc1918/fmt2-bignetwork/
+  preflight.txt
+  bn-query.json
+  ip-address.txt
+  ip-route.txt
+  resolvectl-or-resolvconf.txt
+  dns-checks.txt
+  reachability.txt
+  nmap-targeted.txt
+  post-stop-routes.txt
+```
+
+Minimum captured commands:
+
+```bash
+hostname -f
+date -u
+bn -q /var/lib/bn
+ip -brief address
+ip route
+getent hosts app-sfo200-monitoring-9927.vernetzen.io
+ping -c 3 10.200.99.1
+nmap -Pn -p 22,80,443,6556 app-sfo200-monitoring-9927.vernetzen.io
+```
+
+If the target hostnames do not resolve through LAN DNS, record that as a DNS
+blocker instead of substituting guessed IPs.
+
+### Promotion Gates
+
+Promote FMT2 transport from smoke-test to managed service only after all gates
+pass:
+
+1. BigNetwork service starts repeatedly after reboot or service restart.
+2. RFC99/SUN99 reaches at least one FMT2 management prefix.
+3. Return routing from FMT2 to the transport source is proven or explicitly
+   remediated.
+4. Check_MK URL and agent-port checks are reachable through the transport.
+5. NetBox imports remain dry-run until live reachability evidence is attached
+   to issue #114.
+6. Check_MK onboarding waits for NetBox prefix/device promotion.
+
 ### Phase 3: Gentoo/OpenRC Promotion
 
 Only after the Devuan VM validates transport:
