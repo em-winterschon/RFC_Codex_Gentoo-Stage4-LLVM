@@ -164,8 +164,8 @@
               'command': '/usr/sbin/slurmctld -D -f ' + resolved_slurm_cluster.config_dir + '/slurm.conf',
               'runlevel': 'default',
               'enabled': true,
-              'user': resolved_slurm_cluster.user,
-              'group': resolved_slurm_cluster.group,
+              'user': 'root',
+              'group': 'root',
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmctld.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmctld.err'
@@ -188,8 +188,8 @@
               'command': '/usr/sbin/slurmd -D -f ' + resolved_slurm_cluster.config_dir + '/slurm.conf',
               'runlevel': 'default',
               'enabled': true,
-              'user': resolved_slurm_cluster.user,
-              'group': resolved_slurm_cluster.group,
+              'user': 'root',
+              'group': 'root',
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmd.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmd.err'
@@ -212,8 +212,8 @@
               'command': '/usr/sbin/slurmdbd -D -f ' + resolved_slurm_cluster.config_dir + '/slurmdbd.conf',
               'runlevel': 'default',
               'enabled': true,
-              'user': resolved_slurm_cluster.user,
-              'group': resolved_slurm_cluster.group,
+              'user': 'root',
+              'group': 'root',
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmdbd.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmdbd.err'
