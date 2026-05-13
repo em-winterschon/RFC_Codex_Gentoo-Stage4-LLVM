@@ -151,6 +151,41 @@ Repo-safe transport intent and role wiring live in:
 gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/bignetwork.yml
 ```
 
+## Context7 MCP Token
+
+The operator-private Context7 API token used by the Codex MCP wrapper is
+sourced from:
+
+```bash
+/root/.codex/secrets/context7_api_key
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-context7-vault.sh
+```
+
+The encrypted local-network vault stores the token and repo-safe metadata under:
+
+```text
+vault_context7_api_token
+vault_context7_token_name
+vault_context7_token_owner
+vault_context7_purpose
+```
+
+Materialize the runtime token file after vault import or host rebuild with:
+
+```bash
+scripts/materialize-context7-mcp-secret.sh
+```
+
+The materializer writes `/root/.codex/secrets/context7_api_key` with mode `0600`
+and never prints the token value. The Codex MCP wrapper
+`/root/.codex/bin/context7-mcp-wrapper.sh` reads that runtime file so `codex mcp
+list` does not expose the token in command arguments.
+
 ## Private CA
 
 The shared RFC1918 private certificate authority should be imported from an
