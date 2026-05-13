@@ -25,6 +25,8 @@
 - Added tomorrow planning items for BlueField-2/ConnectX-5 OFED deployment,
   coherent-storage and heterogeneous-compute ADR import, and BigNetwork FMT2
   link bring-up.
+- Added the 2026-05-12 EOD report covering recovery, pushed commits, wiki sync,
+  FastMCP scaffold state, tomorrow queue, and Forge continuity design.
 
 ## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
 

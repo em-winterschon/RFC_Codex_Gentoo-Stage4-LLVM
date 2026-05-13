@@ -67,6 +67,49 @@ This is intentionally weaker than a distributed database but stronger than
 untracked local notes. It is sufficient for replay, audit, EOD synthesis, and
 future pattern analysis.
 
+## Forge Continuity Model
+
+Forge continuity should not depend on one local Codex process, one host, or one
+terminal session. The durable model should have three layers:
+
+- Repo state: committed docs, roadmap entries, plans, tests, and issue links are
+  the source of truth for decisions and work products.
+- Append-only memory events: each Forge session writes JSONL events and a closeout
+  manifest to object storage with commit, branch, host, and artifact references.
+- Derived summaries: a compaction job renders current-day SITREP, EOD context,
+  unresolved blockers, and next-action queues from the append-only event stream.
+
+Bootstrap sequence for a new Forge runtime:
+
+1. Read the current repository branch and latest pushed commit.
+2. Fetch the latest memory manifest for the repo and branch.
+3. Load the latest EOD/SITREP summary plus unresolved blocker index.
+4. Reconcile with GitHub issues, milestones, and the project board.
+5. Emit a new session-start event before taking infrastructure actions.
+
+Required properties:
+
+- one writer per session stream
+- no raw secrets or private key material in events
+- content-addressed artifact references where practical
+- signed session closeout manifests
+- local write-ahead spool when object storage is offline
+- replayable summaries so memory can be rebuilt after corruption or bad
+  compaction
+
+Recommended first implementation:
+
+- Object store: MinIO or Garage on the LAN; Ceph RGW later if Ceph becomes part
+  of the storage fabric.
+- Local spool: `/var/lib/forge-memory/spool/<session-id>.jsonl`.
+- Sync path: append locally, upload object, write manifest, then mark local spool
+  synced.
+- MCP facade: implement `memory.append_event`,
+  `memory.get_session_summary`, `memory.list_recent_sessions`,
+  `memory.search_artifact_refs`, and `memory.render_eod_context`.
+- GitHub bridge: link memory manifests to issue comments or EOD reports rather
+  than storing long raw event logs in GitHub.
+
 ## MCP Integration Direction
 
 The MCP control plane should expose these methods:
