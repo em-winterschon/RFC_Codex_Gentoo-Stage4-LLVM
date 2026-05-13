@@ -32,4 +32,5 @@ the on-host Codex system directly to the AT&T gateway or to the management L2
 that still reaches it. This is the emergency path if the primary gateway is
 offline long enough that Codex cannot reach network services while Hasslehoff
 CCR2004 serial access remains available through
-`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`.
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`
+(currently observed as `/dev/ttyUSB0`; do not depend on the volatile tty name).

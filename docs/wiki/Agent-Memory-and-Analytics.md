@@ -110,6 +110,46 @@ Recommended first implementation:
 - GitHub bridge: link memory manifests to issue comments or EOD reports rather
   than storing long raw event logs in GitHub.
 
+## Local Spool CLI
+
+`scripts/forge_memory_spool.py` provides the first repo-managed write-ahead
+spool for continuity events while the object-store backend and MCP facade are
+still being built.
+
+Implemented operations:
+
+- `append-event`: writes one JSONL event under
+  `agents/<agent-id>/sessions/<session-id>/events.jsonl`
+- `closeout`: writes an unsigned closeout manifest under
+  `manifests/<yyyy>/<mm>/<dd>/<session-id>.json`
+
+The CLI records session, agent, repo, branch, commit, host, timestamp, intent,
+actions, artifact references, and notes. It rejects secret-looking JSON keys
+before writing an event or manifest so token material cannot be accidentally
+stored through the structured `--extra-json` path.
+
+Example:
+
+```bash
+scripts/forge_memory_spool.py append-event \
+  --spool-root /var/lib/forge-memory/spool \
+  --session-id "$(date -u +%Y%m%dT%H%M%SZ)-forge" \
+  --agent-id forge \
+  --repo RFC_Codex_Gentoo-Stage4-LLVM \
+  --branch "$(git branch --show-current)" \
+  --commit "$(git rev-parse --short HEAD)" \
+  --event-type session-start \
+  --intent "resume critical-path infrastructure work" \
+  --action "reconcile repo state" \
+  --artifact "issue:115"
+```
+
+Current limitations:
+
+- closeout manifests are unsigned until the signing backend is selected
+- object-store upload is not implemented yet
+- MCP methods still need to wrap the CLI and enforce operator policy
+
 ## MCP Integration Direction
 
 The MCP control plane should expose these methods:

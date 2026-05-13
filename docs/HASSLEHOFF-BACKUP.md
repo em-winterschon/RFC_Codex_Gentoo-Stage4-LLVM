@@ -43,6 +43,7 @@ Emergency objective:
 - keep local shell access on the Codex host
 - keep Hasslehoff serial access to the CCR2004 available through
   `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`
+  (currently observed as `/dev/ttyUSB0`; do not depend on the volatile tty name)
 - bypass the failed primary gateway long enough to review, repair, or roll back
   RouterOS
 

@@ -17,6 +17,15 @@
 - Added the FastMCP infrastructure control-plane promotion plan for NetBox,
   Proxmox, RouterOS, Trac, and internal-infra MCP wrappers, with LAN-only
   routing, vault-only credentials, mutation gates, and audit requirements.
+- Added `scripts/forge_memory_spool.py` as the first Forge continuity
+  write-ahead spool, with append-only JSONL events, unsigned closeout manifests,
+  and secret-looking JSON key rejection before writes.
+- Normalized recovered roadmap issues #111-#115 with RDMA/storage/HPC,
+  FMT2, and Agent Memory labels and milestones after the Codex session-memory
+  loss window.
+- Updated local-network and Hasslehoff backup tests/docs to assert stable
+  RouterOS serial `/dev/serial/by-id` paths while retaining current tty
+  observations for operator context.
 - Added initial FastMCP common helpers and a NetBox MCP skeleton with
   read/plan/apply tool boundaries, mutation gating, and JSON audit artifacts.
 - Added the SLURM-first HPC workload scheduler plan, separating deterministic

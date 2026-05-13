@@ -34,9 +34,11 @@ require_grep 'HASSLEHOFF_BACKUP_DRY_RUN' "${SCRIPT}"
 
 require_file "${DOC}"
 require_grep 'Emergency Gateway Ethernet WAN Link' "${DOC}"
-require_grep '/dev/ttyUSB2' "${DOC}"
+require_grep '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0' "${DOC}"
+require_grep '/dev/ttyUSB0' "${DOC}"
 
 require_file "${WIKI}"
 require_grep 'Emergency Gateway Ethernet WAN Link' "${WIKI}"
+require_grep '/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0' "${WIKI}"
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"
