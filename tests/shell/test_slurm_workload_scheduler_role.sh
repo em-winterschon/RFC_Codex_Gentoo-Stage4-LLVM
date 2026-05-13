@@ -87,6 +87,13 @@ assert_file_contains "${ROLE_DIR}/tasks/main.yml" "'user': 'root'"
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmctld'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmd'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmdbd'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" "'command': '/usr/sbin/slurmdbd -D'"
+if grep -q "'command': '/usr/sbin/slurmdbd -D -f " "${ROLE_DIR}/tasks/main.yml"; then
+  printf 'FAIL: slurmdbd must not be launched with unsupported -f option\n' >&2
+  exit 1
+fi
+assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Register SLURM worker OpenRC action service' "'cgroup_v2_system_slice': true"
+assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Register SLURM worker OpenRC action service' "'cgroup_v2_controllers': \\['cpuset', 'cpu', 'memory'\\]"
 assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'ClusterName='
 assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'SlurmctldPidFile=/run/slurmctld-daemon.pid'
 assert_file_contains "${ROLE_DIR}/templates/slurm.conf.j2" 'SlurmdPidFile=/run/slurmd-daemon.pid'
@@ -97,6 +104,7 @@ assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Render SLURM accounting
 assert_task_block_contains "${ROLE_DIR}/tasks/main.yml" 'Render SLURM accounting daemon configuration' 'group: "{{ resolved_slurm_cluster.group }}"'
 assert_file_contains "${ROLE_DIR}/templates/cgroup.conf.j2" 'ConstrainCores=yes'
 assert_file_contains "${ROLE_DIR}/templates/cgroup.conf.j2" 'IgnoreSystemd=yes'
+assert_file_contains "${ROLE_DIR}/templates/cgroup.conf.j2" 'ConstrainSwapSpace=no'
 
 assert_file_contains "${SERVICE_ATOMS}" 'vm-slurm-controller:'
 assert_file_contains "${SERVICE_ATOMS}" 'slurm-worker-node:'

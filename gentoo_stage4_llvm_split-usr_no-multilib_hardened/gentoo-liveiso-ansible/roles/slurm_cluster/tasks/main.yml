@@ -192,6 +192,8 @@
               'enabled': true,
               'user': 'root',
               'group': 'root',
+              'cgroup_v2_system_slice': true,
+              'cgroup_v2_controllers': ['cpuset', 'cpu', 'memory'],
               'dependencies_need': ['net'],
               'output_log': resolved_slurm_cluster.log_dir + '/slurmd.log',
               'error_log': resolved_slurm_cluster.log_dir + '/slurmd.err'
@@ -211,7 +213,7 @@
             {
               'name': 'slurmdbd',
               'description': 'SLURM accounting daemon',
-              'command': '/usr/sbin/slurmdbd -D -f ' + resolved_slurm_cluster.config_dir + '/slurmdbd.conf',
+              'command': '/usr/sbin/slurmdbd -D',
               'runlevel': 'default',
               'enabled': true,
               'user': 'root',
