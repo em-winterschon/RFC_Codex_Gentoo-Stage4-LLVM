@@ -19,13 +19,13 @@
     {
       "name": "inventory",
       "required": true,
-      "default": "inventories/examples/hosts.yml",
+      "default": "inventories/local-network/hosts.yml",
       "description": "Inventory containing the SLURM controller and first worker targets."
     },
     {
       "name": "controller_target",
       "required": true,
-      "default": "vm_slurm_controller",
+      "default": "sched_sun99_slurmctl_099071",
       "description": "Controller target for sched-sun99-slurmctl-099071.rfc1918.host at 172.16.99.71."
     },
     {

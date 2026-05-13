@@ -26,6 +26,12 @@
             | default(slurm_cluster_default_user),
           'group': (resolved_profile_slurm_cluster | default({})).group
             | default(slurm_cluster_default_group),
+          'munge_user': (resolved_profile_slurm_cluster | default({})).munge_user
+            | default(slurm_cluster_default_munge_user),
+          'munge_group': (resolved_profile_slurm_cluster | default({})).munge_group
+            | default(slurm_cluster_default_munge_group),
+          'munge_key_b64': (resolved_profile_slurm_cluster | default({})).munge_key_b64
+            | default(slurm_cluster_default_munge_key_b64),
           'state_save_location': (resolved_profile_slurm_cluster | default({})).state_save_location
             | default(slurm_cluster_default_state_save_location),
           'slurmd_spool_dir': (resolved_profile_slurm_cluster | default({})).slurmd_spool_dir
@@ -62,6 +68,7 @@
     - /var/lib/slurm
     - "{{ resolved_slurm_cluster.state_save_location }}"
     - "{{ resolved_slurm_cluster.slurmd_spool_dir }}"
+    - /etc/munge
     - /var/lib/slurm/slurmdbd
     - /var/lib/munge
   loop_control:
@@ -90,6 +97,18 @@
   when:
     - slurm_cluster_enabled
     - resolved_slurm_cluster.dbd_enabled | bool
+
+- name: Install vaulted MUNGE key when provided
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/munge/munge.key"
+    mode: '0400'
+    owner: "{{ resolved_slurm_cluster.munge_user }}"
+    group: "{{ resolved_slurm_cluster.munge_group }}"
+    content: "{{ resolved_slurm_cluster.munge_key_b64 | b64decode }}"
+  no_log: true
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.munge_key_b64 | length > 0
 
 - name: Render MUNGE key policy note
   ansible.builtin.copy:

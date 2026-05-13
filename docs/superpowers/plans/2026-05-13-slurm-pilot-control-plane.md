@@ -97,11 +97,11 @@ Run from the Ansible root:
 
 ```bash
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
-  --limit vm_slurm_controller \
+  --inventory inventories/local-network/hosts.yml \
+  --limit sched_sun99_slurmctl_099071 \
   --sequence target-integration \
   --checkpoint \
-  --control-flow-path /tmp/ansible-control-flow/vm_slurm_controller.target-integration.jsonl
+  --control-flow-path /tmp/ansible-control-flow/sched_sun99_slurmctl_099071.target-integration.jsonl
 ```
 
 Expected: `slurm.conf`, `slurmdbd.conf`, `cgroup.conf`, and OpenRC action
@@ -113,7 +113,7 @@ Run from the Ansible root:
 
 ```bash
 bash scripts/run-install-sequence.sh \
-  --inventory inventories/examples/hosts.yml \
+  --inventory inventories/local-network/hosts.yml \
   --limit slurm_worker_node01 \
   --sequence target-integration \
   --checkpoint \

@@ -40,9 +40,11 @@ assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" '^gentoo_profile_d
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'slurm_cluster:'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'controller_enabled: true'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'dbd_enabled: true'
+assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'munge_key_b64: "{{ vault_slurm_munge_key_b64'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'partitions:'
 assert_file_contains "${PROFILE_DIR}/vm-slurm-controller.yml" 'rdma-test'
 assert_file_contains "${PROFILE_DIR}/slurm-worker-node.yml" 'worker_enabled: true'
+assert_file_contains "${PROFILE_DIR}/slurm-worker-node.yml" 'munge_key_b64: "{{ vault_slurm_munge_key_b64'
 assert_file_contains "${PROFILE_DIR}/slurm-worker-node.yml" 'node_features:'
 
 for package_atom in \
@@ -62,8 +64,12 @@ for package_atom in \
 done
 
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'slurm_cluster_default_enabled: false'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'slurm_cluster_default_munge_key_b64: ""'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'slurm_cluster_default_partitions:'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'resolved_profile_slurm_cluster'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" '/etc/munge'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'b64decode'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'no_log: true'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'openrc_action_services'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmctld'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'slurmd'

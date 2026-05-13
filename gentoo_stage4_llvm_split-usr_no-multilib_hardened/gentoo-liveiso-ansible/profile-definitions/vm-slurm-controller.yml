@@ -14,6 +14,7 @@ gentoo_profile_definition:
     accounting_storage_database: slurm_acct_db
     accounting_storage_user: slurm
     accounting_storage_password_ref: "{{ vault_slurmdbd_storage_password }}"
+    munge_key_b64: "{{ vault_slurm_munge_key_b64 | default('') }}"
     state_save_location: /var/lib/slurm/slurmctld
     slurmd_spool_dir: /var/lib/slurm/slurmd
     partitions:

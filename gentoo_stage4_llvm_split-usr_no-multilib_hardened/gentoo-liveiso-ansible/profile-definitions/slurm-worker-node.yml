@@ -10,6 +10,7 @@ gentoo_profile_definition:
     controller_enabled: false
     dbd_enabled: false
     worker_enabled: true
+    munge_key_b64: "{{ vault_slurm_munge_key_b64 | default('') }}"
     node_features:
       - build
       - validation

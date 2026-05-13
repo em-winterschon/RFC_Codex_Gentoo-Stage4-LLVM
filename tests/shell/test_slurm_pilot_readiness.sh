@@ -8,6 +8,8 @@ DOC="${REPO_ROOT}/docs/SLURM-PILOT-BRINGUP.md"
 WIKI="${REPO_ROOT}/docs/wiki/SLURM-Pilot-Bringup.md"
 PLAN="${REPO_ROOT}/docs/superpowers/plans/2026-05-13-slurm-pilot-control-plane.md"
 WORKFLOW="${REPO_ROOT}/docs/workflows/stage5-slurm-pilot-bringup.json"
+LOCAL_INVENTORY="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml"
+INVENTORY_INTAKE="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/local-rfc1918-lab.yml"
 
 assert_file_contains() {
   local file=$1
@@ -15,7 +17,7 @@ assert_file_contains() {
   grep -q -- "${pattern}" "${file}"
 }
 
-for file in "${DOC}" "${WIKI}" "${PLAN}" "${WORKFLOW}"; do
+for file in "${DOC}" "${WIKI}" "${PLAN}" "${WORKFLOW}" "${LOCAL_INVENTORY}" "${INVENTORY_INTAKE}"; do
   test -f "${file}"
 done
 
@@ -45,6 +47,22 @@ assert_file_contains "${DOC}" 'gpu-test'
 assert_file_contains "${DOC}" 'rdma-test'
 assert_file_contains "${DOC}" 'Backout'
 
+assert_file_contains "${LOCAL_INVENTORY}" 'slurm_controllers:'
+assert_file_contains "${LOCAL_INVENTORY}" 'slurm_workers:'
+assert_file_contains "${LOCAL_INVENTORY}" 'sched_sun99_slurmctl_099071:'
+assert_file_contains "${LOCAL_INVENTORY}" 'slurm_worker_node01:'
+assert_file_contains "${LOCAL_INVENTORY}" 'stage5_profile: vm-slurm-controller'
+assert_file_contains "${LOCAL_INVENTORY}" 'stage5_profile: slurm-worker-node'
+assert_file_contains "${LOCAL_INVENTORY}" 'fqdn: sched-sun99-slurmctl-099071.rfc1918.host'
+assert_file_contains "${LOCAL_INVENTORY}" 'sched-sun99-slurmctl.rfc1918.host'
+
+assert_file_contains "${INVENTORY_INTAKE}" 'sched_sun99_slurmctl_099071'
+assert_file_contains "${INVENTORY_INTAKE}" 'sched-sun99-slurmctl-099071.rfc1918.host'
+assert_file_contains "${INVENTORY_INTAKE}" 'sched-sun99-slurmctl.rfc1918.host'
+assert_file_contains "${INVENTORY_INTAKE}" 'slurm_worker_node01'
+assert_file_contains "${INVENTORY_INTAKE}" 'sched-sun99-slurmwkr-099072.rfc1918.host'
+assert_file_contains "${INVENTORY_INTAKE}" '172.16.99.72'
+
 python3 - "${WORKFLOW}" << 'PY'
 import json
 import sys
@@ -72,8 +90,11 @@ if missing:
 
 text = json.dumps(payload, sort_keys=True)
 for needle in (
+    "inventories/local-network/hosts.yml",
     "sched-sun99-slurmctl-099071",
     "172.16.99.71",
+    "sched_sun99_slurmctl_099071",
+    "slurm_worker_node01",
     "slurmctld",
     "slurmd",
     "slurmdbd",
