@@ -1,11 +1,15 @@
 # Changelog
 
-## 2026-05-14 - M70 PDU Outlet Label
+## 2026-05-14 - M70 PDU Label And EOD Closeout
 
 - Normalized AP7901 outlet 4 inventory to the control-panel label
   `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
 - Removed the paused validation laptop from active repo inventory, roadmap, and
   docs until it is re-inventoried with stable IP, power, and switch metadata.
+- Added the 2026-05-13 EOD report and overnight execution plan, prioritizing
+  safe repo-only M70 hardening, Forge continuity restore planning, X12AGAIN
+  preflight expansion, SLURM observability, NetBox DCIM dry-run modeling, and
+  BigNetwork/FMT2 smoke-test prep.
 
 ## 2026-05-13 - M70 Automation Admin Provisioning
 
