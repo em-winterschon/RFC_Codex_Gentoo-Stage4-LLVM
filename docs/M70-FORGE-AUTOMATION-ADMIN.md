@@ -114,6 +114,11 @@ status` validates when the current Forge token is supplied through the
 environment; token persistence is covered by the remaining Forge continuity
 restore gate.
 
+The X12AGAIN BMC wrapper was staged under
+`/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70 with root-only path
+permissions. `ipmitool chassis status` from the M70 reaches the X12AGAIN BMC at
+`172.16.199.108` and returns normal chassis power/fault state.
+
 ## Storage Layout
 
 /dev/sda is the EFI/iPXE boot disk only. The M70 firmware did not expose a

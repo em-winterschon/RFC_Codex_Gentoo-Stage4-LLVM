@@ -25,6 +25,8 @@
 - Installed the static GitHub CLI 2.88.1 binary on the M70, verified its
   SHA256, and validated `gh auth status` with the current Forge token supplied
   through the environment.
+- Staged the X12AGAIN BMC wrapper on the M70 and validated non-interactive
+  `ipmitool chassis status` against the BMC at `172.16.199.108`.
 - Added `docs/runbooks/m70-automation-admin-install.md` so the remaining M70
   nodes can reuse the SATADOM+iPXE+mirrored-ZFS pattern with host-specific
   MAC/IP/hostid substitutions.

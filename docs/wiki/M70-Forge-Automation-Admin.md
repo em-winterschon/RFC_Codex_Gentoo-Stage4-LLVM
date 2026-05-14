@@ -63,9 +63,14 @@ automation host. The copied `gh` binary SHA256 is
 status` validates when the current Forge token is supplied through the
 environment.
 
+The X12AGAIN BMC wrapper was staged under
+`/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70, and `ipmitool chassis
+status` from the M70 reaches the BMC at `172.16.199.108` with normal
+power/fault state.
+
 Current blockers before this can replace X12AGAIN: restore Forge continuity
-data from the off-host X12AGAIN backup, validate X12AGAIN SoL from M70, and
-resolve the observed 32 GiB memory report against the planned 64 GiB inventory.
+data from the off-host X12AGAIN backup and resolve the observed 32 GiB memory
+report against the planned 64 GiB inventory.
 
 ## Intel QAT
 
