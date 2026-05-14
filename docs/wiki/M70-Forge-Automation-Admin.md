@@ -55,11 +55,17 @@ two KIOXIA NVMe devices. `bootfs=zroot/ROOT/gentoo`, iPXE chains the
 hostname `admin-sun99-forge-099070`, root source `zroot/ROOT/gentoo`, and a
 healthy pool.
 
-Current blockers before this can replace X12AGAIN: install `gh` from an overlay
-or trusted binary source because the active Gentoo repo lacked
-`dev-vcs/github-cli`, restore Forge continuity data from the off-host X12AGAIN
-backup, validate X12AGAIN SoL from M70, and resolve the observed 32 GiB memory
-report against the planned 64 GiB inventory.
+The first live admin baseline installed Ansible, `ansible-vault`, `ipmitool`,
+`nmap`, `tcpdump`, `tmux`, `jq`, `pciutils`, `usbutils`, `gentoolkit`, `eix`,
+Git, and the existing static `/usr/local/bin/gh` 2.88.1 binary from the current
+automation host. The copied `gh` binary SHA256 is
+`c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`; `gh auth
+status` validates when the current Forge token is supplied through the
+environment.
+
+Current blockers before this can replace X12AGAIN: restore Forge continuity
+data from the off-host X12AGAIN backup, validate X12AGAIN SoL from M70, and
+resolve the observed 32 GiB memory report against the planned 64 GiB inventory.
 
 ## Intel QAT
 

@@ -22,6 +22,9 @@
 - Installed the M70 live Intel platform layer and validated C3000 QAT firmware
   presence, then re-applied the FreeIPA client playbook to the persistent ZFS
   root and validated `codex-admin` NSS/PAM/SSH-key login through SSSD.
+- Installed the static GitHub CLI 2.88.1 binary on the M70, verified its
+  SHA256, and validated `gh auth status` with the current Forge token supplied
+  through the environment.
 - Added `docs/runbooks/m70-automation-admin-install.md` so the remaining M70
   nodes can reuse the SATADOM+iPXE+mirrored-ZFS pattern with host-specific
   MAC/IP/hostid substitutions.

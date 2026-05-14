@@ -102,6 +102,18 @@ Live installation on 2026-05-14 completed `sys-firmware/intel-microcode`,
 firmware files are present at `/lib/firmware/intel/qat/qat_c3xxx.bin` and
 `/lib/firmware/intel/qat/qat_c3xxx_mmp.bin`.
 
+## Tooling Baseline
+
+The first live admin baseline installed Ansible, `ansible-vault`, `ipmitool`,
+`nmap`, `tcpdump`, `tmux`, `jq`, `pciutils`, `usbutils`, `gentoolkit`, `eix`,
+and Git. The local Gentoo repo did not expose `dev-vcs/github-cli`, so the
+existing static `/usr/local/bin/gh` 2.88.1 binary from the current automation
+host was installed on the M70 with SHA256
+`c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`. `gh auth
+status` validates when the current Forge token is supplied through the
+environment; token persistence is covered by the remaining Forge continuity
+restore gate.
+
 ## Storage Layout
 
 /dev/sda is the EFI/iPXE boot disk only. The M70 firmware did not expose a
@@ -137,9 +149,6 @@ boot fix.
 
 ## Remaining Blockers
 
-- The local Gentoo repo did not expose `dev-vcs/github-cli` during the
-  2026-05-14 install. `gh` must be installed from an overlay, upstream binary,
-  or internal package source before X12AGAIN cutover.
 - Forge continuity data from the off-host X12AGAIN backup still needs to be
   restored and validated on the M70.
 - Observed memory is still 32 GiB while the planned inventory expected 64 GiB;
