@@ -64,8 +64,10 @@ host principal through `ipa host-mod` resolved keytab generation. The live apply
 now sets the OpenRC hostname files, forces the active kernel hostname, removes
 the stale K10 `/etc/hosts` fallback, starts SSSD, validates NSS/PAM/SSH lookup
 for `codex-admin`, and confirms the host keytab exists. The persistent ZFS
-install does not yet carry that keytab; rerun the FreeIPA client apply after the
-admin tool baseline finishes.
+install was later re-applied with the same playbook after the admin tool
+baseline finished; `/etc/krb5.keytab`, `/etc/sssd/sssd.conf`, NSS/PAM, SSSD
+SSH authorized-key lookup, and `codex-admin` non-root SSH now validate on the
+persistent root.
 
 On 2026-05-14 the persistent install completed its first boot path. `/dev/sda`
 was rebuilt as a clean GPT disk with a single 1 GiB FAT32 ESP labeled
@@ -94,6 +96,11 @@ HAProxy, Nginx, and OpenZFS must each get benchmark evidence and rollback
 commands before QAT acceleration is enabled in production. OpenZFS+QAT is
 tracked as a separate CI/CD artifact lane because Gentoo does not currently
 treat QAT-enabled ZFS as the stock ebuild path.
+
+Live installation on 2026-05-14 completed `sys-firmware/intel-microcode`,
+`sys-kernel/linux-firmware`, and `sys-apps/iucode_tool`. The required C3000 QAT
+firmware files are present at `/lib/firmware/intel/qat/qat_c3xxx.bin` and
+`/lib/firmware/intel/qat/qat_c3xxx_mmp.bin`.
 
 ## Storage Layout
 
@@ -130,8 +137,6 @@ boot fix.
 
 ## Remaining Blockers
 
-- FreeIPA/SSSD must be re-applied to the persistent root so `/etc/krb5.keytab`,
-  `/etc/sssd/sssd.conf`, NSS/PAM, and centralized SSH key lookup are durable.
 - The local Gentoo repo did not expose `dev-vcs/github-cli` during the
   2026-05-14 install. `gh` must be installed from an overlay, upstream binary,
   or internal package source before X12AGAIN cutover.

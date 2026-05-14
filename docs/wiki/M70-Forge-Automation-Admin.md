@@ -37,7 +37,10 @@ without `krbprincipalname`, so `ipa-getkeytab` failed with `PrincipalName not
 found`; adding the canonical host principal fixed keytab generation. The live
 apply now forces the active OpenRC hostname, removes the stale K10 hosts entry,
 starts SSSD, validates `codex-admin` through NSS/PAM/SSH key lookup, and leaves
-the host with a valid `/etc/krb5.keytab`.
+the host with a valid `/etc/krb5.keytab`. After the persistent ZFS root came
+online, the same client apply was re-run and validated `/etc/krb5.keytab`,
+`/etc/sssd/sssd.conf`, SSSD service startup, NSS/PAM lookup, SSSD SSH
+authorized-key lookup, and non-root `codex-admin` SSH on the persistent host.
 
 Also on 2026-05-14 the SATADOM boot path was backed up before disk prep under
 `/root/operator-private/m70/preinstall/`. After confirming the live root was the
@@ -52,11 +55,11 @@ two KIOXIA NVMe devices. `bootfs=zroot/ROOT/gentoo`, iPXE chains the
 hostname `admin-sun99-forge-099070`, root source `zroot/ROOT/gentoo`, and a
 healthy pool.
 
-Current blockers before this can replace X12AGAIN: re-apply FreeIPA/SSSD to the
-persistent root, install `gh` from an overlay or trusted binary source because
-the active Gentoo repo lacked `dev-vcs/github-cli`, restore Forge continuity
-data from the off-host X12AGAIN backup, validate X12AGAIN SoL from M70, and
-resolve the observed 32 GiB memory report against the planned 64 GiB inventory.
+Current blockers before this can replace X12AGAIN: install `gh` from an overlay
+or trusted binary source because the active Gentoo repo lacked
+`dev-vcs/github-cli`, restore Forge continuity data from the off-host X12AGAIN
+backup, validate X12AGAIN SoL from M70, and resolve the observed 32 GiB memory
+report against the planned 64 GiB inventory.
 
 ## Intel QAT
 
@@ -72,3 +75,8 @@ HAProxy, Nginx, and OpenZFS must each get benchmark evidence and rollback
 commands before QAT acceleration is enabled in production. OpenZFS+QAT is
 tracked as a separate CI/CD artifact lane because Gentoo does not currently
 treat QAT-enabled ZFS as the stock ebuild path.
+
+Live installation on 2026-05-14 completed `sys-firmware/intel-microcode`,
+`sys-kernel/linux-firmware`, and `sys-apps/iucode_tool`. The required C3000 QAT
+firmware files are present at `/lib/firmware/intel/qat/qat_c3xxx.bin` and
+`/lib/firmware/intel/qat/qat_c3xxx_mmp.bin`.

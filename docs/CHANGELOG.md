@@ -19,6 +19,9 @@
   Atom C3000 QAT kernel/module readiness for the M70 fleet while keeping
   OpenSSL, HAProxy, Nginx, and OpenZFS acceleration gated behind benchmark and
   CI/CD validation.
+- Installed the M70 live Intel platform layer and validated C3000 QAT firmware
+  presence, then re-applied the FreeIPA client playbook to the persistent ZFS
+  root and validated `codex-admin` NSS/PAM/SSH-key login through SSSD.
 - Added `docs/runbooks/m70-automation-admin-install.md` so the remaining M70
   nodes can reuse the SATADOM+iPXE+mirrored-ZFS pattern with host-specific
   MAC/IP/hostid substitutions.
