@@ -20,6 +20,13 @@ It is currently referenced by the M70 Forge automation-admin profile, the M70
 builder-farm node profile, the X12AGAIN workstation/hypervisor profile, and the
 generic Xen/QEMU/Libvirt hypervisor profile.
 
+For C3000 M70 service roles, QAT is most valuable first as a TLS and compression
+offload path: OpenSSL consumers such as HAProxy and Nginx can be benchmarked for
+request-per-second gains before any production listener is switched. Treat
+operator-observed 1.5x-2x TLS RPS improvements as a hypothesis until this
+infrastructure has local before/after measurements with the exact kernel,
+OpenSSL, QAT, cipher-suite, and HAProxy or Nginx versions in use.
+
 ## Current State
 
 M70 QAT is kernel-ready, not application-enabled. Live validation showed the

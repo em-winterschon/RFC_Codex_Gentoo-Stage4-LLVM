@@ -27,6 +27,15 @@
   through the environment.
 - Staged the X12AGAIN BMC wrapper on the M70 and validated non-interactive
   `ipmitool chassis status` against the BMC at `172.16.199.108`.
+- Installed `dev-vcs/git-lfs` on the M70 and added it to the
+  `metal-forge-automation-admin` package list after the restored Forge repo
+  failed `git status` without LFS filters available.
+- Restored the latest off-host X12AGAIN `/root` snapshot into a quarantined M70
+  path, merged only continuity-critical Forge/Codex/vault/token/operator/repo
+  paths into active `/root`, preserved a pre-merge backup, and validated the
+  restored repo and GitHub token path.
+- Deferred full `/opt` import because the latest off-host `/opt` snapshot is
+  about 227 GiB while the current M70 ZFS pool has about 223 GiB available.
 - Added `docs/runbooks/m70-automation-admin-install.md` so the remaining M70
   nodes can reuse the SATADOM+iPXE+mirrored-ZFS pattern with host-specific
   MAC/IP/hostid substitutions.

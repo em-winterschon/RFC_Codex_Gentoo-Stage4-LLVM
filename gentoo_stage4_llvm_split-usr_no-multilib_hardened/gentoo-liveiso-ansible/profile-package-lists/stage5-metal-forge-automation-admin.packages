@@ -17,6 +17,7 @@ app-portage/gentoolkit
 dev-lang/python
 dev-python/pip
 dev-vcs/git
+dev-vcs/git-lfs
 # dev-vcs/github-cli is desired, but unavailable in the active Gentoo repo used
 # during the 2026-05-14 M70 install. Install gh from an overlay, upstream
 # binary, or internal package source before final X12AGAIN cutover.

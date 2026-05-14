@@ -106,18 +106,41 @@ firmware files are present at `/lib/firmware/intel/qat/qat_c3xxx.bin` and
 
 The first live admin baseline installed Ansible, `ansible-vault`, `ipmitool`,
 `nmap`, `tcpdump`, `tmux`, `jq`, `pciutils`, `usbutils`, `gentoolkit`, `eix`,
-and Git. The local Gentoo repo did not expose `dev-vcs/github-cli`, so the
-existing static `/usr/local/bin/gh` 2.88.1 binary from the current automation
-host was installed on the M70 with SHA256
+Git, and `git-lfs`. `git-lfs` is required because restored Forge working copies
+use LFS filters; without it, `git status` fails before the repo can be used for
+cutover validation. The local Gentoo repo did not expose `dev-vcs/github-cli`,
+so the existing static `/usr/local/bin/gh` 2.88.1 binary from the current
+automation host was installed on the M70 with SHA256
 `c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`. `gh auth
-status` validates when the current Forge token is supplied through the
-environment; token persistence is covered by the remaining Forge continuity
-restore gate.
+status` validates with the restored Forge token.
 
 The X12AGAIN BMC wrapper was staged under
 `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70 with root-only path
 permissions. `ipmitool chassis status` from the M70 reaches the X12AGAIN BMC at
 `172.16.199.108` and returns normal chassis power/fault state.
+
+## Forge Continuity Restore
+
+On 2026-05-14 the latest off-host X12AGAIN `/root` backup snapshot
+`/home/x12again-root/20260513-191801/root` was restored onto the M70 under
+`/srv/restore/x12again-root/20260513-191801/root`. The active merge copied only
+the continuity-critical paths into `/root`: `.codex`, `.config/superpowers`,
+`.ssh/vault`, `.ssh/codex.d/tokens`, `.ssh/codex.d/ipmi.d`,
+`operator-private`, `RFC_Codex_Gentoo-Stage4-LLVM`, and selected shell/git
+configuration. The pre-merge M70 state was preserved at
+`/root/restore-pre-merge-20260514T050816Z`.
+
+Post-merge validation confirms the M70 has `/root/.codex/config.toml`, the
+Ansible vault environment, the Forge GitHub token, the operator backup script,
+and a usable restored repo. The restored active repo is
+`/root/RFC_Codex_Gentoo-Stage4-LLVM` on branch
+`codex/slurm-pilot-control-plane` at commit `d6c04cd`; `git status` works after
+installing `dev-vcs/git-lfs`.
+
+The latest off-host `/opt` snapshot is about 227 GiB, while the current M70
+pool has about 223 GiB available. Full `/opt` import is therefore deferred until
+larger local storage, an NFS-backed restore target, or a selective `/opt`
+subtree restore plan is chosen.
 
 ## Storage Layout
 
@@ -154,8 +177,8 @@ boot fix.
 
 ## Remaining Blockers
 
-- Forge continuity data from the off-host X12AGAIN backup still needs to be
-  restored and validated on the M70.
+- Full `/opt` continuity restore is deferred due the current M70 pool capacity
+  being smaller than the latest off-host `/opt` backup.
 - Observed memory is still 32 GiB while the planned inventory expected 64 GiB;
   validate DIMM population before scheduling memory-heavy automation workloads.
 

@@ -57,20 +57,37 @@ healthy pool.
 
 The first live admin baseline installed Ansible, `ansible-vault`, `ipmitool`,
 `nmap`, `tcpdump`, `tmux`, `jq`, `pciutils`, `usbutils`, `gentoolkit`, `eix`,
-Git, and the existing static `/usr/local/bin/gh` 2.88.1 binary from the current
-automation host. The copied `gh` binary SHA256 is
+Git, `git-lfs`, and the existing static `/usr/local/bin/gh` 2.88.1 binary from
+the current automation host. `git-lfs` is required because restored Forge repos
+use LFS filters. The copied `gh` binary SHA256 is
 `c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`; `gh auth
-status` validates when the current Forge token is supplied through the
-environment.
+status` validates with the restored Forge token.
 
 The X12AGAIN BMC wrapper was staged under
 `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70, and `ipmitool chassis
 status` from the M70 reaches the BMC at `172.16.199.108` with normal
 power/fault state.
 
-Current blockers before this can replace X12AGAIN: restore Forge continuity
-data from the off-host X12AGAIN backup and resolve the observed 32 GiB memory
-report against the planned 64 GiB inventory.
+On 2026-05-14 the latest off-host X12AGAIN `/root` backup snapshot
+`/home/x12again-root/20260513-191801/root` was restored to
+`/srv/restore/x12again-root/20260513-191801/root` on the M70. Only
+continuity-critical paths were merged into active `/root`: `.codex`,
+`.config/superpowers`, `.ssh/vault`, `.ssh/codex.d/tokens`,
+`.ssh/codex.d/ipmi.d`, `operator-private`, the repo snapshot, and selected
+shell/git config. The pre-merge state was preserved at
+`/root/restore-pre-merge-20260514T050816Z`.
+
+Post-merge validation confirms Codex config, vault environment, Forge token,
+operator backup script, and restored repo access. The restored active repo is
+`/root/RFC_Codex_Gentoo-Stage4-LLVM` on branch
+`codex/slurm-pilot-control-plane` at commit `d6c04cd`; `git status` works after
+installing `dev-vcs/git-lfs`. Full `/opt` import is deferred because the latest
+off-host `/opt` snapshot is about 227 GiB and the current M70 pool has about
+223 GiB available.
+
+Current blockers before this can replace X12AGAIN: either add storage or choose
+a selective `/opt` restore plan, and resolve the observed 32 GiB memory report
+against the planned 64 GiB inventory.
 
 ## Intel QAT
 
