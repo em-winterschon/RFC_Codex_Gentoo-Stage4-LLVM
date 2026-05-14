@@ -8,6 +8,7 @@ gentoo_system_profile_metadata:
     role_name: x12again-workstation-xen-coherent
     host_scope: x12again
     package_layers:
+      - profile-package-lists/stage5-metal-intel-platform.packages
       - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
       - profile-package-lists/stage5-metal-host-hypervisor.packages
       - profile-package-lists/stage5-storage-nfs-client.packages
@@ -26,6 +27,8 @@ gentoo_system_profile_metadata:
       - sys-cluster/rdma-core
       - sys-cluster/slurm
       - sys-fs/zfs
+      - sys-firmware/intel-microcode
+      - sys-kernel/linux-firmware
       - x11-base/xorg-server
       - x11-drivers/nvidia-drivers
   host_hardware:

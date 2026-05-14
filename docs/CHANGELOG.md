@@ -8,9 +8,20 @@
   repository paths, restore validation, retention, and local ntfy/observability
   reporting.
 - Preserved the M70 SATADOM/iPXE boot path with an operator-private preinstall
-  backup, left `/dev/sda` intact as the proven chainloader disk, and wiped both
-  KIOXIA NVMe install targets for the pending mirrored ZFS automation-admin
-  install.
+  backup, rebuilt `/dev/sda` as a clean `M70IPXE` ESP, created mirrored `zroot`
+  on the two KIOXIA NVMe devices, switched the M70 netboot role to
+  `forge-automation-admin-zfs`, and repeat-reboot validated persistent root
+  `zroot/ROOT/gentoo` at `172.16.99.70`.
+- Tracked `gh` as an external package-source follow-up because the active
+  Gentoo repo on the M70 did not expose `dev-vcs/github-cli`.
+- Added a reusable Intel bare-metal platform layer for
+  `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`, and tracked
+  Atom C3000 QAT kernel/module readiness for the M70 fleet while keeping
+  OpenSSL, HAProxy, Nginx, and OpenZFS acceleration gated behind benchmark and
+  CI/CD validation.
+- Added `docs/runbooks/m70-automation-admin-install.md` so the remaining M70
+  nodes can reuse the SATADOM+iPXE+mirrored-ZFS pattern with host-specific
+  MAC/IP/hostid substitutions.
 - Normalized AP7901 outlet 4 inventory to the control-panel label
   `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
 - Removed the paused validation laptop from active repo inventory, roadmap, and

@@ -21,8 +21,8 @@ and a local SATADOM ESP iPXE chainloader because the firmware did not expose a
 usable UEFI PXE NIC entry. The M70-specific iPXE binary successfully chained the
 published HTTP role and reached SSH at `172.16.99.70`.
 
-The follow-up reboot validated the corrected `netboot0` dracut cmdline. The live
-OS now exposes the management NIC as `netboot0`.
+The follow-up reboot validated the corrected `netboot0` dracut cmdline. The
+persistent OS now exposes the management NIC as `netboot0`.
 
 Later on 2026-05-13 the M70 stopped answering ARP from X12AGAIN and Hasslehoff
 while CSS326 `ge14` still reported link up and the serial console remained at a
@@ -39,15 +39,36 @@ apply now forces the active OpenRC hostname, removes the stale K10 hosts entry,
 starts SSSD, validates `codex-admin` through NSS/PAM/SSH key lookup, and leaves
 the host with a valid `/etc/krb5.keytab`.
 
-Also on 2026-05-14 the SATADOM boot path was preserved and backed up before
-disk prep under `/root/operator-private/m70/preinstall/`. After confirming the
-live root was the netboot overlay and neither NVMe disk was mounted, both NVMe devices were wiped by clearing filesystem signatures plus the head and tail GPT
-regions. `/dev/sda` remains the EFI/iPXE chainloader disk until the installer
-writes a replacement boot path.
+Also on 2026-05-14 the SATADOM boot path was backed up before disk prep under
+`/root/operator-private/m70/preinstall/`. After confirming the live root was the
+netboot overlay and neither NVMe disk was mounted, `/dev/sda` was wiped and
+rebuilt as a clean 1 GiB `M70IPXE` ESP containing the published
+`m70-forge-ipxe.efi` binary, and both NVMe devices were wiped by clearing
+filesystem signatures plus the head and tail GPT regions.
 
-Current blockers before this can replace X12AGAIN: convert the transient live
-validation into a persistent Stage5 install, keep `/dev/sda` as the EFI/iPXE
-boot disk only, use `/dev/nvme0n1` and `/dev/nvme1n1` as destructive mirrored
-ZFS targets after a final health check, fix installed-system networking so
-`dhcpcd` is not part of the static management path, and resolve the observed
-32 GiB memory report against the planned 64 GiB inventory.
+The active persistent layout is now a mirrored ZFS root named `zroot` across the
+two KIOXIA NVMe devices. `bootfs=zroot/ROOT/gentoo`, iPXE chains the
+`forge-automation-admin-zfs` role, and repeat reboot validation returned
+hostname `admin-sun99-forge-099070`, root source `zroot/ROOT/gentoo`, and a
+healthy pool.
+
+Current blockers before this can replace X12AGAIN: re-apply FreeIPA/SSSD to the
+persistent root, install `gh` from an overlay or trusted binary source because
+the active Gentoo repo lacked `dev-vcs/github-cli`, restore Forge continuity
+data from the off-host X12AGAIN backup, validate X12AGAIN SoL from M70, and
+resolve the observed 32 GiB memory report against the planned 64 GiB inventory.
+
+## Intel QAT
+
+The M70 Atom C3000 platform exposes Intel QuickAssist at PCI `01:00.0`
+(`8086:19e2`). Live validation on 2026-05-14 showed kernel driver `c3xxx`,
+module `qat_c3xxx`, supporting module `intel_qat`, and in-tree kernel config for
+`CONFIG_CRYPTO_DEV_QAT_C3XXX=m` plus `CONFIG_CRYPTO_DEV_QAT_C3XXXVF=m`.
+
+The profile includes the reusable `stage5-metal-intel-platform` package layer
+for `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`, and it loads
+`intel_qat` plus `qat_c3xxx`. Application consumers stay gated: OpenSSL,
+HAProxy, Nginx, and OpenZFS must each get benchmark evidence and rollback
+commands before QAT acceleration is enabled in production. OpenZFS+QAT is
+tracked as a separate CI/CD artifact lane because Gentoo does not currently
+treat QAT-enabled ZFS as the stock ebuild path.

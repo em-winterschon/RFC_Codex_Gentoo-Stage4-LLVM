@@ -5,6 +5,7 @@ gentoo_profile_definition:
     stage5_profile: metal-forge-automation-admin
   package_list_files:
     - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-metal-intel-platform.packages
     - profile-package-lists/stage5-domain-client.packages
     - profile-package-lists/stage5-storage-nfs-client.packages
     - profile-package-lists/stage5-observability-metrics-client.packages
@@ -25,6 +26,8 @@ gentoo_profile_definition:
       nvme
       zfs
       nfs
+      intel_qat
+      qat_c3xxx
   openrc_services_enable:
     - chronyd
     - rsyslog
@@ -55,3 +58,11 @@ gentoo_profile_definition:
       - local-ntfy-https
       - github-cli
       - offhost-backup-target
+    external_tooling:
+      github_cli:
+        command: gh
+        status: source-required
+        note: >-
+          dev-vcs/github-cli was not available from the active Gentoo repo on
+          the 2026-05-14 M70 install; install from an overlay, upstream binary,
+          or internal package source before final X12AGAIN cutover.

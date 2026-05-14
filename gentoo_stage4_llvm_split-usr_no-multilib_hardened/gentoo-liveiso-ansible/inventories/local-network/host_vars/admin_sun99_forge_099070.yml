@@ -27,6 +27,35 @@ install_storage_layout:
   firmware_probe:
     fwupd_candidate: true
     expected_likely_result: vendor-bios-update-required
+hardware_acceleration:
+  intel_qat:
+    enabled: true
+    generation: c3000
+    pci_address: "0000:01:00.0"
+    pci_id: "8086:19e2"
+    kernel_driver_observed: c3xxx
+    kernel_modules:
+      - intel_qat
+      - qat_c3xxx
+    required_firmware:
+      - qat_c3xxx.bin
+      - qat_c3xxx_mmp.bin
+    consumer_enablement_status:
+      openssl: planned
+      haproxy_tls: planned
+      nginx_tls: planned
+      openzfs: ci_cd_required
+    validation_policy:
+      production_default: disabled_until_benchmarked
+      required_gates:
+        - kernel_module_load
+        - firmware_present
+        - qat_service_or_userspace_runtime
+        - openssl_provider_or_engine_smoke_test
+        - haproxy_tls_rps_baseline
+        - nginx_tls_rps_baseline
+        - openzfs_qat_build_pipeline
+        - zfs_compression_encryption_checksum_benchmark
 freeipa_client_apply_required: false
 freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host
 freeipa_client_short_hostname: admin-sun99-forge-099070

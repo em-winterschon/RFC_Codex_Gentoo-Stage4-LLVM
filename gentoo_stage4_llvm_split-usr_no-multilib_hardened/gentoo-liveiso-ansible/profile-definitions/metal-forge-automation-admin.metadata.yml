@@ -11,6 +11,7 @@ gentoo_system_profile_metadata:
     role_name: forge-automation-admin
     package_layers:
       - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-metal-intel-platform.packages
       - profile-package-lists/stage5-domain-client.packages
       - profile-package-lists/stage5-storage-nfs-client.packages
       - profile-package-lists/stage5-observability-metrics-client.packages
@@ -26,14 +27,31 @@ gentoo_system_profile_metadata:
       - telemetry-node-exporter-client
       - secure-firstboot-enrollment
   package_pins:
+    platform_packages:
+      - sys-firmware/intel-microcode
+      - sys-kernel/linux-firmware
     automation_packages:
       - app-admin/ansible
       - dev-vcs/git
-      - dev-vcs/github-cli
       - net-analyzer/nmap
       - net-analyzer/tcpdump
       - sys-apps/ipmitool
       - sys-fs/zfs
+    external_tooling:
+      - gh
+  hardware_acceleration:
+    intel_qat:
+      status: kernel-ready-consumer-validation-required
+      generation: c3000
+      pci_id: "8086:19e2"
+      kernel_modules:
+        - intel_qat
+        - qat_c3xxx
+      consumers:
+        - openssl
+        - haproxy
+        - nginx
+        - openzfs
   openrc_services:
     - chronyd
     - nfsmount

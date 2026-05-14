@@ -98,9 +98,17 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `ADM-001` | active | Provision first M70 as Forge automation-admin host | M70 serial BIOS setup, SUN99 netboot publisher, CCR2004 DHCP/DNS desired state | Reserved `admin-sun99-forge-099070.rfc1918.host` / `172.16.99.70` for MAC `00:07:32:78:65:C6`; profile `metal-forge-automation-admin` includes Ansible, GitHub CLI, vault, ipmitool, NFS/ZFS, netboot, and Forge continuity tooling. On 2026-05-14 the SATADOM boot path was backed up under operator-private storage, `/dev/sda` was preserved as the iPXE chainloader, and both NVMe install targets were wiped for the mirrored ZFS install. |
+| `ADM-001` | active | Provision first M70 as Forge automation-admin host | M70 serial BIOS setup, SUN99 netboot publisher, CCR2004 DHCP/DNS desired state | Reserved `admin-sun99-forge-099070.rfc1918.host` / `172.16.99.70` for MAC `00:07:32:78:65:C6`; profile `metal-forge-automation-admin` includes Ansible, vault, ipmitool, NFS/ZFS, netboot, and Forge continuity tooling. On 2026-05-14 `/dev/sda` was rebuilt as the `M70IPXE` chainloader ESP, the two KIOXIA NVMe devices were configured as mirrored `zroot`, and repeat reboot validation reached persistent root `zroot/ROOT/gentoo`. `gh` remains a package-source follow-up because the active Gentoo repo lacked `dev-vcs/github-cli`. |
 | `ADM-002` | pending | Restore Forge/Codex continuity data from X12AGAIN backup | `ADM-001`, off-host backup availability | Restore `/root`, `/opt`, `/var/lib/ansible`, `/var/lib/codex`, `/var/lib/forge-memory`, and `/var/lib/git`; verify no unencrypted secrets are newly introduced into the repo. |
 | `ADM-003` | pending | Prove X12AGAIN SoL and infrastructure reachability from M70 | `ADM-002` | Acceptance requires `ipmi-prinzessin` SoL, Hasslehoff SSH/API, CCR2004 RouterOS, NetBox, FreeIPA, local ntfy HTTPS, GitHub, and off-host backup target reachability before X12AGAIN reimage. |
+
+## Hardware Acceleration
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `HWACC-001` | active | Enable Intel Atom C3000 QAT platform readiness for M70 nodes | `ADM-001`, kernel config validation | M70 exposes Intel QAT `8086:19e2` at `01:00.0`; live validation shows driver `c3xxx`, module `qat_c3xxx`, supporting module `intel_qat`, and kernel config for C3000 PF/VF modules. The reusable `stage5-metal-intel-platform` package layer now carries `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`. |
+| `HWACC-002` | planned | Build OpenSSL/HAProxy/Nginx QAT acceleration benchmark lane | `HWACC-001`, observability baseline | Measure OpenSSL provider or engine viability first, then HAProxy and Nginx TLS requests-per-second with QAT disabled/enabled using identical cipher suites and rollback commands. |
+| `HWACC-003` | planned | Build OpenZFS+QAT CI/CD artifact lane | `HWACC-001`, `CI-003`, ZFS package policy | Do not enable by default. Produce reproducible source provenance, patches, binpkg, kernel compatibility matrix, and compression/encryption/checksum benchmarks before any production profile consumes QAT-enabled ZFS. |
 
 ## Proxmox, NetBox, And RouterOS
 

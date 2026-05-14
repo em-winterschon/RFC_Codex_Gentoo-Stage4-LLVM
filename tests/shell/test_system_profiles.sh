@@ -136,6 +136,7 @@ for package_list in \
   stage5-base-minimal-xorg-slim.packages \
   stage5-domain-client.packages \
   stage5-managed-access-zerotier.packages \
+  stage5-metal-intel-platform.packages \
   stage5-metal-forge-automation-admin.packages \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \

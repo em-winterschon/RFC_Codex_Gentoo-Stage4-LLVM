@@ -45,7 +45,7 @@ M70-specific iPXE binary. That path successfully DHCPs, chains
 
 The follow-up reboot validation also passed with the corrected dracut interface
 name: `bootdev=netboot0`, `ifname=netboot0:00:07:32:78:65:c6`, and static
-`ip=...:netboot0:none`. The live OS now exposes the primary management
+`ip=...:netboot0:none`. The persistent OS now exposes the primary management
 interface as `netboot0`.
 
 On 2026-05-13 a later reachability check found `172.16.99.70` not answering
@@ -63,12 +63,37 @@ FreeIPA had created the host object without `krbprincipalname`, which caused
 host principal through `ipa host-mod` resolved keytab generation. The live apply
 now sets the OpenRC hostname files, forces the active kernel hostname, removes
 the stale K10 `/etc/hosts` fallback, starts SSSD, validates NSS/PAM/SSH lookup
-for `codex-admin`, and confirms the host keytab exists. This remains a transient
-live-rootfs validation until the persistent install is completed.
+for `codex-admin`, and confirms the host keytab exists. The persistent ZFS
+install does not yet carry that keytab; rerun the FreeIPA client apply after the
+admin tool baseline finishes.
+
+On 2026-05-14 the persistent install completed its first boot path. `/dev/sda`
+was rebuilt as a clean GPT disk with a single 1 GiB FAT32 ESP labeled
+`M70IPXE`; `EFI/BOOT/BOOTX64.EFI` matches the published `m70-forge-ipxe.efi`
+hash `239b5526f919e4aa4a833763d6db972675796452df8389efe9cb57fea6bab278`.
+The netboot publisher now chains `roles/forge-automation-admin-zfs.ipxe`, which
+loads the HTTP kernel/initramfs and imports `zroot/ROOT/gentoo` as `/`.
+Repeat reboot validation returned hostname `admin-sun99-forge-099070`,
+root source `zroot/ROOT/gentoo`, and `zpool status -x` as healthy.
 
 Observed hardware note: Linux/BSDRP serial validation reported 32 GiB available
 memory, while the planned inventory expected 64 GiB. Validate DIMM population
 before scheduling memory-heavy workloads on this node.
+
+## Intel QAT
+
+The M70 Atom C3000 platform exposes Intel QuickAssist at PCI `01:00.0`
+(`8086:19e2`). Live validation on 2026-05-14 showed kernel driver `c3xxx`,
+module `qat_c3xxx`, supporting module `intel_qat`, and in-tree kernel config for
+`CONFIG_CRYPTO_DEV_QAT_C3XXX=m` plus `CONFIG_CRYPTO_DEV_QAT_C3XXXVF=m`.
+
+The profile includes the reusable `stage5-metal-intel-platform` package layer
+for `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`, and it loads
+`intel_qat` plus `qat_c3xxx`. Application consumers stay gated: OpenSSL,
+HAProxy, Nginx, and OpenZFS must each get benchmark evidence and rollback
+commands before QAT acceleration is enabled in production. OpenZFS+QAT is
+tracked as a separate CI/CD artifact lane because Gentoo does not currently
+treat QAT-enabled ZFS as the stock ebuild path.
 
 ## Storage Layout
 
@@ -83,14 +108,18 @@ small enough to treat as a temporary install target; if larger 2230/2242 NVMe
 drives are installed before final provisioning, re-run `lsblk`, `nvme list`, and
 SMART/NVMe health checks before starting the wipe.
 
-On 2026-05-14 the SATADOM boot path was preserved and backed up before disk
-prep. The first 64 MiB of `/dev/sda` and the pre-wipe disk inventory were stored
-outside the repo under `/root/operator-private/m70/preinstall/`; raw backup
-artifacts are not committed. After confirming the live root was the netboot
-overlay and neither NVMe disk was mounted, both NVMe devices were wiped by
-clearing filesystem signatures plus the head and tail GPT regions. Post-wipe
-`lsblk` showed `/dev/nvme0n1` and `/dev/nvme1n1` as empty `238.5G` KIOXIA
-install targets.
+On 2026-05-14 the SATADOM boot path was backed up before disk prep. The first
+64 MiB of `/dev/sda` and the pre-wipe disk inventory were stored outside the
+repo under `/root/operator-private/m70/preinstall/`; raw backup artifacts are
+not committed. After confirming the live root was the netboot overlay and
+neither NVMe disk was mounted, `/dev/sda` was wiped and rebuilt as the clean
+M70IPXE ESP, and both NVMe devices were wiped by clearing filesystem signatures
+plus the head and tail GPT regions.
+
+The active persistent layout is `zroot`, a mirrored ZFS pool over the two KIOXIA
+NVMe devices. `bootfs=zroot/ROOT/gentoo`, `autotrim=on`, and child datasets are
+mounted for `/home`, `/opt`, `/srv`, `/tmp`, `/usr/local`, `/var/lib`, and
+`/var/log`. The active root is `zroot/ROOT/gentoo` at `/`.
 
 The install workflow may wipe `/dev/sda`, `/dev/nvme0n1`, and `/dev/nvme1n1`,
 but it must preserve the design boundary: SATA/SATADOM provides the UEFI iPXE
@@ -99,17 +128,15 @@ can be probed after the installed system is online, but this hardware is old
 enough that a vendor BIOS update path is more likely than an LVFS-provided NVMe
 boot fix.
 
-## Current Blockers
+## Remaining Blockers
 
-- The live-rootfs enrollment is validated but not durable across reboot; the
-  installed Stage5 root must render the same hostname, SSSD, keytab-generation,
-  and static networking behavior.
-- The install must keep `/dev/sda` as the EFI/iPXE chainloader path and use the
-  two NVMe devices as mirrored ZFS targets, after one last disk health check.
-- `dhcpcd` is marked crashed after live-rootfs boot even though the
-  dracut-provided static management route is up on `netboot0`; installed-system
-  networking should be rendered by the automation-admin profile instead of
-  relying on this live-rootfs behavior.
+- FreeIPA/SSSD must be re-applied to the persistent root so `/etc/krb5.keytab`,
+  `/etc/sssd/sssd.conf`, NSS/PAM, and centralized SSH key lookup are durable.
+- The local Gentoo repo did not expose `dev-vcs/github-cli` during the
+  2026-05-14 install. `gh` must be installed from an overlay, upstream binary,
+  or internal package source before X12AGAIN cutover.
+- Forge continuity data from the off-host X12AGAIN backup still needs to be
+  restored and validated on the M70.
 - Observed memory is still 32 GiB while the planned inventory expected 64 GiB;
   validate DIMM population before scheduling memory-heavy automation workloads.
 

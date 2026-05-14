@@ -94,6 +94,14 @@ Dependency:
 | `ST-015` | completed | Add explicit image pull/preload policy to runtime app profiles | `ST-013` | Generated Podman wrappers emit `--pull`; package-backed GHCR profiles default to `missing`, and the live Path B `ntfy` override uses `never` while the upstream-image path is blocked. |
 | `ST-016` | active | Safe-move container-services workload to Hasslehoff Stage4 VM | `PNR-014`, `ST-013` | Staging VM `svc-container-services-safe-move-01` is live at `172.16.99.89`; Podman/Buildah/Skopeo bootstrap completed; rsyslog, nginx, HAProxy, and ntfy are running. ntfy is exposed on service VIP `172.16.99.96` as `msg-sun99-ntfysys-099096.rfc1918.host` with RouterOS, Hetzner, and NetBox tracking. CCR2004 owns the scoped Elasticsearch/search VIP `obs-sun99-esvip-099092.rfc1918.host` / `172.16.99.92` and the dedicated rsyslog VIP `log-sun99-rsyslog-099093.rfc1918.host` / `172.16.99.93` with RouterOS DNS, Hetzner DNS, DNAT, and hairpin SRCNAT. Elasticsearch now runs on Hasslehoff VM `1091` at `10.9.8.91` on VLAN1098; temporary `/32` Path-B backend routes via X12AGAIN were removed after validation. |
 
+## Hardware Acceleration
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `HWACC-001` | active | Enable Intel Atom C3000 QAT platform readiness for M70 nodes | `ADM-001`, kernel config validation | M70 exposes Intel QAT `8086:19e2` at `01:00.0`; live validation shows driver `c3xxx`, module `qat_c3xxx`, supporting module `intel_qat`, and kernel config for C3000 PF/VF modules. The reusable `stage5-metal-intel-platform` package layer now carries `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`. |
+| `HWACC-002` | planned | Build OpenSSL/HAProxy/Nginx QAT acceleration benchmark lane | `HWACC-001`, observability baseline | Measure OpenSSL provider or engine viability first, then HAProxy and Nginx TLS requests-per-second with QAT disabled/enabled using identical cipher suites and rollback commands. |
+| `HWACC-003` | planned | Build OpenZFS+QAT CI/CD artifact lane | `HWACC-001`, `CI-003`, ZFS package policy | Do not enable by default. Produce reproducible source provenance, patches, binpkg, kernel compatibility matrix, and compression/encryption/checksum benchmarks before any production profile consumes QAT-enabled ZFS. |
+
 ## Proxmox, NetBox, And RouterOS
 
 | ID | Status | Task | Depends On | Notes |

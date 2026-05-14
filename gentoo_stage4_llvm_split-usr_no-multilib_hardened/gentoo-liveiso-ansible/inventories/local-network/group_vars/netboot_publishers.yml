@@ -40,3 +40,20 @@ netboot_roles_extra:
       rd.net.timeout.carrier=60
       rd.live.image
       root=live:{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img
+  forge-automation-admin-zfs:
+    description: Boot the first M70 Forge automation-admin persistent ZFS root.
+    kernel_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/vmlinuz"
+    initrd_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/{{ netboot_initramfs_short_name }}"
+    initrd_boot_name: "{{ netboot_initramfs_short_name }}"
+    extra_cmdline: >-
+      root=ZFS=zroot/ROOT/gentoo
+      rw
+      zfs_force=1
+      rd.zfs.force=1
+      spl.spl_hostid=0x0951f603
+      bootdev=netboot0
+      ifname=netboot0:00:07:32:78:65:c6
+      ip=172.16.99.70::172.16.99.1:255.255.255.0:admin-sun99-forge-099070:netboot0:none
+      nameserver=172.16.99.63
+      rd.neednet=1
+      rd.net.timeout.carrier=60

@@ -53,12 +53,12 @@ network_fabric_devices:
     serial_console_by_id: /dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0
     serial_baud: 115200
     netboot_operational_bootstrap: local-esp-ipxe-chainloader
-    status: provisioning-live-boot-validated
+    status: persistent-zfs-root-boot-validated
     notes:
       - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
       - Desired UEFI PXE-to-iPXE boot uses static DHCP address 172.16.99.70 and boot file m70-forge-ipxe.efi.
-      - 2026-05-13 validation booted by replacing the SATADOM ESP BOOTX64.EFI with the M70-specific iPXE binary; original BSDRP loader was backed up on the ESP.
-      - Live rootfs currently still carries K10 hostname state and must be rebuilt or overlaid before the host is accepted as the admin system.
+      - 2026-05-14 provisioning rebuilt the SATADOM as a clean M70IPXE ESP with the M70-specific iPXE binary.
+      - 2026-05-14 provisioning created zroot as a mirrored ZFS root on both KIOXIA NVMe devices and repeat-reboot validated persistent root at 172.16.99.70.
       - Observed memory is 32 GiB despite planned 64 GiB; validate DIMMs before scheduling memory-heavy workloads.
       - Must validate X12AGAIN SoL through /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin before Prinzessin reimage.
   sw_mgmt_css326:
