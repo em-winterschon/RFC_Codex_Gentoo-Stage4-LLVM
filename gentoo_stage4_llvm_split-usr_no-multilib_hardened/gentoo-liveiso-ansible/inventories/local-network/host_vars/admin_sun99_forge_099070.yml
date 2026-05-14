@@ -11,6 +11,22 @@ profile_definition_files:
 
 install_target_root: /
 install_hostname: admin-sun99-forge-099070
+install_storage_layout:
+  efi_boot_disk: /dev/sda
+  efi_boot_role: local-ipxe-chainloader-only
+  zfs_pool_name: zroot
+  zfs_pool_topology: mirror
+  zfs_mirror_disks:
+    - /dev/nvme0n1
+    - /dev/nvme1n1
+  destructive_wipe_approved: true
+  wipe_scope:
+    - /dev/sda
+    - /dev/nvme0n1
+    - /dev/nvme1n1
+  firmware_probe:
+    fwupd_candidate: true
+    expected_likely_result: vendor-bios-update-required
 freeipa_client_apply_required: false
 freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host
 freeipa_client_short_hostname: admin-sun99-forge-099070

@@ -56,25 +56,52 @@ marked crashed, hostname still `gmktek-k10-stage5`, and `sssd` stopped due to a
 missing `/etc/sssd/sssd.conf`. Treat this as a live-rootfs profile durability
 defect, not an SSH source filter or switch/VLAN defect.
 
+On 2026-05-14 the live M70 FreeIPA enrollment was repaired and validated.
+FreeIPA had created the host object without `krbprincipalname`, which caused
+`ipa-getkeytab` to fail with `PrincipalName not found`; adding the canonical
+host principal through `ipa host-mod` resolved keytab generation. The live apply
+now sets the OpenRC hostname files, forces the active kernel hostname, removes
+the stale K10 `/etc/hosts` fallback, starts SSSD, validates NSS/PAM/SSH lookup
+for `codex-admin`, and confirms the host keytab exists. This remains a transient
+live-rootfs validation until the persistent install is completed.
+
 Observed hardware note: Linux/BSDRP serial validation reported 32 GiB available
 memory, while the planned inventory expected 64 GiB. Validate DIMM population
 before scheduling memory-heavy workloads on this node.
 
+## Storage Layout
+
+/dev/sda is the EFI/iPXE boot disk only. The M70 firmware did not expose a
+usable NVMe boot path during validation, so the SATADOM/local SATA device stays
+as the minimal UEFI chainloader disk unless a later BIOS update changes that
+constraint.
+
+/dev/nvme0n1 and /dev/nvme1n1 are the destructive mirrored ZFS targets for
+the installed automation-admin root/data pool. The current observed NVMe pair is
+small enough to treat as a temporary install target; if larger 2230/2242 NVMe
+drives are installed before final provisioning, re-run `lsblk`, `nvme list`, and
+SMART/NVMe health checks before starting the wipe.
+
+The install workflow may wipe `/dev/sda`, `/dev/nvme0n1`, and `/dev/nvme1n1`,
+but it must preserve the design boundary: SATA/SATADOM provides the UEFI iPXE
+entry point, while mirrored NVMe provides the durable ZFS system pool. `fwupd`
+can be probed after the installed system is online, but this hardware is old
+enough that a vendor BIOS update path is more likely than an LVFS-provided NVMe
+boot fix.
+
 ## Current Blockers
 
-- The live HTTP rootfs still carries `/etc/conf.d/hostname` from the K10 image:
-  `gmktek-k10-stage5`.
-- `sssd` is installed but `/etc/sssd/sssd.conf` is absent, so RBAC/AAA
-  acceptance is blocked until the automation-admin image gets its own firstboot
-  identity/enrollment overlay or rebuilt rootfs.
-- FreeIPA currently has no `admin-sun99-forge-099070.rfc1918.host` host entry.
-  The IPA controller host keytab can authenticate but does not have permission
-  to add the host principal; an admin ticket or generated host OTP is required
-  before live or firstboot enrollment can complete.
-- `dhcpcd` is marked crashed after boot even though the dracut-provided static
-  management route is up on `netboot0`; installed-system networking should be
-  rendered by the automation-admin profile instead of relying on this live-rootfs
-  behavior.
+- The live-rootfs enrollment is validated but not durable across reboot; the
+  installed Stage5 root must render the same hostname, SSSD, keytab-generation,
+  and static networking behavior.
+- The install must keep `/dev/sda` as the EFI/iPXE chainloader path and use the
+  two NVMe devices as mirrored ZFS targets, after one last disk health check.
+- `dhcpcd` is marked crashed after live-rootfs boot even though the
+  dracut-provided static management route is up on `netboot0`; installed-system
+  networking should be rendered by the automation-admin profile instead of
+  relying on this live-rootfs behavior.
+- Observed memory is still 32 GiB while the planned inventory expected 64 GiB;
+  validate DIMM population before scheduling memory-heavy automation workloads.
 
 ## Acceptance Gates
 

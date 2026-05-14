@@ -58,6 +58,31 @@
         content: "{{ ipa_client_live_short_hostname }}\n"
       when: freeipa_client_manage_hostname | default(true) | bool
 
+    - name: Write OpenRC hostname configuration
+      ansible.builtin.copy:
+        dest: /etc/conf.d/hostname
+        mode: '0644'
+        content: "hostname=\"{{ ipa_client_live_short_hostname }}\"\n"
+      when: freeipa_client_manage_hostname | default(true) | bool
+
+    - name: Read active kernel hostname
+      ansible.builtin.command:
+        argv:
+          - hostname
+      register: ipa_client_live_current_hostname
+      changed_when: false
+      when: freeipa_client_manage_hostname | default(true) | bool
+
+    - name: Force active kernel hostname on OpenRC live clients
+      ansible.builtin.command:
+        argv:
+          - hostname
+          - "{{ ipa_client_live_short_hostname }}"
+      changed_when: true
+      when:
+        - freeipa_client_manage_hostname | default(true) | bool
+        - ipa_client_live_current_hostname.stdout | trim != ipa_client_live_short_hostname
+
     - name: Ensure FreeIPA server and local host fallback records are present
       ansible.builtin.blockinfile:
         path: /etc/hosts
@@ -65,6 +90,13 @@
         block: |
           {{ ipa_client_live_server_ip }} {{ ipa_client_live_server }} identity-ldap-radius.rfc1918.host
           {{ ansible_default_ipv4.address | default(ansible_host) }} {{ ipa_client_live_fqdn }} {{ ipa_client_live_short_hostname }}
+      when: freeipa_client_manage_hosts_fallback | default(true) | bool
+
+    - name: Remove stale K10 live-rootfs hostname fallback
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+gmktek-k10-stage5(\s|$)'
+        state: absent
       when: freeipa_client_manage_hosts_fallback | default(true) | bool
 
     - name: Ensure Portage package.use directory exists
@@ -368,6 +400,14 @@
       register: ipa_client_live_pam_acct
       changed_when: false
 
+    - name: Validate active kernel hostname
+      ansible.builtin.command:
+        argv:
+          - hostname
+      register: ipa_client_live_active_hostname
+      changed_when: false
+      when: freeipa_client_manage_hostname | default(true) | bool
+
     - name: Assert live IPA client validation passed
       ansible.builtin.assert:
         that:
@@ -378,4 +418,5 @@
           - "ipa_client_live_validate_user in ipa_client_live_getent.stdout"
           - "ipa_client_live_ssh_keys.stdout | length > 0"
           - "ipa_client_live_pam_acct.rc == 0"
+          - "not (freeipa_client_manage_hostname | default(true) | bool) or ipa_client_live_active_hostname.stdout | trim == ipa_client_live_short_hostname"
         fail_msg: "Live IPA client enrollment did not pass SSSD/NSS/SSH/PAM validation."

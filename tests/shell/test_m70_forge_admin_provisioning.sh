@@ -30,6 +30,7 @@ assert_file "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_for
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml"
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml"
 assert_file "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml"
+assert_file "${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml"
 assert_file "docs/M70-FORGE-AUTOMATION-ADMIN.md"
 assert_file "docs/wiki/M70-Forge-Automation-Admin.md"
 
@@ -66,8 +67,14 @@ assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "freeipa_client_apply_required: false"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "secure_firstboot_enrollment_expected_fqdn: admin-sun99-forge-099070.rfc1918.host"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "efi_boot_disk: /dev/sda"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "zfs_mirror_disks:"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "/dev/nvme0n1"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/admin_sun99_forge_099070.yml" "/dev/nvme1n1"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml" "admin-sun99-forge-099070.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml" "admin-sun99-forge.rfc1918.host"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml" "forge.rfc1918.host"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/dns_hetzner_cloud.yml" "forge-sun99.rfc1918.host"
 
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml" "dest: m70-forge-ipxe.efi"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml" "src: /opt/gentoo-netboot/path-b/m70-forge-ipxe-172.16.99.88-ipxe.efi"
@@ -78,12 +85,19 @@ assert_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_pu
 
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "admin-sun99-forge-099070.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "admin-sun99-forge.rfc1918.host"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "forge.rfc1918.host"
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "forge-sun99.rfc1918.host"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "m70-forge-pxe-bootfile"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "m70-forge-ipxe.efi"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "00:07:32:78:65:C6"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/gw_rfc99_mkccr2004_16g.yml" "172.16.99.70"
 assert_contains "${ANSIBLE_ROOT}/profile-service-atoms/stage5-role-service-atoms.yml" "metal-forge-automation-admin:"
 assert_contains "${ANSIBLE_ROOT}/profile-service-atoms/stage5-role-service-atoms.yml" "forge-control-plane"
+assert_contains "${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml" "Force active kernel hostname on OpenRC live clients"
+assert_contains "${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml" "Validate active kernel hostname"
+assert_contains "${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml" "ipa_client_live_active_hostname.stdout | trim == ipa_client_live_short_hostname"
+assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "/dev/sda is the EFI/iPXE boot disk only"
+assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "/dev/nvme0n1 and /dev/nvme1n1 are the destructive mirrored ZFS targets"
 
 assert_contains "tests/shell/run-tests.sh" "test_m70_forge_admin_provisioning.sh"
 

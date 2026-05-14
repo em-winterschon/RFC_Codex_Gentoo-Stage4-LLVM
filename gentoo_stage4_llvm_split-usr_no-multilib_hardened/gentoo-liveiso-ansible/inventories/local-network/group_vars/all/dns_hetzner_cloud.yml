@@ -94,6 +94,24 @@ dns_hetzner_cloud_managed_rrsets:
     comment: sun99 Forge automation admin cname
   - token_group: rfc1918
     zone: rfc1918.host
+    name: forge
+    fqdn: forge.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - admin-sun99-forge-099070.rfc1918.host.
+    comment: Forge automation admin short cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: forge-sun99
+    fqdn: forge-sun99.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - admin-sun99-forge-099070.rfc1918.host.
+    comment: Forge SUN99 automation admin cname
+  - token_group: rfc1918
+    zone: rfc1918.host
     name: obs-sun99-prometheus-099064
     fqdn: obs-sun99-prometheus-099064.rfc1918.host
     type: A

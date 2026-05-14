@@ -31,9 +31,16 @@ Post-boot evidence showed this is a live-rootfs profile durability problem:
 `gmktek-k10-stage5`, `dhcpcd` was marked crashed, and `sssd` lacked
 `/etc/sssd/sssd.conf`.
 
-Current blockers before this can replace X12AGAIN: rebuild or overlay the rootfs
-so hostname is `admin-sun99-forge-099070` instead of the K10 hostname, render
-host-specific `sssd.conf` and secure firstboot enrollment, create the missing
-FreeIPA host principal through an admin ticket or host OTP, fix installed-system
-networking so `dhcpcd` is not crashed after boot, and resolve the observed
+On 2026-05-14 the live enrollment was repaired. The FreeIPA host object existed
+without `krbprincipalname`, so `ipa-getkeytab` failed with `PrincipalName not
+found`; adding the canonical host principal fixed keytab generation. The live
+apply now forces the active OpenRC hostname, removes the stale K10 hosts entry,
+starts SSSD, validates `codex-admin` through NSS/PAM/SSH key lookup, and leaves
+the host with a valid `/etc/krb5.keytab`.
+
+Current blockers before this can replace X12AGAIN: convert the transient live
+validation into a persistent Stage5 install, keep `/dev/sda` as the EFI/iPXE
+boot disk only, use `/dev/nvme0n1` and `/dev/nvme1n1` as destructive mirrored
+ZFS targets after a final health check, fix installed-system networking so
+`dhcpcd` is not part of the static management path, and resolve the observed
 32 GiB memory report against the planned 64 GiB inventory.

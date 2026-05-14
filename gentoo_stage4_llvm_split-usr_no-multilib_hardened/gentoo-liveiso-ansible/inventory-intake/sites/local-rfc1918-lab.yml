@@ -459,6 +459,8 @@ devices:
     fqdn: admin-sun99-forge-099070.rfc1918.host
     dns_aliases:
       - admin-sun99-forge.rfc1918.host
+      - forge.rfc1918.host
+      - forge-sun99.rfc1918.host
     interfaces:
       - name: eth0
         type: 1000base-t
