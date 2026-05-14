@@ -102,9 +102,6 @@ devices:
       - name: ge14
         purpose: admin-sun99-forge-099070-primary
         status: active
-      - name: ge15
-        purpose: lap-sun99-chonkers-lom
-        status: active
       - name: ge24
         purpose: crs354-management
         status: active
@@ -422,32 +419,6 @@ devices:
       - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
       - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
       - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
-  - name: lap_sun99_chonkers
-    site: local-rfc1918-lab
-    role: baremetal-workstation-validation
-    manufacturer: Alienware
-    model: 16X Aurora
-    status: active
-    management_ip: 172.16.99.157
-    management_interface: LOM
-    fqdn: lap-sun99-chonkers.rfc1918.dev
-    asset_tag: AC16251
-    interfaces:
-      - name: LOM
-        type: 1000base-t
-        purpose: native-ipxe-httpv4-netboot
-        mac_address: "84:5C:31:A5:CF:51"
-        connected_device: sw_mgmt_css326
-        connected_interface: ge15
-        netboot_type: dynamic
-        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
-        status: active
-    notes:
-      - Alienware 16X Aurora Stage5 workstation validation laptop.
-      - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
-      - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
-      - Realtek RTL8111H 1GbE LOM is connected to CSS326 ge15.
-      - PDU outlet assignment superseded by admin_sun99_forge_099070; re-inventory before remote power control.
   - name: admin_sun99_forge_099070
     site: local-rfc1918-lab
     role: automation-admin

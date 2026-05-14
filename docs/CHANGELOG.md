@@ -4,9 +4,8 @@
 
 - Normalized AP7901 outlet 4 inventory to the control-panel label
   `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
-- Kept historical Chonkers outlet references in dated EOD notes unchanged, but
-  updated current inventory, roadmap, and M70 docs so future PDU mutation
-  workflows can verify the expected short outlet label before issuing SNMP OIDs.
+- Removed the paused validation laptop from active repo inventory, roadmap, and
+  docs until it is re-inventoried with stable IP, power, and switch metadata.
 
 ## 2026-05-13 - M70 Automation Admin Provisioning
 
@@ -104,7 +103,8 @@
   present, then re-applied and validated live FreeIPA client enrollment.
 - Extended NetBox intake/apply logic to create real DCIM power cable objects
   between AP7901 outlets and host power ports, then applied and verified
-  `outlet6 -> K10` and `outlet4 -> Chonkers` with pre/post NetBox snapshots.
+  `outlet6 -> K10` and `outlet4 -> M70 automation-admin` with pre/post
+  NetBox snapshots.
 - Added the `secure-firstboot-enrollment` profile, package list, role-service
   atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
   FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
@@ -374,9 +374,6 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
   NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
   and K10 `power0` metadata.
-- Added the Alienware `lap-sun99-chonkers.rfc1918.dev` laptop as the second
-  physical Stage5 workstation validation target, with Realtek RTL8111H LOM MAC,
-  CSS326 `ge15`, AP7901 outlet 4, and iPXE/HTTPv4 boot metadata.
 
 ### Changed
 

@@ -2,15 +2,7 @@
 
 ## Completed
 
-- Added the second Stage5 workstation validation target to repo-safe NetBox
-  intake:
-  - hostname: `lap-sun99-chonkers.rfc1918.dev`
-  - make/model: Alienware `16X Aurora`, SKU `AC16251`
-  - NIC: Realtek RTL8111H LOM, MAC `84:5C:31:A5:CF:51`
-  - switch path: CSS326 `ge15`
-  - power path: `pdu-rfc99-corectrl-099241` outlet `4`
-  - intended boot flow: iPXE / HTTPv4 with PXE fallback
-- Promoted the K10/AP7901/Chonkers intake sequence into a stacked draft PR:
+- Promoted the K10/AP7901 intake sequence into a stacked draft PR:
   - PR `#103`: `codex/netbox-aaa-first-enrollment`
   - base: `codex/workstation-nscde-profile`
   - status: draft, mergeable
@@ -64,18 +56,13 @@
 - AP7901 remains the correct first power-device RADIUS target, but local
   break-glass access and non-secret NetBox power-chain modeling must be
   validated before any authentication change.
-- Chonkers laptop intake is ready, but boot validation is paused until the
-  existing NVMe stops hijacking the boot sequence.
 - Open PR stack still needs merge sequencing:
   - PR `#20`: workstation/NsCDE base branch
-  - PR `#103`: NetBox K10/AP7901/Chonkers first enrollment
+  - PR `#103`: NetBox K10/AP7901 first enrollment
   - PR `#105`: AAA source-of-truth sync scaffold
 
 ## Major Pivots And Errors
 
-- Chonkers did not present usable iPXE/PXE evidence before pause because the
-  installed NVMe boot path took over. The correct next action is physical NVMe
-  replacement or boot-order correction, not more network debugging.
 - AAA moved from loose policy notes into a repo-safe source-of-truth model.
   This intentionally separates non-secret identity intent from Ansible Vault
   secret values and avoids premature live mutations.
@@ -96,8 +83,7 @@
    target install path is ready.
 5. Validate AP7901 RADIUS auth with break-glass local admin retained and
    documented.
-6. Resume Chonkers provisioning after the NVMe/boot-order issue is removed.
-7. Continue FMT2/BigNetwork transport validation once the local bridge path is
+6. Continue FMT2/BigNetwork transport validation once the local bridge path is
    available.
 
 ## Backout Summary
@@ -109,9 +95,6 @@ branch.
 The NetBox first-enrollment branch is intended to remain non-secret. Any live
 NetBox corrections should be made through the intake/apply workflow, not direct
 manual database edits.
-
-Chonkers provisioning remains safe to pause. No target disk write should happen
-until the replacement/blank NVMe or boot-order correction is confirmed.
 
 ## Next Work Block
 
@@ -130,4 +113,3 @@ until the replacement/blank NVMe or boot-order correction is confirmed.
    - confirm local break-glass
    - configure RADIUS client/server path
    - validate readonly and admin role behavior
-5. Return to Chonkers once physical boot media is corrected.
