@@ -24,5 +24,15 @@ bignetwork_fmt2_transport:
 resolved_profile_bignetwork_edge:
   enabled: false
   auth_token: "{{ vault_bignetwork_codexian_api_token | default('') }}"
+  orbit_enabled: true
+  orbit_worlds:
+    - world_id: 6aaf7fee5a
+      seed: 6aaf7fee5a
+  join_networks: []
+  join_network_settings:
+    allowDNS: false
+    allowDefault: false
+    allowGlobal: false
+    allowManaged: true
   service_enabled: false
   service_started: false

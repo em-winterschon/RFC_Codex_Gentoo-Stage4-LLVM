@@ -31,6 +31,8 @@
 - [Workstation Package Capture](Workstation-Package-Capture)
 - [Workstation NsCDE](Workstation-NsCDE)
 - [GMKtek K10 Stage5 Validation](GMKtek-K10-Stage5-Validation)
+- [M70 Forge Automation Admin](M70-Forge-Automation-Admin)
+- [X11SCL-IF Forge Automation Admin](X11SCL-IF-Forge-Automation-Admin)
 - [X12AGAIN Bare Metal Reimage Prep](X12AGAIN-Bare-Metal-Reimage-Prep)
 - [Container-Services Validation](Container-Services-Validation)
 - [Container Building](Container-Building)

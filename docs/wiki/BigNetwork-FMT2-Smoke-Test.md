@@ -70,9 +70,17 @@ After install, apply the `bignetwork_edge` role with:
 ```yaml
 resolved_profile_bignetwork_edge:
   enabled: true
+  user: root
+  group: root
   service_manager: sysvinit
   service_enabled: true
   service_started: true
+  orbit_enabled: true
+  orbit_worlds:
+    - world_id: 6aaf7fee5a
+      seed: 6aaf7fee5a
+  join_networks:
+    - network_id: <fmt2-bignetwork-network-id>
 ```
 
 Secrets such as BigNetwork auth tokens must come from Ansible Vault. Do not
@@ -94,6 +102,16 @@ scripts/validate-ansible-vaults.sh
 The local-network inventory exposes the token to `bignetwork_edge` through
 `vault_bignetwork_codexian_api_token`; role tasks write the runtime token file
 with `no_log` enabled.
+
+The BigNetwork desktop package runs the service as root and executes:
+
+```bash
+bn-cli orbit 6aaf7fee5a 6aaf7fee5a
+```
+
+The Ansible role mirrors that orbit bootstrap before attempting network joins.
+Keep service execution root-owned unless a disposable host proves the daemon can
+create TUN interfaces and routes correctly as an unprivileged user.
 
 ### Preferred Permanent Edge
 
@@ -189,6 +207,28 @@ nmap -Pn -p 22,80,443,6556 app-sfo200-monitoring-9927.vernetzen.io
 
 If the target hostnames do not resolve through LAN DNS, record that as a DNS
 blocker instead of substituting guessed IPs.
+
+### Live M70 Smoke-Test: 2026-05-14
+
+M70 host: `admin-sun99-forge-099070.rfc1918.host` / `172.16.99.70`.
+
+Observed state after installing the extracted `bn` binary and starting it with
+`/var/lib/bn`:
+
+1. `bn-cli orbit 6aaf7fee5a 6aaf7fee5a` returned `200 orbit OK`.
+2. `bn-cli info` reported `ONLINE`.
+3. Public planet/root peers were reachable.
+4. `bn-cli listnetworks` returned no joined networks.
+5. No overlay interface or route to `10.200.99.0/24` appeared.
+6. Pings to `10.200.99.27` and `10.200.99.1` failed, as expected with no joined network.
+7. `https://api.bignetwork.com/consumer/networks` returned `401` with the current operator token when tested as a bearer/API-key style portal token.
+
+Current blocker: M70 is online in the BigNetwork control plane, but it is not
+joined to the FMT2/SFO200 network. The next live action requires either the
+FMT2 BigNetwork network ID for `bn-cli join <network-id>` / local REST
+`POST /network/<network-id>`, or a portal-auth token/session that can read
+`/consumer/networks` and issue the device-join request. The M70 BigNetwork node
+address captured during the smoke test is `26b37d60fe`.
 
 ### Promotion Gates
 

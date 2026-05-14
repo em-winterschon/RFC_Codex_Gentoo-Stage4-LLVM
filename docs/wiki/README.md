@@ -37,6 +37,8 @@ Current mirrored pages:
 - `Binpkg-Repository.md`
 - `Nexus-Repository.md`
 - `Package-Version-Pinning.md`
+- `M70-Forge-Automation-Admin.md`
+- `X11SCL-IF-Forge-Automation-Admin.md`
 - `Container-Services-Validation.md`
 - `Container-Building.md`
 - `Container-Publishing.md`
