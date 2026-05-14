@@ -226,12 +226,26 @@ Observed state after installing the extracted `bn` binary and starting it with
 9. After controller authorization, `607daa3a01933028` reported `OK` as `SDWAN_NET`; M70 received `172.17.170.214/24` on `bnlj6dscrj`.
 10. The controller still advertised only `172.17.170.0/24`; no managed route to `10.200.99.0/24` was installed.
 11. A temporary direct local route for `10.200.99.0/24` over `bnlj6dscrj` did not reach `10.200.99.27` and was removed.
+12. The Edge Lite node is visible as peer `ab4af90f44` with direct low-latency transport.
+13. Operator topology note: `SDWAN_NET` was intentionally isolated when created on 2022-06-10 and was not routed to the FMT2 OPNsense router pair. `10.200.99.1` is the FMT2 OPNsense CARP VIP for primary host traffic and transit uplinks.
 
-Current blocker: M70 is online, authorized, and joined to `SDWAN_NET`, but the
-network does not yet provide a usable path to the FMT2 management prefix. The
-next live action is to either add a BigNetwork managed route for
-`10.200.99.0/24` through the Edge Lite member, or convert/confirm the network as
-a true L2 bridge and assign M70 a safe, non-conflicting FMT2-side address.
+Current blocker: M70 is online, authorized, and joined to `SDWAN_NET`; the lack
+of reachability to `10.200.99.0/24` is an intentional segmentation boundary, not
+a local client failure. Any path from M70 into FMT2 host/management networks now
+requires a routed or bridged change with explicit backout.
+
+Safe promotion options:
+
+1. L3 route: assign/confirm an Edge Lite overlay IP in `172.17.170.0/24`, enable
+   forwarding on the Edge Lite side, add a BigNetwork managed route for
+   `10.200.99.0/24` via that Edge Lite overlay IP, and add/confirm the return
+   route on the FMT2 OPNsense pair for `172.17.170.0/24`.
+2. L2 bridge: convert/confirm Edge Lite bridge behavior into the target FMT2
+   segment, then assign M70 a safe non-conflicting FMT2-side IP. This has higher
+   blast radius and should require loop/ARP-flood checks before enablement.
+3. Per-service jump path: keep `SDWAN_NET` isolated and deploy a minimal FMT2
+   jump/agent endpoint on the overlay for Check_MK, SSH, rsyslog, and NetBox
+   discovery until the broader route is approved.
 
 ### Promotion Gates
 

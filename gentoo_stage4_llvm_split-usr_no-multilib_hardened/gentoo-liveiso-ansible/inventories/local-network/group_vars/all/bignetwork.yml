@@ -12,6 +12,11 @@ bignetwork_fmt2_transport:
   preferred_path: nanopi-r6s-transparent-l2-bridge
   interim_path: disposable-devuan-bn-client-smoketest
   network_id: "607daa3a01933028"
+  network_name: SDWAN_NET
+  edge_lite_node_id: "ab4af90f44"
+  created_at: "2022-06-10T05:45:09"
+  intentionally_isolated: true
+  fmt2_primary_carp_vip: "10.200.99.1"
   target_sites:
     - FMT2
     - SFO200
@@ -21,6 +26,7 @@ bignetwork_fmt2_transport:
   notes:
     - Use the NanoPi R6S Edge Lite path when it has been re-onboarded in the BigNetwork portal.
     - Use per-host bn client tests only as interim reachability evidence.
+    - SDWAN_NET was intentionally isolated from the FMT2 OPNsense router pair and should not be routed into 10.200.99.0/24 without an explicit change.
 
 resolved_profile_bignetwork_edge:
   enabled: false
