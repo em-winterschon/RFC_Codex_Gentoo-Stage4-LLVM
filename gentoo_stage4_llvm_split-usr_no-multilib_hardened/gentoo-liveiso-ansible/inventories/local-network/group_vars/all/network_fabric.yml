@@ -46,6 +46,7 @@ network_fabric_devices:
     connected_switch_port: ge14
     pdu_name: pdu-rfc99-corectrl-099241
     pdu_outlet: "4"
+    pdu_outlet_label: admin-sun99-forge
     observed_memory_gib: 32
     serial_console_host: hasslehoff
     serial_console_current_tty: /dev/ttyUSB3

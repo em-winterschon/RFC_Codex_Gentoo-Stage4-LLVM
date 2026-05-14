@@ -496,7 +496,7 @@ devices:
         status: active
     power_outlets:
       - name: outlet4
-        label: host_admin_sun99_forge_099070
+        label: admin-sun99-forge
         outlet_index: 4
         target_device: admin_sun99_forge_099070
         target_power_port: power0
@@ -511,9 +511,9 @@ devices:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
       - Operator/control-panel name is pdu-rfc99-corectrl-099241.
-      - Outlet 4 maps to admin_sun99_forge_099070.
+      - Outlet 4 control-panel label is admin-sun99-forge and maps to admin_sun99_forge_099070.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
-      - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
+      - PDU mutation automation must verify the expected outlet label before setting command OIDs.
 
 clusters:
   - name: hasslehoff-proxmox

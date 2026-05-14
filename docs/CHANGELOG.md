@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-05-14 - M70 PDU Outlet Label
+
+- Normalized AP7901 outlet 4 inventory to the control-panel label
+  `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
+- Kept historical Chonkers outlet references in dated EOD notes unchanged, but
+  updated current inventory, roadmap, and M70 docs so future PDU mutation
+  workflows can verify the expected short outlet label before issuing SNMP OIDs.
+
 ## 2026-05-13 - M70 Automation Admin Provisioning
 
 - Added the `metal-forge-automation-admin` Stage5 profile, package list,

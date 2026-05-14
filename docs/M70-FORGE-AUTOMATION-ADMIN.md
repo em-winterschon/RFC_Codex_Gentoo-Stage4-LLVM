@@ -21,6 +21,7 @@ environment.
 | Primary MAC | `00:07:32:78:65:C6` |
 | Switch port | `sw_mgmt_css326 ge14` |
 | PDU outlet | `pdu-rfc99-corectrl-099241 outlet 4` |
+| PDU outlet label | `admin-sun99-forge` |
 | Serial console | Hasslehoff `/dev/ttyUSB3` |
 | Stage5 profile | `metal-forge-automation-admin` |
 

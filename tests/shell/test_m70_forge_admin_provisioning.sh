@@ -56,6 +56,7 @@ assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "stage5_pr
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "primary_nic_mac: \"00:07:32:78:65:C6\""
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "connected_switch_port: ge14"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "pdu_outlet: \"4\""
+assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "pdu_outlet_label: admin-sun99-forge"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "observed_memory_gib: 32"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "serial_console_current_tty: /dev/ttyUSB3"
 assert_contains "${ANSIBLE_ROOT}/inventories/local-network/hosts.yml" "automation_admin_migration_source: x12again"

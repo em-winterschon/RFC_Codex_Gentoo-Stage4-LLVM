@@ -177,7 +177,7 @@ The 2026-05-08 local RFC1918 lab intake convergence pass completed with:
 - AP7901 device: `pdu_rfc99_corectrl_ap7901`
 - AP7901 management IP: `172.16.99.241/24`, assigned to interface `mgmt`, set
   as primary IPv4
-- AP7901 power metadata: outlet `outlet4`, label `host_lap_sun99_chonkers`,
-  target `lap_sun99_chonkers` power port `power0`; outlet `outlet6`, label
+- AP7901 power metadata: outlet `outlet4`, label `admin-sun99-forge`, target
+  `admin_sun99_forge_099070` power port `power0`; outlet `outlet6`, label
   `host_gmktec_k10`, target `gmktek_nucbox_k10_stage5_candidate` power port
   `power0`
