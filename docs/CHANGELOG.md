@@ -2,6 +2,11 @@
 
 ## 2026-05-14 - M70 PDU Label And EOD Closeout
 
+- Added `PNR-034` / issue #123 and the Hasslehoff external scheduled-backup
+  readiness plan for Thursday 2026-05-14, covering off-host target
+  independence, config/state bundles, selected VM/LXC backups, ZFS or encrypted
+  repository paths, restore validation, retention, and local ntfy/observability
+  reporting.
 - Normalized AP7901 outlet 4 inventory to the control-panel label
   `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
 - Removed the paused validation laptop from active repo inventory, roadmap, and
