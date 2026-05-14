@@ -222,13 +222,13 @@ Observed state after installing the extracted `bn` binary and starting it with
 5. No overlay interface or route to `10.200.99.0/24` appeared.
 6. Pings to `10.200.99.27` and `10.200.99.1` failed, as expected with no joined network.
 7. `https://api.bignetwork.com/consumer/networks` returned `401` with the current operator token when tested as a bearer/API-key style portal token.
+8. Joining FMT2/SFO200 network `607daa3a01933028` succeeded locally and created interface `bnlj6dscrj`, but the controller returned `ACCESS_DENIED`; no assigned address or managed route was installed.
 
-Current blocker: M70 is online in the BigNetwork control plane, but it is not
-joined to the FMT2/SFO200 network. The next live action requires either the
-FMT2 BigNetwork network ID for `bn-cli join <network-id>` / local REST
-`POST /network/<network-id>`, or a portal-auth token/session that can read
-`/consumer/networks` and issue the device-join request. The M70 BigNetwork node
-address captured during the smoke test is `26b37d60fe`.
+Current blocker: M70 is online in the BigNetwork control plane and has attempted
+to join FMT2/SFO200 network `607daa3a01933028`, but the controller has not
+authorized the device. The next live action is to authorize M70 BigNetwork node
+address `26b37d60fe` for that network in the BigNetwork portal, or provide a
+portal-auth token/session that can issue the device-join authorization.
 
 ### Promotion Gates
 

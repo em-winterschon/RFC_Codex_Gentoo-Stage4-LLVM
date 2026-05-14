@@ -11,6 +11,7 @@ bignetwork_portal_accounts:
 bignetwork_fmt2_transport:
   preferred_path: nanopi-r6s-transparent-l2-bridge
   interim_path: disposable-devuan-bn-client-smoketest
+  network_id: "607daa3a01933028"
   target_sites:
     - FMT2
     - SFO200
@@ -28,7 +29,9 @@ resolved_profile_bignetwork_edge:
   orbit_worlds:
     - world_id: 6aaf7fee5a
       seed: 6aaf7fee5a
-  join_networks: []
+  join_networks:
+    - network_id: "607daa3a01933028"
+      name: FMT2/SFO200 Edge Lite
   join_network_settings:
     allowDNS: false
     allowDefault: false

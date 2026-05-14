@@ -38,6 +38,8 @@ assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "No live B
 assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "Evidence bundle for issue #114"
 assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "Live M70 Smoke-Test: 2026-05-14"
 assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "bn-cli orbit 6aaf7fee5a 6aaf7fee5a"
+assert_file_contains "${REPO_ROOT}/docs/BIGNETWORK-FMT2-SMOKETEST.md" "607daa3a01933028"
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/bignetwork.yml" "607daa3a01933028"
 assert_file_contains "${REPO_ROOT}/docs/wiki/BigNetwork-FMT2-Smoke-Test.md" "Issue #114 Readiness Runbook"
 assert_file_contains "${REPO_ROOT}/docs/wiki/BigNetwork-FMT2-Smoke-Test.md" "Evidence bundle for issue #114"
 assert_file_contains "${REPO_ROOT}/docs/wiki/BigNetwork-FMT2-Smoke-Test.md" "Live M70 Smoke-Test: 2026-05-14"
