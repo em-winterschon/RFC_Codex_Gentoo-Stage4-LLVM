@@ -99,6 +99,10 @@ assert_contains "${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml" "Validate 
 assert_contains "${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml" "ipa_client_live_active_hostname.stdout | trim == ipa_client_live_short_hostname"
 assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "/dev/sda is the EFI/iPXE boot disk only"
 assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "/dev/nvme0n1 and /dev/nvme1n1 are the destructive mirrored ZFS targets"
+assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "On 2026-05-14 the SATADOM boot path was preserved"
+assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "/root/operator-private/m70/preinstall/"
+assert_contains "docs/M70-FORGE-AUTOMATION-ADMIN.md" "both NVMe devices were wiped"
+assert_contains "docs/wiki/M70-Forge-Automation-Admin.md" "both NVMe devices were wiped"
 
 assert_contains "tests/shell/run-tests.sh" "test_m70_forge_admin_provisioning.sh"
 

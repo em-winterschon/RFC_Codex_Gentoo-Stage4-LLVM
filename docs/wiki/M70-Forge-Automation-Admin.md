@@ -39,6 +39,12 @@ apply now forces the active OpenRC hostname, removes the stale K10 hosts entry,
 starts SSSD, validates `codex-admin` through NSS/PAM/SSH key lookup, and leaves
 the host with a valid `/etc/krb5.keytab`.
 
+Also on 2026-05-14 the SATADOM boot path was preserved and backed up before
+disk prep under `/root/operator-private/m70/preinstall/`. After confirming the
+live root was the netboot overlay and neither NVMe disk was mounted, both NVMe devices were wiped by clearing filesystem signatures plus the head and tail GPT
+regions. `/dev/sda` remains the EFI/iPXE chainloader disk until the installer
+writes a replacement boot path.
+
 Current blockers before this can replace X12AGAIN: convert the transient live
 validation into a persistent Stage5 install, keep `/dev/sda` as the EFI/iPXE
 boot disk only, use `/dev/nvme0n1` and `/dev/nvme1n1` as destructive mirrored

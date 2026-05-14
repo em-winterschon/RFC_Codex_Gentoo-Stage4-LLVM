@@ -83,6 +83,15 @@ small enough to treat as a temporary install target; if larger 2230/2242 NVMe
 drives are installed before final provisioning, re-run `lsblk`, `nvme list`, and
 SMART/NVMe health checks before starting the wipe.
 
+On 2026-05-14 the SATADOM boot path was preserved and backed up before disk
+prep. The first 64 MiB of `/dev/sda` and the pre-wipe disk inventory were stored
+outside the repo under `/root/operator-private/m70/preinstall/`; raw backup
+artifacts are not committed. After confirming the live root was the netboot
+overlay and neither NVMe disk was mounted, both NVMe devices were wiped by
+clearing filesystem signatures plus the head and tail GPT regions. Post-wipe
+`lsblk` showed `/dev/nvme0n1` and `/dev/nvme1n1` as empty `238.5G` KIOXIA
+install targets.
+
 The install workflow may wipe `/dev/sda`, `/dev/nvme0n1`, and `/dev/nvme1n1`,
 but it must preserve the design boundary: SATA/SATADOM provides the UEFI iPXE
 entry point, while mirrored NVMe provides the durable ZFS system pool. `fwupd`

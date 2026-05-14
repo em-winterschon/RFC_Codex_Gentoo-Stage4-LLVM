@@ -7,6 +7,10 @@
   independence, config/state bundles, selected VM/LXC backups, ZFS or encrypted
   repository paths, restore validation, retention, and local ntfy/observability
   reporting.
+- Preserved the M70 SATADOM/iPXE boot path with an operator-private preinstall
+  backup, left `/dev/sda` intact as the proven chainloader disk, and wiped both
+  KIOXIA NVMe install targets for the pending mirrored ZFS automation-admin
+  install.
 - Normalized AP7901 outlet 4 inventory to the control-panel label
   `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
 - Removed the paused validation laptop from active repo inventory, roadmap, and
