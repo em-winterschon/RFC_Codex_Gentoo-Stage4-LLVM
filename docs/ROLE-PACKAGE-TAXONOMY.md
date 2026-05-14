@@ -8,7 +8,8 @@ profiles.
 ## Baseline Layers
 
 - `base-minimal-nox`: non-graphical baseline for SSH, rsyslog, chrony, Portage
-  tooling, diagnostics, and shell operations.
+  tooling, diagnostics, shell operations, and standard UNIX network tools
+  including `ethtool`, `ifconfig`, and `netstat`.
 - `base-minimal-xorg-slim`: extends `base-minimal-nox` with Xorg, SLiM, xinit,
   xterm, libinput, and basic font support. Wayland remains explicitly out of
   scope for this layer.

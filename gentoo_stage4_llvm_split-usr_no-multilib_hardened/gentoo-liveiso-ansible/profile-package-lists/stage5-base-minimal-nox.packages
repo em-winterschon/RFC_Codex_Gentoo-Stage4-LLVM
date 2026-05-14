@@ -10,7 +10,9 @@ net-misc/chrony
 net-misc/curl
 net-misc/openssh
 net-misc/wget
+sys-apps/ethtool
 sys-apps/iproute2
+sys-apps/net-tools
 sys-apps/pciutils
 sys-apps/smartmontools
 sys-apps/usbutils

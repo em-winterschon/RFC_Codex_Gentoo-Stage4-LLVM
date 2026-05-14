@@ -2,7 +2,7 @@
 
 Stage 5 role package atoms are tracked as composable layers:
 
-- `base-minimal-nox`: SSH, rsyslog, chrony, Portage tooling, diagnostics, and shell tools.
+- `base-minimal-nox`: SSH, rsyslog, chrony, Portage tooling, diagnostics, shell tools, and standard UNIX network tools including `ethtool`, `ifconfig`, and `netstat`.
 - `base-minimal-xorg-slim`: Xorg, SLiM, xinit, xterm, libinput, fonts, and no Wayland.
 - `base-hypervisor-xen`: common hypervisor atoms plus Xen and Xen tools.
 - `base-hypervisor-qemu-libvirt`: common hypervisor atoms plus QEMU, Libvirt, and guestfs tooling.

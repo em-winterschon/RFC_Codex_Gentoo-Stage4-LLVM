@@ -54,7 +54,9 @@ done
 for atom in \
   '^app-admin/rsyslog$' \
   '^net-misc/openssh$' \
-  '^app-portage/gentoolkit$'; do
+  '^app-portage/gentoolkit$' \
+  '^sys-apps/ethtool$' \
+  '^sys-apps/net-tools$'; do
   require_grep "${atom}" "${PACKAGE_LIST_DIR}/stage5-base-minimal-nox.packages"
 done
 

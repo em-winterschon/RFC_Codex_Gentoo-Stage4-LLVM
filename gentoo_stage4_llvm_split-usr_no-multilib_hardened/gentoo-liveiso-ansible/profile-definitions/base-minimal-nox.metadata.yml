@@ -16,6 +16,8 @@ gentoo_system_profile_metadata:
       - app-portage/gentoolkit
       - net-misc/openssh
       - net-misc/chrony
+      - sys-apps/ethtool
+      - sys-apps/net-tools
   openrc_services:
     - chronyd
     - rsyslog
