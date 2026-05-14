@@ -31,7 +31,7 @@ resolved_profile_bignetwork_edge:
       seed: 6aaf7fee5a
   join_networks:
     - network_id: "607daa3a01933028"
-      name: FMT2/SFO200 Edge Lite
+      name: SDWAN_NET
   join_network_settings:
     allowDNS: false
     allowDefault: false
