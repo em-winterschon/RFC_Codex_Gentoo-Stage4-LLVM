@@ -80,7 +80,18 @@ routeros_rfc99_gateway_service_vips:
     address: 172.16.99.93/32
     interface: br-lan
 routeros_rfc99_gateway_static_routes:
-  []
+  - dst_address: 10.100.99.0/24
+    gateway: 172.16.99.70
+    distance: 1
+    comment: FMT2 OpenVPN compatibility transport via admin-sun99-forge-099070
+  - dst_address: 10.200.99.0/24
+    gateway: 172.16.99.70
+    distance: 1
+    comment: FMT2 OpenVPN compatibility transport via admin-sun99-forge-099070
+  - dst_address: 172.18.20.0/24
+    gateway: 172.16.99.70
+    distance: 1
+    comment: FMT2 OpenVPN compatibility transport via admin-sun99-forge-099070
 routeros_rfc99_gateway_dst_nat_rules:
   - name: obs-sun99-esvip-099092-elasticsearch
     protocol: tcp

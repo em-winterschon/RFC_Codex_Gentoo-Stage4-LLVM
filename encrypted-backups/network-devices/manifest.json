@@ -1,5 +1,5 @@
 {
-  "generated_at_epoch": 1778815153,
+  "generated_at_epoch": 1778846644,
   "records": [
     {
       "device_type": "routeros",
@@ -72,6 +72,42 @@
       "snapshot_timestamp": "k10-netboot-clean-20260511T012132Z",
       "source_file": "/root/operator-private/routeros/ccr2004-16g/post-k10-netboot-clean-20260511T012132Z.rsc",
       "source_size_bytes": 15002
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/identity.txt.vault",
+      "encrypted_size_bytes": 490,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/identity.txt",
+      "source_size_bytes": 34
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/ip-route-fmt2-openvpn.txt.vault",
+      "encrypted_size_bytes": 3860,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/ip-route-fmt2-openvpn.txt",
+      "source_size_bytes": 867
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/export-hide-sensitive.rsc.vault",
+      "encrypted_size_bytes": 63735,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/export-hide-sensitive.rsc",
+      "source_size_bytes": 15661
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/manifest.json.vault",
+      "encrypted_size_bytes": 1203,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/manifest.json",
+      "source_size_bytes": 219
     }
   ],
   "schema": "rfc1918.network-device-config-backups.v1"

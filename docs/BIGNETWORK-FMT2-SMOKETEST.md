@@ -261,6 +261,17 @@ pass:
    to issue #114.
 6. Check_MK onboarding waits for NetBox prefix/device promotion.
 
+### Active Workaround: 2026-05-15
+
+BigNetwork route publication and M70 route installation succeeded, but Edge Lite
+forwarding/return behavior still blocked end-to-end reachability. A temporary
+legacy OpenVPN compatibility transport is now active on M70 as
+`openvpn.fmt2`.
+
+See `docs/FMT2-OPENVPN-COMPAT-TRANSPORT.md` for live routes, validation, and
+backout. BigNetwork remains a preferred steady-state candidate after Edge Lite
+forwarding is corrected.
+
 ### Phase 3: Gentoo/OpenRC Promotion
 
 Only after the Devuan VM validates transport:
