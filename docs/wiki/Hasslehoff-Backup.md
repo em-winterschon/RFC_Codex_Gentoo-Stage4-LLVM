@@ -54,8 +54,11 @@ Preferred first durable target:
 - FMT2 NASA storage controller `kvm-sfo200-nasa-9918.vernetzen.io`
   (`10.200.99.18`) over the temporary M70 OpenVPN transport. On 2026-05-15,
   DNS, ICMP, SSH `tcp/22`, and NFS `tcp/2049` validated from SUN99; rsync
-  daemon `tcp/873` was closed or filtered. Use rsync-over-SSH or an explicitly
-  mounted NFS export. Do not depend on rsync daemon service.
+  daemon `tcp/873` was closed or filtered. `showmount` exposed
+  `/opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs` for
+  `172.16.99.0/24`, but mount/write validation remains pending. Use
+  rsync-over-SSH or an explicitly mounted NFS export. Do not depend on rsync
+  daemon service.
 
 Readiness gates:
 
@@ -88,8 +91,9 @@ bash scripts/backup-hasslehoff-scheduled.sh
 
 Use `sshfs` only for operator inspection or staging. Scheduled automation should
 prefer rsync-over-SSH because it avoids a long-lived FUSE mount dependency. If
-NFS is used for bulky VM artifacts, mount it under a dedicated backup path with
-explicit timeout, retry, and stale-mount detection.
+NFS is used for bulky VM artifacts, first validate mount behavior against the
+visible export, then mount it under a dedicated backup path with explicit
+timeout, retry, and stale-mount detection.
 
 ## Emergency Gateway Ethernet WAN Link
 

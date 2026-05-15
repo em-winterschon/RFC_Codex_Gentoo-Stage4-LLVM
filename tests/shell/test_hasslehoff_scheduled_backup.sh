@@ -44,12 +44,15 @@ require_grep 'kvm-sfo200-nasa-9918.vernetzen.io' "${DOC}"
 require_grep '10.200.99.18' "${DOC}"
 require_grep 'rsync-over-SSH' "${DOC}"
 require_grep 'tcp/2049' "${DOC}"
+require_grep 'ora-sas-mpaths/chunkers/rfc1918.nfs' "${DOC}"
+require_grep 'mount, backup write path' "${DOC}"
 
 require_file "${WIKI}"
 require_grep 'backup-hasslehoff-scheduled.sh' "${WIKI}"
 require_grep 'HASSLEHOFF_BACKUP_MIRROR_TARGET' "${WIKI}"
 require_grep 'kvm-sfo200-nasa-9918.vernetzen.io' "${WIKI}"
 require_grep 'rsync-over-SSH' "${WIKI}"
+require_grep 'ora-sas-mpaths/chunkers/rfc1918.nfs' "${WIKI}"
 
 HASSLEHOFF_BACKUP_DRY_RUN=1 \
   HASSLEHOFF_BACKUP_STAMP=20260515T000000Z \

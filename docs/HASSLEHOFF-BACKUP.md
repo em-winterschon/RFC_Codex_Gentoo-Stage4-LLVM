@@ -93,8 +93,11 @@ Initial external target candidates:
 - FMT2 NASA storage controller `kvm-sfo200-nasa-9918.vernetzen.io`
   (`10.200.99.18`) over the temporary M70 OpenVPN transport. On
   2026-05-15, DNS, ICMP, SSH `tcp/22`, and NFS `tcp/2049` validated from
-  SUN99; rsync daemon `tcp/873` was closed or filtered. Use rsync-over-SSH or
-  an explicitly mounted NFS export. Do not depend on rsync daemon service.
+  SUN99; `showmount` exposed
+  `/opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs` for
+  `172.16.99.0/24`, while rsync daemon `tcp/873` was closed or filtered. Use
+  rsync-over-SSH or an explicitly mounted NFS export. Do not depend on rsync
+  daemon service.
 - R86S/off-host backup node over SSH or mounted storage for immediate
   config-bundle mirroring.
 - QNAP TS435XEU after NAS inventory, storage-pool validation, and RBAC/AAA
@@ -132,8 +135,9 @@ FMT2 compatibility VPN is live:
 host: kvm-sfo200-nasa-9918.vernetzen.io
 ip: 10.200.99.18
 role: Dell R730xd storage controller for the FMT2 OpenZFS array
-validated: icmp, ssh/tcp22, nfs/tcp2049
-not validated: rsync daemon/tcp873
+validated: icmp, ssh/tcp22, nfs/tcp2049, showmount export visibility
+visible export: /opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs
+not validated: rsync daemon/tcp873, successful NFS mount, backup write path
 ```
 
 Immediate safe mirror mode is direct `rsync` over SSH from the scheduled
@@ -149,8 +153,9 @@ bash scripts/backup-hasslehoff-scheduled.sh
 Use `sshfs` only as an operator convenience mount for inspection or staging.
 For scheduled automation, rsync-over-SSH is lower risk because it does not leave
 backup success dependent on a long-lived FUSE mount state. If NFS is selected
-for bulk VM artifacts, mount it under a dedicated backup path with explicit
-timeout, retry, and stale-mount detection before any destructive retention job.
+for bulk VM artifacts, first validate mount behavior against the visible export,
+then mount it under a dedicated backup path with explicit timeout, retry, and
+stale-mount detection before any destructive retention job.
 
 ## Emergency Gateway Ethernet WAN Link
 
