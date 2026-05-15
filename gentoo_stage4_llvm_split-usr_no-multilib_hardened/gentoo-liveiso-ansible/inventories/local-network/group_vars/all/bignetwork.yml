@@ -14,9 +14,52 @@ bignetwork_fmt2_transport:
   network_id: "607daa3a01933028"
   network_name: SDWAN_NET
   edge_lite_node_id: "ab4af90f44"
+  edge_lite_overlay_ip: "172.17.170.200"
   created_at: "2022-06-10T05:45:09"
   intentionally_isolated: true
   fmt2_primary_carp_vip: "10.200.99.1"
+  cloud_routes:
+    - target: 172.17.170.0/24
+      via: null
+      status: active
+    - target: 172.17.17.0/24
+      via: 172.17.170.200
+      status: active-propagated
+      purpose: Edge Lite local OOB_NET LAN
+    - target: 172.18.20.0/24
+      via: 172.17.170.200
+      status: active-propagated-but-e2e-unvalidated
+      purpose: FMT2/SFO200 device-management subnet
+  validation:
+    observed_at: "2026-05-15T03:57:48Z"
+    api:
+      network_patch_status: 204
+      edge_member_ip_assignments:
+        - 172.17.170.200
+      edge_member_auto_assign_ips: false
+      edge_member_active_bridge: true
+      edge_device_status: CONFIGURED
+      edge_device_applied_revision: 9
+    m70_client:
+      routes_installed:
+        - 172.17.17.0/24 via 172.17.170.200 dev bnlj6dscrj proto static metric 5000
+        - 172.18.20.0/24 via 172.17.170.200 dev bnlj6dscrj proto static metric 5000
+      tcpdump_evidence:
+        - M70 sends ICMP to 172.17.170.200 and 172.17.17.2 over bnlj6dscrj.
+        - Edge Lite ARPs for 172.17.170.214 and M70 replies.
+        - No ICMP replies were observed from Edge Lite or routed FMT2 targets.
+      ping_results:
+        172.17.170.200: failed
+        172.17.17.1: failed
+        172.17.17.2: failed
+        172.18.20.4: failed
+        172.18.20.5: failed
+    conclusion: >-
+      BigNetwork API state and M70 client route propagation are correct, but
+      Edge Lite or downstream FMT2 routing/firewall behavior is still blocking
+      end-to-end traffic. Do not treat the FMT2 management subnet as reachable
+      until Edge Lite forwarding is corrected or the FMT2 side routes back to
+      the SDWAN_NET client prefix.
   target_sites:
     - FMT2
     - SFO200
@@ -27,6 +70,7 @@ bignetwork_fmt2_transport:
     - Use the NanoPi R6S Edge Lite path when it has been re-onboarded in the BigNetwork portal.
     - Use per-host bn client tests only as interim reachability evidence.
     - SDWAN_NET was intentionally isolated from the FMT2 OPNsense router pair and should not be routed into 10.200.99.0/24 without an explicit change.
+    - 2026-05-15 approved routes to 172.17.17.0/24 and 172.18.20.0/24 were published through 172.17.170.200; route propagation worked, E2E reachability did not.
 
 resolved_profile_bignetwork_edge:
   enabled: false

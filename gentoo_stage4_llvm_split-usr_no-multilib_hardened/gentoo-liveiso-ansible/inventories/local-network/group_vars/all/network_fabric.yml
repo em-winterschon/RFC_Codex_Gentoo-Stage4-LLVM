@@ -60,6 +60,7 @@ network_fabric_devices:
       - 2026-05-14 provisioning rebuilt the SATADOM as a clean M70IPXE ESP with the M70-specific iPXE binary.
       - 2026-05-14 provisioning created zroot as a mirrored ZFS root on both KIOXIA NVMe devices and repeat-reboot validated persistent root at 172.16.99.70.
       - 2026-05-15 CSS326 SNMP bridge FDB validated netboot0 on ge14, enp3s0 on ge17, and eno1 on ge18.
+      - 2026-05-15 bond0 LACP over CSS326 ge17/ge18 was activated for unnumbered Forge transfer and VM staging use.
       - Observed memory is 32 GiB despite planned 64 GiB; validate DIMMs before scheduling memory-heavy workloads.
       - Must validate X12AGAIN SoL through /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin before Prinzessin reimage.
   sw_mgmt_css326:
@@ -86,6 +87,7 @@ network_fabric_devices:
       - Static management IP is 172.16.99.6.
       - Address acquisition mode is static.
       - ge5 and ge6 are active LACP members for Hasslehoff bond0.
+      - ge17 and ge18 are active LACP members for M70 Forge bond0.
       - sfp1 and sfp2 currently contain Intel FTLX8571D3BCV-IT 10G-SR MMF optics.
   sw_mgmt_mkcrs354:
     role: distribution-switch
@@ -317,13 +319,14 @@ network_fabric_links:
     endpoint_b:
       device: admin_sun99_forge_099070
       interface: enp3s0
-    purpose: forge-transfer-lag-candidate
+    purpose: forge-transfer-lag-member
     lag: forge-transfer-bond0
     media: 1GBASE-T
-    status: cabled-unconfigured
+    status: active
     validation:
       method: css326-snmp-bridge-fdb-and-link-bounce
       observed_mac: "00:07:32:78:65:C7"
+      lacp_partner: "8a:87:45:85:5d:5a"
       observed_at: 2026-05-15
   - endpoint_a:
       device: sw_mgmt_css326
@@ -331,13 +334,14 @@ network_fabric_links:
     endpoint_b:
       device: admin_sun99_forge_099070
       interface: eno1
-    purpose: forge-transfer-lag-candidate
+    purpose: forge-transfer-lag-member
     lag: forge-transfer-bond0
     media: 1GBASE-T
-    status: cabled-unconfigured
+    status: active
     validation:
       method: css326-snmp-bridge-fdb
       observed_mac: "00:07:32:78:65:C8"
+      lacp_partner: "8a:87:45:85:5d:5a"
       observed_at: 2026-05-15
   - endpoint_a:
       device: sw_mgmt_css326
@@ -489,11 +493,18 @@ network_fabric_lags:
     host_ports:
       - enp3s0
       - eno1
-    status: planned
-    activation_gate: configure_css326_lag_before_host_bond
+    status: active
+    host_interface: bond0
+    address_family: unnumbered
+    validation:
+      m70_bond_mii_status: up
+      m70_partner_key: 2
+      m70_partner_mac: f4:1e:57:89:af:be
+      css326_partner_mac: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
     notes:
-      - Links are cabled and carrier-up but intentionally unnumbered on the M70.
-      - Do not place these ports into a bridge or assign IPs until CSS326 LACP state is explicitly changed and validated.
+      - bond0 is live and intentionally unnumbered on the M70.
+      - Do not place bond0 into a bridge or assign IPs until a staging VLAN or VM bridge change is explicitly approved.
   crs309-crs354-lag:
     mode: 802.3ad
     switch_a: sw_spine_crs309_rfc99

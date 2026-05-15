@@ -5,8 +5,8 @@ ansible_python_interpreter: /usr/bin/python3
 local_network_role: automation-admin
 
 local_inventory_observed:
-  captured_at: "2026-05-15T02:24:05Z"
-  source: ssh-plus-css326-snmp
+  captured_at: "2026-05-15T03:08:21Z"
+  source: ssh-plus-css326-snmp-plus-bonding
   fqdn: admin-sun99-forge-099070.rfc1918.host
   network_interfaces:
     - name: netboot0
@@ -27,7 +27,8 @@ local_inventory_observed:
       link: up
       speed: 1000Mb/s
       duplex: full
-      role: forge-transfer-lag-candidate
+      role: forge-transfer-lag-member
+      bond: bond0
       switch: sw_mgmt_css326
       switch_port: ge17
       validation: css326_bridge_fdb-and-link-bounce
@@ -37,7 +38,8 @@ local_inventory_observed:
       link: up
       speed: 1000Mb/s
       duplex: full
-      role: forge-transfer-lag-candidate
+      role: forge-transfer-lag-member
+      bond: bond0
       switch: sw_mgmt_css326
       switch_port: ge18
       validation: css326_bridge_fdb
@@ -59,9 +61,35 @@ local_inventory_observed:
   routes:
     default: 172.16.99.1 via netboot0
     bignetwork_overlay: 172.17.170.0/24 via bnlj6dscrj
+    bignetwork_fmt2_edge_lan: 172.17.17.0/24 via 172.17.170.200 dev bnlj6dscrj
+    bignetwork_fmt2_oob_management: 172.18.20.0/24 via 172.17.170.200 dev bnlj6dscrj
+  bonds:
+    bond0:
+      role: forge-transfer-vm-staging
+      mode: 802.3ad
+      lacp_rate: fast
+      miimon: 100
+      xmit_hash_policy: layer3+4
+      address_family: unnumbered
+      switch: sw_mgmt_css326
+      switch_ports:
+        - ge17
+        - ge18
+      members:
+        - enp3s0
+        - eno1
+      validation:
+        mii_status: up
+        partner_mac: f4:1e:57:89:af:be
+        partner_key: 2
+        observed_at: "2026-05-15T03:08:21Z"
+      persistence:
+        openrc_service: net.bond0
+        enabled_runlevel: default
+        config_file: /etc/conf.d/net
   notes:
     - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
-    - enp3s0 and eno1 are intentionally left unnumbered until the CSS326 side is explicitly configured for LACP or a dedicated staging VLAN.
+    - bond0 is intentionally left unnumbered until a dedicated staging VLAN or VM bridge is explicitly assigned.
 
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"

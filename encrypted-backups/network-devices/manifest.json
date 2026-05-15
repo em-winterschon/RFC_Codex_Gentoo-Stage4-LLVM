@@ -1,5 +1,5 @@
 {
-  "generated_at_epoch": 1778462515,
+  "generated_at_epoch": 1778815153,
   "records": [
     {
       "device_type": "routeros",
@@ -39,21 +39,21 @@
     },
     {
       "device_type": "swos",
-      "encrypted_file": "encrypted-backups/network-devices/swos/sw_mgmt_css326/20260510T213905Z/backup.swb.vault",
+      "encrypted_file": "encrypted-backups/network-devices/swos/sw_mgmt_css326/20260515T030821Z/backup.swb.vault",
       "encrypted_size_bytes": 11830,
       "inventory_host": "sw_mgmt_css326",
-      "snapshot_timestamp": "20260510T213905Z",
-      "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260510T213905Z/backup.swb",
+      "snapshot_timestamp": "20260515T030821Z",
+      "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260515T030821Z/backup.swb",
       "source_size_bytes": 2833
     },
     {
       "device_type": "swos",
-      "encrypted_file": "encrypted-backups/network-devices/swos/sw_mgmt_css326/20260510T213905Z/summary.json.vault",
-      "encrypted_size_bytes": 17597,
+      "encrypted_file": "encrypted-backups/network-devices/swos/sw_mgmt_css326/20260515T030821Z/summary.json.vault",
+      "encrypted_size_bytes": 18505,
       "inventory_host": "sw_mgmt_css326",
-      "snapshot_timestamp": "20260510T213905Z",
-      "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260510T213905Z/summary.json",
-      "source_size_bytes": 4271
+      "snapshot_timestamp": "20260515T030821Z",
+      "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260515T030821Z/summary.json",
+      "source_size_bytes": 4495
     },
     {
       "device_type": "routeros-manual",
