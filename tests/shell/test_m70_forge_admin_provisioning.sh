@@ -50,7 +50,11 @@ assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admi
 assert_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-intel-platform.packages" "sys-firmware/intel-microcode"
 assert_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-intel-platform.packages" "sys-kernel/linux-firmware"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "qat_c3xxx"
+assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "coretemp"
+assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "it87"
+assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "lm_sensors"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.metadata.yml" "kernel-ready-consumer-validation-required"
+assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.metadata.yml" "host_sensor_modules"
 
 assert_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-forge-automation-admin.packages" "app-admin/ansible"
 assert_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-forge-automation-admin.packages" "dev-vcs/git"

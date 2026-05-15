@@ -9,5 +9,6 @@ gentoo_profile_definition:
       nvme
   openrc_services_enable:
     - chronyd
+    - lm_sensors
     - rsyslog
     - sshd

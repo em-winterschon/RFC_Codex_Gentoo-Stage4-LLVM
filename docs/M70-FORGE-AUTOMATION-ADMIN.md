@@ -102,6 +102,19 @@ Live installation on 2026-05-14 completed `sys-firmware/intel-microcode`,
 firmware files are present at `/lib/firmware/intel/qat/qat_c3xxx.bin` and
 `/lib/firmware/intel/qat/qat_c3xxx_mmp.bin`.
 
+## Local Monitoring
+
+On 2026-05-15 the M70 local monitoring baseline was installed and validated:
+`lm_sensors`, `htop`, `btop`, `iotop-c`, `lsof`, `psmisc`, `parallel`,
+`numactl`, `numad`, `time`, `anacron`, `daemontools`, `wait_on_pid`, and
+`watchpid`.
+
+`sensors-detect --auto` found `coretemp` and the ITE IT8728F Super I/O sensor
+driver `it87`; `jc42` also exposes DDR4 DIMM temperature sensors. The default
+DIMM and Super I/O thresholds can report bogus alarms, so production alerting
+must use a board-specific `sensors.conf` before treating those alarms as SLO
+signals.
+
 ## Tooling Baseline
 
 The first live admin baseline installed Ansible, `ansible-vault`, `ipmitool`,

@@ -2,7 +2,7 @@
 
 Stage 5 role package atoms are tracked as composable layers:
 
-- `base-minimal-nox`: SSH, rsyslog, chrony, Portage tooling, diagnostics, shell tools, and standard UNIX network tools including `ethtool`, `ifconfig`, and `netstat`.
+- `base-minimal-nox`: SSH, rsyslog, chrony, Portage tooling, diagnostics, shell tools, standard UNIX network tools including `ethtool`, `ifconfig`, and `netstat`, plus stable local monitoring tools including `lm_sensors`, `htop`, `btop`, `iotop-c`, `lsof`, `psmisc`, `parallel`, `numactl`, `numad`, `time`, `anacron`, `daemontools`, `wait_on_pid`, and `watchpid`.
 - `base-minimal-xorg-slim`: Xorg, SLiM, xinit, xterm, libinput, fonts, and no Wayland.
 - `base-hypervisor-xen`: common hypervisor atoms plus Xen and Xen tools.
 - `base-hypervisor-qemu-libvirt`: common hypervisor atoms plus QEMU, Libvirt, and guestfs tooling.
@@ -16,3 +16,6 @@ Service atoms are tracked in:
 
 Existing compatibility profiles remain available while new provisioning moves
 toward explicit `base-*` and `virt-*` composition.
+
+Keyworded or Guru-only tools such as `bashtop`, `psinfo`, `rtirq`, `pipectl`,
+and `procenv` remain host/profile opt-ins.

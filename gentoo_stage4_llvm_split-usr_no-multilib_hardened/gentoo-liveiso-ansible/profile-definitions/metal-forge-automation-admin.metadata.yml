@@ -52,8 +52,20 @@ gentoo_system_profile_metadata:
         - haproxy
         - nginx
         - openzfs
+  hardware_sensors:
+    status: live-validated
+    detected_on: "2026-05-15"
+    platform: AAEON FWS-2363 / AppNeta M70
+    host_sensor_modules:
+      - coretemp
+      - it87
+      - jc42
+    notes:
+      - sensors-detect found Intel coretemp and ITE IT8728F Super I/O sensors.
+      - jc42 exposes DDR4 DIMM temperature sensors but default thresholds may report bogus alarm states until a board-specific sensors.conf is tuned.
   openrc_services:
     - chronyd
+    - lm_sensors
     - nfsmount
     - rpcbind
     - rsyslog

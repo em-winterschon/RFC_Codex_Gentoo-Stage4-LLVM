@@ -26,10 +26,14 @@ gentoo_profile_definition:
       nvme
       zfs
       nfs
+      coretemp
+      it87
+      jc42
       intel_qat
       qat_c3xxx
   openrc_services_enable:
     - chronyd
+    - lm_sensors
     - rsyslog
     - rpcbind
     - nfsmount

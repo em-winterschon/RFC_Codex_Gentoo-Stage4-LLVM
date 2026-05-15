@@ -36,6 +36,21 @@ role_service_atoms:
           - chronyd
         protocol_ports:
           - udp/123
+      - id: host-monitoring-local
+        package_atoms:
+          - sys-apps/lm-sensors
+          - sys-process/anacron
+          - sys-process/btop
+          - sys-process/htop
+          - sys-process/iotop-c
+          - sys-process/lsof
+          - sys-process/numactl
+          - sys-process/numad
+          - sys-process/parallel
+          - sys-process/psmisc
+          - sys-process/time
+        openrc_services:
+          - lm_sensors
 
   base-minimal-xorg-slim:
     role_class: baremetal-base
