@@ -40,10 +40,16 @@ require_grep 'backup-hasslehoff-scheduled.sh' "${DOC}"
 require_grep 'HASSLEHOFF_BACKUP_MIRROR_TARGET' "${DOC}"
 require_grep 'HASSLEHOFF_BACKUP_NOTIFY' "${DOC}"
 require_grep 'HASSLEHOFF_BACKUP_MIRROR_VERIFY' "${DOC}"
+require_grep 'kvm-sfo200-nasa-9918.vernetzen.io' "${DOC}"
+require_grep '10.200.99.18' "${DOC}"
+require_grep 'rsync-over-SSH' "${DOC}"
+require_grep 'tcp/2049' "${DOC}"
 
 require_file "${WIKI}"
 require_grep 'backup-hasslehoff-scheduled.sh' "${WIKI}"
 require_grep 'HASSLEHOFF_BACKUP_MIRROR_TARGET' "${WIKI}"
+require_grep 'kvm-sfo200-nasa-9918.vernetzen.io' "${WIKI}"
+require_grep 'rsync-over-SSH' "${WIKI}"
 
 HASSLEHOFF_BACKUP_DRY_RUN=1 \
   HASSLEHOFF_BACKUP_STAMP=20260515T000000Z \

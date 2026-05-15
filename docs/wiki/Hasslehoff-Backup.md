@@ -49,6 +49,14 @@ Target backup layers:
 - Restore validation through checksums, manifest readback, and periodic
   disposable restore or offline image inspection.
 
+Preferred first durable target:
+
+- FMT2 NASA storage controller `kvm-sfo200-nasa-9918.vernetzen.io`
+  (`10.200.99.18`) over the temporary M70 OpenVPN transport. On 2026-05-15,
+  DNS, ICMP, SSH `tcp/22`, and NFS `tcp/2049` validated from SUN99; rsync
+  daemon `tcp/873` was closed or filtered. Use rsync-over-SSH or an explicitly
+  mounted NFS export. Do not depend on rsync daemon service.
+
 Readiness gates:
 
 - External backup target is reachable without relying on X12AGAIN.
@@ -68,6 +76,20 @@ HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
+
+NASA mirror example, after the SSH principal and destination path are selected:
+
+```bash
+HASSLEHOFF_BACKUP_MIRROR_TARGET='<ssh-user>@10.200.99.18:/path/to/hasslehoff/config-bundles' \
+HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_NOTIFY=1 \
+bash scripts/backup-hasslehoff-scheduled.sh
+```
+
+Use `sshfs` only for operator inspection or staging. Scheduled automation should
+prefer rsync-over-SSH because it avoids a long-lived FUSE mount dependency. If
+NFS is used for bulky VM artifacts, mount it under a dedicated backup path with
+explicit timeout, retry, and stale-mount detection.
 
 ## Emergency Gateway Ethernet WAN Link
 
