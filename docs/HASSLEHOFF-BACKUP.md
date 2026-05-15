@@ -15,6 +15,12 @@ Dry-run:
 HASSLEHOFF_BACKUP_DRY_RUN=1 bash scripts/backup-hasslehoff-config.sh
 ```
 
+Scheduled wrapper dry-run:
+
+```bash
+HASSLEHOFF_BACKUP_DRY_RUN=1 bash scripts/backup-hasslehoff-scheduled.sh
+```
+
 Default output:
 
 ```text
@@ -40,6 +46,28 @@ depends on it.
 The current script is only the first layer. It captures host configuration and
 Proxmox state into operator-private local storage, but it does not yet provide a
 durable off-host copy, VM disk coverage, retention, or restore validation.
+
+The second-layer scheduled wrapper is:
+
+```bash
+bash scripts/backup-hasslehoff-scheduled.sh
+```
+
+It runs `scripts/backup-hasslehoff-config.sh`, writes a timestamped
+`manifest.json`, uses a lockfile to prevent overlapping runs, and optionally
+mirrors the timestamped output to an external target.
+
+Example external mirror:
+
+```bash
+HASSLEHOFF_BACKUP_MIRROR_TARGET=backup-node:/srv/backups/hasslehoff \
+HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_NOTIFY=1 \
+bash scripts/backup-hasslehoff-scheduled.sh
+```
+
+The wrapper uses `rsync -aH` and does not delete remote data. Set
+`HASSLEHOFF_BACKUP_NOTIFY=1` to publish success/failure summaries to local ntfy.
 
 Target backup layers:
 

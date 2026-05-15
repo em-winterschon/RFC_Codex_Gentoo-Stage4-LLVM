@@ -15,6 +15,12 @@ Dry-run:
 HASSLEHOFF_BACKUP_DRY_RUN=1 bash scripts/backup-hasslehoff-config.sh
 ```
 
+Scheduled wrapper dry-run:
+
+```bash
+HASSLEHOFF_BACKUP_DRY_RUN=1 bash scripts/backup-hasslehoff-scheduled.sh
+```
+
 Default output:
 
 ```text
@@ -34,7 +40,7 @@ depends on it.
 Target backup layers:
 
 - Config and control-plane state from `scripts/backup-hasslehoff-config.sh`,
-  mirrored off-host after capture.
+  mirrored off-host after capture by `scripts/backup-hasslehoff-scheduled.sh`.
 - VM and LXC recoverability through `vzdump` or Proxmox Backup Server for
   NetBox, FreeIPA, observability, syslog/search, netboot publisher,
   container-services, and workstation validation VMs.
@@ -53,6 +59,15 @@ Readiness gates:
   observability checks.
 - Backout is limited to disabling the timer/job and leaving existing backups in
   place.
+
+Example external mirror:
+
+```bash
+HASSLEHOFF_BACKUP_MIRROR_TARGET=backup-node:/srv/backups/hasslehoff \
+HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_NOTIFY=1 \
+bash scripts/backup-hasslehoff-scheduled.sh
+```
 
 ## Emergency Gateway Ethernet WAN Link
 
