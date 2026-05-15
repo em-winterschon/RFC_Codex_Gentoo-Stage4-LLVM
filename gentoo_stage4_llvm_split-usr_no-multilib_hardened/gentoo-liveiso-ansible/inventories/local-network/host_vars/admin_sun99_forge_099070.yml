@@ -4,6 +4,65 @@ ansible_user: root
 ansible_python_interpreter: /usr/bin/python3
 local_network_role: automation-admin
 
+local_inventory_observed:
+  captured_at: "2026-05-15T02:24:05Z"
+  source: ssh-plus-css326-snmp
+  fqdn: admin-sun99-forge-099070.rfc1918.host
+  network_interfaces:
+    - name: netboot0
+      mac_address: "00:07:32:78:65:C6"
+      driver: igb
+      link: up
+      speed: 1000Mb/s
+      duplex: full
+      role: management
+      address: 172.16.99.70/24
+      gateway: 172.16.99.1
+      switch: sw_mgmt_css326
+      switch_port: ge14
+      validation: css326_bridge_fdb
+    - name: enp3s0
+      mac_address: "00:07:32:78:65:C7"
+      driver: igb
+      link: up
+      speed: 1000Mb/s
+      duplex: full
+      role: forge-transfer-lag-candidate
+      switch: sw_mgmt_css326
+      switch_port: ge17
+      validation: css326_bridge_fdb-and-link-bounce
+    - name: eno1
+      mac_address: "00:07:32:78:65:C8"
+      driver: ixgbe
+      link: up
+      speed: 1000Mb/s
+      duplex: full
+      role: forge-transfer-lag-candidate
+      switch: sw_mgmt_css326
+      switch_port: ge18
+      validation: css326_bridge_fdb
+    - name: eno2
+      mac_address: "00:07:32:78:65:C9"
+      driver: ixgbe
+      link: down
+      role: spare
+    - name: eno3
+      mac_address: "00:07:32:78:65:CA"
+      driver: ixgbe
+      link: down
+      role: spare
+    - name: eno4
+      mac_address: "00:07:32:78:65:CB"
+      driver: ixgbe
+      link: down
+      role: spare
+  routes:
+    default: 172.16.99.1 via netboot0
+    bignetwork_overlay: 172.17.170.0/24 via bnlj6dscrj
+  notes:
+    - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
+    - enp3s0 and eno1 are intentionally left unnumbered until the CSS326 side is explicitly configured for LACP or a dedicated staging VLAN.
+
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"

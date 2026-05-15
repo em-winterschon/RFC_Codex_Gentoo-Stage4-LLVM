@@ -59,6 +59,7 @@ network_fabric_devices:
       - Desired UEFI PXE-to-iPXE boot uses static DHCP address 172.16.99.70 and boot file m70-forge-ipxe.efi.
       - 2026-05-14 provisioning rebuilt the SATADOM as a clean M70IPXE ESP with the M70-specific iPXE binary.
       - 2026-05-14 provisioning created zroot as a mirrored ZFS root on both KIOXIA NVMe devices and repeat-reboot validated persistent root at 172.16.99.70.
+      - 2026-05-15 CSS326 SNMP bridge FDB validated netboot0 on ge14, enp3s0 on ge17, and eno1 on ge18.
       - Observed memory is 32 GiB despite planned 64 GiB; validate DIMMs before scheduling memory-heavy workloads.
       - Must validate X12AGAIN SoL through /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin before Prinzessin reimage.
   sw_mgmt_css326:
@@ -299,6 +300,47 @@ network_fabric_links:
     lag: hasslehoff-bond0
   - endpoint_a:
       device: sw_mgmt_css326
+      interface: ge14
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: netboot0
+    purpose: forge-management
+    media: 1GBASE-T
+    status: active
+    validation:
+      method: css326-snmp-bridge-fdb
+      observed_mac: "00:07:32:78:65:C6"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge17
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: enp3s0
+    purpose: forge-transfer-lag-candidate
+    lag: forge-transfer-bond0
+    media: 1GBASE-T
+    status: cabled-unconfigured
+    validation:
+      method: css326-snmp-bridge-fdb-and-link-bounce
+      observed_mac: "00:07:32:78:65:C7"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge18
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno1
+    purpose: forge-transfer-lag-candidate
+    lag: forge-transfer-bond0
+    media: 1GBASE-T
+    status: cabled-unconfigured
+    validation:
+      method: css326-snmp-bridge-fdb
+      observed_mac: "00:07:32:78:65:C8"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
       interface: ge24
     endpoint_b:
       device: sw_mgmt_mkcrs354
@@ -437,6 +479,21 @@ network_fabric_lags:
       - eno1
       - eno2
     validated: true
+  forge-transfer-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge17
+      - ge18
+    host: admin_sun99_forge_099070
+    host_ports:
+      - enp3s0
+      - eno1
+    status: planned
+    activation_gate: configure_css326_lag_before_host_bond
+    notes:
+      - Links are cabled and carrier-up but intentionally unnumbered on the M70.
+      - Do not place these ports into a bridge or assign IPs until CSS326 LACP state is explicitly changed and validated.
   crs309-crs354-lag:
     mode: 802.3ad
     switch_a: sw_spine_crs309_rfc99

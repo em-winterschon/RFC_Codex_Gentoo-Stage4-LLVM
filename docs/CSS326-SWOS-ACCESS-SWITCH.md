@@ -67,9 +67,16 @@ Expected normalized state:
 | `ge4` | CCR2004-1G-2XS-PCIe management copper | linked |
 | `ge5` | Hasslehoff `bond0` LACP member | active LACP group 1 |
 | `ge6` | Hasslehoff `bond0` LACP member | active LACP group 1 |
+| `ge14` | M70 Forge admin `netboot0` management | linked, SNMP FDB MAC `00:07:32:78:65:C6` |
+| `ge17` | M70 Forge admin `enp3s0` transfer/LACP candidate | linked, unnumbered, SNMP FDB MAC `00:07:32:78:65:C7` |
+| `ge18` | M70 Forge admin `eno1` transfer/LACP candidate | linked, unnumbered, SNMP FDB MAC `00:07:32:78:65:C8` |
 | `ge24` | CRS354 `ether49` management copper | linked |
 | `sfp1` | planned CRS309 `sfp-sfpplus8` access/aggregation uplink | 10G-SR optic present |
 | `sfp2` | legacy CRS354 uplink / temporary access path | 10G-SR optic present |
+
+The M70 `ge17`/`ge18` pair is cabled only. Do not configure a host bridge or IP
+address on `enp3s0`/`eno1` until the CSS326 side has an explicit LACP or staging
+VLAN change gate.
 
 The current SFP modules are Intel `FTLX8571D3BCV-IT` 10G-SR MMF optics. The
 fabric default remains FS.com `SFP-10GSR-85` or 10Gtek `AXS85-192-M3` for new
