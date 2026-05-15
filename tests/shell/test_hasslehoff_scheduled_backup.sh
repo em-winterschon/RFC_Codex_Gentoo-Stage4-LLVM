@@ -46,9 +46,9 @@ require_grep 'backup-hasslehoff-scheduled.sh' "${WIKI}"
 require_grep 'HASSLEHOFF_BACKUP_MIRROR_TARGET' "${WIKI}"
 
 HASSLEHOFF_BACKUP_DRY_RUN=1 \
-HASSLEHOFF_BACKUP_STAMP=20260515T000000Z \
-HASSLEHOFF_BACKUP_MIRROR_TARGET=backup.example:/srv/hasslehoff \
-  bash "${SCRIPT}" >/tmp/hasslehoff-scheduled-backup-test.out
+  HASSLEHOFF_BACKUP_STAMP=20260515T000000Z \
+  HASSLEHOFF_BACKUP_MIRROR_TARGET=backup.example:/srv/hasslehoff \
+  bash "${SCRIPT}" > /tmp/hasslehoff-scheduled-backup-test.out
 
 grep -q 'source=root@hasslehoff' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing source"
 grep -q 'dest=.*/20260515T000000Z' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing destination"

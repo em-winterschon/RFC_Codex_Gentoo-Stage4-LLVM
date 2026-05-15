@@ -47,7 +47,7 @@ require_grep 'FMT2 transport' "${WIKI}"
 require_grep 'SLURM pilot' "${WIKI}"
 require_grep 'X12AGAIN reimage' "${WIKI}"
 
-SUNRISE_SKIP_LIVE=1 bash "${SCRIPT}" >/tmp/sunrise-critical-path-test.out
+SUNRISE_SKIP_LIVE=1 bash "${SCRIPT}" > /tmp/sunrise-critical-path-test.out
 grep -q 'summary: failures=0' /tmp/sunrise-critical-path-test.out || {
   cat /tmp/sunrise-critical-path-test.out >&2
   fail "repo-only sunrise validator did not pass"

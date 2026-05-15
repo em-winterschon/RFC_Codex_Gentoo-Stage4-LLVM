@@ -39,4 +39,3 @@ The X11SCL-IF becomes primary only after SSH, FreeIPA/SSSD, Ansible vault,
 GitHub CLI, NetBox API, local ntfy HTTPS, Hasslehoff, CCR2004, X12AGAIN SoL,
 ZFS health, and off-host backup validation pass. The M70 stays online as
 rollback through at least one successful post-cutover reboot.
-

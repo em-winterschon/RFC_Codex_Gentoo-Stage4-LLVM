@@ -15,7 +15,7 @@ failures=0
 warnings=0
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Usage: validate-sunrise-critical-path.sh
 
 Read-only launch gate for the current SUN99/FMT2 critical path.
@@ -77,7 +77,7 @@ require_grep() {
 run_check() {
   local description="$1"
   shift
-  if "$@" >/tmp/sunrise-check.out 2>/tmp/sunrise-check.err; then
+  if "$@" > /tmp/sunrise-check.out 2> /tmp/sunrise-check.err; then
     ok "${description}"
   else
     fail "${description}"
@@ -148,7 +148,7 @@ check_live_hasslehoff() {
 
   run_check "Hasslehoff config backup dry-run renders destinations" \
     env HASSLEHOFF_BACKUP_DRY_RUN=1 HASSLEHOFF_SSH_TARGET="${HASSLEHOFF_SSH_TARGET}" \
-      bash "${REPO_ROOT}/scripts/backup-hasslehoff-config.sh"
+    bash "${REPO_ROOT}/scripts/backup-hasslehoff-config.sh"
 }
 
 check_live_ntfy() {
@@ -174,7 +174,7 @@ send_ntfy_summary() {
     -H "Title: Sunrise critical path ${status}" \
     -H "Tags: sunrise,critical-path" \
     --data-binary "${message}" \
-    "${SUNRISE_NTFY_URL%/}/${SUNRISE_NTFY_TOPIC}" >/dev/null || \
+    "${SUNRISE_NTFY_URL%/}/${SUNRISE_NTFY_TOPIC}" > /dev/null ||
     warn "failed to publish ntfy summary"
 }
 
@@ -191,7 +191,7 @@ main() {
 
   log "summary: failures=${failures} warnings=${warnings}"
 
-  if (( failures > 0 )); then
+  if ((failures > 0)); then
     send_ntfy_summary "failed" "Sunrise critical path gate failed: failures=${failures}, warnings=${warnings}."
     exit 1
   fi

@@ -17,7 +17,7 @@ HASSLEHOFF_BACKUP_NTFY_TOPIC="${HASSLEHOFF_BACKUP_NTFY_TOPIC:-forge-obs}"
 DEST="${HASSLEHOFF_BACKUP_ROOT}/${HASSLEHOFF_BACKUP_STAMP}"
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Usage: backup-hasslehoff-scheduled.sh
 
 Runs the Hasslehoff config/state backup and optionally mirrors the timestamped
@@ -56,7 +56,7 @@ notify() {
     -H "Title: ${title}" \
     -H "Tags: backup,hasslehoff" \
     --data-binary "${body}" \
-    "${HASSLEHOFF_BACKUP_NTFY_URL%/}/${HASSLEHOFF_BACKUP_NTFY_TOPIC}" >/dev/null || true
+    "${HASSLEHOFF_BACKUP_NTFY_URL%/}/${HASSLEHOFF_BACKUP_NTFY_TOPIC}" > /dev/null || true
 }
 
 write_manifest() {
@@ -66,7 +66,7 @@ write_manifest() {
   tarball="$(find "${DEST}" -maxdepth 1 -type f -name 'hasslehoff-config-backup-*.tar.gz' -print -quit)"
   sha_file="$(find "${DEST}" -maxdepth 1 -type f -name 'hasslehoff-config-backup-*.tar.gz.sha256' -print -quit)"
 
-  python3 - "$DEST/manifest.json" "$status" "$HASSLEHOFF_SSH_TARGET" "$DEST" "$HASSLEHOFF_BACKUP_MIRROR_TARGET" "$tarball" "$sha_file" <<'PY'
+  python3 - "$DEST/manifest.json" "$status" "$HASSLEHOFF_SSH_TARGET" "$DEST" "$HASSLEHOFF_BACKUP_MIRROR_TARGET" "$tarball" "$sha_file" << 'PY'
 import json
 import pathlib
 import sys
@@ -123,7 +123,7 @@ main() {
     exit 0
   fi
 
-  exec 9>"${HASSLEHOFF_BACKUP_LOCKFILE}"
+  exec 9> "${HASSLEHOFF_BACKUP_LOCKFILE}"
   if ! flock -n 9; then
     log "another Hasslehoff backup is already running: ${HASSLEHOFF_BACKUP_LOCKFILE}"
     exit 75
@@ -131,8 +131,8 @@ main() {
 
   log "starting Hasslehoff config backup ${HASSLEHOFF_BACKUP_STAMP}"
   HASSLEHOFF_SSH_TARGET="${HASSLEHOFF_SSH_TARGET}" \
-  HASSLEHOFF_BACKUP_ROOT="${HASSLEHOFF_BACKUP_ROOT}" \
-  HASSLEHOFF_BACKUP_STAMP="${HASSLEHOFF_BACKUP_STAMP}" \
+    HASSLEHOFF_BACKUP_ROOT="${HASSLEHOFF_BACKUP_ROOT}" \
+    HASSLEHOFF_BACKUP_STAMP="${HASSLEHOFF_BACKUP_STAMP}" \
     bash "${REPO_ROOT}/scripts/backup-hasslehoff-config.sh"
 
   write_manifest "captured"

@@ -117,4 +117,3 @@ without impacting the currently validated M70 continuity path.
 If the X11SCL-IF passes initial provisioning but later fails acceptance, revert
 DNS aliases to the M70 and keep the X11SCL-IF as an offline repair candidate
 until storage, thermal, NIC, or BMC faults are corrected.
-
