@@ -30,7 +30,8 @@ Mutation gates:
 - `checkmk_recovery_allow_os_update=true` applies Rocky package updates after `dnf update --assumeno` has been reviewed.
 - `checkmk_recovery_allow_reboot=true` reboots the VM and validates `omd status`.
 - `checkmk_recovery_allow_discovery_apply=true` applies rediscovery only for the curated live FMT2 host list.
-- `checkmk_recovery_allow_checkmk_upgrade=true` installs a staged CheckMK RPM and runs `omd update`.
+- `checkmk_recovery_allow_checkmk_upgrade=true` installs a staged CheckMK RPM and runs `omd -f -V <target-version> update`.
+- `checkmk_recovery_upgrade_target_version` must match the installed OMD target version, for example `2.0.0p39.cre`.
 
 Operational policy:
 

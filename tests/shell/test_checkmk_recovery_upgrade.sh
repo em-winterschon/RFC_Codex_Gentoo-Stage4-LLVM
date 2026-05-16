@@ -42,6 +42,7 @@ assert_contains "${ROLE_DIR}/defaults/main.yml" "checkmk_recovery_allow_os_updat
 assert_contains "${ROLE_DIR}/defaults/main.yml" "checkmk_recovery_allow_reboot: false"
 assert_contains "${ROLE_DIR}/defaults/main.yml" "checkmk_recovery_allow_discovery_apply: false"
 assert_contains "${ROLE_DIR}/defaults/main.yml" "checkmk_recovery_allow_checkmk_upgrade: false"
+assert_contains "${ROLE_DIR}/defaults/main.yml" "checkmk_recovery_upgrade_target_version: \"\""
 assert_contains "${ROLE_DIR}/defaults/main.yml" "ripe-atlas-probe"
 
 assert_contains "${ROLE_DIR}/tasks/main.yml" "omd status {{ checkmk_recovery_site }}"
@@ -56,7 +57,9 @@ assert_contains "${ROLE_DIR}/tasks/main.yml" "checkmk_recovery_allow_cert_instal
 assert_contains "${ROLE_DIR}/tasks/main.yml" "checkmk_recovery_allow_checkmk_upgrade | bool"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "cmk -nv"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "cmk -II"
-assert_contains "${ROLE_DIR}/tasks/main.yml" "omd update --conflict={{ checkmk_recovery_upgrade_conflict_mode }}"
+assert_contains "${ROLE_DIR}/tasks/main.yml" "checkmk_recovery_upgrade_target_version | length > 0"
+assert_contains "${ROLE_DIR}/tasks/main.yml" "omd -f -V {{ checkmk_recovery_upgrade_target_version }}"
+assert_contains "${ROLE_DIR}/tasks/main.yml" "update --conflict={{ checkmk_recovery_upgrade_conflict_mode }}"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "until: checkmk_recovery_post_reboot_omd_status.rc == 0"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "retries: 12"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "delay: 10"

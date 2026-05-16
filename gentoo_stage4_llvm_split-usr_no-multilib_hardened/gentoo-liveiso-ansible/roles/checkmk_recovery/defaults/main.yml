@@ -41,6 +41,7 @@ checkmk_recovery_discovery_hosts:
   - kvm-sfo200-nasa-9918
 
 checkmk_recovery_upgrade_target_rpm: ""
+checkmk_recovery_upgrade_target_version: ""
 checkmk_recovery_upgrade_conflict_mode: install
 
 checkmk_recovery_allow_backup: false

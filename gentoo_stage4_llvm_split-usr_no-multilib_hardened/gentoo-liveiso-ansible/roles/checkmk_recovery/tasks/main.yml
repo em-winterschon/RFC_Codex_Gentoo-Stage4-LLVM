@@ -252,7 +252,10 @@
   ansible.builtin.assert:
     that:
       - checkmk_recovery_upgrade_target_rpm | length > 0
-    fail_msg: "Set checkmk_recovery_upgrade_target_rpm before enabling checkmk_recovery_allow_checkmk_upgrade."
+      - checkmk_recovery_upgrade_target_version | length > 0
+    fail_msg: >-
+      Set checkmk_recovery_upgrade_target_rpm and checkmk_recovery_upgrade_target_version
+      before enabling checkmk_recovery_allow_checkmk_upgrade.
   when: checkmk_recovery_allow_checkmk_upgrade | bool
   tags:
     - checkmk_recovery_upgrade_apply
@@ -272,7 +275,10 @@
     - checkmk_recovery_upgrade_apply
 
 - name: Run gated CheckMK site upgrade
-  ansible.builtin.command: "omd update --conflict={{ checkmk_recovery_upgrade_conflict_mode }} {{ checkmk_recovery_site }}"
+  ansible.builtin.command: >-
+    omd -f -V {{ checkmk_recovery_upgrade_target_version }}
+    update --conflict={{ checkmk_recovery_upgrade_conflict_mode }}
+    {{ checkmk_recovery_site }}
   changed_when: true
   when: checkmk_recovery_allow_checkmk_upgrade | bool
   tags:
