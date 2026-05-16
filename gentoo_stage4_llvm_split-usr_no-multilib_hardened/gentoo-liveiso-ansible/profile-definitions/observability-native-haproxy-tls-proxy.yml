@@ -1,0 +1,29 @@
+---
+gentoo_profile_definition:
+  package_atoms:
+    - net-proxy/haproxy
+  package_use_files:
+    40-observability-haproxy-tls-proxy: |
+      net-proxy/haproxy -slz zlib ssl threads pcre
+  env_files:
+    gcc-compat.conf: |
+      CC=gcc
+      CXX=g++
+      CPP=cpp
+      AR=gcc-ar
+      NM=gcc-nm
+      RANLIB=gcc-ranlib
+      COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+      FCFLAGS="${COMMON_FLAGS}"
+      FFLAGS="${COMMON_FLAGS}"
+      LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
+  package_env_files:
+    40-observability-haproxy-tls-proxy: |
+      net-proxy/haproxy gcc-compat.conf
+  native_haproxy_tls_proxy:
+    enabled: true
+    config_path: /etc/haproxy/haproxy.cfg
+    user: haproxy
+    group: haproxy

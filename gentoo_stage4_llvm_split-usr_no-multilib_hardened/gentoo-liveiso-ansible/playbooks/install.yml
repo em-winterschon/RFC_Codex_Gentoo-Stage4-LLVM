@@ -36,6 +36,7 @@
       - ipa_client
       - rfc1918_ca_trust
       - rfc1918_service_tls
+      - native_haproxy_tls_proxy
       - nfs_storage_client
       - freeradius_bridge
       - elasticsearch_cluster

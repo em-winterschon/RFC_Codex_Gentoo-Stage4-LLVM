@@ -71,6 +71,7 @@ ALLOWED_PROFILE_KEYS = {
     "nfs_storage_client",
     "nscde_workstation",
     "haproxy_service_types",
+    "native_haproxy_tls_proxy",
     "service_readiness",
     "container_base_image",
     "container_app_build_defaults",

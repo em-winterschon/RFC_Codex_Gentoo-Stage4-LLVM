@@ -304,6 +304,14 @@
         resolved_profile_haproxy_service_types
         + (loaded_profile_definition_file.gentoo_profile_definition.haproxy_service_types | default([]))
       }}
+    resolved_profile_native_haproxy_tls_proxy: >-
+      {{
+        resolved_profile_native_haproxy_tls_proxy
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.native_haproxy_tls_proxy | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_service_readiness: >-
       {{
         resolved_profile_service_readiness

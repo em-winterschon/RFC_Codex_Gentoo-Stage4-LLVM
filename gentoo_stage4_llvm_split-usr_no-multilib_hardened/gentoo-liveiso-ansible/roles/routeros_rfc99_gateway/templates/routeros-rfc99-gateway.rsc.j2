@@ -235,7 +235,7 @@
 {% endfor %}
 /ip firewall nat remove [find comment~"RFC99 service srcnat"]
 {% for srcnat_rule in routeros_rfc99_gateway_src_nat_rules %}
-/ip firewall nat add chain=srcnat action={{ srcnat_rule.action | default('masquerade') }} protocol={{ srcnat_rule.protocol | default('tcp') }} src-address={{ srcnat_rule.src_address }} dst-address={{ srcnat_rule.dst_address }} dst-port={{ srcnat_rule.dst_port }} comment="RFC99 service srcnat {{ srcnat_rule.comment }}"
+/ip firewall nat add chain=srcnat action={{ srcnat_rule.action | default('masquerade') }} protocol={{ srcnat_rule.protocol | default('tcp') }} src-address={{ srcnat_rule.src_address }} dst-address={{ srcnat_rule.dst_address }}{% if srcnat_rule.dst_port is defined and (srcnat_rule.dst_port | string | length) > 0 %} dst-port={{ srcnat_rule.dst_port }}{% endif %} comment="RFC99 service srcnat {{ srcnat_rule.comment }}"
 {% endfor %}
 /ip firewall nat remove [find comment="RFC99 WAN SNAT"]
 /ip firewall nat add chain=srcnat action=masquerade out-interface-list=WAN comment="RFC99 WAN SNAT"

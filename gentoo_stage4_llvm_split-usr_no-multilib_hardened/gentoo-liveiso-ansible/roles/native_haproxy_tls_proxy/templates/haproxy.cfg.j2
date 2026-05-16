@@ -1,0 +1,32 @@
+global
+  log stdout format raw local0
+  user {{ native_haproxy_tls_proxy_user }}
+  group {{ native_haproxy_tls_proxy_group }}
+  daemon
+  maxconn 1024
+
+defaults
+  log global
+  option dontlognull
+  timeout connect 5s
+  timeout client 30s
+  timeout server 30s
+
+{% for frontend in native_haproxy_tls_proxy_frontends %}
+frontend fe_{{ frontend.name | replace('-', '_') }}
+  mode {{ frontend.mode | default('http') }}
+{% if frontend.mode | default('http') == 'http' %}
+  option httplog
+{% else %}
+  option tcplog
+{% endif %}
+  bind {{ frontend.bind | default('*:443') }} ssl crt {{ frontend.pem_path }}
+  default_backend {{ frontend.backend_name | default('be_' ~ (frontend.name | replace('-', '_'))) }}
+
+backend {{ frontend.backend_name | default('be_' ~ (frontend.name | replace('-', '_'))) }}
+  mode {{ frontend.mode | default('http') }}
+{% for server in frontend.servers %}
+  server {{ server.name }} {{ server.address }}:{{ server.port }} check
+{% endfor %}
+
+{% endfor %}

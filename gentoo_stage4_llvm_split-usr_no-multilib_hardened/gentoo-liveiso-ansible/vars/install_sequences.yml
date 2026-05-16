@@ -49,6 +49,7 @@ install_role_sequences:
           - ipa_client
           - rfc1918_ca_trust
           - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -122,6 +123,7 @@ install_role_sequences:
           - ipa_client
           - rfc1918_ca_trust
           - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -197,6 +199,7 @@ install_role_sequences:
           - ipa_client
           - rfc1918_ca_trust
           - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
