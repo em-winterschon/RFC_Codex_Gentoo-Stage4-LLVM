@@ -77,7 +77,7 @@ Dependency:
 
 | ID | Status | Task | Depends On | Notes |
 | --- | --- | --- | --- | --- |
-| `ST-001` | pending | Add a repo-native mounted-target builder launcher | `CP-003` | Should enforce high-performance defaults and binpkg sync by default. |
+| `ST-001` | active | Add a repo-native mounted-target builder launcher | `CP-003` | `sync-binpkgs-to-repo.sh` now supports `--local-root` for M70-local NASA NFS publishing. Next step is a controlled emerge/Jenkins/SLURM wrapper that calls it after successful build phases. |
 | `ST-002` | active | Reduce base-container closure | `CP-005` | Active path now starts from official stage3 and layers only Stage5 service-container packages. |
 | `ST-003` | pending | Add explicit binpkg cleanup/retention policy | binpkg VM stable | Decide retention by repo ID, profile generation, and disk pressure. |
 | `ST-004` | completed | Validate GHCR publish workflow end-to-end | `CP-006` | Base image published to GHCR; VM-side Podman was too slow, so host-side `crane` pushed the docker archive and recorded the registry digest. |
@@ -137,7 +137,7 @@ Dependency:
 | `PNR-032` | completed | Add encrypted network-device post-change config backup back-channel | `PNR-019`, `PNR-020`, vault workflow | `scripts/backup-network-device-configs.sh` now runs RouterOS and SwOS snapshot playbooks, requests RouterOS `show-sensitive` exports over SSH or serial for encrypted backup workflows, encrypts selected artifacts with `ansible-vault`, and stages repo-safe vault files under `encrypted-backups/network-devices/` with optional git add/commit/push sync. |
 | `PNR-033` | completed | Move live RouterOS serial consoles off X12AGAIN onto Hasslehoff interim USB hub | X12AGAIN reimage prep, `PNR-020` | CCR2004, CRS354, and CRS309 serial consoles were moved to Hasslehoff on 2026-05-10 through an interim generic VIA Labs USB hub. Stable FTDI by-id paths are tracked in local-network inventory, and all three prompts were validated at `115200` baud. Target state remains a dedicated serial gateway VM plus Coolgear `CG-4PU3MGD` managed hub after replacement power is available. |
 | `PNR-016` | active | Capture Hasslehoff host backups before gateway and VM changes | `PNR-001` | `scripts/backup-hasslehoff-config.sh` now captures `/etc/pve`, network/sysctl state, Proxmox JSON, and host summaries to `/root/operator-private/hasslehoff/backups`. |
-| `PNR-034` | active | Prepare Hasslehoff for scheduled external backups | `PNR-016`, external target validation, backup storage validation | Issue #123. Thursday 2026-05-14 track. `scripts/backup-hasslehoff-scheduled.sh` wraps config capture with lockfile protection, manifests, optional rsync-over-SSH mirror, checksum verification, and ntfy reporting. FMT2 NASA `10.200.99.18` is reachable over temporary OpenVPN with SSH and NFS open; remaining work is selecting SSH principal/path, adding selected VM/LXC coverage, restore validation, and explicit retention. Raw backup artifacts stay out of git. |
+| `PNR-034` | active | Prepare Hasslehoff for scheduled external backups | `PNR-016`, external target validation, backup storage validation | Issue #123. `scripts/backup-hasslehoff-scheduled.sh` wraps config capture with lockfile protection, manifests, optional rsync-over-SSH mirror, checksum verification, and ntfy reporting. M70 validates SSH and NFSv3/TCP to NASA `10.200.99.18` over OpenVPN, with write/read/delete passing under NASA-side UID/GID `8888` directories `hasslehoff/config-bundles` and `forge/transfer-stage`. Remaining work is durable mount policy, selected VM/LXC coverage, restore validation, and explicit retention. Raw backup artifacts stay out of git. |
 | `PNR-004` | planned | Export current QEMU RouterOS Path B config as rollback | `PNR-001` | Must happen before CCR2004 mutations. |
 | `PNR-005` | planned | Apply CCR2004 management-only baseline | `PNR-004` | Routing migration waits until management access is repeatable. |
 | `PNR-006` | planned | Move Path B gateway functions to CCR2004 | `PNR-005` | Validate DNS, internet egress, binpkg access, and HAProxy VIP ingress before retiring QEMU RouterOS. |
@@ -174,6 +174,15 @@ Dependency:
 | `AAA-008` | pending | Enroll AP7901 as the first RADIUS-managed power device | `AAA-006`, `AAA-005`, `PNR-031` | Render and deploy the AP7901 FreeRADIUS client stanza, preserve local break-glass access, validate read-only RADIUS login first, then test power-admin authorization before any wider PDU/UPS/ATS rollout. |
 | `AAA-009` | active | Persist K10 Stage5 installed-system SSSD policy | `AAA-007`, `WS-006` | Package-layer rootfs rebuild is complete; the remaining work is persistent hostname/FQDN behavior, secure first-boot FreeIPA OTP bundle delivery or disk-install enrollment, SSSD offline cache, sudo rule refresh, local break-glass account access, and reboot durability before enrolling additional Linux clients. |
 | `AAA-010` | planned | Add optional Tang/Clevis NBDE hardening for firstboot enrollment | `AAA-009`, Guru package pinning | Immediate K10 path remains age-encrypted FreeIPA OTP. Tang/Clevis should be modeled as optional `tpm2+tang` host-bound hardening with a Tang service role, Clevis client package policy, Guru atoms `app-crypt/tang` and `app-crypt/clevis`, and explicit validation that Tang-only unlock is never used for host enrollment secrets. |
+| `AAA-011` | planned | Add daily-usable RBAC/AAA operator interfaces | `AAA-006`, `AAA-009` | Use FreeIPA Web UI as the primary web console, `ipa` CLI for repeatable operations, and `ldapvi` for guarded terminal inspection/editing. Keycloak is appropriate later for HTTP SSO/OIDC/SAML federation, but FreeIPA remains authoritative for POSIX UID/GID, SSH public keys, HBAC, sudo, hostgroups, and service principals. |
+
+### Inference And Accelerators
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `INF-001` | planned | Define `inference-accelerator` host and VM profile | GPU/NPU inventory, NetBox accelerator metadata | Covers driver readiness, PCIe/IOMMU metadata, VFIO or container device exposure, NUMA pinning, hugepages where needed, low-latency sysctl, and io_uring-capable storage/network workers. |
+| `INF-002` | planned | Define `inference-engine` container role | `INF-001`, container service profile baseline | Initial engine is Ollama. Later engines are vLLM and SGLang for heterogeneous GPU/NPU scheduling. |
+| `INF-003` | planned | Define `inference-webui-api` container role | `INF-002`, HAProxy VIP profile | Open WebUI and OpenAI-compatible API front-door through HAProxy VIPs. Each primary inference container should have a dedicated service IP/interface with health checks and inventory-driven backend registration. |
 
 ### Storage, NAS, And Home Directories
 

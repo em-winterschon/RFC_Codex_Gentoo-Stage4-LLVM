@@ -16,11 +16,16 @@ gentoo_profile_definition:
     USE="${USE} acl curl git gssapi kerberos ldap nfs ssh ssl zfs -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
   package_use_files:
     40-forge-automation-admin: |
+      app-editors/emacs X acl gmp inotify ssl threads xattr xpm zlib -alsa -dbus -gtk -sound -systemd -wayland
       dev-libs/cyrus-sasl kerberos
       net-fs/nfs-utils kerberos nfsv4 nfsv41
       net-misc/openssh kerberos ssl
       sys-auth/sssd ssh sudo
       sys-fs/zfs rootfs
+  portage_config_files:
+    /etc/eixrc/00-eixrc: |
+      # RFC1918 Stage5 Forge automation-admin eix cache policy.
+      OVERLAY_CACHE_METHOD="assign"
   modules_load_files:
     forge-automation-admin.conf: |
       nvme

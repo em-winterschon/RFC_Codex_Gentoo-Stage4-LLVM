@@ -127,6 +127,24 @@ automation host was installed on the M70 with SHA256
 `c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`. `gh auth
 status` validates with the restored Forge token.
 
+The automation-admin profile now treats the following operator tools as part of
+the baseline, not ad hoc live-host drift: GNU Emacs 30 or newer, `tree`,
+`bash-completion`, `xfsprogs`, `xfsdump`, `eza`, Git, `git-lfs`, and `tig`.
+`dev-vcs/git-delta` was checked but is not available in the active Gentoo repo;
+`dev-vcs/git-extras` is keyword-masked and should stay out of the stable
+baseline until the overlay policy explicitly accepts it. The live M70 Emacs USE
+shape is captured in the profile with X-enabled Emacs and systemd/GTK/Wayland
+disabled.
+
+M70 also carries an eix cache policy file at `/etc/eixrc/00-eixrc`:
+
+```text
+OVERLAY_CACHE_METHOD="assign"
+```
+
+This keeps overlay cache behavior consistent for automation-admin hosts and
+should be rendered by the profile rather than copied manually.
+
 The X12AGAIN BMC wrapper was staged under
 `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70 with root-only path
 permissions. `ipmitool chassis status` from the M70 reaches the X12AGAIN BMC at

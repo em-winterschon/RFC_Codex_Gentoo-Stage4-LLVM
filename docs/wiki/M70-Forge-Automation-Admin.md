@@ -63,6 +63,13 @@ use LFS filters. The copied `gh` binary SHA256 is
 `c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`; `gh auth
 status` validates with the restored Forge token.
 
+The automation-admin profile now includes GNU Emacs 30 or newer, `tree`,
+`bash-completion`, `xfsprogs`, `xfsdump`, `eza`, Git, `git-lfs`, and `tig` as
+baseline tools. The M70 Emacs USE shape is captured with X-enabled Emacs and
+systemd/GTK/Wayland disabled. The live `/etc/eixrc/00-eixrc` customization is
+also profile-owned with `OVERLAY_CACHE_METHOD="assign"` so future
+automation-admin hosts get the same eix overlay cache behavior.
+
 The X12AGAIN BMC wrapper was staged under
 `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70, and `ipmitool chassis
 status` from the M70 reaches the BMC at `172.16.199.108` with normal

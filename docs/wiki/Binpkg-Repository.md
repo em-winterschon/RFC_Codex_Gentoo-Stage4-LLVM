@@ -120,6 +120,23 @@ The helper syncs `PKGDIR` to the repository host on exit when
 `--binpkg-sync-remote` is set, including failed exits. That preserves useful
 packages from partial runs.
 
+For M70-local NASA NFS publishing, mount the NASA export on the M70 and sync to
+the mounted repository root without `sshfs`:
+
+```bash
+scripts/sync-binpkgs-to-repo.sh \
+  --pkgdir /var/cache/binpkgs/stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg \
+  --repo-id stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg \
+  --local-root /mnt/nasa/forge/transfer-stage/binpkgs
+```
+
+This is the immediate post-successful-build hook primitive for builders that
+run directly on the M70 or on hosts that can hand package output to the M70.
+Jenkins and SLURM should call the same helper after each successful build step
+or at bounded watchdog intervals. Avoid a raw `/etc/portage/bashrc` phase hook
+until it can be tested against Portage phase environment variables and rollback
+behavior; a bad phase hook can break unrelated package merges.
+
 For overnight or unattended reruns, pair the sync helper with the build
 watchdog. The watchdog does not diagnose new package blockers by itself; it
 preserves continuity by syncing binpkgs and relaunching a bounded number of

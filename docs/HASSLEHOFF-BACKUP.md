@@ -93,11 +93,18 @@ Initial external target candidates:
 - FMT2 NASA storage controller `kvm-sfo200-nasa-9918.vernetzen.io`
   (`10.200.99.18`) over the temporary M70 OpenVPN transport. On
   2026-05-15, DNS, ICMP, SSH `tcp/22`, and NFS `tcp/2049` validated from
-  SUN99; `showmount` exposed
-  `/opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs` for
-  `172.16.99.0/24`, while rsync daemon `tcp/873` was closed or filtered. Use
-  rsync-over-SSH or an explicitly mounted NFS export. Do not depend on rsync
-  daemon service.
+  SUN99, while rsync daemon `tcp/873` was closed or filtered. The X12AGAIN
+  operator artifact `/root/operator-private/fmt2-nasa/nasa-nfs-exports`
+  records NASA's reference client-facing mapping as
+  `/srv/nfs/rfc1918/nasa/chunkers`, allowed for both `172.16.99.0/24` and the
+  OpenVPN transit subnet `192.168.132.0/24` with
+  `rw,sync,insecure,all_squash,no_subtree_check,sec=sys` and anonymous UID/GID
+  `8888`. Live `exportfs -v` currently reports the canonical backing path
+  `/opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs`. Use the M70
+  NASA NFS relay pattern for bulky artifacts: mount NASA NFS only on
+  `admin-sun99-forge-099070`, then rsync backup data to that mounted path on
+  the M70 so the payload transits `tun-fmt2`. X12AGAIN must not mount NASA NFS.
+  Do not depend on rsync daemon service.
 - R86S/off-host backup node over SSH or mounted storage for immediate
   config-bundle mirroring.
 - QNAP TS435XEU after NAS inventory, storage-pool validation, and RBAC/AAA
@@ -136,26 +143,52 @@ host: kvm-sfo200-nasa-9918.vernetzen.io
 ip: 10.200.99.18
 role: Dell R730xd storage controller for the FMT2 OpenZFS array
 validated: icmp, ssh/tcp22, nfs/tcp2049, showmount export visibility
-visible export: /opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs
-not validated: rsync daemon/tcp873, successful NFS mount, backup write path
+reference mapping: /srv/nfs/rfc1918/nasa/chunkers
+live exportfs path: /opt/storage/local/zfs/ora-sas-mpaths/chunkers/rfc1918.nfs
+allowed clients: 172.16.99.0/24 and 192.168.132.0/24
+export policy: rw,sync,insecure,all_squash,no_subtree_check,sec=sys,anonuid=8888,anongid=8888
+validated 2026-05-15: successful M70 NFSv3 mount over tun-fmt2 plus write/read/delete
+not validated: rsync daemon/tcp873
 ```
 
+## M70 NASA NFS relay
+
 Immediate safe mirror mode is direct `rsync` over SSH from the scheduled
-wrapper, once the operator provides the SSH principal and destination path:
+wrapper to the M70 relay, once the M70 has mounted NASA NFS at the selected
+local mountpoint:
 
 ```bash
-HASSLEHOFF_BACKUP_MIRROR_TARGET='<ssh-user>@10.200.99.18:/path/to/hasslehoff/config-bundles' \
+HASSLEHOFF_BACKUP_MIRROR_TARGET='root@admin-sun99-forge-099070:/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
 
-Use `sshfs` only as an operator convenience mount for inspection or staging.
-For scheduled automation, rsync-over-SSH is lower risk because it does not leave
-backup success dependent on a long-lived FUSE mount state. If NFS is selected
-for bulk VM artifacts, first validate mount behavior against the visible export,
+If the scheduled wrapper runs directly on M70, use a local mirror target under
+the NASA mountpoint instead:
+
+```bash
+HASSLEHOFF_BACKUP_MIRROR_TARGET='/mnt/nasa/hasslehoff/config-bundles' \
+HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_NOTIFY=1 \
+bash scripts/backup-hasslehoff-scheduled.sh
+```
+
+Use `sshfs` only as an operator convenience mount for inspection or staging. For
+scheduled automation, rsync-over-SSH to the M70 relay plus M70-local NFS is the
+lower-risk topology because NASA is reachable only through the M70 OpenVPN link.
+If NFS is selected for bulk VM artifacts, first validate mount behavior from the
+M70 against the reference mapping and the live `exportfs -v` canonical path,
 then mount it under a dedicated backup path with explicit timeout, retry, and
 stale-mount detection before any destructive retention job.
+
+Live validation on 2026-05-15 mounted the canonical export from M70 with
+NFSv3/TCP through `tun-fmt2`. The export root is owned by UID/GID `4096`, while
+NASA exports with `all_squash` to UID/GID 8888, so write probes fail at the
+export root by design. The dedicated NASA-side directories
+`hasslehoff/config-bundles` and `forge/transfer-stage` were created with
+UID/GID 8888 and mode `2770`; M70 write/read/delete probes passed in both
+directories.
 
 ## Emergency Gateway Ethernet WAN Link
 
