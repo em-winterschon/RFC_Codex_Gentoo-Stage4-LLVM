@@ -125,9 +125,7 @@ def validate_profile_definition(path: Path) -> None:
         fail(f"{path} portage_config_files must be a mapping")
     allowed_config_prefixes = ("/etc/portage/", "/etc/eixrc/")
     for config_path, config_body in (portage_config_files or {}).items():
-        if not isinstance(config_path, str) or not config_path.startswith(
-            allowed_config_prefixes
-        ):
+        if not isinstance(config_path, str) or not config_path.startswith(allowed_config_prefixes):
             fail(
                 f"{path} portage_config_files keys must be absolute paths under "
                 "/etc/portage or /etc/eixrc"

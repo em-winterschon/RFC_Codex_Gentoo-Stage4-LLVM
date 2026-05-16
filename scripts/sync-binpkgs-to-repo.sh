@@ -111,9 +111,9 @@ if [[ -n "${REMOTE}" ]]; then
 else
   install -d -m 0755 "${LOCAL_REPO}"
   rsync -a "${PKGDIR%/}/" "${LOCAL_REPO}/"
-  if command -v "${INDEX_COMMAND}" >/dev/null 2>&1; then
+  if command -v "${INDEX_COMMAND}" > /dev/null 2>&1; then
     "${INDEX_COMMAND}" "${LOCAL_REPO}"
-  elif command -v emaint >/dev/null 2>&1; then
+  elif command -v emaint > /dev/null 2>&1; then
     PKGDIR="${LOCAL_REPO}" emaint binhost --fix
   fi
 fi
