@@ -1,0 +1,53 @@
+---
+checkmk_recovery_site: vernetzen
+checkmk_recovery_current_observed_version: 2.0.0p22.cre
+checkmk_recovery_observed_os_release: Rocky Linux 8.6
+
+checkmk_recovery_backup_root: /var/backups/checkmk
+checkmk_recovery_config_bundle_root: "{{ checkmk_recovery_backup_root }}/config-bundles"
+checkmk_recovery_backup_timestamp: "{{ ansible_date_time.iso8601_basic_short | default('manual') }}"
+checkmk_recovery_omd_backup_archive: "{{ checkmk_recovery_backup_root }}/{{ checkmk_recovery_site }}-{{ checkmk_recovery_backup_timestamp }}.tar.gz"
+checkmk_recovery_config_bundle_archive: >-
+  {{ checkmk_recovery_config_bundle_root }}/{{ checkmk_recovery_site }}-config-{{ checkmk_recovery_backup_timestamp }}.tar.gz
+checkmk_recovery_update_plan_path: /var/tmp/checkmk-dnf-update-plan.txt
+
+checkmk_recovery_elasticsearch_endpoint: app-sfo200-elastic-9961.vernetzen.io
+checkmk_recovery_elasticsearch_port: 9200
+checkmk_recovery_rsyslog_elastic_config: /etc/rsyslog.d/00-elasticsearch.conf
+
+checkmk_recovery_disable_repos:
+  - ripe-atlas-probe
+
+checkmk_recovery_config_bundle_paths:
+  - /etc
+  - /etc/yum.repos.d
+  - /etc/httpd
+  - /etc/rsyslog.d
+  - "/opt/omd/sites/{{ checkmk_recovery_site }}/etc"
+
+checkmk_recovery_current_tls_cert_path: /etc/pki/tls/certs/localhost.crt
+checkmk_recovery_internal_ca_cert_path: ""
+checkmk_recovery_tls_cert_path: ""
+checkmk_recovery_tls_key_path: ""
+checkmk_recovery_tls_ca_dest: /etc/pki/ca-trust/source/anchors/rfc1918-internal-ca.pem
+checkmk_recovery_tls_cert_dest: "/etc/pki/tls/certs/{{ ansible_fqdn | default(inventory_hostname) }}.crt"
+checkmk_recovery_tls_key_dest: "/etc/pki/tls/private/{{ ansible_fqdn | default(inventory_hostname) }}.key"
+
+checkmk_recovery_discovery_hosts:
+  - app-sfo200-monitoring-9926
+  - app-sfo200-monitoring-9927
+  - app-sfo200-elastic-9961
+  - app-sfo200-prometheus-9946
+  - kvm-sfo200-nasa-9918
+
+checkmk_recovery_upgrade_target_rpm: ""
+checkmk_recovery_upgrade_conflict_mode: install
+
+checkmk_recovery_allow_backup: false
+checkmk_recovery_allow_repo_disable: false
+checkmk_recovery_allow_rsyslog_elastic_disable: false
+checkmk_recovery_allow_cert_install: false
+checkmk_recovery_allow_os_update: false
+checkmk_recovery_allow_reboot: false
+checkmk_recovery_allow_discovery_apply: false
+checkmk_recovery_allow_checkmk_upgrade: false

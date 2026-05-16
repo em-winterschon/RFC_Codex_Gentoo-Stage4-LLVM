@@ -42,6 +42,7 @@
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
 - [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
 - [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
+- [CheckMK FMT2 Recovery Upgrade](CheckMK-FMT2-Recovery-Upgrade)
 - [BigNetwork FMT2 Smoke-Test](BigNetwork-FMT2-Smoke-Test)
 - [Telemetry Observability](Telemetry-Observability)
 - [Observability Access](Observability-Access)

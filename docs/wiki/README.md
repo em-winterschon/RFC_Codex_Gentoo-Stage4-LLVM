@@ -44,6 +44,7 @@ Current mirrored pages:
 - `Container-Publishing.md`
 - `Identity-AAA.md`
 - `Hetzner-DNS-Automation.md`
+- `CheckMK-FMT2-Recovery-Upgrade.md`
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
 - `ITIL-Change-Control-Container-Services-Safe-Move.md`
