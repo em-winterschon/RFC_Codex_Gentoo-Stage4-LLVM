@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 ANSIBLE_ROOT="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible"
 MATRIX="${ANSIBLE_ROOT}/inventories/local-network/group_vars/all/service_tls_certificates.yml"
+TLS_PLAYBOOK="${ANSIBLE_ROOT}/playbooks/rfc1918_tls_deploy.yml"
 PLAN="${REPO_ROOT}/docs/superpowers/plans/2026-05-16-rfc1918-ca-tls-deployment.md"
 DOC="${REPO_ROOT}/docs/RFC1918-CA-TLS-DEPLOYMENT.md"
 WIKI="${REPO_ROOT}/docs/wiki/ITIL-ADR-RFC1918-CA-TLS-Deployment.md"
@@ -24,7 +25,7 @@ assert_file_contains() {
   grep -Fq "${pattern}" "${file}" || fail "expected ${file} to contain ${pattern}"
 }
 
-for file in "${MATRIX}" "${PLAN}" "${DOC}" "${WIKI}"; do
+for file in "${MATRIX}" "${TLS_PLAYBOOK}" "${PLAN}" "${DOC}" "${WIKI}"; do
   [[ -f "${file}" ]] || fail "missing file ${file}"
 done
 
@@ -39,6 +40,11 @@ assert_file_contains "${MATRIX}" "app-sfo200-monitoring-9927.vernetzen.io"
 assert_file_contains "${MATRIX}" "gw-rfc99-mkccr2004-16g.rfc1918.host"
 assert_file_contains "${MATRIX}" "pdu-rfc99-corectrl-p08-099241.rfc1918.host"
 assert_file_contains "${MATRIX}" "pdu-rfc99-corectrl-099241.rfc1918.host"
+assert_file_contains "${MATRIX}" "unsafe_writes: true"
+assert_file_contains "${MATRIX}" "manage_file_modes: false"
+assert_file_contains "${TLS_PLAYBOOK}" "rfc1918_tls_target_hosts"
+assert_file_contains "${TLS_PLAYBOOK}" "rfc1918_ca_trust"
+assert_file_contains "${TLS_PLAYBOOK}" "rfc1918_service_tls"
 assert_file_contains "${PLAN}" "# RFC1918 CA TLS Deployment Implementation Plan"
 assert_file_contains "${PLAN}" "REQUIRED SUB-SKILL"
 assert_file_contains "${PLAN}" "service_tls_certificates.yml"
@@ -125,6 +131,18 @@ for service_id in device_services:
     refs = services[service_id]["secret_refs"]
     if "pkcs12_base64" not in refs or "pkcs12_password" not in refs:
         raise SystemExit(f"{service_id} must track PKCS#12 secret refs")
+
+if services["netbox_stage4"]["validation"].get("url") != "https://svc-netbox-stage4.rfc1918.host/":
+    raise SystemExit("netbox_stage4 validation URL must not require API authentication")
+
+if services["proxmox_hasslehoff"]["validation"].get("url") != "https://hasslehoff.rfc1918.host:8006/":
+    raise SystemExit("proxmox_hasslehoff validation URL must not require API authentication")
+
+proxmox_options = services["proxmox_hasslehoff"].get("deploy_options", {})
+if proxmox_options.get("unsafe_writes") is not True:
+    raise SystemExit("proxmox_hasslehoff must enable unsafe_writes for pmxcfs")
+if proxmox_options.get("manage_file_modes") is not False:
+    raise SystemExit("proxmox_hasslehoff must not chmod pmxcfs certificate files")
 PY
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

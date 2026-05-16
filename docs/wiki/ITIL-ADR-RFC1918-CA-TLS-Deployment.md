@@ -51,10 +51,20 @@ Implemented repo controls:
 - `rfc1918_ca_trust` role for explicit-gate CA trust-anchor installation.
 - `rfc1918_service_tls` role for explicit-gate file-backed leaf certificate
   deployment from `vault_service_tls_certificates`.
+- `rfc1918_tls_deploy.yml` playbook for selected-host live TLS deployment
+  outside installer-only host groups.
 - RouterOS `rfc1918_private_ca` certificate-source mode with self-signed
   fallback retained.
 - `scripts/validate-rfc1918-service-tls.sh` for OpenSSL validation, JSONL audit,
   health URL checks, and optional local ntfy alerting.
+
+Live deployment evidence:
+
+- 2026-05-16: `ntfy_lan`, `checkmk_fmt2`, `netbox_stage4`, and
+  `proxmox_hasslehoff` validated with RFC1918 CA-issued certificates and
+  hostname verification.
+- Remaining endpoints stay tracked in the matrix until service-specific
+  mutation and backout plans are complete.
 
 Canonical documents:
 

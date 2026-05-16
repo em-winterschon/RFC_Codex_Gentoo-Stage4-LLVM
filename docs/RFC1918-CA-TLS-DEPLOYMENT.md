@@ -76,6 +76,9 @@ Repo automation artifacts:
 - `roles/routeros_rfc99_gateway` keeps `self_signed` as fallback and adds
   `rfc1918_private_ca` import mode for CA plus PKCS#12 RouterOS certificate
   bundles.
+- `playbooks/rfc1918_tls_deploy.yml` applies the CA trust and file-backed
+  service TLS roles to selected inventory hosts outside the LiveISO installer
+  workflow.
 - `scripts/validate-rfc1918-service-tls.sh` provides endpoint validation,
   JSONL audit rows, and optional local ntfy notification.
 
@@ -88,6 +91,23 @@ openssl s_client -connect <fqdn>:<port> -servername <fqdn> -verify_return_error 
 HTTP services must also pass a service-specific health or readiness request
 with the RFC1918 trust bundle installed on the client. Validation results should
 be captured as JSONL audit records and surfaced through local ntfy topics.
+
+## Live Deployment Evidence
+
+2026-05-16 live rollout status:
+
+| Service ID | Endpoint | Port | Result | Notes |
+| --- | --- | ---: | --- | --- |
+| `ntfy_lan` | `msg-sun99-ntfysys-099096.rfc1918.host` | 443 | pass | HAProxy PEM deployed on the container-services host; `/v1/health` returned healthy. |
+| `checkmk_fmt2` | `app-sfo200-monitoring-9927.vernetzen.io` | 443 | pass | Apache/OMD certificate files replaced after `omd update-apache-config vernetzen`; login redirect validated. |
+| `netbox_stage4` | `svc-netbox-stage4.rfc1918.host` | 443 | pass | nginx TLS server block added; unauthenticated `/` redirect validated. |
+| `proxmox_hasslehoff` | `hasslehoff.rfc1918.host` | 8006 | pass | `pveproxy` cert installed under pmxcfs; unauthenticated Proxmox UI endpoint validated. |
+
+All four endpoints validated with issuer
+`O=RFC1918 Internal, CN=RFC1918 Private CA 2026`, hostname verification, and
+396 days remaining at validation time. The generated CA and leaf private
+material remains outside git under operator-private storage and in Ansible
+Vault only.
 
 ## Backout
 
