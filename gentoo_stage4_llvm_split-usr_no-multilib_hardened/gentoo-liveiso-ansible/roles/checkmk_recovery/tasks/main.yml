@@ -212,6 +212,9 @@
   ansible.builtin.command: "omd status {{ checkmk_recovery_site }}"
   register: checkmk_recovery_post_reboot_omd_status
   changed_when: false
+  retries: 12
+  delay: 10
+  until: checkmk_recovery_post_reboot_omd_status.rc == 0
   tags:
     - checkmk_recovery_reboot_validate
 

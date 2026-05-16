@@ -57,6 +57,9 @@ assert_contains "${ROLE_DIR}/tasks/main.yml" "checkmk_recovery_allow_checkmk_upg
 assert_contains "${ROLE_DIR}/tasks/main.yml" "cmk -nv"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "cmk -II"
 assert_contains "${ROLE_DIR}/tasks/main.yml" "omd update --conflict={{ checkmk_recovery_upgrade_conflict_mode }}"
+assert_contains "${ROLE_DIR}/tasks/main.yml" "until: checkmk_recovery_post_reboot_omd_status.rc == 0"
+assert_contains "${ROLE_DIR}/tasks/main.yml" "retries: 12"
+assert_contains "${ROLE_DIR}/tasks/main.yml" "delay: 10"
 
 assert_contains "docs/CHECKMK-FMT2-RECOVERY-UPGRADE.md" "dry-run by default"
 assert_contains "docs/CHECKMK-FMT2-RECOVERY-UPGRADE.md" "Rocky Linux 8.6"
