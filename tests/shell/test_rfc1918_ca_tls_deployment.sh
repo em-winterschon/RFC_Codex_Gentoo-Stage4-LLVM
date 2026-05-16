@@ -51,7 +51,7 @@ if grep -Eq 'BEGIN (RSA |EC |OPENSSH |)?PRIVATE KEY|BEGIN CERTIFICATE|END CERTIF
   fail "matrix must not contain literal PEM material"
 fi
 
-MATRIX="${MATRIX}" python3 - <<'PY'
+MATRIX="${MATRIX}" python3 - << 'PY'
 import os
 from pathlib import Path
 
