@@ -43,6 +43,7 @@ Current mirrored pages:
 - `Container-Building.md`
 - `Container-Publishing.md`
 - `Identity-AAA.md`
+- `ITIL-ADR-RFC1918-CA-TLS-Deployment.md`
 - `Hetzner-DNS-Automation.md`
 - `CheckMK-FMT2-Recovery-Upgrade.md`
 - `Telemetry-Observability.md`

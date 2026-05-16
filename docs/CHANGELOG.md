@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-05-16 - RFC1918 CA TLS Deployment Planning
+
+- Added the non-secret RFC1918 service TLS certificate matrix for ntfy,
+  rsyslog, Elasticsearch VIP, NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, CheckMK, MCP control plane, RouterOS, Proxmox, and PDU
+  coverage.
+- Added the CA/TLS implementation plan and ITIL/ADR documentation for vault-only
+  secrets, trust-anchor rollout, HAProxy-first leaf deployment, network-device
+  imports, validation, and backout.
+- Extended Ansible Vault documentation with the
+  `vault_service_tls_certificates.<service_id>.*` leaf certificate namespace.
+- Added a shell guard test that validates the matrix structure and blocks
+  committed PEM material.
+
 ## 2026-05-14 - M70 PDU Label And EOD Closeout
 
 - Added `PNR-034` / issue #123 and the Hasslehoff external scheduled-backup

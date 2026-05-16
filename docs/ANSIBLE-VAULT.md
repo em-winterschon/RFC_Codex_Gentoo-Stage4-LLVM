@@ -238,6 +238,26 @@ vault_private_ca_rfc1918_pkcs12_path
 Until this CA is imported and distributed to clients, service TLS may use
 runtime-generated self-signed certificates for transport testing only.
 
+Service leaf certificates are tracked separately from the CA under a nested
+vault namespace:
+
+```text
+vault_service_tls_certificates.<service_id>.fullchain_pem
+vault_service_tls_certificates.<service_id>.private_key_pem
+vault_service_tls_certificates.<service_id>.pkcs12_base64
+vault_service_tls_certificates.<service_id>.pkcs12_password
+```
+
+The non-secret deployment matrix is:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/service_tls_certificates.yml
+```
+
+Do not commit literal leaf PEM, private-key PEM, or PKCS#12 data. File-backed
+services use `fullchain_pem` and `private_key_pem`; RouterOS and firmware-backed
+devices may additionally require PKCS#12 material.
+
 ## APC PDU Credentials
 
 The operator-private AP7901 RFC99 core-control PDU credential source is:
