@@ -47,6 +47,8 @@ install_role_sequences:
           - nexus_repo
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -118,6 +120,8 @@ install_role_sequences:
           - nexus_repo
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -191,6 +195,8 @@ install_role_sequences:
           - nexus_repo
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface

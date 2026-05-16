@@ -1,6 +1,6 @@
 # ITIL ADR: RFC1918 CA And TLS Deployment
 
-Status: proposed.
+Status: active implementation.
 
 Adopt the RFC1918 private CA as the common internal trust anchor for LAN
 service TLS, observability, management APIs, CheckMK, Proxmox, RouterOS, and
@@ -46,8 +46,19 @@ Implementation order:
 6. Deploy Proxmox and RouterOS certificates after console backout validation.
 7. Add expiry audit, local ntfy alerts, and CheckMK/Prometheus checks.
 
+Implemented repo controls:
+
+- `rfc1918_ca_trust` role for explicit-gate CA trust-anchor installation.
+- `rfc1918_service_tls` role for explicit-gate file-backed leaf certificate
+  deployment from `vault_service_tls_certificates`.
+- RouterOS `rfc1918_private_ca` certificate-source mode with self-signed
+  fallback retained.
+- `scripts/validate-rfc1918-service-tls.sh` for OpenSSL validation, JSONL audit,
+  health URL checks, and optional local ntfy alerting.
+
 Canonical documents:
 
 - `docs/RFC1918-CA-TLS-DEPLOYMENT.md`
 - `docs/superpowers/plans/2026-05-16-rfc1918-ca-tls-deployment.md`
 - `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/service_tls_certificates.yml`
+- `scripts/validate-rfc1918-service-tls.sh`

@@ -1,6 +1,6 @@
 # RFC1918 CA And TLS Deployment Plan
 
-Status: proposed.
+Status: active implementation.
 
 The RFC1918 private CA is the internal trust anchor for LAN service TLS,
 management APIs, observability endpoints, and selected network or OOB device
@@ -66,6 +66,19 @@ Initial service IDs:
 
 ## Validation
 
+Repo automation artifacts:
+
+- `roles/rfc1918_ca_trust` installs the RFC1918 trust anchor only when
+  `rfc1918_ca_trust_enabled=true` and `rfc1918_ca_trust_apply=true`.
+- `roles/rfc1918_service_tls` deploys selected file-backed leaf certificates
+  only when `rfc1918_service_tls_enabled=true`,
+  `rfc1918_service_tls_apply=true`, and service IDs are explicitly selected.
+- `roles/routeros_rfc99_gateway` keeps `self_signed` as fallback and adds
+  `rfc1918_private_ca` import mode for CA plus PKCS#12 RouterOS certificate
+  bundles.
+- `scripts/validate-rfc1918-service-tls.sh` provides endpoint validation,
+  JSONL audit rows, and optional local ntfy notification.
+
 Every deployed endpoint must pass:
 
 ```bash
@@ -96,3 +109,7 @@ Backout is service-specific:
 - `docs/wiki/ITIL-ADR-RFC1918-CA-TLS-Deployment.md`
 - `tests/shell/test_private_ca_vault.sh`
 - `tests/shell/test_rfc1918_ca_tls_deployment.sh`
+- `tests/shell/test_rfc1918_ca_trust_role.sh`
+- `tests/shell/test_rfc1918_service_tls_role.sh`
+- `tests/shell/test_routeros_internal_ca_certificate_import.sh`
+- `tests/shell/test_validate_rfc1918_service_tls.sh`

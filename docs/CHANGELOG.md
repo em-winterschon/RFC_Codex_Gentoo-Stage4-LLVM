@@ -2,6 +2,14 @@
 
 ## 2026-05-16 - RFC1918 CA TLS Deployment Planning
 
+- Added gated `rfc1918_ca_trust` and `rfc1918_service_tls` Ansible roles, wired
+  them into install role sequencing, and kept live mutation blocked behind
+  explicit apply variables.
+- Added RouterOS internal-CA certificate import mode for CA plus PKCS#12
+  bundles while preserving the existing self-signed fallback path.
+- Added `scripts/validate-rfc1918-service-tls.sh` for OpenSSL endpoint
+  validation, JSONL audit output, health URL checks, and optional local ntfy
+  notifications.
 - Added the non-secret RFC1918 service TLS certificate matrix for ntfy,
   rsyslog, Elasticsearch VIP, NetBox, FreeIPA, Prometheus, VictoriaMetrics,
   Grafana, Kibana, CheckMK, MCP control plane, RouterOS, Proxmox, and PDU
