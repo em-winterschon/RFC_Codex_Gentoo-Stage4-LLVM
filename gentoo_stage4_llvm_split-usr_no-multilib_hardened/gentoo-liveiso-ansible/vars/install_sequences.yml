@@ -34,6 +34,7 @@ install_role_sequences:
           - network
           - rsyslog_base
           - telemetry_node_exporter
+          - telemetry_nut
           - telemetry_podman_exporter
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
@@ -109,6 +110,7 @@ install_role_sequences:
           - bootloader
           - rsyslog_base
           - telemetry_node_exporter
+          - telemetry_nut
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
@@ -184,6 +186,7 @@ install_role_sequences:
           - network
           - rsyslog_base
           - telemetry_node_exporter
+          - telemetry_nut
           - telemetry_podman_exporter
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter

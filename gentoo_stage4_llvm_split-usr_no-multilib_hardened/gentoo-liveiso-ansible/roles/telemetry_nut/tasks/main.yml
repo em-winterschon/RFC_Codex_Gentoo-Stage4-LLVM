@@ -1,0 +1,104 @@
+---
+- name: Resolve NUT monitoring settings
+  ansible.builtin.set_fact:
+    telemetry_nut_enabled: >-
+      {{
+        resolved_profile_telemetry.nut_monitoring.enabled
+        | default(telemetry_nut_default_enabled)
+        | bool
+      }}
+    resolved_nut_monitoring: >-
+      {{
+        {
+          'device_name': resolved_profile_telemetry.nut_monitoring.device_name | default(telemetry_nut_default_device_name),
+          'description': resolved_profile_telemetry.nut_monitoring.description | default(telemetry_nut_default_description),
+          'driver': resolved_profile_telemetry.nut_monitoring.driver | default(telemetry_nut_default_driver),
+          'port': resolved_profile_telemetry.nut_monitoring.port | default(telemetry_nut_default_port),
+          'vendorid': resolved_profile_telemetry.nut_monitoring.vendorid | default(telemetry_nut_default_vendorid),
+          'productid': resolved_profile_telemetry.nut_monitoring.productid | default(telemetry_nut_default_productid),
+          'pollinterval': resolved_profile_telemetry.nut_monitoring.pollinterval | default(telemetry_nut_default_pollinterval),
+          'maxretry': resolved_profile_telemetry.nut_monitoring.maxretry | default(telemetry_nut_default_maxretry),
+          'listen_lan': resolved_profile_telemetry.nut_monitoring.listen_lan | default(telemetry_nut_default_listen_lan),
+          'listen_address': resolved_profile_telemetry.nut_monitoring.listen_address | default(telemetry_nut_default_listen_address),
+          'monitor_username': resolved_profile_telemetry.nut_monitoring.monitor_username | default(telemetry_nut_default_monitor_username),
+          'monitor_password': resolved_profile_telemetry.nut_monitoring.monitor_password | default(telemetry_nut_default_monitor_password),
+          'enable_shutdown_policy': resolved_profile_telemetry.nut_monitoring.enable_shutdown_policy | default(telemetry_nut_default_enable_shutdown_policy),
+          'textfile_directory': resolved_profile_telemetry.nut_monitoring.node_exporter_textfile.directory | default(telemetry_nut_default_textfile_directory),
+          'textfile_output': resolved_profile_telemetry.nut_monitoring.node_exporter_textfile.output | default(telemetry_nut_default_textfile_output),
+          'collector_interval_seconds': resolved_profile_telemetry.nut_monitoring.node_exporter_textfile.interval_seconds | default(telemetry_nut_default_collector_interval_seconds)
+        }
+      }}
+
+- name: Refuse NUT shutdown policy until explicitly implemented
+  ansible.builtin.assert:
+    that:
+      - not (resolved_nut_monitoring.enable_shutdown_policy | bool)
+    fail_msg: >-
+      telemetry_nut currently supports read-only UPS telemetry only. Do not
+      enable UPS shutdown policy until power-off behavior is explicitly modeled.
+  when: telemetry_nut_enabled
+
+- name: Ensure NUT monitoring directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nut_monitoring_dir }}"
+    state: directory
+    owner: "{{ 'nut' if nut_monitoring_dir in ['/etc/nut', resolved_nut_monitoring.textfile_directory] else 'root' }}"
+    group: "{{ 'nut' if nut_monitoring_dir in ['/etc/nut', resolved_nut_monitoring.textfile_directory] else 'root' }}"
+    mode: "{{ '0750' if nut_monitoring_dir == '/etc/nut' else '0755' }}"
+  loop:
+    - /etc/nut
+    - /etc/init.d
+    - /etc/conf.d
+    - /usr/local/sbin
+    - "{{ resolved_nut_monitoring.textfile_directory }}"
+  loop_control:
+    loop_var: nut_monitoring_dir
+  when: telemetry_nut_enabled
+
+- name: Render NUT read-only monitoring configuration
+  ansible.builtin.template:
+    src: "{{ nut_template.src }}"
+    dest: "{{ install_target_root }}{{ nut_template.dest }}"
+    owner: root
+    group: "{{ nut_template.group | default('root') }}"
+    mode: "{{ nut_template.mode }}"
+  loop:
+    - src: nut.conf.j2
+      dest: /etc/nut/nut.conf
+      group: nut
+      mode: '0640'
+    - src: ups.conf.j2
+      dest: /etc/nut/ups.conf
+      group: nut
+      mode: '0640'
+    - src: upsd.conf.j2
+      dest: /etc/nut/upsd.conf
+      group: nut
+      mode: '0640'
+    - src: upsd.users.j2
+      dest: /etc/nut/upsd.users
+      group: nut
+      mode: '0640'
+    - src: export-nut-textfile.sh.j2
+      dest: /usr/local/sbin/export-nut-textfile
+      mode: '0755'
+    - src: nut-textfile-collector.confd.j2
+      dest: /etc/conf.d/nut-textfile-collector
+      mode: '0644'
+    - src: nut-textfile-collector.initd.j2
+      dest: /etc/init.d/nut-textfile-collector
+      mode: '0755'
+  loop_control:
+    loop_var: nut_template
+  when: telemetry_nut_enabled
+
+- name: Enable read-only NUT monitoring services
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + ['upsdrv', 'upsd', 'nut-textfile-collector']
+        ) | unique
+      }}
+  when: telemetry_nut_enabled
