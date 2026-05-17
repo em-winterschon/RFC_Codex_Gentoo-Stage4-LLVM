@@ -26,6 +26,7 @@ dev-vcs/tig
 # during the 2026-05-14 M70 install. Install gh from an overlay, upstream
 # binary, or internal package source before final X12AGAIN cutover.
 net-analyzer/nmap
+net-analyzer/net-snmp
 net-analyzer/tcpdump
 net-dns/bind-tools
 net-fs/nfs-utils
@@ -46,3 +47,4 @@ sys-fs/xfsprogs
 sys-fs/zfs
 sys-process/htop
 sys-process/lsof
+sys-power/nut

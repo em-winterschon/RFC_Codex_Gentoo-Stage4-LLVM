@@ -325,6 +325,41 @@ legacy HTTP as break-glass. The non-secret policy lives in:
 gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/legacy_oob_devices.yml
 ```
 
+## SUN99 Power Device Credentials
+
+The SUN99 white-rack UPS, ATS, and PDU credential source is:
+
+```bash
+/root/operator-private/voltage-ops/ups-ats-pdu.sun99-white-rack-infra.info
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-sun99-power-device-vault.sh
+```
+
+The importer accepts the operator-private markdown/key-value source and copies
+only section-scoped `username` and `password` fields into the encrypted
+local-network vault. It supports these source sections:
+
+- `Primary UPS`
+- `Secondary UPS`
+- `Primary ATS`
+- `Primary PDU`
+
+The resulting vault variables use the
+`vault_power_devices_sun99_white_rack_*` prefix. The non-secret variable map
+lives in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/power_devices.yml
+```
+
+Do not commit the operator-private source file, decrypted vault views, local
+device passwords, SNMP communities, SNMPv3 auth/privacy secrets, or rendered
+configuration files that contain those values.
+
 ## Safety Rules
 
 - Commit only encrypted vault files.

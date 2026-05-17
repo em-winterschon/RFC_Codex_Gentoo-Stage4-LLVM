@@ -26,6 +26,12 @@ For operator-visible status:
 SUN99_POWER_NOTIFY=1 scripts/validate-sun99-power-recovery.sh
 ```
 
+After the CyberPower USB cable is connected to the M70, require USB detection:
+
+```bash
+SUN99_POWER_EXPECT_CYBERPOWER_USB=1 scripts/validate-sun99-power-recovery.sh
+```
+
 The script must not mutate hosts, outlets, routes, services, or secrets. It
 validates Hasslehoff service VM autostart, M70 chronyd/OpenVPN/ZFS health, K10
 reachability, ntfy HTTP/HTTPS health, and management reachability for the known
