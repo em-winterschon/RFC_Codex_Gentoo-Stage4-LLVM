@@ -83,9 +83,20 @@ Example external mirror:
 ```bash
 HASSLEHOFF_BACKUP_MIRROR_TARGET=backup-node:/srv/backups/hasslehoff \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
+
+Set `HASSLEHOFF_BACKUP_RESTORE_VERIFY=1` to require manifest readback and
+SHA256 validation from the mirrored target after rsync completes. Use
+`HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1` before scheduling a new target, and set
+`HASSLEHOFF_BACKUP_RETENTION_DAYS=<days>` only after the retention window is
+approved. Deletion requires `HASSLEHOFF_BACKUP_RETENTION_APPLY=1`.
+
+The scheduled wrapper refuses X12AGAIN-dependent mirror targets by name, known
+alias, or `172.16.99.108`; X12AGAIN must never become the durable mirror target
+for the work that prepares it to be reimaged.
 
 ## M70 NASA NFS relay
 
@@ -95,6 +106,7 @@ mountpoint:
 ```bash
 HASSLEHOFF_BACKUP_MIRROR_TARGET='root@admin-sun99-forge-099070:/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
@@ -105,6 +117,7 @@ the NASA mountpoint instead:
 ```bash
 HASSLEHOFF_BACKUP_MIRROR_TARGET='/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
