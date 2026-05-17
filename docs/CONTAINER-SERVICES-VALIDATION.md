@@ -150,15 +150,17 @@ Post-outage installed-disk redeploy validation:
   - `10.9.8.89:80/tcp`
   - `10.9.8.89:514/tcp`
   - `10.9.8.92:9200/tcp`
-- current blocker:
-  - `container-ntfy` is stopped because the upstream Docker Hub image pull
-    stalled after the site outage; replace it with a package-backed Stage5
-    image or controlled archive preload path.
+- current `ntfy` image policy:
+  - `container-ntfy` uses a controlled archive preload path instead of a live
+    Docker Hub pull. Stage a verified OCI archive at
+    `/var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive` plus
+    its `.sha256`, then the generated wrapper validates the checksum and loads
+    `localhost/rfc1918/ntfy:v2.14.0` before starting the service.
 - redeploy guardrail:
   - generated Podman wrappers now support explicit `pull_policy`
   - package-backed GHCR app profiles default to `missing`
-  - the live Path B `ntfy` override is disabled with `pull_policy: never` until
-    a controlled image source exists
+  - `ntfy` uses `pull_policy: never`; redeploys require a staged local archive
+    and do not depend on Docker Hub availability
 
 ## Next Validation Goals
 
