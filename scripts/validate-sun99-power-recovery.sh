@@ -228,7 +228,7 @@ check_power_endpoints() {
   run_check "AP7901 PDU ${AP7901_HOST} responds to ping" \
     ping -c 2 -W 2 "${AP7901_HOST}"
 
-  if [[ -n "${SUN99_POWER_AP7901_SNMP_ARGS}" ]] && command -v snmpget >/dev/null 2>&1; then
+  if [[ -n "${SUN99_POWER_AP7901_SNMP_ARGS}" ]] && command -v snmpget > /dev/null 2>&1; then
     run_check "AP7901 pdu-rfc99-corectrl-p08-099241 SNMP sysName validates" \
       snmpget ${SUN99_POWER_AP7901_SNMP_ARGS} "${AP7901_HOST}" SNMPv2-MIB::sysName.0
   else
