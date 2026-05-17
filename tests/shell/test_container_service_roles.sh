@@ -38,6 +38,9 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/tasks/main.yml" 'base
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/templates/base-image.yml.j2" 'resolved_profile_container_base_image'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ghcr.io/em-winterschon/gentoo-stage5-nginx:latest'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'localhost/rfc1918/ntfy:v2.14.0'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'preload:'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ntfy-v2.14.0-amd64.oci-archive'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'gcc-compat.conf'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287'
@@ -89,6 +92,10 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/usr/sbin/rsyslogd'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'container_ntfy_pre_commands'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'podman image exists'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'podman load -i'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'sha256sum -c'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'pull_policy: never'
 
 ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - << 'PY'
@@ -214,8 +221,13 @@ podman_template = env.from_string(
 podman_rendered = podman_template.render(
     container_runtime_app={
         "name": "ntfy",
-        "image": "docker.io/binwiederhier/ntfy:v2.14.0",
+        "image": "localhost/rfc1918/ntfy:v2.14.0",
         "pull_policy": "never",
+        "pre_commands": [
+            "test -s /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+            "sha256sum -c /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive.sha256",
+            "podman image exists localhost/rfc1918/ntfy:v2.14.0 || podman load -i /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+        ],
         "network": "apps",
         "published_ports": [],
         "volumes": [],
@@ -234,6 +246,13 @@ podman_rendered = podman_template.render(
 
 if "--pull never" not in podman_rendered:
     raise SystemExit("podman wrapper render did not include pull policy")
+for expected in (
+    "test -s /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+    "sha256sum -c /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive.sha256",
+    "podman image exists localhost/rfc1918/ntfy:v2.14.0 || podman load -i /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+):
+    if expected not in podman_rendered:
+        raise SystemExit(f"podman wrapper render missing ntfy preload command: {expected}")
 PY
 
 printf 'PASS: %s\n' "$(basename "$0")"

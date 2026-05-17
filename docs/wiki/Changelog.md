@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-05-17 - Hasslehoff Backup And ntfy Image Hardening
+
+- Hardened the Hasslehoff scheduled backup wrapper with preflight-only mirror
+  target validation, X12AGAIN/Prinzessin mirror-target rejection, optional
+  restore/readback verification, final manifest re-sync after a successful
+  mirror, and opt-in local retention controls.
+- Replaced the `ntfy` live Docker Hub runtime dependency with a controlled OCI
+  archive preload policy: local image `localhost/rfc1918/ntfy:v2.14.0`,
+  `pull_policy: never`, and required archive plus SHA256 files under
+  `/var/lib/container-services/preload`.
+
 ## 2026-05-16 - RFC1918 CA TLS Deployment Planning
 
 - Added gated `rfc1918_ca_trust` and `rfc1918_service_tls` Ansible roles, wired
