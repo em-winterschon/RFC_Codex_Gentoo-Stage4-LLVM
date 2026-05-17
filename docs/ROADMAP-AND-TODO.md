@@ -114,6 +114,13 @@ Dependency:
 | `HWACC-002` | planned | Build OpenSSL/HAProxy/Nginx QAT acceleration benchmark lane | `HWACC-001`, observability baseline | Measure OpenSSL provider or engine viability first, then HAProxy and Nginx TLS requests-per-second with QAT disabled/enabled using identical cipher suites and rollback commands. |
 | `HWACC-003` | planned | Build OpenZFS+QAT CI/CD artifact lane | `HWACC-001`, `CI-003`, ZFS package policy | Do not enable by default. Produce reproducible source provenance, patches, binpkg, kernel compatibility matrix, and compression/encryption/checksum benchmarks before any production profile consumes QAT-enabled ZFS. |
 
+## Power Continuity
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `PWR-001` | active | Close SUN99 post-outage recovery follow-up | `ST-017`, `ADM-001`, Hasslehoff service VM restore | `scripts/validate-sun99-power-recovery.sh` validates the recovered service path without mutating hosts. Hasslehoff VM autostart, M70 chronyd/OpenVPN continuity, K10 reachability, local ntfy HTTP/HTTPS, and AP7901 visibility are covered. Remaining audit work is CyberPower USB/NUT validation, APC UPS/ATS identification, exporter tuning, and ATS transfer-event review. |
+| `PWR-002` | planned | Audit two PDUs, two UPS units, and ATS end-to-end | `PWR-001`, `OBS-004`, `AAA-005` | Identify APC endpoints at `172.16.99.242` and `172.16.99.244`, cable CyberPower CP1500PFCRM2U USB to M70 for NUT/usbhid-ups, preserve AP7901 local break-glass, and add NetBox/DNS/Prometheus records after device identity is confirmed. |
+
 ## Proxmox, NetBox, And RouterOS
 
 | ID | Status | Task | Depends On | Notes |
