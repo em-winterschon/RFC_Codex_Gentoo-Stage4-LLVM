@@ -62,12 +62,31 @@ Example external mirror:
 ```bash
 HASSLEHOFF_BACKUP_MIRROR_TARGET=backup-node:/srv/backups/hasslehoff \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
 
 The wrapper uses `rsync -aH` and does not delete remote data. Set
 `HASSLEHOFF_BACKUP_NOTIFY=1` to publish success/failure summaries to local ntfy.
+Set `HASSLEHOFF_BACKUP_RESTORE_VERIFY=1` to require manifest readback plus
+SHA256 validation from the mirrored target after rsync completes.
+
+Preflight the first external target before scheduling:
+
+```bash
+HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1 \
+HASSLEHOFF_BACKUP_MIRROR_TARGET='/mnt/nasa/hasslehoff/config-bundles' \
+bash scripts/backup-hasslehoff-scheduled.sh
+```
+
+The scheduled wrapper refuses X12AGAIN-dependent mirror targets by name, known
+alias, or `172.16.99.108` so an accidental operator default cannot place the
+only durable copy back on the host being prepared for reimage. Local retention
+is disabled by default; set `HASSLEHOFF_BACKUP_RETENTION_DAYS=<days>` to scan
+for expired local backup directories, and add
+`HASSLEHOFF_BACKUP_RETENTION_APPLY=1` only when deletion is intentionally
+approved.
 
 Target backup layers:
 
@@ -160,6 +179,7 @@ local mountpoint:
 ```bash
 HASSLEHOFF_BACKUP_MIRROR_TARGET='root@admin-sun99-forge-099070:/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
@@ -170,6 +190,7 @@ the NASA mountpoint instead:
 ```bash
 HASSLEHOFF_BACKUP_MIRROR_TARGET='/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
+HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
