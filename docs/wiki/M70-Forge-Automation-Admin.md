@@ -16,10 +16,22 @@ Provisioning is tracked as UEFI PXE to iPXE with static DHCP address
 `172.16.99.70`, boot file `m70-forge-ipxe.efi`, and netboot publisher
 `172.16.99.88`.
 
-2026-05-13 live validation uses Hasslehoff `/dev/ttyUSB3` for serial console
+2026-05-13 live validation used Hasslehoff `/dev/ttyUSB3` for serial console
 and a local SATADOM ESP iPXE chainloader because the firmware did not expose a
 usable UEFI PXE NIC entry. The M70-specific iPXE binary successfully chained the
 published HTTP role and reached SSH at `172.16.99.70`.
+
+On 2026-05-17 the generic USB serial hub was moved from Hasslehoff to M70.
+RouterOS serial consoles and the CyberPower USB UPS now enumerate on M70.
+M70's own external serial console is not currently available through Hasslehoff;
+attach a separate OOB adapter before relying on serial recovery for this host.
+
+| Device | Stable Device | Current TTY |
+| --- | --- | --- |
+| CCR2004 gateway | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` |
+| CRS354 distribution | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` |
+| CRS309 spine | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB4` |
+| CyberPower UPS | USB `0764:0601`, product `CP1500PFCRM2U` | `/dev/hidraw0` |
 
 The follow-up reboot validated the corrected `netboot0` dracut cmdline. The
 persistent OS now exposes the management NIC as `netboot0`.

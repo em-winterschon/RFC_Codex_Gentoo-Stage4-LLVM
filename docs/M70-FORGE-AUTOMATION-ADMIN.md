@@ -22,7 +22,7 @@ environment.
 | Switch port | `sw_mgmt_css326 ge14` |
 | PDU outlet | `pdu-rfc99-corectrl-099241 outlet 4` |
 | PDU outlet label | `admin-sun99-forge` |
-| Serial console | Hasslehoff `/dev/ttyUSB3` |
+| Serial console | Currently unavailable after USB serial hub move; attach separate external OOB before relying on M70 serial recovery |
 | Stage5 profile | `metal-forge-automation-admin` |
 
 ## Provisioning Plan
@@ -81,6 +81,25 @@ root source `zroot/ROOT/gentoo`, and `zpool status -x` as healthy.
 Observed hardware note: Linux/BSDRP serial validation reported 32 GiB available
 memory, while the planned inventory expected 64 GiB. Validate DIMM population
 before scheduling memory-heavy workloads on this node.
+
+## USB Serial And UPS Gateway
+
+On 2026-05-17 the generic USB serial hub was moved from Hasslehoff to this M70
+so RouterOS serial access and CyberPower USB UPS telemetry are no longer tied to
+Hasslehoff. The 1.9 TiB USB NVMe staging disk remains direct-attached to M70,
+while the serial adapters and CyberPower UPS are attached through the hub.
+
+Observed stable mappings:
+
+| Device | Stable Device | Current TTY | Notes |
+| --- | --- | --- | --- |
+| CCR2004 gateway | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` | RouterOS console |
+| CRS354 distribution | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` | RouterOS console |
+| CRS309 spine | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB4` | RouterOS console |
+| CyberPower UPS | USB `0764:0601`, product `CP1500PFCRM2U` | `/dev/hidraw0` | NUT `usbhid-ups` |
+
+Use `/dev/serial/by-id` for automation. The `/dev/ttyUSB*` names are observed
+state only and can change after USB re-enumeration.
 
 ## Intel QAT
 
