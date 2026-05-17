@@ -21,6 +21,7 @@
       - network
       - rsyslog_base
       - telemetry_node_exporter
+      - telemetry_nut
       - telemetry_podman_exporter
       - telemetry_blackbox_exporter
       - telemetry_snmp_exporter

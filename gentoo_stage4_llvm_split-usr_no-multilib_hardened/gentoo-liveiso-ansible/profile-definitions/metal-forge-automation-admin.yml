@@ -44,6 +44,30 @@ gentoo_profile_definition:
     - nfsmount
     - sshd
     - sssd
+  telemetry:
+    node_exporter:
+      enabled: true
+      listen_address: "0.0.0.0"
+      listen_port: 9100
+      textfile_directory: /var/lib/node_exporter
+    nut_monitoring:
+      enabled: true
+      device_name: cyberpower_cp1500
+      description: SUN99 CyberPower CP1500PFCRM2U
+      driver: usbhid-ups
+      port: auto
+      vendorid: "0764"
+      productid: "0601"
+      pollinterval: 15
+      maxretry: 3
+      listen_lan: false
+      monitor_username: "{{ vault_power_devices_sun99_white_rack_secondary_ups_username }}"
+      monitor_password: "{{ vault_power_devices_sun99_white_rack_secondary_ups_password }}"
+      enable_shutdown_policy: false
+      node_exporter_textfile:
+        directory: /var/lib/node_exporter
+        output: /var/lib/node_exporter/nut_ups.prom
+        interval_seconds: 15
   automation_admin:
     enabled: true
     host_class: forge-control-plane

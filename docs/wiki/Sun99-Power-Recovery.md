@@ -45,8 +45,13 @@ management reachability for the known SUN99 power/OOB endpoints.
 
 Cable the CyberPower CP1500PFCRM2U USB port to
 `admin-sun99-forge-099070.rfc1918.host` first. Use NUT with `usbhid-ups`,
-then add a NUT Prometheus exporter after `upsc` exposes model, serial, charge,
-runtime, voltage, load, and status.
+then publish read-only metrics through node_exporter textfile output after
+`upsc` exposes model, serial, charge, runtime, voltage, load, and status.
+
+M70 read-only telemetry runs `upsdrv` and `upsd` only. The `upsmon` shutdown
+path is intentionally disabled. node_exporter scrapes
+`/var/lib/node_exporter/nut_ups.prom` for metrics prefixed
+`rfc1918_nut_ups_`.
 
 Do not enable automated shutdown from the CyberPower path until ATS transfer
 behavior and alerting are understood.

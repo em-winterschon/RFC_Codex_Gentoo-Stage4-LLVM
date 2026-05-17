@@ -32,6 +32,12 @@ After the CyberPower USB cable is connected to the M70, require USB detection:
 SUN99_POWER_EXPECT_CYBERPOWER_USB=1 scripts/validate-sun99-power-recovery.sh
 ```
 
+For read-only UPS telemetry, M70 runs NUT with `upsdrv` and `upsd` only. The
+`upsmon` shutdown path remains intentionally disabled until a shutdown policy is
+modeled. Metrics are published through node_exporter textfile output at
+`/var/lib/node_exporter/nut_ups.prom` with names prefixed
+`rfc1918_nut_ups_`.
+
 The script must not mutate hosts, outlets, routes, services, or secrets. It
 validates Hasslehoff service VM autostart, M70 chronyd/OpenVPN/ZFS health, K10
 reachability, ntfy HTTP/HTTPS health, and management reachability for the known

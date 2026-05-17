@@ -1,0 +1,10 @@
+# Managed by gentoo-liveiso-ansible.
+maxretry = {{ resolved_nut_monitoring.maxretry }}
+pollinterval = {{ resolved_nut_monitoring.pollinterval }}
+
+[{{ resolved_nut_monitoring.device_name }}]
+  driver = {{ resolved_nut_monitoring.driver }}
+  port = {{ resolved_nut_monitoring.port }}
+  vendorid = "{{ resolved_nut_monitoring.vendorid }}"
+  productid = "{{ resolved_nut_monitoring.productid }}"
+  desc = "{{ resolved_nut_monitoring.description }}"
