@@ -73,10 +73,10 @@ reject_x12again_target() {
   lowered="$(printf '%s' "${target}" | tr '[:upper:]' '[:lower:]')"
 
   case "${lowered}" in
-    *x12again*|*prinzessin*|*172.16.99.108*)
-      log "refusing X12AGAIN-dependent mirror target: ${target}"
-      exit 64
-      ;;
+  *x12again* | *prinzessin* | *172.16.99.108*)
+    log "refusing X12AGAIN-dependent mirror target: ${target}"
+    exit 64
+    ;;
   esac
 }
 

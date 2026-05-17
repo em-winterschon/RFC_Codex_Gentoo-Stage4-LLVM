@@ -96,7 +96,7 @@ grep -q 'retention_days=0' /tmp/hasslehoff-scheduled-backup-test.out || fail "dr
 
 if HASSLEHOFF_BACKUP_DRY_RUN=1 \
   HASSLEHOFF_BACKUP_MIRROR_TARGET=root@x12again:/srv/backups \
-  bash "${SCRIPT}" >/tmp/hasslehoff-scheduled-backup-x12again.out 2>&1; then
+  bash "${SCRIPT}" > /tmp/hasslehoff-scheduled-backup-x12again.out 2>&1; then
   fail "x12again mirror target was not rejected"
 fi
 grep -qi 'x12again' /tmp/hasslehoff-scheduled-backup-x12again.out || fail "x12again rejection did not mention target"
