@@ -1,0 +1,23 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+  openrc_services_available:
+    - stage5-firstboot-enroll
+  secure_firstboot_enrollment:
+    enabled: false
+    method: freeipa-otp-age
+    bundle_transport: https
+    bundle_crypto: age
+    bundle_validator: /usr/local/sbin/validate_secure_firstboot_bundle.py
+    enrollment_service: stage5-firstboot-enroll
+    required_runtime_files:
+      - /etc/stage5-firstboot/age.identity
+    forbidden_netboot_artifacts:
+      - /etc/krb5.keytab
+    optional_future_nbde:
+      clevis_tang:
+        enabled: false
+        policy: tpm2+tang
+        gentoo_repo: guru
+        note: Tang-only decryption is not sufficient for host enrollment secrets.

@@ -1,0 +1,8 @@
+sys-cluster/slurm
+sys-auth/munge
+dev-db/mariadb
+sys-process/numactl
+dev-vcs/git
+net-misc/curl
+net-misc/rsync
+app-misc/jq

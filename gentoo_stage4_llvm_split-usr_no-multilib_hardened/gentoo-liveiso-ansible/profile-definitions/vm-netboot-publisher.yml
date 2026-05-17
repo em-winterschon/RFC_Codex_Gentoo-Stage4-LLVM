@@ -1,0 +1,29 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-netboot-publisher
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-netboot-publisher.packages
+  netboot_publisher:
+    enabled: true
+    publish_root: /var/lib/netboot/path-b
+    http_listen_address: 0.0.0.0
+    http_listen_port: 8080
+    tftp_listen_address: 0.0.0.0
+    tftp_root: /var/lib/netboot/path-b
+    replaces_legacy_host: 172.16.99.108
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+  openrc_services_enable:
+    - nginx
+    - in.tftpd
+    - rsyslog
+  haproxy_service_types:
+    - name: netboot-http
+      bind: "*:8080"
+      mode: http
+      backend_name: be_netboot_http
+      servers:
+        - name: netboot-local
+          address: 127.0.0.1
+          port: 8080

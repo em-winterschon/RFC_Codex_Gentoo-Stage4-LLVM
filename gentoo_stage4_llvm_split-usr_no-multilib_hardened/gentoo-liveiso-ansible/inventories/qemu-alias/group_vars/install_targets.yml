@@ -84,7 +84,7 @@ finalize_reboot_host: false
 cpu_flags_x86_override: []
 
 # Optional custom make.conf additions
-portage_accept_license: "-* @FREE @BINARY-REDISTRIBUTABLE"
+portage_accept_license: "*.*"
 portage_features:
   - parallel-install
   - merge-sync

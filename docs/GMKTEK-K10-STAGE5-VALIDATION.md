@@ -21,8 +21,10 @@ before reimaging X12AGAIN with the LOX Stage4 plus Stage5 workstation profile.
   live-root fetch phase
 - DHCP client class: `PXEClient:Arch:00007:UNDI:003016`
 - HTTPBoot class observed: `HTTPClient:Arch:00016:UNDI:003016`
-- DHCP next-server: `172.16.99.108`
-- EFI handoff: TFTP `k10-ipxe.efi` from `172.16.99.108`
+- Desired DHCP next-server after netboot offload: `172.16.99.88`
+- Desired publisher: `boot-sun99-netboot-099088.rfc1918.host`
+- Last fully observed historical path: TFTP `k10-ipxe.efi` from X12AGAIN
+  `172.16.99.108`
 - Optional console: rear DB9 RS232, pending validation for pre/post-bootloader
   redirection
 
@@ -48,25 +50,62 @@ Current physical discovery state:
 - Observed status: DHCP requests from `84:47:09:5F:21:64` reached `eno1`, and
   `172.16.99.1` offered `172.16.99.156` during the 2026-05-07 reboot window
 - DHCP handoff: RouterOS static lease now scopes option 67 `k10-ipxe.efi` and
-  network `next-server=172.16.99.108`
-- TFTP handoff: on-host listener serves `/var/lib/netboot/path-b` on
-  `172.16.99.108:69`; local TFTP fetch of `k10-ipxe.efi` has been validated
+  network `next-server=172.16.99.88`
+- TFTP handoff: Hasslehoff VM `1088`
+  `boot-sun99-netboot-099088.rfc1918.host` serves
+  `/var/lib/netboot/path-b` on `172.16.99.88:69` through the repo-managed
+  OpenRC `netboot-tftp` service
 - iPXE handoff: K10 fetched `hosts/gmktek-k10-stage5.ipxe`,
-  `roles/installer-k10.ipxe`, `g/vmlinuz`, and `g/initramfs-gz.img`
+  generated `roles/workstation-validation.ipxe`, `g/vmlinuz`, and
+  `g/initramfs-gz.img`
 - Kernel handoff: K10 requires iPXE UEFI Linux boot with
-  `initrd=initrd.magic`; direct `boot vmlinuz` or a non-magic initrd argument
-  causes the kernel to miss dracut and panic on `root=live:http://...`.
+  `initrd=initrd.magic` while the initramfs image is loaded under the normal
+  `initramfs-gz.img` name. Generated roles must run `imgfree` before loading
+  kernel/initramfs images; without it, iPXE can fetch kernel/initramfs but
+  Linux never requests `rootfs.img`.
 - HTTPBoot note: native UEFI HTTPBoot accepted DHCP only after option 60
   `HTTPClient`, but then failed to issue ARP/TCP toward `172.16.99.108`;
   PXE IPv4 is the active fallback because it did ARP and attempt TFTP
-- Current status: K10 loads the patched initramfs, loads
-  `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img` from
-  `http://172.16.99.108:8080`, mounts `LiveOS_rootfs`, switches root, and
-  reaches the Gentoo login prompt on the PiKVM video console.
+- Current status: AP7901 outlet 6 PDU reboot validated the repo-generated
+  `workstation-validation.ipxe` path from `172.16.99.88`: K10 loads the
+  patched initramfs, loads `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img`,
+  mounts `LiveOS_rootfs`, switches root, and accepts SSH as `root` on
+  `172.16.99.156`. OpenRC `netmount`, `sshd`, and `local` were started after
+  boot.
+- FreeIPA/SSSD status: K10 was transiently enrolled on the live Gentoo image as
+  `gmktek-k10-stage5.rfc1918.host` on 2026-05-09. On 2026-05-11 the promoted
+  Path B rootfs rebooted with SSSD, Samba, Kerberos, OpenLDAP, and
+  `/usr/lib64/sssd/libsss_ipa.so` present. A post-boot
+  `ipa-client-live-apply.yml` run then passed `sssctl config-check`, NSS lookup,
+  FreeIPA SSH-key lookup, PAM account checks, and floating SSH login as
+  `codex-admin`.
+- AAA durability caveat: the netboot rootfs is fetched over unauthenticated HTTP
+  and must not embed `/etc/krb5.keytab`. The current safe model is package
+  durability in the rootfs plus post-boot secure enrollment. Fully unattended
+  reboot-durable enrollment requires disk install or
+  `stage5-firstboot-enroll` consuming an age-encrypted FreeIPA host OTP bundle
+  so `/etc/krb5.keytab` is generated on the target.
+- SSSD package policy: the active Gentoo client requires `sys-auth/sssd samba`
+  and `net-fs/samba winbind`; without those flags, the IPA provider module
+  `/usr/lib64/sssd/libsss_ipa.so` is missing.
+- Live-image caveat: the booted live root still reports `hostname -f` as
+  `gentoo-pathb`, and system D-Bus is not running by default. The live
+  validation therefore treats `sssctl domain-status` as advisory if the failure
+  is exactly `Unable to connect to system bus` and the stronger NSS, SSH, PAM,
+  backend-module, and config-check gates pass.
 - Rebuild source of truth:
   `gentoo-liveiso-ansible/netboot-image-manifests/k10-stage5-workstation.yml`
   records the kernel, initramfs, rootfs, dracut firmware requirements, static
   command line, and Jenkins rebuild inputs for this K10 boot image.
+- Rebuild invocation: the Path B artifact builder now consumes profile
+  definitions directly. For the K10 AAA-capable rootfs, run with the
+  whitespace-separated shell list
+  `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`
+  so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy,
+  `app-crypt/age`, `curl`, `jq`, the `sssd` OpenRC service, and the opt-in
+  secure first-boot enrollment scaffold are carried into the generated rootfs
+  instead of applied only as live mutations. Do not embed host keytabs in the
+  public netboot artifact set.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.
@@ -86,7 +125,7 @@ Once the host requests DHCP, record:
 ## Validation Gates
 
 1. Reboot K10 with UEFI PXE IPv4 and confirm DHCP offer includes option 67
-   `k10-ipxe.efi` and `next-server=172.16.99.108`.
+   `k10-ipxe.efi` and `next-server=172.16.99.88`.
 2. Confirm firmware fetches `k10-ipxe.efi` over TFTP.
 3. Confirm embedded iPXE fetches `hosts/gmktek-k10-stage5.ipxe`.
 4. Confirm EFI/iPXE attaches and executes `g/initramfs-gz.img`.
@@ -99,8 +138,41 @@ Once the host requests DHCP, record:
 9. Validate Xorg-only policy: no Wayland/Xwayland path should be required.
 10. Validate Intel display stack: Mesa, libdrm, libva, Vulkan loader/tools, and
     Xorg driver behavior.
-11. Validate SSH, rsyslog, telemetry, and optional SSSD client enrollment.
+11. Validate SSH, rsyslog, telemetry, and SSSD client enrollment. The K10
+    Path B rootfs now includes the `aaa-domain-client` package layer and passes
+    post-boot FreeIPA/SSSD apply, but unattended enrollment durability still
+    requires disk install or secure first-boot age-encrypted FreeIPA OTP bundle
+    delivery plus hostname, offline cache, sudo policy, and break-glass
+    behavior validation.
 12. Snapshot/capture final package and Portage state before considering X12AGAIN.
+
+## E2ET Rebuild Timing Sequence
+
+Use this timing model when K10 is rebuilt as the bare-metal E2ET candidate:
+
+1. Pre-change capture: confirm RouterOS static lease, AP7901 outlet mapping,
+   NetBox device/interface/IPAM data, and current publisher artifact checksums.
+2. Image build: run the Path B artifact builder with
+   `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`.
+   Expected duration depends on binpkg cache state; record start, finish, and
+   elapsed wall time in the E2ET log.
+3. Publish: sync kernel, initramfs, rootfs, iPXE host script, and generated role
+   script to `boot-sun99-netboot-099088.rfc1918.host:/var/lib/netboot/path-b`.
+4. Power cycle: use AP7901 outlet 6 only after the publisher has the complete
+   artifact set and RouterOS still advertises `next-server=172.16.99.88`.
+5. Firmware and iPXE gates: validate DHCP, TFTP `k10-ipxe.efi`, host iPXE
+   script fetch, kernel fetch, initramfs fetch, Realtek firmware load, and
+   rootfs fetch in order. Stop on the first missing handoff.
+6. Rootfs smoke: validate SSH as root, hostname intent, OpenRC state, network
+   route, DNS, NTP/chrony readiness, rsyslog readiness, and exporter readiness.
+7. AAA smoke: validate package presence, SSSD config, NSS lookup, PAM account,
+   FreeIPA SSH-key lookup, and floating SSH for `codex-admin`.
+8. Durable enrollment gate: netboot-only evidence is insufficient. Mark the
+   durable E2ET gate complete only after disk install or another persistent
+   identity path proves `/etc/krb5.keytab`, SSSD cache, hostname, sudo policy,
+   and break-glass behavior survive a power-cycle.
+9. Conformance report: write pass/fail, timings, artifact IDs, package profile
+   IDs, and observed deviations before any X12AGAIN reimage action.
 
 ## Backout
 

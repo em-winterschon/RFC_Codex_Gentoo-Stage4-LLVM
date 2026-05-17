@@ -52,6 +52,20 @@ prefixes:
     vlan:
       id: 1078
       name: container-applications
+  - prefix: 10.78.0.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-management
+    vlan:
+      id: 1079
+      name: mcp-container-management
+  - prefix: 10.78.1.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-applications
+    vlan:
+      id: 1080
+      name: mcp-container-applications
 
 devices:
   - name: hasslehoff
@@ -61,6 +75,9 @@ devices:
     model: Proxmox-8.4-host
     status: active
     management_ip: 172.16.99.9
+    fqdn: cls0-rfc99-hasslehoff-099009.rfc1918.host
+    dns_aliases:
+      - hasslehoff.rfc1918.host
     interfaces:
       - name: vmbr0
         type: bridge
@@ -96,8 +113,8 @@ devices:
       - name: ge6
         lag: hasslehoff-bond0
         status: active
-      - name: ge15
-        purpose: lap-sun99-chonkers-lom
+      - name: ge14
+        purpose: admin-sun99-forge-099070-primary
         status: active
       - name: ge24
         purpose: crs354-management
@@ -258,7 +275,7 @@ devices:
     role: routeros-gateway-candidate
     manufacturer: MikroTik
     model: CCR2004-1G-2XS-PCIe
-    status: planned
+    status: active
     management_ip: 172.16.99.120
   - name: svc_netbox_stage4
     site: local-rfc1918-lab
@@ -279,6 +296,105 @@ devices:
     fqdn: ipa01.rfc1918.host
     hypervisor: hasslehoff
     vmid: 1063
+  - name: obs_sun99_prometheus_099064
+    site: local-rfc1918-lab
+    role: observability-prometheus
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.64
+    fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    dns_aliases:
+      - obs-sun99-prometheus.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1064
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-and-scrape
+        status: planned
+    notes:
+      - SUN99 Prometheus scrape scheduler and alert-rule runtime.
+      - Remote writes metrics to obs_sun99_vmetrics_099065.
+  - name: obs_sun99_vmetrics_099065
+    site: local-rfc1918-lab
+    role: observability-victoriametrics
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.65
+    fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    dns_aliases:
+      - obs-sun99-vmetrics.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1065
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-metrics-store-collectd
+        status: planned
+    notes:
+      - SUN99 VictoriaMetrics single-node retention store.
+      - Persistent metrics path is /srv/metrics/victoriametrics backed by Hasslehoff NFS export intent.
+  - name: obs_sun99_grafana_099066
+    site: local-rfc1918-lab
+    role: observability-grafana
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.66
+    fqdn: obs-sun99-grafana-099066.rfc1918.host
+    dns_aliases:
+      - obs-sun99-grafana.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1066
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-dashboard
+        status: planned
+    notes:
+      - SUN99 Grafana dashboard endpoint backed by VictoriaMetrics and Prometheus datasources.
+  - name: sched_sun99_slurmctl_099071
+    site: local-rfc1918-lab
+    role: slurm-controller
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.71
+    fqdn: sched-sun99-slurmctl-099071.rfc1918.host
+    dns_aliases:
+      - sched-sun99-slurmctl.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1071
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: slurm-control-plane
+        status: planned
+    notes:
+      - RFC99 SLURM pilot controller with local MUNGE, MariaDB, slurmdbd, and slurmctld.
+      - Must remain independent of X12AGAIN reimage state.
+  - name: slurm_worker_node01
+    site: local-rfc1918-lab
+    role: slurm-worker
+    manufacturer: Gentoo
+    model: gentoo-stage4-vm
+    status: planned
+    management_ip: 172.16.99.72
+    fqdn: sched-sun99-slurmwkr-099072.rfc1918.host
+    dns_aliases:
+      - sched-sun99-slurmwkr01.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1072
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: slurm-first-worker
+        status: planned
+    notes:
+      - Disposable first worker for SLURM pilot smoke validation.
+      - Replace or expand with K10/X12AGAIN only after host E2ET passes.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging
@@ -292,6 +408,38 @@ devices:
     notes:
       - Temporary Hasslehoff staging VM for safe container-services migration.
       - Do not assign the production Path B service IP until cutover validation passes.
+  - name: vm_mcp_control_plane
+    site: local-rfc1918-lab
+    role: mcp-control-plane
+    manufacturer: Gentoo
+    model: gentoo-stage5-container-vm
+    status: planned
+    management_ip: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    dns_aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1068
+    stage5_profile: vm-mcp-control-plane
+    service_tls_id: mcp_control_plane
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-and-mcp-frontdoor
+        status: planned
+      - name: podman-mcp-mgmt0
+        type: virtual
+        purpose: mcp-container-management
+        status: planned
+      - name: podman-mcp-apps0
+        type: virtual
+        purpose: mcp-container-applications
+        status: planned
+    notes:
+      - LAN-only MCP control-plane VM for Nginx-UI and future FastMCP wrappers.
+      - Required before live deployment: Nginx-UI vault secrets, RFC1918 TLS material, DNS records, and HAProxy config with MCP query-string logging disabled.
+      - Docker socket access must remain disabled unless a separate mutation proposal is approved.
   - name: gmktek_nucbox_k10_stage5_candidate
     site: local-rfc1918-lab
     role: baremetal-workstation-validation
@@ -314,34 +462,39 @@ devices:
     notes:
       - GMKtek NucBox K10 bare-metal Stage5 workstation validation host.
       - CPU Intel Core i9-13900HK; GPU Intel Iris Xe for display-only workstation validation.
-      - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.108.
+      - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
       - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
       - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
-  - name: lap_sun99_chonkers
+  - name: admin_sun99_forge_099070
     site: local-rfc1918-lab
-    role: baremetal-workstation-validation
-    manufacturer: Alienware
-    model: 16X Aurora
-    status: active
-    management_ip: 172.16.99.157
-    management_interface: LOM
-    fqdn: lap-sun99-chonkers.rfc1918.dev
-    asset_tag: AC16251
+    role: automation-admin
+    manufacturer: M70
+    model: Atom C3758 appliance
+    status: planned
+    management_ip: 172.16.99.70
+    management_interface: eth0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    dns_aliases:
+      - admin-sun99-forge.rfc1918.host
+      - forge.rfc1918.host
+      - forge-sun99.rfc1918.host
     interfaces:
-      - name: LOM
+      - name: eth0
         type: 1000base-t
-        purpose: native-ipxe-httpv4-netboot
-        mac_address: "84:5C:31:A5:CF:51"
+        purpose: uefi-pxe-ipxe-netboot
+        mac_address: "00:07:32:78:65:C6"
         connected_device: sw_mgmt_css326
-        connected_interface: ge15
-        netboot_type: dynamic
-        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
+        connected_interface: ge14
+        netboot_type: static
+        netboot_protocol_flow: pxe-to-ipxe
         status: active
     notes:
-      - Alienware 16X Aurora Stage5 workstation validation laptop.
-      - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
-      - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
-      - Realtek RTL8111H 1GbE LOM is connected to CSS326 ge15.
+      - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
+      - CPU Intel Atom C3758; planned 64 GiB ECC RAM, but 2026-05-13 live serial validation observed 32 GiB available.
+      - Six 1GbE NICs; 32GB SATADOM iPXE boot anchor; two 238.5GB KIOXIA NVMe devices mirrored as zroot.
+      - Desired state remains UEFI PXE/TFTP to m70-forge-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
+      - Operational 2026-05-14 state is local SATADOM ESP chainload to the M70-specific iPXE EFI binary, then HTTP kernel/initramfs boot of local ZFS root zroot/ROOT/gentoo.
+      - Primary NIC eth0 MAC 00:07:32:78:65:C6 is connected to CSS326 ge14.
       - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab
@@ -360,9 +513,9 @@ devices:
         status: active
     power_outlets:
       - name: outlet4
-        label: host_lap_sun99_chonkers
+        label: admin-sun99-forge
         outlet_index: 4
-        target_device: lap_sun99_chonkers
+        target_device: admin_sun99_forge_099070
         target_power_port: power0
         status: active
       - name: outlet6
@@ -375,9 +528,9 @@ devices:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
       - Operator/control-panel name is pdu-rfc99-corectrl-099241.
-      - Outlet 4 maps to lap_sun99_chonkers.
+      - Outlet 4 control-panel label is admin-sun99-forge and maps to admin_sun99_forge_099070.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
-      - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
+      - PDU mutation automation must verify the expected outlet label before setting command OIDs.
 
 clusters:
   - name: hasslehoff-proxmox
@@ -398,7 +551,13 @@ clusters:
     members:
       - svc_netbox_stage4
       - svc_identity_ipa01
+      - obs_sun99_prometheus_099064
+      - obs_sun99_vmetrics_099065
+      - obs_sun99_grafana_099066
+      - sched_sun99_slurmctl_099071
+      - slurm_worker_node01
       - svc_container_services_safe_move_01
+      - vm_mcp_control_plane
 
 service_vips:
   - name: msg-sun99-ntfysys
@@ -413,6 +572,21 @@ service_vips:
     listeners:
       - protocol: http
         port: 80
+  - name: obs-sun99-esvip-099092
+    site: local-rfc1918-lab
+    address: 172.16.99.92
+    fqdn: obs-sun99-esvip-099092.rfc1918.host
+    aliases:
+      - obs-sun99-esvip.rfc1918.host
+    owners:
+      - observability
+      - logging-search
+    listeners:
+      - protocol: tcp
+        port: 9200
+    notes:
+      - CCR2004 owns the SUN99 service VIP and DNATs TCP/9200 to svc-container-services-safe-move-01 on 172.16.99.89.
+      - HAProxy remains on the Stage4 container-services VM; RouterOS containers are deferred to lab-only validation.
   - name: netbox-http
     site: local-rfc1918-lab
     address: 172.16.99.62
@@ -435,16 +609,115 @@ service_vips:
         port: 1812
       - protocol: udp
         port: 1813
-  - name: rsyslog-ingest-vip
+  - name: obs-sun99-prometheus
     site: local-rfc1918-lab
-    address: 10.9.8.20
+    address: 172.16.99.64
+    fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    aliases:
+      - obs-sun99-prometheus.rfc1918.host
     owners:
       - observability
     listeners:
+      - protocol: http
+        port: 9090
+  - name: obs-sun99-vmetrics
+    site: local-rfc1918-lab
+    address: 172.16.99.65
+    fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    aliases:
+      - obs-sun99-vmetrics.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 8428
       - protocol: tcp
-        port: 514
+        port: 2003
       - protocol: udp
-        port: 514
+        port: 25826
+      - protocol: tcp
+        port: 9103
+  - name: obs-sun99-grafana
+    site: local-rfc1918-lab
+    address: 172.16.99.66
+    fqdn: obs-sun99-grafana-099066.rfc1918.host
+    aliases:
+      - obs-sun99-grafana.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 3000
+  - name: obs-sun99-kibana
+    site: local-rfc1918-lab
+    address: 172.16.99.67
+    fqdn: obs-sun99-kibana-099067.rfc1918.host
+    aliases:
+      - obs-sun99-kibana.rfc1918.host
+    owners:
+      - observability
+    listeners:
+      - protocol: http
+        port: 5601
+  - name: mcp-control-plane
+    site: local-rfc1918-lab
+    address: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    owners:
+      - automation
+      - mcp-control-plane
+    listeners:
+      - protocol: http
+        port: 80
+      - protocol: https
+        port: 443
+    notes:
+      - HAProxy front door for Nginx-UI native MCP and future FastMCP infrastructure wrappers.
+      - TLS certificate service ID is mcp_control_plane.
+  - name: sched-sun99-slurmctl
+    site: local-rfc1918-lab
+    address: 172.16.99.71
+    fqdn: sched-sun99-slurmctl-099071.rfc1918.host
+    aliases:
+      - sched-sun99-slurmctl.rfc1918.host
+    owners:
+      - scheduler
+      - build-farm
+    listeners:
+      - protocol: tcp
+        port: 6817
+      - protocol: tcp
+        port: 6819
+  - name: sched-sun99-slurmwkr01
+    site: local-rfc1918-lab
+    address: 172.16.99.72
+    fqdn: sched-sun99-slurmwkr-099072.rfc1918.host
+    aliases:
+      - sched-sun99-slurmwkr01.rfc1918.host
+    owners:
+      - scheduler
+      - build-farm
+    listeners:
+      - protocol: tcp
+        port: 6818
+  - name: log-sun99-rsyslog-099093
+    site: local-rfc1918-lab
+    address: 172.16.99.93
+    fqdn: log-sun99-rsyslog-099093.rfc1918.host
+    aliases:
+      - log-sun99-rsyslog.rfc1918.host
+    owners:
+      - observability
+      - centralized-logging
+    listeners:
+      - protocol: tcp
+        port: 6514
+    notes:
+      - CCR2004 owns the SUN99 rsyslog service VIP and DNATs TCP/6514 to svc-container-services-safe-move-01 on 172.16.99.89.
+      - Keep this syslog path separate from the Elasticsearch/search VIP so log shipping survives search endpoint changes.
   - name: elasticsearch-vip
     site: local-rfc1918-lab
     address: 10.9.8.21

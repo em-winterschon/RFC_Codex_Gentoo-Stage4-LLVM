@@ -82,6 +82,10 @@
 {% for routeros_address in routeros_rfc99_gateway_legacy_bridge_addresses %}
 /ip address add address={{ routeros_address.address }} interface={{ routeros_address.interface }} comment="RFC99 legacy {{ routeros_address.comment }}"
 {% endfor %}
+/ip address remove [find comment~"RFC99 service VIP"]
+{% for service_vip in routeros_rfc99_gateway_service_vips %}
+/ip address add address={{ service_vip.address }} interface={{ service_vip.interface | default(routeros_rfc99_gateway_lan_bridge) }} comment="RFC99 service VIP {{ service_vip.name }}"
+{% endfor %}
 
 # WAN egress.
 /ip dhcp-client remove [find interface="{{ routeros_rfc99_gateway_wan_interface }}"]
@@ -98,6 +102,10 @@
 {% else %}
 :error ("[" . $cfgTag . "] invalid WAN mode {{ routeros_rfc99_gateway_wan_mode }}")
 {% endif %}
+/ip route remove [find comment~"RFC99 static route"]
+{% for static_route in routeros_rfc99_gateway_static_routes %}
+/ip route add dst-address={{ static_route.dst_address }} gateway={{ static_route.gateway }} distance={{ static_route.distance | default(1) }} comment="RFC99 static route {{ static_route.comment }}"
+{% endfor %}
 /ip dns set servers={{ routeros_rfc99_gateway_dns_servers | join(',') }} allow-remote-requests={{ routeros_rfc99_gateway_dns_allow_remote_requests | ternary("yes", "no") }}
 {% for dns_record in routeros_rfc99_gateway_dns_static_records %}
 {% set record_type = dns_record.type | default('A') | upper %}
@@ -158,15 +166,27 @@
 /ip ssh set strong-crypto={{ routeros_rfc99_gateway_ssh_strong_crypto | ternary("yes", "no") }} forwarding-enabled={{ routeros_rfc99_gateway_ssh_forwarding | ternary("yes", "no") }}
 /tool bandwidth-server set enabled=no
 
-# Self-signed certificate until the internal CA service is wired into RouterOS imports.
 /ip service set www-ssl disabled=yes address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate=none
 /ip service set api-ssl disabled=yes address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate=none
+{% if routeros_rfc99_gateway_certificate_source == 'rfc1918_private_ca' %}
+# Internal CA certificate import. Upload the CA certificate and PKCS#12 bundle
+# before applying this script; the PKCS#12 passphrase is rendered from vault.
+/certificate remove [find name~"{{ routeros_rfc99_gateway_internal_ca_certificate_name }}"]
+/certificate import file-name="{{ routeros_rfc99_gateway_internal_ca_ca_file }}" passphrase="" trusted=yes
+/certificate import file-name="{{ routeros_rfc99_gateway_internal_ca_pkcs12_file }}" passphrase="{{ routeros_rfc99_gateway_internal_ca_pkcs12_passphrase }}"
+:delay 2s
+/certificate set [find where common-name="{{ routeros_rfc99_gateway_certificate_common_name }}"] name="{{ routeros_rfc99_gateway_internal_ca_certificate_name }}" trusted=yes
+/ip service set www-ssl disabled={{ (not routeros_rfc99_gateway_https_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_https_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate={{ routeros_rfc99_gateway_internal_ca_certificate_name }} tls-version=only-1.2
+/ip service set api-ssl disabled={{ (not routeros_rfc99_gateway_api_ssl_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_api_ssl_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate={{ routeros_rfc99_gateway_internal_ca_certificate_name }} tls-version=only-1.2
+{% else %}
+# Self-signed certificate until the internal CA service is wired into RouterOS imports.
 /certificate remove [find name~"{{ routeros_rfc99_gateway_certificate_name }}"]
 /certificate add name="{{ routeros_rfc99_gateway_certificate_name }}-template" common-name="{{ routeros_rfc99_gateway_certificate_common_name }}" subject-alt-name="{{ routeros_rfc99_gateway_certificate_subject_alt_names | join(',') }}" key-size={{ routeros_rfc99_gateway_certificate_key_size }} days-valid={{ routeros_rfc99_gateway_certificate_days_valid }} key-usage=digital-signature,key-encipherment,tls-server,key-cert-sign,crl-sign trusted=yes
 /certificate sign "{{ routeros_rfc99_gateway_certificate_name }}-template" name="{{ routeros_rfc99_gateway_certificate_name }}"
 :delay 2s
 /ip service set www-ssl disabled={{ (not routeros_rfc99_gateway_https_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_https_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate={{ routeros_rfc99_gateway_certificate_name }} tls-version=only-1.2
 /ip service set api-ssl disabled={{ (not routeros_rfc99_gateway_api_ssl_enabled) | ternary("yes", "no") }} port={{ routeros_rfc99_gateway_api_ssl_port }} address={{ routeros_rfc99_gateway_management_cidrs | join(',') }} certificate={{ routeros_rfc99_gateway_certificate_name }} tls-version=only-1.2
+{% endif %}
 
 # Remote syslog client.
 {% if routeros_rfc99_gateway_syslog_enabled | bool %}
@@ -209,6 +229,14 @@
 {% endif %}
 
 {% if routeros_rfc99_gateway_nat_enabled | bool %}
+/ip firewall nat remove [find comment~"RFC99 service dstnat"]
+{% for dnat_rule in routeros_rfc99_gateway_dst_nat_rules %}
+/ip firewall nat add chain=dstnat action=dst-nat protocol={{ dnat_rule.protocol | default('tcp') }} dst-address={{ dnat_rule.dst_address }} dst-port={{ dnat_rule.dst_port }} to-addresses={{ dnat_rule.to_address }} to-ports={{ dnat_rule.to_port | default(dnat_rule.dst_port) }} comment="RFC99 service dstnat {{ dnat_rule.comment }}"
+{% endfor %}
+/ip firewall nat remove [find comment~"RFC99 service srcnat"]
+{% for srcnat_rule in routeros_rfc99_gateway_src_nat_rules %}
+/ip firewall nat add chain=srcnat action={{ srcnat_rule.action | default('masquerade') }} protocol={{ srcnat_rule.protocol | default('tcp') }} src-address={{ srcnat_rule.src_address }} dst-address={{ srcnat_rule.dst_address }}{% if srcnat_rule.dst_port is defined and (srcnat_rule.dst_port | string | length) > 0 %} dst-port={{ srcnat_rule.dst_port }}{% endif %} comment="RFC99 service srcnat {{ srcnat_rule.comment }}"
+{% endfor %}
 /ip firewall nat remove [find comment="RFC99 WAN SNAT"]
 /ip firewall nat add chain=srcnat action=masquerade out-interface-list=WAN comment="RFC99 WAN SNAT"
 {% endif %}

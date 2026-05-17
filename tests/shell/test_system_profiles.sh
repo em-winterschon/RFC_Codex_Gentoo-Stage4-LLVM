@@ -32,12 +32,14 @@ for profile in \
   hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  metal-forge-automation-admin.yml \
   logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
   nfs-storage-client.yml \
   netbox-managed-inventory.yml \
   netbox-pathb-lab-ipam-plan.yml \
+  telemetry-collectd-client.yml \
   telemetry-elasticsearch-exporter.yml \
   telemetry-node-exporter-client.yml \
   telemetry-podman-exporter.yml \
@@ -52,6 +54,7 @@ for profile in \
   vm-guest-simple-ipxe.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-observability-victoriametrics.yml \
   vm-redfish-emulator.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
@@ -73,6 +76,7 @@ for metadata in \
   hardened-llvm-stage4-merged-usr.metadata.yml \
   hardened-llvm-stage4-split-usr.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
+  metal-forge-automation-admin.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
   nfs-storage-client.metadata.yml \
@@ -87,6 +91,7 @@ for metadata in \
   vm-guest-simple-ipxe.metadata.yml \
   vm-observability-grafana.metadata.yml \
   vm-observability-prometheus.metadata.yml \
+  vm-observability-victoriametrics.metadata.yml \
   vm-redfish-emulator.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
@@ -114,6 +119,7 @@ for host_var in \
   vm-guest-simple.yml \
   vm-observability-grafana.yml \
   vm-observability-prometheus.yml \
+  vm-observability-victoriametrics.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
   vm-nexus-repository.yml; do
@@ -130,11 +136,14 @@ for package_list in \
   stage5-base-minimal-xorg-slim.packages \
   stage5-domain-client.packages \
   stage5-managed-access-zerotier.packages \
+  stage5-metal-intel-platform.packages \
+  stage5-metal-forge-automation-admin.packages \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \
   stage5-storage-nfs-client.packages \
   stage5-observability-client.packages \
+  stage5-observability-metrics-collectd-client.packages \
   stage5-observability-metrics-client.packages \
   stage5-observability-metrics-elasticsearch-exporter.packages \
   stage5-observability-metrics-podman-exporter.packages \
@@ -150,6 +159,7 @@ for package_list in \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
+  stage5-virtual-host-observability-victoriametrics.packages \
   stage5-virtual-host-redfish-emulator.packages \
   stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages; do
@@ -168,6 +178,8 @@ assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=x11-drivers/nvi
 assert_file_contains "${PROFILE_DIR}/vm-workstation-nscde.yml" '=dev-util/nvidia-cuda-toolkit-12\.9\.1-r1 NVIDIA-CUDA'
 assert_file_contains "${PREFLIGHT_ROLE}" 'resolved_portage_patch_files'
 assert_file_contains "${PORTAGE_ROLE}" '/etc/portage/patches'
+assert_file_contains "${PROFILE_DIR}/vm-kibana-interface.yml" 'install_method: upstream_tarball'
+assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-kibana-interface.packages" '^net-misc/curl$'
 
 test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 

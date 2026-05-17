@@ -38,6 +38,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -45,6 +47,9 @@ install_role_sequences:
           - nexus_repo
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -56,6 +61,7 @@ install_role_sequences:
           - platform_profile
           - identity
           - memory_storage
+          - slurm_cluster
           - jenkins_controller
           - distcc_farm
           - container_host
@@ -106,6 +112,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -113,6 +121,9 @@ install_role_sequences:
           - nexus_repo
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -177,6 +188,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -184,6 +197,9 @@ install_role_sequences:
           - nexus_repo
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
@@ -193,6 +209,7 @@ install_role_sequences:
           - platform_profile
           - identity
           - memory_storage
+          - slurm_cluster
           - jenkins_controller
           - distcc_farm
           - container_host
@@ -242,6 +259,8 @@ install_role_sequences:
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
+          - telemetry_collectd
+          - telemetry_victoriametrics
           - telemetry_prometheus
           - telemetry_alertmanager
           - telemetry_grafana
@@ -258,6 +277,7 @@ install_role_sequences:
           - platform_profile
           - identity
           - memory_storage
+          - slurm_cluster
           - jenkins_controller
           - distcc_farm
           - container_host

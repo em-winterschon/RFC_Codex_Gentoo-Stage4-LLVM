@@ -26,6 +26,14 @@ start_pre() {
   checkpath --directory --owner "${openrc_action_user}:${openrc_action_group}" --mode 0755 "$(dirname "${openrc_action_error_log}")"
   checkpath --file --owner "${openrc_action_user}:${openrc_action_group}" --mode 0644 "${openrc_action_output_log}"
   checkpath --file --owner "${openrc_action_user}:${openrc_action_group}" --mode 0644 "${openrc_action_error_log}"
+  if [ "${openrc_action_cgroup_v2_system_slice:-no}" = "yes" ] && [ -d /sys/fs/cgroup ]; then
+    mkdir -p /sys/fs/cgroup/system.slice 2>/dev/null || true
+    for openrc_action_cgroup_controller in ${openrc_action_cgroup_v2_controllers:-}; do
+      if grep -qw "${openrc_action_cgroup_controller}" /sys/fs/cgroup/system.slice/cgroup.controllers 2>/dev/null; then
+        echo "+${openrc_action_cgroup_controller}" > /sys/fs/cgroup/system.slice/cgroup.subtree_control 2>/dev/null || true
+      fi
+    done
+  fi
 }
 
 start() {

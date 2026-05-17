@@ -13,6 +13,7 @@
         container_haproxy_profile.tls.container_dir
         | default(container_haproxy_container_tls_dir)
       }}
+    container_haproxy_tls_crt_list_path: "{{ container_haproxy_profile.tls.crt_list | default('') }}"
     container_haproxy_runtime_volumes: >-
       {{
         [
@@ -45,6 +46,17 @@
     - container_services_enabled
     - container_haproxy_profile.enabled | default(false) | bool
     - container_haproxy_tls_enabled | bool
+
+- name: Render haproxy TLS crt-list
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}{{ container_haproxy_tls_dir }}/{{ container_haproxy_tls_crt_list_path | basename }}"
+    content: "{{ (container_haproxy_profile.tls.crt_list_entries | default([container_haproxy_profile.tls.cert_path])) | join('\n') }}\n"
+    mode: '0644'
+  when:
+    - container_services_enabled
+    - container_haproxy_profile.enabled | default(false) | bool
+    - container_haproxy_tls_enabled | bool
+    - container_haproxy_tls_crt_list_path | length > 0
 
 - name: Render haproxy configuration
   ansible.builtin.template:

@@ -1,0 +1,178 @@
+---
+- name: Refuse FreeIPA server certificate migration without explicit apply gate
+  ansible.builtin.assert:
+    that:
+      - freeipa_server_certificate_apply | bool
+      - freeipa_server_certificate_service_id | length > 0
+    fail_msg: >-
+      FreeIPA server certificate migration requires
+      freeipa_server_certificate_enabled=true,
+      freeipa_server_certificate_apply=true, and a selected
+      freeipa_server_certificate_service_id.
+  when: freeipa_server_certificate_enabled | bool
+
+- name: Resolve FreeIPA server certificate matrix entry
+  ansible.builtin.set_fact:
+    freeipa_server_certificate_entry: "{{ freeipa_server_certificate_matrix[freeipa_server_certificate_service_id] }}"
+    freeipa_server_certificate_secret_map: "{{ lookup('vars', freeipa_server_certificate_secret_namespace, default={}) }}"
+  when:
+    - freeipa_server_certificate_enabled | bool
+    - freeipa_server_certificate_apply | bool
+
+- name: Resolve FreeIPA server certificate secret values
+  ansible.builtin.set_fact:
+    freeipa_server_certificate_secret_entry: "{{ freeipa_server_certificate_secret_map[freeipa_server_certificate_service_id] | default({}) }}"
+    freeipa_server_certificate_directory_manager_password_var_resolved: >-
+      {{
+        freeipa_server_certificate_directory_manager_password_var
+        if freeipa_server_certificate_directory_manager_password_var | length > 0
+        else freeipa_server_certificate_entry.secret_refs.directory_manager_password | default('')
+      }}
+    freeipa_server_certificate_cert_name_resolved: "{{ freeipa_server_certificate_entry.deploy_options.cert_name | default(freeipa_server_certificate_service_id) }}"
+    freeipa_server_certificate_ca_nickname_resolved: "{{ freeipa_server_certificate_entry.deploy_options.ca_nickname | default('RFC1918-Private-CA') }}"
+    freeipa_server_certificate_install_http_resolved: "{{ freeipa_server_certificate_entry.deploy_options.install_http_certificate | default(freeipa_server_certificate_install_http) }}"
+    freeipa_server_certificate_install_dirsrv_resolved: "{{ freeipa_server_certificate_entry.deploy_options.install_dirsrv_certificate | default(freeipa_server_certificate_install_dirsrv) }}"
+    freeipa_server_certificate_install_kdc_resolved: "{{ freeipa_server_certificate_entry.deploy_options.install_kdc_certificate | default(freeipa_server_certificate_install_kdc) }}"
+  no_log: true
+  when:
+    - freeipa_server_certificate_enabled | bool
+    - freeipa_server_certificate_apply | bool
+
+- name: Resolve FreeIPA Directory Manager password
+  ansible.builtin.set_fact:
+    freeipa_server_certificate_directory_manager_password: "{{ lookup('vars', freeipa_server_certificate_directory_manager_password_var_resolved, default='') }}"
+  no_log: true
+  when:
+    - freeipa_server_certificate_enabled | bool
+    - freeipa_server_certificate_apply | bool
+
+- name: Assert FreeIPA certificate migration inputs exist
+  ansible.builtin.assert:
+    that:
+      - freeipa_server_certificate_entry.service_class == 'identity_http_ldap'
+      - freeipa_server_certificate_secret_entry.pkcs12_base64 is defined
+      - freeipa_server_certificate_secret_entry.pkcs12_base64 | length > 0
+      - freeipa_server_certificate_secret_entry.pkcs12_password is defined
+      - freeipa_server_certificate_secret_entry.pkcs12_password | length > 0
+      - freeipa_server_certificate_directory_manager_password | length > 0
+      - freeipa_server_certificate_ca_cert_pem | length > 0
+      - (freeipa_server_certificate_install_http_resolved | bool) or (freeipa_server_certificate_install_dirsrv_resolved | bool) or (freeipa_server_certificate_install_kdc_resolved | bool)
+    fail_msg: >-
+      FreeIPA server certificate migration requires service TLS PKCS#12 vault
+      material, vault_freeipa_ipa01_directory_manager_password or an override
+      variable, an RFC1918 CA certificate PEM, and at least one target store.
+  no_log: true
+  when:
+    - freeipa_server_certificate_enabled | bool
+    - freeipa_server_certificate_apply | bool
+
+- name: Install FreeIPA RFC1918 certificate bundle
+  when:
+    - freeipa_server_certificate_enabled | bool
+    - freeipa_server_certificate_apply | bool
+  block:
+    - name: Check FreeIPA services before certificate migration
+      ansible.builtin.command:
+        argv:
+          - ipactl
+          - status
+      changed_when: false
+
+    - name: Check FreeIPA certificate installer availability
+      ansible.builtin.command:
+        argv:
+          - ipa-server-certinstall
+          - --help
+      changed_when: false
+
+    - name: Ensure FreeIPA certificate staging directory exists
+      ansible.builtin.file:
+        path: "{{ freeipa_server_certificate_tempdir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Stage RFC1918 CA certificate for FreeIPA trust import
+      ansible.builtin.copy:
+        dest: "{{ freeipa_server_certificate_tempdir }}/rfc1918-private-ca.crt.pem"
+        content: "{{ freeipa_server_certificate_ca_cert_pem }}"
+        mode: "0644"
+      no_log: true
+
+    - name: Stage FreeIPA PKCS#12 certificate bundle
+      ansible.builtin.shell:
+        cmd: >-
+          umask 077 &&
+          base64 -d > {{ freeipa_server_certificate_tempdir }}/{{ freeipa_server_certificate_service_id }}.p12
+        stdin: "{{ freeipa_server_certificate_secret_entry.pkcs12_base64 }}"
+        executable: /bin/bash
+      no_log: true
+
+    - name: Import RFC1918 CA into FreeIPA trust store
+      ansible.builtin.command:
+        argv:
+          - ipa-cacert-manage
+          - install
+          - "{{ freeipa_server_certificate_tempdir }}/rfc1918-private-ca.crt.pem"
+          - "-n"
+          - "{{ freeipa_server_certificate_ca_nickname_resolved }}"
+          - "-t"
+          - "C,,"
+          - "-p"
+          - "{{ freeipa_server_certificate_directory_manager_password }}"
+      no_log: true
+
+    - name: Refresh FreeIPA CA trust on the server
+      ansible.builtin.command:
+        argv:
+          - ipa-certupdate
+      no_log: true
+
+    - name: Build FreeIPA server certificate install argv
+      ansible.builtin.set_fact:
+        freeipa_server_certificate_install_argv: >-
+          {{
+            ['ipa-server-certinstall']
+            + (['-w'] if freeipa_server_certificate_install_http_resolved | bool else [])
+            + (['-d'] if freeipa_server_certificate_install_dirsrv_resolved | bool else [])
+            + (['-k'] if freeipa_server_certificate_install_kdc_resolved | bool else [])
+            + [
+              '--pin',
+              freeipa_server_certificate_secret_entry.pkcs12_password,
+              '-p',
+              freeipa_server_certificate_directory_manager_password,
+              '--cert-name',
+              freeipa_server_certificate_cert_name_resolved,
+              freeipa_server_certificate_tempdir ~ '/' ~ freeipa_server_certificate_service_id ~ '.p12'
+            ]
+          }}
+      no_log: true
+
+    - name: Install FreeIPA HTTP/Directory certificate from PKCS#12
+      ansible.builtin.command:
+        argv: "{{ freeipa_server_certificate_install_argv }}"
+      no_log: true
+
+    - name: Restart FreeIPA after certificate migration
+      ansible.builtin.command:
+        argv:
+          - ipactl
+          - restart
+      when: freeipa_server_certificate_restart | bool
+
+    - name: Validate local FreeIPA HTTPS certificate after migration
+      ansible.builtin.shell: >-
+        timeout 20 openssl s_client
+        -connect 127.0.0.1:443
+        -servername {{ freeipa_server_certificate_entry.validation.openssl_name | default(freeipa_server_certificate_entry.endpoint_fqdn) }}
+        -verify_return_error
+        -verify_hostname {{ freeipa_server_certificate_entry.validation.openssl_name | default(freeipa_server_certificate_entry.endpoint_fqdn) }}
+        -CAfile {{ freeipa_server_certificate_tempdir }}/rfc1918-private-ca.crt.pem
+        < /dev/null
+      changed_when: false
+      when: freeipa_server_certificate_validate_local_tls | bool
+  always:
+    - name: Remove FreeIPA certificate migration staging directory
+      ansible.builtin.file:
+        path: "{{ freeipa_server_certificate_tempdir }}"
+        state: absent
+      no_log: true

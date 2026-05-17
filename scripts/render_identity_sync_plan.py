@@ -24,10 +24,12 @@ def render_identity_sync_plan(source: dict[str, Any]) -> dict[str, Any]:
     groups = source.get("groups", []) or []
     host_enrollments = source.get("host_enrollments", []) or []
     radius_clients = source.get("radius_clients", []) or []
+    uid_gid_policy = source.get("uid_gid_policy", {}) or {}
 
     return {
         "realm": source["realm"],
         "domain": source["domain"],
+        "freeipa_local_idrange": uid_gid_policy.get("freeipa_local_idrange", {}) or {},
         "freeipa_groups": [
             {
                 "name": group["name"],

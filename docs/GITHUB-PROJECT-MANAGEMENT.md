@@ -85,8 +85,8 @@ Current live seed status:
 - open roadmap/catalog issues are applied
 - Projects v2 board `RFC Codex Infrastructure Roadmap` is created at
   `https://github.com/users/em-winterschon/projects/1`
-- the board contains `81` seeded roadmap/catalog/epic issues and the custom
-  `Roadmap Status` plus `Roadmap ID` fields
+- the board contains seeded roadmap/catalog/epic issues and the custom
+  `Kanban Status`, `Roadmap Status`, and `Roadmap ID` fields
 - relationship sync has created `14` milestone epic issues and dependency
   sections with live issue references where the referenced roadmap issue exists
 
@@ -106,7 +106,7 @@ GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" \
 
 This pass creates epic issues for each milestone, rewrites dependency sections
 with live `#issue` references, adds all seeded issues to the project, and fills
-`Roadmap ID` / `Roadmap Status` project fields.
+`Roadmap ID`, `Roadmap Status`, and `Kanban Status` project fields.
 
 Native GitHub dependency and sub-issue API links are optional:
 
@@ -140,8 +140,21 @@ GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" \
 
 The project is named `RFC Codex Infrastructure Roadmap` unless overridden with
 `--project-title`. GitHub creates a reserved `Status` field automatically; the
-script creates `Roadmap Status` and `Roadmap ID` fields for repo-specific
-Kanban and burn-down style tracking, then adds seeded issues to the project.
+script creates `Kanban Status`, `Roadmap Status`, and `Roadmap ID` fields for
+repo-specific Kanban and burn-down style tracking, then adds seeded issues to
+the project.
+
+`Kanban Status` is the operator-facing board column field and uses:
+
+- `Backlog`
+- `Scoping`
+- `In-Progress`
+- `Blocked`
+- `Review-Ready`
+- `Complete`
+
+`Roadmap Status` remains in place for legacy automation compatibility and maps
+to `Backlog`, `Ready`, `Active`, `Blocked`, `Review`, and `Done`.
 
 If the token is missing project permissions, the script exits before performing
 any project mutation and prints a scope-specific error.

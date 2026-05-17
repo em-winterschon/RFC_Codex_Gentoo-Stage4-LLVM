@@ -5,6 +5,7 @@ SOURCE_HOST="${SOURCE_HOST:-root@10.9.8.89}"
 TARGET_HOST="${TARGET_HOST:-root@172.16.99.89}"
 STAGING_MODE="${STAGING_MODE:-1}"
 START_SERVICES="${START_SERVICES:-0}"
+TARGET_PATHB_ROUTES="${TARGET_PATHB_ROUTES:-}"
 DRY_RUN=1
 
 usage() {
@@ -18,6 +19,10 @@ Environment:
   SOURCE_HOST    SSH target for the source container-services VM.
   TARGET_HOST    SSH target for the staging VM.
   STAGING_MODE   When 1, patch HAProxy to avoid claiming production 10.9.8.92.
+  TARGET_PATHB_ROUTES
+                 Optional pipe-delimited routes to persist on the target for
+                 legacy Path B backends. Empty by default; CCR2004 should be
+                 the normal gateway for current container-services targets.
 
 Safety:
   This copies runtime config and OpenRC wrappers only. It does not move the
@@ -88,6 +93,7 @@ dry_run() {
   log "paths=${remote_paths[*]}"
   log "staging_mode=${STAGING_MODE}"
   log "start_services=${START_SERVICES}"
+  log "target_pathb_routes=${TARGET_PATHB_ROUTES}"
 }
 
 copy_runtime() {
@@ -129,6 +135,71 @@ rc-update add container-haproxy default
 '
 }
 
+persist_target_pathb_routes() {
+  [[ -n "${TARGET_PATHB_ROUTES}" ]] || return 0
+  ssh "${TARGET_HOST}" "TARGET_PATHB_ROUTES='${TARGET_PATHB_ROUTES}' python3 -" << 'PY'
+import os
+import re
+import shutil
+import subprocess
+import time
+from pathlib import Path
+
+routes = [route.strip() for route in os.environ["TARGET_PATHB_ROUTES"].split("|") if route.strip()]
+path = Path("/etc/conf.d/net")
+
+if path.exists():
+    text = path.read_text(encoding="utf-8")
+else:
+    text = ""
+
+changed = False
+
+def ensure_route_var(text: str, var_name: str) -> tuple[str, bool]:
+    pattern = re.compile(rf'^{re.escape(var_name)}="([^"]*)"$', re.MULTILINE)
+    match = pattern.search(text)
+    if match:
+        current = match.group(1)
+        updated = current
+        for route in routes:
+            if route not in updated:
+                updated = f"{updated} {route}".strip()
+        if updated == current:
+            return text, False
+        return text[:match.start()] + f'{var_name}="{updated}"' + text[match.end():], True
+
+    return f'{text.rstrip()}\n{var_name}="{" ".join(routes)}"\n', True
+
+for var_name in ("routes_eth0", "routes_ens18"):
+    text, var_changed = ensure_route_var(text, var_name)
+    changed = changed or var_changed
+
+if changed:
+    if path.exists():
+        backup = path.with_name(f"{path.name}.pre-pathb-routes-{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}")
+        shutil.copy2(path, backup)
+    path.write_text(text, encoding="utf-8")
+
+for route in routes:
+    destination, _via, gateway = route.partition(" via ")
+    if not destination or not gateway:
+        raise SystemExit(f"unsupported route format: {route}")
+    route_get = subprocess.run(
+        ["ip", "-o", "route", "get", gateway],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    tokens = route_get.stdout.split()
+    dev = tokens[tokens.index("dev") + 1] if "dev" in tokens else "eth0"
+    subprocess.run(
+        ["ip", "route", "replace", destination, "via", gateway, "dev", dev],
+        check=False,
+    )
+PY
+}
+
 start_runtime() {
   [[ "${START_SERVICES}" == '1' ]] || return 0
   ssh "${TARGET_HOST}" 'set -euo pipefail
@@ -151,6 +222,7 @@ main() {
   copy_runtime
   patch_staging_haproxy
   enable_runtime
+  persist_target_pathb_routes
   start_runtime
 }
 

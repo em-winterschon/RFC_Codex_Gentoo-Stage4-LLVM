@@ -1,0 +1,16 @@
+---
+gentoo_system_profile_metadata:
+  name: vm-observability-victoriametrics
+  summary: Stage 5 virtual-host profile for VictoriaMetrics single-node retention, collectd aggregation, and NFS-backed metrics persistence.
+  stage_taxonomy:
+    stage4: hardened-llvm-stage4-merged-usr
+    stage5:
+      - virtual-host
+      - observability-victoriametrics
+      - metrics-retention
+  package_pins:
+    tracked_atoms:
+      - app-metrics/collectd
+      - net-fs/nfs-utils
+    app_version_lock_id: victoriametrics-stack
+    upstream_app_version: VictoriaMetrics 1.142.0

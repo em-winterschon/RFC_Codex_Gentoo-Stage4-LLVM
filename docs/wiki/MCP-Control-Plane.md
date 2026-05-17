@@ -9,6 +9,9 @@ generic HTTP/SSE MCP backend slot reserved for later tools.
 ## Service Topology
 
 - Profile: `vm-mcp-control-plane`
+- Inventory host: `vm_mcp_control_plane`
+- Management IP: `172.16.99.68`
+- Proxmox placement: Hasslehoff VMID `1068`
 - Runtime: Podman via the existing container-services roles
 - Front door: HAProxy on ports `80` and `443`
 - Primary hostnames:
@@ -62,6 +65,37 @@ References:
   behavior are validated.
 - Live apply should be gated through the same explicit mutation pattern used for
   RouterOS, NetBox, and AAA apply work.
+
+## Live Readiness Gates
+
+The control plane is inventory-ready when all of these are true:
+
+- `vm_mcp_control_plane` exists in the local-network inventory and NetBox intake.
+- `mcp-control-plane.rfc1918.host` resolves to `172.16.99.68`.
+- `nginx-ui.rfc1918.host` and `mcp-generic.rfc1918.host` are CNAMEs or aliases
+  for the MCP control-plane service.
+- `vault_nginx_ui_*` variables exist in Ansible Vault.
+- `vault_service_tls_certificates.mcp_control_plane.*` contains RFC1918-issued
+  leaf material.
+- HAProxy serves HTTPS with the `mcp_control_plane` certificate.
+- HAProxy request logging remains disabled for `/mcp` routes so `node_secret`
+  query parameters are not routinely written to logs.
+- Nginx-UI Docker socket access remains disabled.
+
+After those gates pass, promote FastMCP backends one at a time. NetBox is the
+first custom MCP target because it is read-heavy, audit-friendly, and already
+has repo-side source-of-truth metadata.
+
+## FastMCP Service Promotion
+
+Custom infrastructure MCP services should be implemented as FastMCP wrappers
+behind HAProxy, not as unrestricted API mirrors. The initial promotion order is
+NetBox, Proxmox, RouterOS, Trac, and then an internal infrastructure wrapper for
+repo playbooks and validators. Nginx-UI remains on its native `/mcp` endpoint.
+
+See:
+
+- [FastMCP Infrastructure Control Plane](FastMCP-Infra-Control-Plane)
 
 ## Validation
 

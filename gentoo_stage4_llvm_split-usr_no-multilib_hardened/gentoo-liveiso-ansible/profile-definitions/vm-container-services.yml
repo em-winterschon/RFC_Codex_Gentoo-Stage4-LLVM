@@ -136,6 +136,10 @@ gentoo_profile_definition:
         bind: "*:443"
         container_dir: /etc/haproxy/tls
         cert_path: /etc/haproxy/tls/msg-sun99-ntfysys.pem
+        crt_list: /etc/haproxy/tls/crt-list.txt
+        crt_list_entries:
+          - /etc/haproxy/tls/msg-sun99-ntfysys.pem
+          - /etc/haproxy/tls/obs-sun99-esvip.pem
         certificate_authority: rfc1918_private_ca
         certificate_source: vault-or-runtime
         cert_sans:

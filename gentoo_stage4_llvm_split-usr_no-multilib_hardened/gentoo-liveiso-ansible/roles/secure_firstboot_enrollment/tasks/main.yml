@@ -1,0 +1,53 @@
+---
+- name: Ensure secure first-boot enrollment directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ secure_firstboot_enrollment_config_dir }}"
+      mode: '0700'
+    - path: "{{ secure_firstboot_enrollment_state_dir }}"
+      mode: '0700'
+
+- name: Install secure first-boot bundle validator
+  ansible.builtin.copy:
+    src: "{{ secure_firstboot_enrollment_validator_source }}"
+    dest: "{{ secure_firstboot_enrollment_validator }}"
+    mode: '0755'
+  when: secure_firstboot_enrollment_install_validator | default(false) | bool
+
+- name: Render secure first-boot enrollment command
+  ansible.builtin.template:
+    src: stage5-firstboot-enroll.sh.j2
+    dest: /usr/local/sbin/stage5-firstboot-enroll
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Render secure first-boot enrollment OpenRC conf.d
+  ansible.builtin.template:
+    src: stage5-firstboot-enroll.confd.j2
+    dest: "/etc/conf.d/{{ secure_firstboot_enrollment_service_name }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Render secure first-boot enrollment OpenRC init.d
+  ansible.builtin.template:
+    src: stage5-firstboot-enroll.initd.j2
+    dest: "/etc/init.d/{{ secure_firstboot_enrollment_service_name }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Add secure first-boot enrollment to default runlevel when enabled
+  ansible.builtin.command:
+    argv:
+      - rc-update
+      - add
+      - "{{ secure_firstboot_enrollment_service_name }}"
+      - default
+  register: secure_firstboot_enrollment_rc_update
+  changed_when: "'service {{ secure_firstboot_enrollment_service_name }} added' in secure_firstboot_enrollment_rc_update.stdout"
+  when: secure_firstboot_enrollment_enabled | bool

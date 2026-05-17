@@ -33,10 +33,14 @@ for metadata in \
 done
 
 for package_list in \
+  stage5-metal-intel-platform.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-metal-host-builder-farm-node.packages; do
   test -f "${ANSIBLE_ROOT}/profile-package-lists/${package_list}"
 done
+
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/metal-builder-farm-node.yml" 'stage5-metal-intel-platform.packages'
+assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-intel-platform.packages" 'sys-firmware/intel-microcode'
 
 assert_file_contains "${ANSIBLE_ROOT}/playbooks/install.yml" 'jenkins_controller'
 assert_file_contains "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'distcc_farm'

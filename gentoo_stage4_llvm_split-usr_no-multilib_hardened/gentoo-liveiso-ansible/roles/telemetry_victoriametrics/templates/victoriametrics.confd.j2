@@ -1,0 +1,5 @@
+victoriametrics_command="{{ resolved_victoriametrics_telemetry.install_root }}/{{ resolved_victoriametrics_telemetry.binary_name }}"
+victoriametrics_user="{{ resolved_victoriametrics_telemetry.service_user }}"
+victoriametrics_group="{{ resolved_victoriametrics_telemetry.service_group }}"
+victoriametrics_data_path="{{ resolved_victoriametrics_telemetry.data_path }}"
+victoriametrics_args="-storageDataPath={{ resolved_victoriametrics_telemetry.data_path }} -retentionPeriod={{ resolved_victoriametrics_telemetry.retention_period }} -httpListenAddr={{ resolved_victoriametrics_telemetry.http_listen_addr }} -graphiteListenAddr={{ resolved_victoriametrics_telemetry.graphite_listen_addr }}{% if resolved_victoriametrics_telemetry.influx_listen_addr | length > 0 %} -influxListenAddr={{ resolved_victoriametrics_telemetry.influx_listen_addr }}{% endif %}{% if resolved_victoriametrics_telemetry.opentsdb_listen_addr | length > 0 %} -opentsdbListenAddr={{ resolved_victoriametrics_telemetry.opentsdb_listen_addr }}{% endif %}{% for extra_arg in resolved_victoriametrics_telemetry.extra_args %} {{ extra_arg }}{% endfor %}"

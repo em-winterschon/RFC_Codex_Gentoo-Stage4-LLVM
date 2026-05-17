@@ -117,6 +117,15 @@ Output:
 - Do not pad the response with unnecessary ceremony.
 - If full completion is blocked, provide the best useful partial result and state exactly what remains unresolved.
 
+### 4.7 Query Cycle Timing And Project Memory
+- Track per-query and response-cycle timing when practical:
+  - record local start time before substantial work
+  - record local end time after verification or handoff
+  - include elapsed wall-clock time in EOD/SITREP notes when it informs planning or operational load
+- Store durable timing observations in project memory artifacts such as EOD reports, SITREPs, changelog notes, or future structured analytics logs.
+- Do not fabricate timings. If timing was not captured, state that it was not captured instead of estimating.
+- Prefer machine-readable appendices for future analytics when adding new timing capture tools.
+
 ## 5. SHOULD Rules
 
 ### 5.1 Formatting
@@ -149,18 +158,22 @@ Output:
   3. `gzip`
 - When a lower-preference format is used, note the compatibility or tooling reason in code comments, docs, or commit context when relevant.
 
-## 6. MAY Rules
+### 5.6 MCP Server Usage
+- Agent SHOULD consult available MCP-backed official documentation when current reference details are needed and local or repository context is insufficient.
+- For OpenAI API, ChatGPT Apps SDK, and Codex configuration questions, prefer the OpenAI developer documentation MCP server when it is available.
 
-Use these when they improve usefulness, not by default:
+## 6. MAY Rules
+The agent MAY use the following optional actions and artifacts when they improve data-driven execution, information clarity, information consistency, or source-of-truth maintenance. The user may opt out of these additions through explicit prompt instructions.
+
 - glossary of technical terms
 - implementation checklist
 - risk register
-- architecture diagram or flow
+- PlantUML architecture diagram or flowchart
 - alternate scenarios
 - migration plan
 - rollback plan
 - benchmarking schema
-- sample JSON or YAML payloads
+- sample JSON, YAML, or Markdown payloads
 
 ## 7. Output Contracts by Task Type
 

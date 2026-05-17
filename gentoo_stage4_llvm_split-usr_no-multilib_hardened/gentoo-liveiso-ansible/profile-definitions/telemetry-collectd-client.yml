@@ -1,0 +1,22 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-observability-metrics-collectd-client.packages
+  package_use_files:
+    40-observability-collectd-client: |
+      app-metrics/collectd collectd_plugins_cpu collectd_plugins_df collectd_plugins_disk collectd_plugins_entropy collectd_plugins_interface collectd_plugins_load collectd_plugins_memory collectd_plugins_network collectd_plugins_nfs collectd_plugins_processes collectd_plugins_protocols collectd_plugins_swap collectd_plugins_tcpconns collectd_plugins_uptime collectd_plugins_write_graphite collectd_plugins_write_prometheus
+  telemetry:
+    collectd:
+      enabled: true
+      network_servers:
+        - host: vm-observability-victoriametrics.example.internal
+          port: 25826
+  haproxy_service_types:
+    - name: collectd-prometheus-http
+      bind: "*:9103"
+      mode: http
+      backend_name: be_collectd_prometheus_http
+      servers:
+        - name: collectd-prometheus
+          address: 127.0.0.1
+          port: 9103

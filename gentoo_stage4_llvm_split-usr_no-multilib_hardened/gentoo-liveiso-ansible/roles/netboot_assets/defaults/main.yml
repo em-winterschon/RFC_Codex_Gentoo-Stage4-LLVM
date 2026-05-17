@@ -14,6 +14,14 @@ netboot_rescue_short_path: r
 netboot_initramfs_short_name: initramfs-gz.img
 netboot_initramfs_boot_name: "{{ netboot_initramfs_short_name }}"
 netboot_tftp_autoexec_chain_url: ""
+netboot_first_stage_binaries: []
+netboot_tftp_service_enabled: false
+netboot_tftp_service_name: netboot-tftp
+netboot_tftp_server_script_path: /usr/local/sbin/rfc99-tftp-server.py
+netboot_tftp_python_interpreter: /usr/bin/python3
+netboot_tftp_listen_address: 0.0.0.0
+netboot_tftp_listen_port: 69
+netboot_tftp_log_path: /var/log/netboot-tftp.log
 netboot_operator_notes_url: "{{ netboot_public_base_url }}/README.txt"
 netboot_host_map_extra: []
 netboot_roles_extra: {}

@@ -7,6 +7,7 @@ gentoo_system_profile_metadata:
     role_class: metal-host
     role_name: hypervisor-xen-qemu-libvirt-host
     package_layers:
+      - profile-package-lists/stage5-metal-intel-platform.packages
       - profile-package-lists/stage5-metal-host-hypervisor.packages
   package_pins:
     gentoo_tree_exact_atoms:
@@ -24,6 +25,7 @@ gentoo_system_profile_metadata:
       - =sys-fs/zfs-2.4.1
       - =sys-fs/zfs-kmod-2.4.0_rc2-r1
     unpinned_support_packages:
+      - sys-firmware/intel-microcode
       - sys-cluster/rdma-core
       - sys-kernel/linux-firmware
   kernel_modules:

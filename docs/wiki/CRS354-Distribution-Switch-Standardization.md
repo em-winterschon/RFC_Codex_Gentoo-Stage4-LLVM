@@ -2,8 +2,8 @@
 
 ## Current Evidence
 
-Live CRS354 discovery was captured from serial console `/dev/ttyUSB1` and
-archived outside the repo:
+Live CRS354 discovery was captured from serial console and archived outside the
+repo:
 
 ```text
 /root/operator-private/routeros/crs354/20260504T194533Z
@@ -88,8 +88,12 @@ Validated state:
 
 ## Planned RouterOS Change
 
-Do not import these commands without serial `/dev/ttyUSB1` attached and a fresh
-pre-change export copied off-device.
+Do not import these commands without the Hasslehoff CRS354 serial path attached
+and a fresh pre-change export copied off-device.
+
+Current serial source of truth is
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`; `/dev/ttyUSB1`
+is only the observed current tty assignment.
 
 CRS354:
 
@@ -136,7 +140,8 @@ Expected CRS354 state:
 
 ## Backout
 
-Use serial `/dev/ttyUSB1`:
+Use CRS354 serial through Hasslehoff
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`:
 
 ```routeros
 /interface bridge port remove [find where interface="bond-crs309"]
@@ -146,7 +151,8 @@ Use serial `/dev/ttyUSB1`:
 /ip route enable [find where comment="main-default-opnsense"]
 ```
 
-If CRS309-side LACP was already imported, use CRS309 serial `/dev/ttyUSB0`:
+If CRS309-side LACP was already imported, use CRS309 serial through Hasslehoff
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`:
 
 ```routeros
 /interface bridge port remove [find where interface="bond-crs354"]

@@ -118,12 +118,15 @@ def run_command(
     audit_log: Path | None,
     check: bool = True,
     allow_already_member: bool = False,
+    allow_no_modifications: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     audit_event(audit_log, {"event": "run_command", "argv": redacted_argv(argv)})
     result = subprocess.run(argv, check=False, capture_output=True, text=True)
     if check and result.returncode != 0:
         combined = f"{result.stdout}\n{result.stderr}"
         if allow_already_member and "already a member" in combined:
+            return result
+        if allow_no_modifications and "no modifications to be performed" in combined:
             return result
         raise IdentityApplyError(
             "command failed: " + " ".join(redacted_argv(argv)) + f" (rc={result.returncode})"
@@ -173,6 +176,7 @@ def build_summary(
         "domain": plan["domain"],
         "requires_vars": build_required_vars(plan, providers),
         "freeipa": {
+            "local_idrange": plan.get("freeipa_local_idrange", {}) or {},
             "groups": len(plan["freeipa_groups"]),
             "users": len(plan["freeipa_users"]),
             "service_accounts": len(plan["freeipa_service_accounts"]),
@@ -198,9 +202,94 @@ def build_summary(
     }
 
 
+def parse_ipa_raw_attrs(output: str) -> dict[str, str]:
+    attrs: dict[str, str] = {}
+    for line in output.splitlines():
+        stripped = line.strip()
+        if ": " not in stripped:
+            continue
+        key, value = stripped.split(": ", 1)
+        attrs[key.lower()] = value.strip()
+    return attrs
+
+
+def require_ids_within_local_idrange(plan: dict[str, Any]) -> None:
+    idrange = plan.get("freeipa_local_idrange", {}) or {}
+    if not idrange:
+        raise IdentityApplyError("freeipa_local_idrange is required before FreeIPA UID/GID apply")
+
+    base_id = int(idrange["base_id"])
+    limit = base_id + int(idrange["range_size"])
+    targets: list[tuple[str, str, int]] = []
+    targets.extend(("group", group["name"], int(group["gid"])) for group in plan["freeipa_groups"])
+    targets.extend(("user", user["name"], int(user["uid"])) for user in plan["freeipa_users"])
+    targets.extend(
+        ("service_account", account["name"], int(account["uid"]))
+        for account in plan["freeipa_service_accounts"]
+    )
+    for kind, name, value in targets:
+        if not base_id <= value < limit:
+            raise IdentityApplyError(
+                f"{kind} {name} ID {value} is outside FreeIPA local ID range "
+                f"{base_id}-{limit - 1}"
+            )
+
+
+def ensure_freeipa_local_idrange(
+    plan: dict[str, Any], *, ipa_command: str, audit_log: Path | None
+) -> int:
+    idrange = plan.get("freeipa_local_idrange", {}) or {}
+    if not idrange:
+        return 0
+
+    name = idrange["name"]
+    expected = {
+        "ipabaseid": str(idrange["base_id"]),
+        "ipaidrangesize": str(idrange["range_size"]),
+        "ipabaserid": str(idrange["rid_base"]),
+        "ipasecondarybaserid": str(idrange["secondary_rid_base"]),
+        "iparangetype": idrange.get("type", "ipa-local"),
+    }
+
+    result = run_command(
+        [ipa_command, "idrange-show", name, "--all", "--raw"],
+        audit_log=audit_log,
+        check=False,
+    )
+    if result.returncode != 0:
+        run_command(
+            [
+                ipa_command,
+                "idrange-add",
+                name,
+                f"--base-id={idrange['base_id']}",
+                f"--range-size={idrange['range_size']}",
+                f"--rid-base={idrange['rid_base']}",
+                f"--secondary-rid-base={idrange['secondary_rid_base']}",
+                f"--type={idrange.get('type', 'ipa-local')}",
+            ],
+            audit_log=audit_log,
+        )
+        return 1
+
+    attrs = parse_ipa_raw_attrs(result.stdout)
+    mismatches = [
+        f"{key}: expected {value}, found {attrs.get(key, '<missing>')}"
+        for key, value in expected.items()
+        if attrs.get(key) != value
+    ]
+    if mismatches:
+        raise IdentityApplyError(
+            f"FreeIPA local ID range {name} exists with incompatible settings: "
+            + "; ".join(mismatches)
+        )
+    return 0
+
+
 def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | None) -> int:
+    require_ids_within_local_idrange(plan)
+    commands = ensure_freeipa_local_idrange(plan, ipa_command=ipa_command, audit_log=audit_log)
     group_gids = {group["name"]: str(group["gid"]) for group in plan["freeipa_groups"]}
-    commands = 0
 
     for group in plan["freeipa_groups"]:
         if ipa_exists(ipa_command, "group", group["name"], audit_log):
@@ -213,6 +302,7 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
                     f"--desc={group.get('description', '')}",
                 ],
                 audit_log=audit_log,
+                allow_no_modifications=True,
             )
         else:
             run_command(
@@ -240,6 +330,7 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
                     f"--shell={user['shell']}",
                 ],
                 audit_log=audit_log,
+                allow_no_modifications=True,
             )
         else:
             run_command(
@@ -265,6 +356,7 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
                 [ipa_command, "user-mod", user["name"]]
                 + [f"--sshpubkey={ssh_key}" for ssh_key in ssh_keys],
                 audit_log=audit_log,
+                allow_no_modifications=True,
             )
             commands += 1
 
@@ -280,7 +372,9 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
         fqdn = host["fqdn"]
         if ipa_exists(ipa_command, "host", fqdn, audit_log):
             run_command(
-                [ipa_command, "host-mod", fqdn, f"--desc={host['name']}"], audit_log=audit_log
+                [ipa_command, "host-mod", fqdn, f"--desc={host['name']}"],
+                audit_log=audit_log,
+                allow_no_modifications=True,
             )
         else:
             run_command(

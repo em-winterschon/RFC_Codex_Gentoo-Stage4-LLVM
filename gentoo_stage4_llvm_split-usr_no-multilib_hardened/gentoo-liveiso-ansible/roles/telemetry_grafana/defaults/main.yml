@@ -7,3 +7,4 @@ telemetry_grafana_default_root_url: ""
 telemetry_grafana_default_admin_user: admin
 telemetry_grafana_default_admin_password: changeme
 telemetry_grafana_default_datasources: []
+telemetry_grafana_default_dashboards: []

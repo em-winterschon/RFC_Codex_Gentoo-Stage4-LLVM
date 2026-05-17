@@ -59,7 +59,31 @@
     - nfs_storage_client_enabled
     - resolved_nfs_storage_client.enable_rdma | bool
 
-- name: Add NFS client OpenRC services for rpcbind and nfsmount
+- name: Ensure NFS mount points exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nfs_storage_mount.path }}"
+    state: directory
+    mode: "{{ nfs_storage_mount.mode | default('0755') }}"
+  loop: "{{ resolved_nfs_storage_client.mounts }}"
+  loop_control:
+    loop_var: nfs_storage_mount
+    label: "{{ nfs_storage_mount.path }}"
+  when:
+    - nfs_storage_client_enabled
+    - resolved_nfs_storage_client.mounts | length > 0
+
+- name: Render managed NFS mount entries in /etc/fstab
+  ansible.builtin.blockinfile:
+    path: "{{ install_target_root }}/etc/fstab"
+    create: true
+    mode: '0644'
+    marker: "# {mark} STAGE5 NFS STORAGE CLIENT"
+    block: "{{ lookup('template', 'fstab.j2') }}"
+  when:
+    - nfs_storage_client_enabled
+    - resolved_nfs_storage_client.mounts | length > 0
+
+- name: Add NFS client OpenRC services
   ansible.builtin.set_fact:
     resolved_profile_openrc_services_enable: >-
       {{

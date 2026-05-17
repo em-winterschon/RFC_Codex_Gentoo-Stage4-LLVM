@@ -1,0 +1,43 @@
+---
+- name: Gate Tang NBDE server mutations
+  ansible.builtin.assert:
+    that:
+      - tang_nbde_server_mutation_enabled | bool
+    fail_msg: >-
+      Tang NBDE server role is scaffolded but mutation-gated. Set
+      tang_nbde_server_mutation_enabled=true only after Guru package pinning
+      and firstboot policy review.
+  when: tang_nbde_server_enabled | bool
+
+- name: Ensure Tang state directory exists
+  ansible.builtin.file:
+    path: "{{ tang_nbde_server_state_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when:
+    - tang_nbde_server_enabled | bool
+    - tang_nbde_server_mutation_enabled | bool
+
+- name: Render Tang OpenRC conf.d
+  ansible.builtin.template:
+    src: tangd.confd.j2
+    dest: "/etc/conf.d/{{ tang_nbde_server_service_name }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - tang_nbde_server_enabled | bool
+    - tang_nbde_server_mutation_enabled | bool
+
+- name: Render Tang OpenRC init.d
+  ansible.builtin.template:
+    src: tangd.initd.j2
+    dest: "/etc/init.d/{{ tang_nbde_server_service_name }}"
+    owner: root
+    group: root
+    mode: '0755'
+  when:
+    - tang_nbde_server_enabled | bool
+    - tang_nbde_server_mutation_enabled | bool

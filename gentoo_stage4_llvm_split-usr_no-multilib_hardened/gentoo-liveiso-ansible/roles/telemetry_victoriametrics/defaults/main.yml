@@ -1,0 +1,18 @@
+---
+telemetry_victoriametrics_default_enabled: false
+telemetry_victoriametrics_default_version: "1.142.0"
+telemetry_victoriametrics_default_architecture: amd64
+telemetry_victoriametrics_default_download_enabled: true
+telemetry_victoriametrics_default_download_url: ""
+telemetry_victoriametrics_default_download_checksum: "sha256:878e09069184d4cc86297e1f0574f2a78f5ebfce87dd1d32b286abf13aad4f85"
+telemetry_victoriametrics_default_install_root: /opt/victoriametrics
+telemetry_victoriametrics_default_binary_name: victoria-metrics-prod
+telemetry_victoriametrics_default_service_user: victoriametrics
+telemetry_victoriametrics_default_service_group: victoriametrics
+telemetry_victoriametrics_default_data_path: /srv/metrics/victoriametrics
+telemetry_victoriametrics_default_retention_period: 12
+telemetry_victoriametrics_default_http_listen_addr: "0.0.0.0:8428"
+telemetry_victoriametrics_default_graphite_listen_addr: "0.0.0.0:2003"
+telemetry_victoriametrics_default_influx_listen_addr: ""
+telemetry_victoriametrics_default_opentsdb_listen_addr: ""
+telemetry_victoriametrics_default_extra_args: []

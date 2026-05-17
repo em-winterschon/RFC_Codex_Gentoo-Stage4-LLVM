@@ -1,0 +1,29 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-netboot-publisher
+  purpose: Stage5 virtual-host profile for a stable SUN99 iPXE/TFTP/HTTP netboot publisher that removes X12AGAIN as a boot-service dependency before bare-metal reimage.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: netboot-publisher
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-netboot-publisher.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - www-servers/nginx
+      - net-ftp/tftp-hpa
+      - app-admin/rsyslog
+      - net-misc/curl
+    app_version_lock_id: netboot-publisher-stack
+    upstream_app_version: portage-resolved-nginx-tftp-hpa
+  deployment_notes:
+    - Desired SUN99 service address is 172.16.99.88 with DNS boot-sun99-netboot-099088.rfc1918.host.
+    - Copy /var/lib/netboot/path-b from X12AGAIN before changing RouterOS DHCP next-server live.
+    - Validate TFTP k10-ipxe.efi and HTTP g/vmlinuz, g/initramfs-gz.img, and g/rootfs.img before X12AGAIN reimage.

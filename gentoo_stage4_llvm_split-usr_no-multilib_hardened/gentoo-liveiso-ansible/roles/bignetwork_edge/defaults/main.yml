@@ -5,8 +5,8 @@ bignetwork_edge_default_extracted_root: /opt/repos/remote/bignetwork/APT/bignetw
 bignetwork_edge_default_binary_source: "{{ bignetwork_edge_default_extracted_root }}/usr/sbin/bn"
 bignetwork_edge_default_binary_path: /usr/sbin/bn
 bignetwork_edge_default_home: /var/lib/bn
-bignetwork_edge_default_user: bn
-bignetwork_edge_default_group: bn
+bignetwork_edge_default_user: root
+bignetwork_edge_default_group: root
 bignetwork_edge_default_shell: /usr/sbin/nologin
 bignetwork_edge_default_service_name: bn
 bignetwork_edge_default_service_manager: auto
@@ -14,6 +14,16 @@ bignetwork_edge_default_service_enabled: false
 bignetwork_edge_default_service_started: false
 bignetwork_edge_default_daemon_port: 9995
 bignetwork_edge_default_daemon_extra_args: []
+bignetwork_edge_default_orbit_enabled: true
+bignetwork_edge_default_orbit_worlds:
+  - world_id: 6aaf7fee5a
+    seed: 6aaf7fee5a
+bignetwork_edge_default_join_networks: []
+bignetwork_edge_default_join_network_settings:
+  allowDNS: false
+  allowDefault: false
+  allowGlobal: false
+  allowManaged: true
 bignetwork_edge_default_auth_token: ""
 bignetwork_edge_default_metrics_token: ""
 bignetwork_edge_default_token_mode: "0600"

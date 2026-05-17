@@ -1,9 +1,9 @@
 ---
 profile_rsyslog:
   forward_enabled: true
-  forward_hostname: log-vip.example.internal
+  forward_hostname: log-sun99-rsyslog.rfc1918.host
   forward_protocol: tcp
-  forward_port: 514
+  forward_port: 6514
 
 profile_telemetry:
   prometheus:
@@ -14,6 +14,12 @@ profile_telemetry:
     external_labels:
       site: example-lab
       environment: stage5
+    remote_write:
+      - url: http://10.66.30.42:8428/api/v1/write
+        queue_config:
+          max_samples_per_send: 10000
+          capacity: 20000
+          max_shards: 8
     scrape_configs:
       - job_name: stage5-node
         static_configs:
@@ -44,6 +50,13 @@ profile_telemetry:
               - 10.66.30.21:9114
               - 10.66.30.22:9114
               - 10.66.30.23:9114
+      - job_name: stage5-collectd-aggregator
+        static_configs:
+          - targets:
+              - 10.66.30.42:9103
+            labels:
+              telemetry_domain: collectd
+              node_role: observability-retention
       - job_name: stage5-http-probes
         metrics_path: /probe
         params:

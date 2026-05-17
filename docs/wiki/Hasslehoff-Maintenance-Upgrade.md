@@ -79,3 +79,12 @@ is version and OS specific, and Hasslehoff runs a Proxmox kernel rather than a
 stock Debian kernel. The role requires an explicit repo package URL or local
 repo `.deb`, matching kernel headers, and an explicit custom-kernel
 acknowledgement before it will install anything.
+
+The role now performs a read-only PCI detection pass with `lspci -Dnn` before
+any apply path. The expected device classes are BlueField-2 and ConnectX-5
+family NVIDIA/Mellanox adapters under PCI vendor `15b3`. If no supported device
+is detected, the install path is refused unless
+`nvidia_doca_ofed_skip_device_detection` is deliberately set for a documented
+lab exception. The rendered plan also lists the required kernel modules
+(`mlx5_core`, `mlx5_ib`, `ib_uverbs`, `rdma_cm`) and the first-pass RoCE
+validation commands (`ibv_devinfo`, `rdma link show`, `rdma resource show`).

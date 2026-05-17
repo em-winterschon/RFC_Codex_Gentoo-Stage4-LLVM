@@ -1,0 +1,69 @@
+---
+- name: Render and stage secure first-boot enrollment bundle
+  hosts: localhost
+  gather_facts: false
+  vars:
+    secure_firstboot_bundle_apply: "{{ lookup('env', 'SECURE_FIRSTBOOT_BUNDLE_APPLY') | default('', true) == '1' }}"
+    secure_firstboot_bundle_renderer: "{{ playbook_dir }}/../../../scripts/render_secure_firstboot_bundle.py"
+    secure_firstboot_bundle_stager: "{{ playbook_dir }}/../../../scripts/stage_secure_firstboot_bundle.py"
+    secure_firstboot_bundle_plaintext: "{{ secure_firstboot_bundle_plaintext_path | default('/root/operator-private/secure-firstboot/bundle.json') }}"
+    secure_firstboot_bundle_encrypted: "{{ secure_firstboot_bundle_encrypted_path | default('/root/operator-private/secure-firstboot/bundle.json.age') }}"
+    secure_firstboot_bundle_otp_env: STAGE5_FIRSTBOOT_OTP
+  pre_tasks:
+    - name: Gate secure first-boot bundle staging
+      ansible.builtin.assert:
+        that:
+          - secure_firstboot_bundle_apply | bool
+        fail_msg: >-
+          Set SECURE_FIRSTBOOT_BUNDLE_APPLY=1 after generating a short-lived
+          FreeIPA host OTP and selecting a host age recipient.
+
+  tasks:
+    - name: Render plaintext first-boot bundle from vaulted runtime OTP
+      ansible.builtin.command:
+        argv:
+          - "{{ secure_firstboot_bundle_renderer }}"
+          - --fqdn
+          - "{{ secure_firstboot_bundle_fqdn }}"
+          - --realm
+          - "{{ secure_firstboot_bundle_realm }}"
+          - --domain
+          - "{{ secure_firstboot_bundle_domain }}"
+          - --ipa-server
+          - "{{ secure_firstboot_bundle_ipa_server }}"
+          - --expires-at
+          - "{{ secure_firstboot_bundle_expires_at }}"
+          - --generation-id
+          - "{{ secure_firstboot_bundle_generation_id }}"
+          - --otp-env
+          - "{{ secure_firstboot_bundle_otp_env }}"
+          - --age-recipient
+          - "{{ secure_firstboot_bundle_age_recipient }}"
+          - --output
+          - "{{ secure_firstboot_bundle_plaintext }}"
+      environment:
+        STAGE5_FIRSTBOOT_OTP: "{{ secure_firstboot_bundle_otp }}"
+      no_log: true
+
+    - name: Validate and encrypt first-boot bundle
+      ansible.builtin.command:
+        argv:
+          - "{{ secure_firstboot_bundle_stager }}"
+          - --bundle
+          - "{{ secure_firstboot_bundle_plaintext }}"
+          - --expected-fqdn
+          - "{{ secure_firstboot_bundle_fqdn }}"
+          - --recipient
+          - "{{ secure_firstboot_bundle_age_recipient }}"
+          - --output
+          - "{{ secure_firstboot_bundle_encrypted }}"
+          - --apply
+          - --format
+          - json
+      no_log: true
+
+    - name: Remove plaintext first-boot bundle after encryption
+      ansible.builtin.file:
+        path: "{{ secure_firstboot_bundle_plaintext }}"
+        state: absent
+      no_log: true

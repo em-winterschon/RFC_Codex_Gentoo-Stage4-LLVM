@@ -1,0 +1,23 @@
+---
+gentoo_profile_definition:
+  name: vm-coherence-ce-node
+  description: "Experimental Coherence-CE cache/data-grid node for agent-memory indexes."
+  extends:
+    - virt-minimal
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-coherence-ce-node.packages
+  package_atoms: []
+  package_use_files: {}
+  openrc_services_enable: []
+  roles:
+    - coherence_ce_service
+  service_ports:
+    - proto: tcp
+      port: 7574
+      purpose: coherence-cluster
+    - proto: tcp
+      port: 30000
+      purpose: coherence-management
+  mutation_policy:
+    enabled_by_default: false
+    required_variable: coherence_ce_service_mutation_enabled

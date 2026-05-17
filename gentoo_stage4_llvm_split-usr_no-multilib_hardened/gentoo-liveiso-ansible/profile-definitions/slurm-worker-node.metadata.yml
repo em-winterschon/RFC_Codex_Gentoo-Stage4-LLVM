@@ -1,0 +1,31 @@
+---
+gentoo_system_profile_metadata:
+  id: slurm-worker-node
+  purpose: Reusable Stage5 SLURM worker overlay for build, validation, GPU-test, and RDMA-test nodes.
+  profile_taxonomy:
+    stage: stage5
+    role_class: scheduler-worker
+    role_name: slurm-worker-node
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-slurm-worker-node.packages
+  base_profile:
+    intended_overlay_on:
+      - base-minimal-nox
+      - virt-minimal
+      - aaa-domain-client
+      - nfs-storage-client
+  package_pins:
+    tracked_atoms:
+      - sys-cluster/slurm
+      - sys-auth/munge
+      - sys-cluster/rdma-core
+      - sys-devel/distcc
+      - dev-util/ccache
+  service_segments:
+    - scheduler-worker
+    - build-fabric
+    - validation-fabric
+  source_references:
+    - https://packages.gentoo.org/packages/sys-cluster/slurm
+    - https://slurm.schedmd.com/

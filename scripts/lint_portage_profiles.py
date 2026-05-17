@@ -21,7 +21,10 @@ DEFAULT_PROFILE_REFERENCE = (
 )
 ALLOWED_PROFILE_KEYS = {
     "metadata",
+    "name",
+    "description",
     "profile_id",
+    "extends",
     "repository_enable",
     "make_conf_append",
     "env_files",
@@ -32,15 +35,22 @@ ALLOWED_PROFILE_KEYS = {
     "package_mask_files",
     "package_unmask_files",
     "package_mask_symlinks",
+    "portage_config_files",
+    "patch_files",
     "kernel_config_fragment_files",
     "kernel_config",
     "kernel_config_requirements",
+    "kernel_requirements",
     "profile_parents",
     "package_atoms",
     "package_list_files",
     "openrc_services_enable",
+    "openrc_services_available",
     "modules_load_files",
     "local_user_accounts",
+    "roles",
+    "service_ports",
+    "mutation_policy",
     "cloud_init",
     "aaa_policy_files",
     "aaa_policy",
@@ -57,9 +67,11 @@ ALLOWED_PROFILE_KEYS = {
     "telemetry",
     "binpkg_repo",
     "nexus_repo",
+    "netboot_publisher",
     "nfs_storage_client",
     "nscde_workstation",
     "haproxy_service_types",
+    "native_haproxy_tls_proxy",
     "service_readiness",
     "container_base_image",
     "container_app_build_defaults",
@@ -67,12 +79,17 @@ ALLOWED_PROFILE_KEYS = {
     "container_app_profiles",
     "container_service_segments",
     "site_security_profile",
+    "secure_firstboot_enrollment",
+    "tang_nbde_server",
     "memory_storage",
     "storage_protocols",
     "jenkins_controller",
     "distcc_farm",
+    "slurm_cluster",
+    "time_authority",
     "vm_redfish_emulator",
     "workstation_session_stack",
+    "automation_admin",
 }
 
 
@@ -103,6 +120,21 @@ def validate_profile_definition(path: Path) -> None:
     env_files = profile.get("env_files", {})
     if env_files is not None and not isinstance(env_files, dict):
         fail(f"{path} env_files must be a mapping")
+
+    portage_config_files = profile.get("portage_config_files", {})
+    if portage_config_files is not None and not isinstance(portage_config_files, dict):
+        fail(f"{path} portage_config_files must be a mapping")
+    allowed_config_prefixes = ("/etc/portage/", "/etc/eixrc/")
+    for config_path, config_body in (portage_config_files or {}).items():
+        if not isinstance(config_path, str) or not config_path.startswith(allowed_config_prefixes):
+            fail(
+                f"{path} portage_config_files keys must be absolute paths under "
+                "/etc/portage or /etc/eixrc"
+            )
+        if "/../" in config_path or config_path.endswith("/.."):
+            fail(f"{path} portage_config_files contains unsafe path {config_path}")
+        if not isinstance(config_body, str):
+            fail(f"{path} portage_config_files[{config_path}] must be a string fragment")
 
     package_env_files = profile.get("package_env_files", {})
     if package_env_files is not None and not isinstance(package_env_files, dict):

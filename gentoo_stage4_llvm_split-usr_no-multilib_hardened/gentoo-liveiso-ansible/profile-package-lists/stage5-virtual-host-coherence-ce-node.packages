@@ -1,0 +1,4 @@
+virtual/jre
+app-misc/ca-certificates
+app-misc/jq
+net-misc/curl

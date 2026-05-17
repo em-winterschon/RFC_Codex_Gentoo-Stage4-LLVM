@@ -1,0 +1,11 @@
+---
+- name: Run rfc1918 service TLS reload commands
+  ansible.builtin.command: "{{ rfc1918_service_tls_reload_command }}"
+  loop: "{{ rfc1918_service_tls_reload_commands_pending | default([]) | unique }}"
+  loop_control:
+    loop_var: rfc1918_service_tls_reload_command
+  changed_when: true
+  when:
+    - rfc1918_service_tls_live_root | default(false) | bool
+    - rfc1918_service_tls_reload_live_services | bool
+    - rfc1918_service_tls_reload_commands_pending | default([]) | length > 0

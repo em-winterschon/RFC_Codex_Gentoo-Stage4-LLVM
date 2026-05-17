@@ -5,6 +5,10 @@ routeros_rfc99_gateway_remote_script_name: "{{ inventory_hostname }}-rfc99-gatew
 routeros_rfc99_gateway_render_manifest_name: "{{ inventory_hostname }}-rfc99-gateway.json"
 
 routeros_rfc99_gateway_cfg_tag: RFC99-CCR2004-16G.001
+routeros_rfc99_gateway_target_version: 7.22.3
+routeros_rfc99_gateway_local_artifact_root: /opt/routeros/mikrotik-official
+routeros_rfc99_gateway_routeros_package_path: /opt/routeros/mikrotik-official/os-systems/arm64/routeros-7.22.3-arm64.npk
+routeros_rfc99_gateway_container_package_path: /opt/routeros/mikrotik-official/containers/arm64/container-7.22.3-arm64.npk
 routeros_rfc99_gateway_expected_model: CCR2004-16G-2S+PC
 routeros_rfc99_gateway_expected_board_name: CCR2004-16G-2S+
 routeros_rfc99_gateway_routeros_arch: arm64
@@ -196,6 +200,11 @@ routeros_rfc99_gateway_legacy_bridge_addresses:
     interface: "{{ routeros_rfc99_gateway_lan_bridge }}"
     comment: Yukon GPU nodes
 
+routeros_rfc99_gateway_service_vips: []
+routeros_rfc99_gateway_static_routes: []
+routeros_rfc99_gateway_dst_nat_rules: []
+routeros_rfc99_gateway_src_nat_rules: []
+
 routeros_rfc99_gateway_nat_enabled: true
 routeros_rfc99_gateway_firewall_enabled: true
 routeros_rfc99_gateway_firewall_comment_prefix: RFC99
@@ -218,6 +227,7 @@ routeros_rfc99_gateway_winbox_enabled: false
 routeros_rfc99_gateway_winbox_port: 8291
 
 routeros_rfc99_gateway_certificate_name: rfc99-gw-selfsigned
+routeros_rfc99_gateway_certificate_source: self_signed
 routeros_rfc99_gateway_certificate_common_name: "{{ routeros_rfc99_gateway_identity }}.rfc1918.host"
 routeros_rfc99_gateway_certificate_days_valid: 3650
 routeros_rfc99_gateway_certificate_key_size: 4096
@@ -226,6 +236,10 @@ routeros_rfc99_gateway_certificate_subject_alt_names:
   - "IP:172.16.99.1"
   - "IP:10.9.8.1"
   - "IP:10.128.128.1"
+routeros_rfc99_gateway_internal_ca_certificate_name: rfc1918-gw-rfc99-mkccr2004-16g
+routeros_rfc99_gateway_internal_ca_ca_file: rfc1918-private-ca.crt
+routeros_rfc99_gateway_internal_ca_pkcs12_file: rfc1918-gw-rfc99-mkccr2004-16g.p12
+routeros_rfc99_gateway_internal_ca_pkcs12_passphrase: "{{ (vault_service_tls_certificates | default({})).get('routeros_ccr2004_gateway', {}).get('pkcs12_password', '') }}"
 
 routeros_rfc99_gateway_syslog_enabled: true
 routeros_rfc99_gateway_syslog_remote_host: 172.16.99.80

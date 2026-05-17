@@ -24,6 +24,10 @@
           'service_started': resolved_profile_bignetwork_edge.service_started | default(bignetwork_edge_default_service_started),
           'daemon_port': resolved_profile_bignetwork_edge.daemon_port | default(bignetwork_edge_default_daemon_port),
           'daemon_extra_args': resolved_profile_bignetwork_edge.daemon_extra_args | default(bignetwork_edge_default_daemon_extra_args),
+          'orbit_enabled': resolved_profile_bignetwork_edge.orbit_enabled | default(bignetwork_edge_default_orbit_enabled),
+          'orbit_worlds': resolved_profile_bignetwork_edge.orbit_worlds | default(bignetwork_edge_default_orbit_worlds),
+          'join_networks': resolved_profile_bignetwork_edge.join_networks | default(bignetwork_edge_default_join_networks),
+          'join_network_settings': resolved_profile_bignetwork_edge.join_network_settings | default(bignetwork_edge_default_join_network_settings),
           'auth_token': resolved_profile_bignetwork_edge.auth_token | default(bignetwork_edge_default_auth_token),
           'metrics_token': resolved_profile_bignetwork_edge.metrics_token | default(bignetwork_edge_default_metrics_token),
           'token_mode': resolved_profile_bignetwork_edge.token_mode | default(bignetwork_edge_default_token_mode),
@@ -72,7 +76,9 @@
   ansible.builtin.group:
     name: "{{ resolved_bignetwork_edge.group }}"
     system: true
-  when: bignetwork_edge_enabled
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.group != 'root'
 
 - name: Ensure BigNetwork user exists
   ansible.builtin.user:
@@ -82,7 +88,9 @@
     shell: "{{ resolved_bignetwork_edge.shell }}"
     system: true
     create_home: false
-  when: bignetwork_edge_enabled
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.user != 'root'
 
 - name: Ensure BigNetwork directories exist
   ansible.builtin.file:
@@ -174,3 +182,58 @@
   when:
     - bignetwork_edge_enabled
     - resolved_bignetwork_edge.service_started | bool
+
+- name: Wait for BigNetwork local API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ resolved_bignetwork_edge.daemon_port }}/status"
+    method: GET
+    headers:
+      X-ZT1-Auth: "{{ resolved_bignetwork_edge.auth_token }}"
+    status_code: 200
+  register: bignetwork_edge_status
+  no_log: true
+  retries: 12
+  delay: 2
+  until: bignetwork_edge_status.status == 200
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.service_started | bool
+    - resolved_bignetwork_edge.auth_token | length > 0
+
+- name: Orbit BigNetwork vendor root set
+  ansible.builtin.command:
+    argv:
+      - "{{ resolved_bignetwork_edge.binary_path }}"
+      - "-D{{ resolved_bignetwork_edge.home }}"
+      - orbit
+      - "{{ item.world_id }}"
+      - "{{ item.seed }}"
+  changed_when: false
+  loop: "{{ resolved_bignetwork_edge.orbit_worlds }}"
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.service_started | bool
+    - resolved_bignetwork_edge.orbit_enabled | bool
+
+- name: Join BigNetwork managed networks
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ resolved_bignetwork_edge.daemon_port }}/network/{{ item.network_id }}"
+    method: POST
+    headers:
+      X-ZT1-Auth: "{{ resolved_bignetwork_edge.auth_token }}"
+      Content-Type: application/json
+    body_format: json
+    body: "{{ item.settings | default(resolved_bignetwork_edge.join_network_settings) }}"
+    status_code:
+      - 200
+      - 201
+  register: bignetwork_edge_join_result
+  no_log: true
+  retries: 3
+  delay: 2
+  until: bignetwork_edge_join_result.status in [200, 201]
+  loop: "{{ resolved_bignetwork_edge.join_networks }}"
+  when:
+    - bignetwork_edge_enabled
+    - resolved_bignetwork_edge.service_started | bool
+    - resolved_bignetwork_edge.auth_token | length > 0

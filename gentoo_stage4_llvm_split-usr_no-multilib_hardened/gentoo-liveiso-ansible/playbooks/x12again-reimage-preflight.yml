@@ -1,0 +1,79 @@
+---
+- name: Evaluate X12AGAIN reimage preflight gates without destructive mutation
+  hosts: localhost
+  gather_facts: false
+  vars:
+    x12again_reimage_inventory_host: x12again_workstation_xen_coherent
+    x12again_reimage_profile_id: metal-x12again-workstation-xen-coherent
+    host_e2et_manifest: "{{ playbook_dir }}/../host-e2et-definitions/x12again-reimage-preflight.yml"
+    host_e2et_report_dir: "{{ playbook_dir }}/../artifacts/host-e2et"
+    host_e2et_reporter_path: "{{ playbook_dir }}/../../../scripts/host_e2et_conformance.py"
+    host_e2et_report_name: "{{ (host_e2et_manifest | basename | splitext)[0] }}"
+    x12again_reimage_apply_required: "{{ hostvars[x12again_reimage_inventory_host].x12again_reimage_apply_required | default(false) | bool }}"
+    x12again_reimage_backup_verified: "{{ hostvars[x12again_reimage_inventory_host].x12again_reimage_backup_verified | default(false) | bool }}"
+    x12again_reimage_services_offloaded_verified: "{{ hostvars[x12again_reimage_inventory_host].x12again_reimage_services_offloaded_verified | default(false) | bool }}"
+    x12again_reimage_emergency_console_verified: "{{ hostvars[x12again_reimage_inventory_host].x12again_reimage_emergency_console_verified | default(false) | bool }}"
+    x12again_reimage_human_change_window_approved: "{{ hostvars[x12again_reimage_inventory_host].x12again_reimage_human_change_window_approved | default(false) | bool }}"
+
+  tasks:
+    - name: Assert X12AGAIN is modeled as a reimage candidate
+      ansible.builtin.assert:
+        that:
+          - x12again_reimage_inventory_host in groups.get('reimage_candidates', [])
+          - hostvars[x12again_reimage_inventory_host].stage5_profile == x12again_reimage_profile_id
+        fail_msg: "X12AGAIN must be modeled in reimage_candidates with the coherent Stage5 profile before preflight."
+
+    - name: Load X12AGAIN coherent profile definition
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../profile-definitions/{{ x12again_reimage_profile_id }}.yml"
+        name: x12again_profile_document
+
+    - name: Assert profile keeps destructive behavior gated
+      ansible.builtin.assert:
+        that:
+          - x12again_profile_document.gentoo_profile_definition.mutation_policy.enabled_by_default == false
+          - x12again_profile_document.gentoo_profile_definition.mutation_policy.required_variable == 'x12again_reimage_apply_required'
+          - x12again_profile_document.gentoo_profile_definition.slurm_cluster.worker_enabled == false
+          - x12again_profile_document.gentoo_profile_definition.memory_storage.project_coherent_flash_scale_model.no_production_storage_mutation == true
+        fail_msg: "X12AGAIN coherent profile must keep mutation, SLURM admission, and production storage writes disabled by default."
+
+    - name: Gate destructive reimage mutation
+      ansible.builtin.assert:
+        that:
+          - not (x12again_reimage_apply_required | bool) or (x12again_reimage_backup_verified | bool)
+          - not (x12again_reimage_apply_required | bool) or (x12again_reimage_services_offloaded_verified | bool)
+          - not (x12again_reimage_apply_required | bool) or (x12again_reimage_emergency_console_verified | bool)
+          - not (x12again_reimage_apply_required | bool) or (x12again_reimage_human_change_window_approved | bool)
+        fail_msg: >-
+          Destructive X12AGAIN reimage gates are not satisfied. Require
+          x12again_reimage_backup_verified=true,
+          x12again_reimage_services_offloaded_verified=true,
+          x12again_reimage_emergency_console_verified=true, and
+          x12again_reimage_human_change_window_approved=true before setting
+          x12again_reimage_apply_required=true.
+
+    - name: Ensure host E2ET report directory exists
+      ansible.builtin.file:
+        path: "{{ host_e2et_report_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Render X12AGAIN preflight conformance report
+      ansible.builtin.command:
+        argv:
+          - "{{ host_e2et_reporter_path }}"
+          - "--manifest"
+          - "{{ host_e2et_manifest }}"
+          - "--json-output"
+          - "{{ host_e2et_report_dir }}/{{ host_e2et_report_name }}.json"
+          - "--markdown-output"
+          - "{{ host_e2et_report_dir }}/{{ host_e2et_report_name }}.md"
+          - "--junit-output"
+          - "{{ host_e2et_report_dir }}/{{ host_e2et_report_name }}.xml"
+      register: x12again_reimage_preflight_report
+      changed_when: false
+      failed_when: x12again_reimage_preflight_report.rc not in [0, 1]
+
+    - name: Show X12AGAIN preflight conformance summary
+      ansible.builtin.debug:
+        msg: "{{ x12again_reimage_preflight_report.stdout | from_json }}"

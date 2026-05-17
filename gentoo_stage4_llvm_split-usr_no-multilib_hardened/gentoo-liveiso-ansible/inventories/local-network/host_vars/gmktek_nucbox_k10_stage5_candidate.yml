@@ -1,0 +1,31 @@
+---
+ansible_host: 172.16.99.156
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+local_network_role: baremetal-workstation-validation
+
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"
+
+install_target_root: /
+install_hostname: gmktek-k10-stage5
+freeipa_client_fqdn: gmktek-k10-stage5.rfc1918.host
+freeipa_client_short_hostname: gmktek-k10-stage5
+freeipa_client_realm: RFC1918.HOST
+freeipa_client_domain: rfc1918.host
+freeipa_client_server: ipa01.rfc1918.host
+freeipa_client_server_ip: 172.16.99.63
+freeipa_client_controller_inventory_host: svc_identity_ipa01
+freeipa_client_validate_user: codex-admin
+freeipa_client_pam_validate_user: codex-admin
+freeipa_client_manage_hostname: true
+freeipa_client_manage_hosts_fallback: true
+freeipa_client_install_packages: true
+freeipa_client_build_binary_packages: true
+freeipa_client_package_atoms:
+  - sys-auth/sssd
+  - net-fs/samba
+  - app-crypt/mit-krb5
+  - net-nds/openldap
+  - app-misc/ca-certificates

@@ -168,16 +168,10 @@ The 2026-05-08 local RFC1918 lab intake convergence pass completed with:
 - K10 device: `gmktek_nucbox_k10_stage5_candidate`
 - K10 management IP: `172.16.99.156/24`, assigned to interface `eth0`, set as
   primary IPv4
-- Chonkers laptop device: `lap_sun99_chonkers`
-- Chonkers management IP: `172.16.99.157/24`, assigned to interface `LOM`, set
-  as primary IPv4
-- Chonkers hardware metadata: Alienware 16X Aurora, SKU `AC16251`, Realtek
-  RTL8111H LOM MAC `84:5C:31:A5:CF:51`, CSS326 `ge15`, native iPXE/HTTPv4
-  with PXE fallback
 - AP7901 device: `pdu_rfc99_corectrl_ap7901`
 - AP7901 management IP: `172.16.99.241/24`, assigned to interface `mgmt`, set
   as primary IPv4
-- AP7901 power metadata: outlet `outlet4`, label `host_lap_sun99_chonkers`,
-  target `lap_sun99_chonkers` power port `power0`; outlet `outlet6`, label
+- AP7901 power metadata: outlet `outlet4`, label `admin-sun99-forge`, target
+  `admin_sun99_forge_099070` power port `power0`; outlet `outlet6`, label
   `host_gmktec_k10`, target `gmktek_nucbox_k10_stage5_candidate` power port
   `power0`

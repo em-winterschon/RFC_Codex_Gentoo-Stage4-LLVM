@@ -70,6 +70,7 @@
     resolved_portage_package_license_files: "{{ portage_package_license_files | default({}) }}"
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
+    resolved_portage_config_files: "{{ portage_config_files | default({}) }}"
     resolved_kernel_config_fragment_files: "{{ kernel_config_fragment_files | default({}) }}"
     resolved_portage_patch_files: "{{ portage_patch_files | default({}) }}"
     resolved_profile_parents: "{{ profile_parents | default([]) }}"
@@ -92,11 +93,13 @@
     resolved_profile_vm_redfish_emulator: "{{ profile_vm_redfish_emulator | default({}) }}"
     resolved_profile_zerotier: "{{ profile_zerotier | default({}) }}"
     resolved_profile_telemetry: "{{ profile_telemetry | default({}) }}"
+    resolved_profile_nfs_storage_client: "{{ profile_nfs_storage_client | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
     resolved_profile_nexus_repo: "{{ profile_nexus_repo | default({}) }}"
     resolved_profile_nscde_workstation: "{{ profile_nscde_workstation | default({}) }}"
     resolved_profile_workstation_session_stack: "{{ profile_workstation_session_stack | default({}) }}"
     resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
+    resolved_profile_native_haproxy_tls_proxy: "{{ profile_native_haproxy_tls_proxy | default({}) }}"
     resolved_profile_service_readiness: "{{ profile_service_readiness | default({}) }}"
     resolved_profile_container_base_image: "{{ profile_container_base_image | default({}) }}"
     resolved_profile_container_app_build_defaults: "{{ profile_container_app_build_defaults | default({}) }}"
@@ -197,6 +200,11 @@
         resolved_profile_telemetry
         | combine(profile_telemetry | default({}), recursive=True)
       }}
+    resolved_profile_nfs_storage_client: >-
+      {{
+        resolved_profile_nfs_storage_client
+        | combine(profile_nfs_storage_client | default({}), recursive=True)
+      }}
     resolved_profile_binpkg_repo: >-
       {{
         resolved_profile_binpkg_repo
@@ -273,6 +281,11 @@
       {{
         resolved_profile_distcc_farm
         | combine(profile_distcc_farm | default({}), recursive=True)
+      }}
+    resolved_portage_config_files: >-
+      {{
+        resolved_portage_config_files
+        | combine(portage_config_files | default({}), recursive=True)
       }}
 
 - name: Resolve package atoms from selected profile package list files

@@ -29,6 +29,7 @@ sys-apps/amdgpu_top
 sys-apps/dbus
 sys-block/ndctl
 sys-kernel/linux-firmware
+sys-process/nvtop
 virtual/opencl
 x11-apps/xauth
 x11-apps/xdpyinfo

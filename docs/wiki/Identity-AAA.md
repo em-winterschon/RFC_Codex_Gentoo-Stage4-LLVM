@@ -43,6 +43,8 @@ remain in Ansible Vault or operator-private paths.
 
 The local RFC1918 source currently models:
 
+- FreeIPA local ID range `RFC1918.HOST_low_id_range`, reserving POSIX IDs
+  `200000-399999` for repo-managed local identities
 - `codex-admin` as the first central non-root operator identity
 - `radius-test` as the redacted validation identity
 - `radiusd` as the FreeRADIUS LDAP bind service account
@@ -103,6 +105,8 @@ vault variable names but redact resolved secret values and SSH key material.
 
 Current apply scope:
 
+- FreeIPA local ID range creation and UID/GID guard checks before account
+  mutation.
 - FreeIPA groups, users, SSH public keys, supplemental group membership, hosts,
   and hostgroups through the `ipa` CLI.
 - FreeRADIUS `clients.d` rendering for managed client records, with shared
@@ -140,10 +144,35 @@ image, the first live controller is a dedicated Rocky 9 VM on Hasslehoff:
 Secrets for the controller are generated outside the repo under
 `/root/operator-private/identity/` and are copied to root-only state on the VM.
 
+## FreeIPA Online Gates
+
+For operational purposes, FreeIPA "domain online" means the SSSD IPA backend can
+bind to the domain provider, not merely that `ipa.service` is active. The
+minimum gates are:
+
+- the IPA server FQDN resolves to the canonical hostname used by
+  `/etc/ipa/default.conf`, `/etc/krb5.conf`, certificates, and keytabs
+- `/etc/krb5.keytab` can obtain a host ticket for the IPA host principal
+- Kerberos KDC and LDAP/LDAPS are reachable with acceptable time skew
+- LDAP GSSAPI bind succeeds against the canonical `ldap/<fqdn>` service
+  principal
+- SSSD can resolve the IPA provider and reports `Online status: Online`
+- NSS/PAM can resolve the target user and pass account checks
+
+The 2026-05-09 outage was caused by local `/etc/hosts` fallback ordering:
+`identity-ldap-radius.rfc1918.host` appeared before `ipa01.rfc1918.host` for
+`172.16.99.63`, so Kerberos looked for
+`ldap/identity-ldap-radius.rfc1918.host@RFC1918.HOST`. The DNS inventory
+planner now renders device canonical records before service VIP aliases on
+shared IPs.
+
 The initial live policy includes:
 
-- `codex-admin` as the central non-root SSH identity, in `linux-admin`
-- `radius-test` as the redacted validation identity, in `network-readonly`
+- `codex-admin` as the central non-root SSH identity: UID `200100`, primary GID
+  `201000` / `linux-admin`, with `ci-builder`, `network-admin`, and
+  `power-admin` supplemental groups
+- `radius-test` as the redacted validation identity: UID `200101`, primary GID
+  `201110` / `network-readonly`, with `power-readonly` supplemental group
 - `radiusd` LDAP bind account under `cn=sysaccounts,cn=etc`
 - local management RADIUS client scope: `172.16.99.0/24`
 
@@ -157,6 +186,153 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
 
 The optional `radtest` path is disabled by default to avoid passing secrets in
 normal operator output. Enable it only with vault-backed variables.
+
+## First Live Linux Client
+
+The first live SSSD/RBAC workstation client gate is the GMKtek K10:
+
+- inventory host: `gmktek_nucbox_k10_stage5_candidate`
+- intended FQDN: `gmktek-k10-stage5.rfc1918.host`
+- live address: `172.16.99.156`
+- enrollment playbook: `playbooks/ipa-client-live-apply.yml`
+- validation playbook: `playbooks/ipa-client-live-validate.yml`
+
+On 2026-05-09 the K10 live Gentoo image passed the repo-managed FreeIPA client
+gates before reboot. A later PDU reboot proved the first rootfs did not persist
+the live mutation because it lacked SSSD and `/usr/lib64/sssd/libsss_ipa.so`.
+The promoted 2026-05-11 rootfs now reboots with SSSD, Samba, Kerberos,
+OpenLDAP, and `libsss_ipa.so`; post-boot `ipa-client-live-apply.yml` and
+`ipa-client-live-validate.yml` passed, and floating SSH as `codex-admin`
+resolved the expected UID/GID/group mappings. The remaining blocker is
+unattended durable enrollment without putting `/etc/krb5.keytab` into public
+HTTP netboot artifacts.
+
+The root cause of the initial SSSD failure was package policy: Gentoo's
+`sys-auth/sssd-2.12.0-r2` did not install the IPA backend unless SSSD was built
+with `samba`, and Samba also required `winbind`. The AAA profile now applies:
+
+- `sys-auth/sssd samba`
+- `net-fs/samba winbind`
+
+SSSD `2.12` also rejects `config_file_version = 2` in `[sssd]`, so the client
+template and live playbooks omit that directive.
+
+The live image does not keep system D-Bus running by default, so
+`sssctl domain-status` can fail with `Unable to connect to system bus` even
+while the IPA backend is functional. The validation path accepts that specific
+live-image failure only when all stronger local gates pass:
+
+- `/usr/lib64/sssd/libsss_ipa.so` exists
+- `sssctl config-check` reports zero validator issues
+- `getent passwd codex-admin` resolves UID `200100`
+- `getent group linux-admin` resolves GID `201000`
+- `sss_ssh_authorizedkeys codex-admin` returns the FreeIPA SSH key
+- PAM account validation for `codex-admin` succeeds
+- `sshd -T` reports PAM enabled and SSSD authorized-key lookup configured
+
+The first transient floating SSH validation passed from the operator host:
+
+```bash
+ssh codex-admin@172.16.99.156 'id; hostname -f; pwd'
+```
+
+It resolved `codex-admin` with UID `200100`, primary group `linux-admin`, and
+supplemental `ci-builder`, `network-admin`, and `power-admin` memberships.
+
+## Secure First-Boot Enrollment Producer
+
+The safe enrollment model is now split into two sides:
+
+- operator-side bundle production and encryption
+- host-side first-boot consumption and FreeIPA enrollment
+
+The producer side is intentionally not part of the public HTTP netboot rootfs.
+It renders a short-lived FreeIPA host OTP bundle, validates its hostname and
+expiry, encrypts it with `age`, and refuses to write the encrypted artifact
+inside the git repository unless explicitly overridden. The primary command
+wrapper is:
+
+```bash
+SECURE_FIRSTBOOT_BUNDLE_APPLY=1 \
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/secure-firstboot-bundle-stage.yml
+```
+
+The playbook must receive vault-backed values for:
+
+- target FQDN
+- FreeIPA realm, domain, and server
+- bundle expiry
+- generation ID
+- host OTP
+- target host `age` recipient
+
+The corresponding low-level producer is:
+
+```bash
+scripts/stage_secure_firstboot_bundle.py \
+  --bundle /root/operator-private/secure-firstboot/bundle.json \
+  --expected-fqdn gmktek-k10-stage5.rfc1918.host \
+  --recipient "${AGE_RECIPIENT}" \
+  --output /root/operator-private/secure-firstboot/bundle.json.age \
+  --apply
+```
+
+Secrets are protected by three gates:
+
+- plaintext OTP bundles remain under operator-private paths only
+- `no_log: true` wraps Ansible tasks that handle OTP or encrypted bundle data
+- encrypted bundles are denied under the repo tree by default
+
+## Tang And Clevis NBDE Policy
+
+Tang/Clevis is tracked as optional hardening for disk-installed hosts, not as a
+replacement for host-bound identity. Tang-only decryption is not sufficient for
+first-boot enrollment because any host that can reach the Tang advertisement can
+recover the secret. The only approved NBDE policy for this path is:
+
+```text
+tpm2+tang
+```
+
+The initial Tang service role is mutation-gated:
+
+- profile: `vm-tang-nbde-server`
+- role: `tang_nbde_server`
+- service atom: `tang-advertisement`
+- default state: disabled
+- package source: Guru overlay until `app-crypt/tang` and `app-crypt/clevis`
+  are available in the base package policy
+
+The client package overlay is `secure-firstboot-nbde-client` and includes
+Clevis plus TPM2 tooling. It should be enabled only for disk-install profiles
+that have a real TPM, a measured boot plan, and an E2ET gate proving that
+unlock and FreeIPA enrollment still work after power loss.
+
+## Secure First-Boot Enrollment
+
+The approved durable enrollment path is FreeIPA one-time host password delivery
+through a short-lived encrypted first-boot bundle:
+
+- FreeIPA creates or resets the host OTP with `ipa host-add --random` or the
+  equivalent host OTP reset flow.
+- `scripts/render_secure_firstboot_bundle.py` renders a plaintext JSON bundle
+  from non-secret CLI input plus the OTP supplied through an environment
+  variable.
+- The bundle is encrypted to the target host with `age` and fetched by the
+  opt-in OpenRC `stage5-firstboot-enroll` service.
+- The first-boot script decrypts the bundle, validates expiry and FQDN with
+  `scripts/validate_secure_firstboot_bundle.py`, runs the configured enrollment
+  command, and requires `/etc/krb5.keytab` to be created on the target.
+- Tang/Clevis remains optional future work because Gentoo requires Guru repo
+  ebuilds for `clevis` and `tang`, newer Clevis ebuilds are masked for dracut
+  boot concerns, and Tang-only decryption proves network presence rather than
+  host identity.
+
+The K10 gate is still not reboot-durable until either disk install or this
+secure first-boot bundle path is applied live, then hostname policy, offline
+cache, sudo rules, and local break-glass behavior pass across reboot before
+broad Linux enrollment.
 
 ## Important Constraint
 

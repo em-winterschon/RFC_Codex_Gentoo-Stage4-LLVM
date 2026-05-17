@@ -1,0 +1,20 @@
+---
+- name: Install local DNS fallback host mappings
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    local_hosts_fallback_source: "/tmp/rfc1918-etc-hosts.generated"
+    local_hosts_fallback_marker: "RFC1918 automated DNS fallback"
+  tasks:
+    - name: Read generated local DNS fallback mappings
+      ansible.builtin.set_fact:
+        local_hosts_fallback_block: "{{ lookup('file', local_hosts_fallback_source) }}"
+
+    - name: Write managed DNS fallback block to /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} {{ local_hosts_fallback_marker }}"
+        block: "{{ local_hosts_fallback_block }}"
+        create: true
+        mode: "0644"

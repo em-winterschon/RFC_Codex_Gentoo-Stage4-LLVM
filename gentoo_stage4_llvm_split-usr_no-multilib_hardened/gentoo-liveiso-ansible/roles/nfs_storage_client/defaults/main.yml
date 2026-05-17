@@ -13,7 +13,9 @@ nfs_storage_client_exports: []
 nfs_storage_client_mounts: []
 nfs_storage_client_openrc_services:
   - rpcbind
-  - nfsmount
+  - rpc.statd
+  - nfsclient
+  - netmount
 nfs_storage_client_kernel_modules:
   - nfs
   - nfsv3

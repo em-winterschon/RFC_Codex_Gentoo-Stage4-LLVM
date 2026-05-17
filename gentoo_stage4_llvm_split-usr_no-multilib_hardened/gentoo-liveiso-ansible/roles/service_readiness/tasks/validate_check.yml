@@ -1,6 +1,10 @@
 ---
 # Default validator path resolves to the repo-level scripts/service_validator.py.
-- name: Build service readiness command
+- name: Resolve service readiness check type
+  ansible.builtin.set_fact:
+    service_readiness_check_type: "{{ service_readiness_check.type | default('nmap') }}"
+
+- name: Build nmap service readiness command
   ansible.builtin.set_fact:
     service_readiness_check_command:
       - "{{ resolved_service_readiness_validator_path }}"
@@ -17,13 +21,78 @@
       - "--timeout"
       - "{{ service_readiness_check.timeout | default(30) | string }}"
       - "--json"
+  when: service_readiness_check_type == 'nmap'
 
 - name: Allow open-filtered UDP readiness state when explicitly requested
   ansible.builtin.set_fact:
     service_readiness_check_command: "{{ service_readiness_check_command + ['--allow-open-filtered'] }}"
-  when: service_readiness_check.allow_open_filtered | default(false) | bool
+  when:
+    - service_readiness_check_type == 'nmap'
+    - service_readiness_check.allow_open_filtered | default(false) | bool
 
-- name: Execute nmap service validator
+- name: Build syslog_elasticsearch readiness command
+  ansible.builtin.set_fact:
+    service_readiness_check_command:
+      - "{{ service_readiness_check.validator_path | default(resolved_service_readiness_syslog_elasticsearch_validator_path) }}"
+      - "--service-name"
+      - "{{ service_readiness_check.name }}"
+      - "--syslog-target"
+      - "{{ service_readiness_check.syslog_target | default(service_readiness_check.target) }}"
+      - "--syslog-port"
+      - "{{ service_readiness_check.syslog_port | default(service_readiness_check.port | default(514)) | string }}"
+      - "--syslog-protocol"
+      - "{{ service_readiness_check.syslog_protocol | default(service_readiness_check.protocol | default('tcp')) }}"
+      - "--elasticsearch-url"
+      - "{{ service_readiness_check.elasticsearch_url }}"
+      - "--index-pattern"
+      - "{{ service_readiness_check.index_pattern | default('stage5-syslog*') }}"
+      - "--field"
+      - "{{ service_readiness_check.field | default('message') }}"
+      - "--timeout"
+      - "{{ service_readiness_check.timeout | default(5) | string }}"
+      - "--query-timeout"
+      - "{{ service_readiness_check.query_timeout | default(8) | string }}"
+      - "--retries"
+      - "{{ service_readiness_check.ingest_retries | default(10) | string }}"
+      - "--delay"
+      - "{{ service_readiness_check.ingest_delay | default(2) | string }}"
+      - "--json"
+  when: service_readiness_check_type == 'syslog_elasticsearch'
+
+- name: Add explicit syslog_elasticsearch marker when provided
+  ansible.builtin.set_fact:
+    service_readiness_check_command: "{{ service_readiness_check_command + ['--marker', service_readiness_check.marker] }}"
+  when:
+    - service_readiness_check_type == 'syslog_elasticsearch'
+    - service_readiness_check.marker is defined
+
+- name: Add explicit syslog_elasticsearch host label when provided
+  ansible.builtin.set_fact:
+    service_readiness_check_command: "{{ service_readiness_check_command + ['--host', service_readiness_check.host] }}"
+  when:
+    - service_readiness_check_type == 'syslog_elasticsearch'
+    - service_readiness_check.host is defined
+
+- name: Add explicit syslog_elasticsearch program label when provided
+  ansible.builtin.set_fact:
+    service_readiness_check_command: "{{ service_readiness_check_command + ['--program', service_readiness_check.program] }}"
+  when:
+    - service_readiness_check_type == 'syslog_elasticsearch'
+    - service_readiness_check.program is defined
+
+- name: Add explicit syslog_elasticsearch message suffix when provided
+  ansible.builtin.set_fact:
+    service_readiness_check_command: "{{ service_readiness_check_command + ['--message-suffix', service_readiness_check.message_suffix] }}"
+  when:
+    - service_readiness_check_type == 'syslog_elasticsearch'
+    - service_readiness_check.message_suffix is defined
+
+- name: Reject unsupported service readiness check type
+  ansible.builtin.fail:
+    msg: "Unsupported service readiness check type: {{ service_readiness_check_type }}"
+  when: service_readiness_check_type not in ['nmap', 'syslog_elasticsearch']
+
+- name: Execute service readiness validator
   ansible.builtin.command:
     argv: "{{ service_readiness_check_command }}"
   register: service_readiness_check_result

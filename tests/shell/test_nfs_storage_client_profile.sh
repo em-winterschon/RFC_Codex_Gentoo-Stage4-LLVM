@@ -58,8 +58,10 @@ assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_protoco
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_enable_rdma: false'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_enable_multipath: false'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_nconnect: 4'
-assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'rpcbind'
-assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'nfsmount'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'rpcbind'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'rpc.statd'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfsclient'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'netmount'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'idmapd.conf'
 assert_file_contains "${ROLE_DIR}/templates/nfs.conf.j2" 'rdma-port'
 assert_file_contains "${ROLE_DIR}/templates/nfs.conf.j2" 'vers4.2'
@@ -70,7 +72,9 @@ test -f "${WIKI_FILE}"
 assert_file_contains "${DOC_FILE}" 'NFSv3 over TCP remains the default'
 assert_file_contains "${DOC_FILE}" 'NFSv4 requires centralized AAA'
 assert_file_contains "${DOC_FILE}" 'NFS-RDMA'
+assert_file_contains "${DOC_FILE}" 'Issue #117'
 assert_file_contains "${DOC_FILE}" 'Containers do not inherit this profile by default'
 assert_file_contains "${WIKI_FILE}" 'NFSv3 over TCP remains the default'
+assert_file_contains "${WIKI_FILE}" 'Issue #117'
 
 printf 'PASS: %s\n' "$(basename "$0")"

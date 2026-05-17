@@ -1,0 +1,111 @@
+---
+- name: Resolve RFC1918 CA trust platform
+  ansible.builtin.set_fact:
+    rfc1918_ca_trust_live_root: "{{ rfc1918_ca_trust_install_root in ['', '/'] }}"
+    rfc1918_ca_trust_resolved_platform: >-
+      {{
+        rfc1918_ca_trust_platform
+        if rfc1918_ca_trust_platform | length > 0
+        else (
+          'freebsd'
+          if ansible_system | default('') == 'FreeBSD'
+          else (
+            'rocky_rhel'
+            if ansible_os_family | default('') == 'RedHat'
+            else 'gentoo_openrc'
+          )
+        )
+      }}
+
+- name: Resolve RFC1918 CA trust target paths
+  ansible.builtin.set_fact:
+    rfc1918_ca_trust_anchor_dir: >-
+      {{
+        (
+          service_tls_certificate_policy.trust_anchor_targets[rfc1918_ca_trust_resolved_platform].anchors_dir
+          | default('')
+        )
+        if service_tls_certificate_policy is defined
+        and service_tls_certificate_policy.trust_anchor_targets is defined
+        and rfc1918_ca_trust_resolved_platform in service_tls_certificate_policy.trust_anchor_targets
+        else (
+          rfc1918_ca_trust_freebsd_anchor_dir
+          if rfc1918_ca_trust_resolved_platform == 'freebsd'
+          else (
+            rfc1918_ca_trust_rhel_anchor_dir
+            if rfc1918_ca_trust_resolved_platform == 'rocky_rhel'
+            else rfc1918_ca_trust_gentoo_anchor_dir
+          )
+        )
+      }}
+    rfc1918_ca_trust_refresh_command: >-
+      {{
+        (
+          service_tls_certificate_policy.trust_anchor_targets[rfc1918_ca_trust_resolved_platform].refresh_command
+          | default('')
+        )
+        if service_tls_certificate_policy is defined
+        and service_tls_certificate_policy.trust_anchor_targets is defined
+        and rfc1918_ca_trust_resolved_platform in service_tls_certificate_policy.trust_anchor_targets
+        else (
+          'certctl rehash'
+          if rfc1918_ca_trust_resolved_platform == 'freebsd'
+          else (
+            'update-ca-trust'
+            if rfc1918_ca_trust_resolved_platform == 'rocky_rhel'
+            else 'update-ca-certificates'
+          )
+        )
+      }}
+
+- name: Refuse RFC1918 CA trust mutation without explicit apply gate
+  ansible.builtin.assert:
+    that:
+      - rfc1918_ca_trust_apply | bool
+      - rfc1918_ca_trust_cert_pem | length > 0
+    fail_msg: >-
+      RFC1918 CA trust deployment requires rfc1918_ca_trust_enabled=true,
+      rfc1918_ca_trust_apply=true, and a non-empty
+      rfc1918_ca_trust_cert_pem value from the private CA vault.
+  when: rfc1918_ca_trust_enabled | bool
+  no_log: true
+
+- name: Ensure RFC1918 CA trust anchor directory exists
+  ansible.builtin.file:
+    path: "{{ rfc1918_ca_trust_install_root }}{{ rfc1918_ca_trust_anchor_dir }}"
+    state: directory
+    mode: "0755"
+  when:
+    - rfc1918_ca_trust_enabled | bool
+    - rfc1918_ca_trust_apply | bool
+
+- name: Install RFC1918 CA trust anchor
+  ansible.builtin.copy:
+    dest: "{{ rfc1918_ca_trust_install_root }}{{ rfc1918_ca_trust_anchor_dir }}/{{ rfc1918_ca_trust_dest_name }}"
+    content: "{{ rfc1918_ca_trust_cert_pem }}"
+    mode: "0644"
+  register: rfc1918_ca_trust_anchor_copy
+  when:
+    - rfc1918_ca_trust_enabled | bool
+    - rfc1918_ca_trust_apply | bool
+  no_log: true
+
+- name: Refresh live RFC1918 CA trust store
+  ansible.builtin.command: "{{ rfc1918_ca_trust_refresh_command }}"
+  changed_when: rfc1918_ca_trust_anchor_copy.changed | default(false)
+  when:
+    - rfc1918_ca_trust_enabled | bool
+    - rfc1918_ca_trust_apply | bool
+    - rfc1918_ca_trust_live_root | bool
+
+- name: Refresh target RFC1918 CA trust store through chroot
+  ansible.builtin.command:
+    argv:
+      - "{{ liveiso_work_dir }}/chroot-runner.sh"
+      - "{{ rfc1918_ca_trust_refresh_command }}"
+  changed_when: rfc1918_ca_trust_anchor_copy.changed | default(false)
+  when:
+    - rfc1918_ca_trust_enabled | bool
+    - rfc1918_ca_trust_apply | bool
+    - not rfc1918_ca_trust_live_root | bool
+    - liveiso_work_dir is defined

@@ -31,7 +31,11 @@ run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
 
 assert_file_contains "${apply_script}" "apply_identity_sync_plan"
 assert_file_contains "${apply_script}" "IDENTITY_SYNC_APPLY=1"
+assert_file_contains "${apply_script}" "allow_no_modifications"
 assert_file_contains "${playbook}" "Apply identity source-of-truth definitions"
+assert_file_contains "${playbook}" "Create remote identity apply staging directory"
+assert_file_contains "${playbook}" "Acquire FreeIPA admin Kerberos ticket"
+assert_file_contains "${playbook}" "apply_identity_sync_plan.py"
 assert_file_contains "${docs}" "Gated Apply"
 assert_file_contains "${run_tests}" "test_identity_apply_plan.sh"
 
@@ -93,7 +97,7 @@ cat > "${fake_ipa}" << 'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${FAKE_IPA_LOG}"
 case "$1" in
-  group-show|user-show|host-show|hostgroup-show)
+  group-show|user-show|host-show|hostgroup-show|idrange-show)
     exit 1
     ;;
 esac
@@ -113,6 +117,7 @@ freeipa_stdout="$(
     --format json
 )"
 grep -Fq '"applied": true' <<< "${freeipa_stdout}" || fail "FreeIPA apply did not report applied"
+grep -Fq 'idrange-add RFC1918.HOST_low_id_range' "${fake_log}" || fail "FreeIPA fake log missing idrange-add"
 grep -Fq 'group-add linux-admin' "${fake_log}" || fail "FreeIPA fake log missing group-add"
 grep -Fq 'user-add codex-admin' "${fake_log}" || fail "FreeIPA fake log missing user-add"
 grep -Fq 'group-add-member ci-builder' "${fake_log}" || fail "FreeIPA fake log missing group membership"
