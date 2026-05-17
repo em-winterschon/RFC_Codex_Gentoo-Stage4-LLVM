@@ -248,6 +248,38 @@ vault_service_tls_certificates.<service_id>.pkcs12_base64
 vault_service_tls_certificates.<service_id>.pkcs12_password
 ```
 
+FreeIPA server certificate migration additionally requires the existing
+Directory Manager password:
+
+```text
+vault_freeipa_ipa01_directory_manager_password
+```
+
+`cn=Directory Manager` is the 389-DS LDAP root DN created during FreeIPA
+installation. It is not a Kerberos admin user and it bypasses normal IPA RBAC,
+so it must be stored only in Ansible Vault and consumed only by the gated
+`freeipa_server_certificate` role. If the value is unknown, rotate or reset it
+in a dedicated identity maintenance window before adding the new value to vault.
+
+The `freeipa_ipa01` service TLS vault entry must include PKCS#12 material:
+
+```text
+vault_service_tls_certificates.freeipa_ipa01.pkcs12_base64
+vault_service_tls_certificates.freeipa_ipa01.pkcs12_password
+```
+
+The migration playbook is opt-in and should be run only after FreeIPA health and
+backout paths are validated:
+
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/freeipa-server-cert-migration.yml \
+  -e freeipa_server_certificate_enabled=true \
+  -e freeipa_server_certificate_apply=true \
+  -e freeipa_server_certificate_service_id=freeipa_ipa01
+```
+
 The non-secret deployment matrix is:
 
 ```text
@@ -255,8 +287,10 @@ gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/invento
 ```
 
 Do not commit literal leaf PEM, private-key PEM, or PKCS#12 data. File-backed
-services use `fullchain_pem` and `private_key_pem`; RouterOS and firmware-backed
-devices may additionally require PKCS#12 material.
+services use `fullchain_pem` and `private_key_pem`; supported RouterOS and
+device APIs may additionally require PKCS#12 material. Legacy firmware that
+cannot run modern TLS belongs in `legacy_oob_devices.yml`, not in the service
+TLS certificate matrix.
 
 ## APC PDU Credentials
 
@@ -281,6 +315,15 @@ NetBox inventory for the AP7901 must remain non-secret. It may contain the
 device model, management IP, serial number, SNMPv3 capability marker, and outlet
 labels, but it must not contain SNMPv3 usernames, authentication secrets,
 privacy secrets, or local break-glass passwords.
+
+The AP7901 PDU is TLS-exempt legacy firmware. Do not create
+`vault_service_tls_certificates.pdu_rfc99_corectrl` entries for it. Manage it
+through SNMPv3 first, serial rescue/configuration second, and management-only
+legacy HTTP as break-glass. The non-secret policy lives in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/legacy_oob_devices.yml
+```
 
 ## Safety Rules
 

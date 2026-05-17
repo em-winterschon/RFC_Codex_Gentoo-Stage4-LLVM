@@ -16,7 +16,9 @@ only through Ansible Vault or operator-private source files.
 - Default every mutation to off until an explicit role-level apply variable is
   set.
 - Replace runtime self-signed certificates first on HAProxy VIPs, then on
-  observability and identity services, then on network and power devices.
+  observability and identity services, then on supported network devices.
+- Exclude legacy power/OOB devices that cannot run modern TLS from the service
+  TLS matrix; manage them through the legacy OOB device policy instead.
 - Treat FreeIPA certificate handling as identity-sensitive; deploy trust first
   and change FreeIPA HTTP/LDAP certificates only during a dedicated window.
 - Keep RouterOS self-signed generation as an emergency fallback until imported
@@ -35,9 +37,11 @@ only through Ansible Vault or operator-private source files.
    VictoriaMetrics, Grafana, Kibana, and CheckMK.
 6. Deploy Proxmox `pveproxy` certificate on Hasslehoff after console and API
    rollback paths are validated.
-7. Import certificates into RouterOS and OOB/power devices with device-specific
-   mutation gates.
-8. Add scheduled expiry monitoring and local ntfy alerts.
+7. Import certificates into supported RouterOS/network devices with
+   device-specific mutation gates.
+8. Validate legacy OOB/power devices through SNMPv3, serial, or management-only
+   HTTP checks, not OpenSSL TLS checks.
+9. Add scheduled expiry monitoring and local ntfy alerts.
 
 ## Initial Coverage Matrix
 
@@ -62,7 +66,20 @@ Initial service IDs:
 - `mcp_control_plane`
 - `routeros_ccr2004_gateway`
 - `proxmox_hasslehoff`
-- `pdu_rfc99_corectrl`
+
+TLS-exempt legacy OOB devices are tracked separately in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/legacy_oob_devices.yml
+```
+
+Initial legacy OOB IDs:
+
+- `pdu_rfc99_corectrl_ap7901`
+
+The AP7901 PDU is managed through SNMPv3, serial rescue/configuration, and
+management-only legacy HTTP. It must not be included in RFC1918 service TLS
+certificate deployment or OpenSSL endpoint validation.
 
 ## Validation
 
@@ -119,6 +136,9 @@ Backout is service-specific:
   key files with timestamped suffixes before replacement.
 - RouterOS keeps self-signed certificate generation in the rendered script until
   imported PKCS#12 material has been validated.
+- Unsupported legacy OOB firmware remains outside TLS mutation. Backout for
+  those devices is SNMP/serial/HTTP rollback of management settings, not cert
+  rollback.
 - Device firmware imports require a pre-change configuration backup and a local
   console or serial path before mutation.
 

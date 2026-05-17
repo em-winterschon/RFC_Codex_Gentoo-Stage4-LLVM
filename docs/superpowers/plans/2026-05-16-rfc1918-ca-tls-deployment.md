@@ -28,7 +28,7 @@ Expected before the matrix exists: `FAIL: missing file .../service_tls_certifica
 
 - [ ] **Step 2: Add non-secret matrix content**
 
-Create `service_tls_certificate_policy` and `service_tls_certificate_matrix` with these required service IDs: `ntfy_lan`, `rsyslog_tls_vip`, `elasticsearch_sun99_vip`, `netbox_stage4`, `freeipa_ipa01`, `prometheus_sun99`, `victoriametrics_sun99`, `grafana_sun99`, `kibana_sun99`, `checkmk_fmt2`, `mcp_control_plane`, `routeros_ccr2004_gateway`, `proxmox_hasslehoff`, and `pdu_rfc99_corectrl`.
+Create `service_tls_certificate_policy` and `service_tls_certificate_matrix` with these required service IDs: `ntfy_lan`, `rsyslog_tls_vip`, `elasticsearch_sun99_vip`, `netbox_stage4`, `freeipa_ipa01`, `prometheus_sun99`, `victoriametrics_sun99`, `grafana_sun99`, `kibana_sun99`, `checkmk_fmt2`, `mcp_control_plane`, `routeros_ccr2004_gateway`, and `proxmox_hasslehoff`. Legacy OOB devices that cannot run modern TLS, such as `pdu_rfc99_corectrl_ap7901`, are tracked in `legacy_oob_devices.yml` instead of this matrix.
 
 - [ ] **Step 3: Wire the test runner**
 

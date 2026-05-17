@@ -52,6 +52,20 @@ prefixes:
     vlan:
       id: 1078
       name: container-applications
+  - prefix: 10.78.0.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-management
+    vlan:
+      id: 1079
+      name: mcp-container-management
+  - prefix: 10.78.1.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-applications
+    vlan:
+      id: 1080
+      name: mcp-container-applications
 
 devices:
   - name: hasslehoff
@@ -394,6 +408,38 @@ devices:
     notes:
       - Temporary Hasslehoff staging VM for safe container-services migration.
       - Do not assign the production Path B service IP until cutover validation passes.
+  - name: vm_mcp_control_plane
+    site: local-rfc1918-lab
+    role: mcp-control-plane
+    manufacturer: Gentoo
+    model: gentoo-stage5-container-vm
+    status: planned
+    management_ip: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    dns_aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1068
+    stage5_profile: vm-mcp-control-plane
+    service_tls_id: mcp_control_plane
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-and-mcp-frontdoor
+        status: planned
+      - name: podman-mcp-mgmt0
+        type: virtual
+        purpose: mcp-container-management
+        status: planned
+      - name: podman-mcp-apps0
+        type: virtual
+        purpose: mcp-container-applications
+        status: planned
+    notes:
+      - LAN-only MCP control-plane VM for Nginx-UI and future FastMCP wrappers.
+      - Required before live deployment: Nginx-UI vault secrets, RFC1918 TLS material, DNS records, and HAProxy config with MCP query-string logging disabled.
+      - Docker socket access must remain disabled unless a separate mutation proposal is approved.
   - name: gmktek_nucbox_k10_stage5_candidate
     site: local-rfc1918-lab
     role: baremetal-workstation-validation
@@ -511,6 +557,7 @@ clusters:
       - sched_sun99_slurmctl_099071
       - slurm_worker_node01
       - svc_container_services_safe_move_01
+      - vm_mcp_control_plane
 
 service_vips:
   - name: msg-sun99-ntfysys
@@ -612,6 +659,24 @@ service_vips:
     listeners:
       - protocol: http
         port: 5601
+  - name: mcp-control-plane
+    site: local-rfc1918-lab
+    address: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    owners:
+      - automation
+      - mcp-control-plane
+    listeners:
+      - protocol: http
+        port: 80
+      - protocol: https
+        port: 443
+    notes:
+      - HAProxy front door for Nginx-UI native MCP and future FastMCP infrastructure wrappers.
+      - TLS certificate service ID is mcp_control_plane.
   - name: sched-sun99-slurmctl
     site: local-rfc1918-lab
     address: 172.16.99.71

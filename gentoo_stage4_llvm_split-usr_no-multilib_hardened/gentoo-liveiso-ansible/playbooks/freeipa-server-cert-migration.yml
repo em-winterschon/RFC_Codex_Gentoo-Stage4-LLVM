@@ -1,0 +1,7 @@
+---
+- name: Migrate FreeIPA server certificate to RFC1918 private CA
+  hosts: "{{ freeipa_server_certificate_target_hosts | default('identity_controllers') }}"
+  gather_facts: false
+  become: true
+  roles:
+    - role: freeipa_server_certificate

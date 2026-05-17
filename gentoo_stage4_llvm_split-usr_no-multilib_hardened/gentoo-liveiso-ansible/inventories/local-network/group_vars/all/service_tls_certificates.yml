@@ -164,6 +164,15 @@ service_tls_certificate_matrix:
     secret_refs:
       fullchain_pem: vault_service_tls_certificates.freeipa_ipa01.fullchain_pem
       private_key_pem: vault_service_tls_certificates.freeipa_ipa01.private_key_pem
+      pkcs12_base64: vault_service_tls_certificates.freeipa_ipa01.pkcs12_base64
+      pkcs12_password: vault_service_tls_certificates.freeipa_ipa01.pkcs12_password
+      directory_manager_password: vault_freeipa_ipa01_directory_manager_password
+    deploy_options:
+      install_http_certificate: true
+      install_dirsrv_certificate: true
+      install_kdc_certificate: false
+      cert_name: ipa01-rfc1918-2026
+      ca_nickname: RFC1918-Private-CA-2026
     reload_commands:
       - ipactl restart
     validation:
@@ -402,32 +411,3 @@ service_tls_certificate_matrix:
     validation:
       url: https://hasslehoff.rfc1918.host:8006/
       openssl_name: hasslehoff.rfc1918.host
-
-  pdu_rfc99_corectrl:
-    rollout_priority: 140
-    lifecycle_state: planned
-    service_class: power_device_web
-    owner_inventory_host: pdu_rfc99_corectrl_ap7901
-    termination_owner: device_firmware
-    endpoint_fqdn: pdu-rfc99-corectrl-p08-099241.rfc1918.host
-    endpoint_ips:
-      - 172.16.99.241
-    dns_aliases:
-      - pdu-rfc99-corectrl-099241.rfc1918.host
-    service_ports:
-      - "443/tcp"
-    certificate_profile: device-web-api
-    certificate_authority: rfc1918_private_ca
-    deploy_paths:
-      device_cert_slot: web-ui
-      trust_anchor: device:certificate-store
-    secret_refs:
-      fullchain_pem: vault_service_tls_certificates.pdu_rfc99_corectrl.fullchain_pem
-      private_key_pem: vault_service_tls_certificates.pdu_rfc99_corectrl.private_key_pem
-      pkcs12_base64: vault_service_tls_certificates.pdu_rfc99_corectrl.pkcs12_base64
-      pkcs12_password: vault_service_tls_certificates.pdu_rfc99_corectrl.pkcs12_password
-    reload_commands:
-      - device-web-service-reload
-    validation:
-      url: https://pdu-rfc99-corectrl-p08-099241.rfc1918.host/
-      openssl_name: pdu-rfc99-corectrl-p08-099241.rfc1918.host

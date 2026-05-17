@@ -1,0 +1,14 @@
+---
+freeipa_server_certificate_enabled: false
+freeipa_server_certificate_apply: false
+freeipa_server_certificate_service_id: freeipa_ipa01
+freeipa_server_certificate_matrix: "{{ service_tls_certificate_matrix | default({}) }}"
+freeipa_server_certificate_secret_namespace: "{{ service_tls_certificate_policy.secret_namespace | default('vault_service_tls_certificates') }}"
+freeipa_server_certificate_directory_manager_password_var: ""
+freeipa_server_certificate_ca_cert_pem: "{{ vault_private_ca_rfc1918_cert_pem | default('') }}"
+freeipa_server_certificate_tempdir: /root/.ansible/tmp/freeipa-server-certificate
+freeipa_server_certificate_install_http: true
+freeipa_server_certificate_install_dirsrv: true
+freeipa_server_certificate_install_kdc: false
+freeipa_server_certificate_restart: true
+freeipa_server_certificate_validate_local_tls: true

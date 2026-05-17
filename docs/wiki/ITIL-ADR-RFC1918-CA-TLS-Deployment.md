@@ -3,8 +3,8 @@
 Status: active implementation.
 
 Adopt the RFC1918 private CA as the common internal trust anchor for LAN
-service TLS, observability, management APIs, CheckMK, Proxmox, RouterOS, and
-selected OOB or power devices. Leaf certificates are deployed from Ansible Vault
+service TLS, observability, management APIs, CheckMK, Proxmox, and supported
+RouterOS/network device APIs. Leaf certificates are deployed from Ansible Vault
 references and never committed as PEM or PKCS#12 material.
 
 Key decisions:
@@ -16,6 +16,8 @@ Key decisions:
 - FreeIPA certificate changes require a dedicated identity change window.
 - RouterOS keeps the current self-signed path as a fallback until imported
   internal-CA PKCS#12 certificates are validated.
+- Legacy OOB or power devices that cannot run modern TLS are exempted from the
+  TLS matrix and tracked in `legacy_oob_devices.yml`.
 - Local ntfy receives certificate deployment and expiry alerts.
 
 Priority endpoints:
@@ -33,8 +35,6 @@ Priority endpoints:
 - `mcp-control-plane.rfc1918.host`
 - `gw-rfc99-mkccr2004-16g.rfc1918.host`
 - `hasslehoff.rfc1918.host`
-- `pdu-rfc99-corectrl-p08-099241.rfc1918.host`
-- `pdu-rfc99-corectrl-099241.rfc1918.host`
 
 Implementation order:
 
@@ -44,7 +44,9 @@ Implementation order:
 4. Deploy HAProxy leaf certificates for ntfy, rsyslog, and Elasticsearch VIPs.
 5. Deploy observability, NetBox, and CheckMK service certificates.
 6. Deploy Proxmox and RouterOS certificates after console backout validation.
-7. Add expiry audit, local ntfy alerts, and CheckMK/Prometheus checks.
+7. Validate legacy OOB or power devices through SNMPv3, serial, or
+   management-only HTTP checks.
+8. Add expiry audit, local ntfy alerts, and CheckMK/Prometheus checks.
 
 Implemented repo controls:
 
@@ -65,10 +67,14 @@ Live deployment evidence:
   hostname verification.
 - Remaining endpoints stay tracked in the matrix until service-specific
   mutation and backout plans are complete.
+- `pdu_rfc99_corectrl_ap7901` is explicitly TLS-exempt legacy firmware and is
+  managed through SNMPv3, serial rescue/configuration, and management-only
+  legacy HTTP.
 
 Canonical documents:
 
 - `docs/RFC1918-CA-TLS-DEPLOYMENT.md`
 - `docs/superpowers/plans/2026-05-16-rfc1918-ca-tls-deployment.md`
 - `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/service_tls_certificates.yml`
+- `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/legacy_oob_devices.yml`
 - `scripts/validate-rfc1918-service-tls.sh`
