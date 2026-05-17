@@ -107,17 +107,18 @@ Hasslehoff USB topology:
 
 | Component | USB Path | VID:PID | Notes |
 | --- | --- | --- | --- |
-| Generic hub USB2 root | `1-11` | `2109:2811` | Active interim serial hub. |
+| Generic hub USB2 root | `1-11` | `2109:2811` | Moved to M70 on 2026-05-17. |
 | Generic hub USB3 root | `2-2` | `2109:8110` | Companion SuperSpeed side. |
 | Dual-RS232 internal hub | `1-11.2` | `1a40:0101` | Presents the CRS354/CRS309 FTDI ports. |
 
-Validated console mappings:
+Current console host is `admin-sun99-forge-099070`. Stable adapter IDs remain
+the same after the move; volatile tty paths are now observed on M70:
 
 | Device | Prompt | Stable Device | Current TTY | Baud |
 | --- | --- | --- | --- | --- |
 | CCR2004 gateway | `[admin@gw-rfc99-mkccr2004-16g] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` | `115200` |
 | CRS354 distribution | `[admin@sw-mgmt-mkcrs354] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` | `115200` |
-| CRS309 spine | `[admin@sw-spine-crs309-rfc99] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB2` | `115200` |
+| CRS309 spine | `[admin@sw-spine-crs309-rfc99] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB4` | `115200` |
 
 The `/dev/ttyUSB*` assignments are observed state only. Automation should use
 the stable `/dev/serial/by-id` paths or future `/dev/rfc99-serial/*` udev
