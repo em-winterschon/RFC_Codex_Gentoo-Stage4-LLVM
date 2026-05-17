@@ -1,0 +1,222 @@
+---
+ansible_host: 172.16.99.70
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+local_network_role: automation-admin
+
+local_inventory_observed:
+  captured_at: "2026-05-15T03:08:21Z"
+  source: ssh-plus-css326-snmp-plus-bonding
+  fqdn: admin-sun99-forge-099070.rfc1918.host
+  network_interfaces:
+    - name: netboot0
+      mac_address: "00:07:32:78:65:C6"
+      driver: igb
+      link: up
+      speed: 1000Mb/s
+      duplex: full
+      role: management
+      address: 172.16.99.70/24
+      gateway: 172.16.99.1
+      switch: sw_mgmt_css326
+      switch_port: ge14
+      validation: css326_bridge_fdb
+    - name: enp3s0
+      mac_address: "00:07:32:78:65:C7"
+      driver: igb
+      link: up
+      speed: 1000Mb/s
+      duplex: full
+      role: forge-transfer-lag-member
+      bond: bond0
+      switch: sw_mgmt_css326
+      switch_port: ge17
+      validation: css326_bridge_fdb-and-link-bounce
+    - name: eno1
+      mac_address: "00:07:32:78:65:C8"
+      driver: ixgbe
+      link: up
+      speed: 1000Mb/s
+      duplex: full
+      role: forge-transfer-lag-member
+      bond: bond0
+      switch: sw_mgmt_css326
+      switch_port: ge18
+      validation: css326_bridge_fdb
+    - name: eno2
+      mac_address: "00:07:32:78:65:C9"
+      driver: ixgbe
+      link: down
+      role: spare
+    - name: eno3
+      mac_address: "00:07:32:78:65:CA"
+      driver: ixgbe
+      link: down
+      role: spare
+    - name: eno4
+      mac_address: "00:07:32:78:65:CB"
+      driver: ixgbe
+      link: down
+      role: spare
+  routes:
+    default: 172.16.99.1 via netboot0
+    bignetwork_overlay: 172.17.170.0/24 via bnlj6dscrj
+    bignetwork_fmt2_edge_lan: 172.17.17.0/24 via 172.17.170.200 dev bnlj6dscrj
+    bignetwork_fmt2_oob_management: 172.18.20.0/24 via 172.17.170.200 dev bnlj6dscrj
+    fmt2_openvpn_legacy:
+      - 10.100.99.0/24 via 192.168.132.1 dev tun-fmt2
+      - 10.200.99.0/24 via 192.168.132.1 dev tun-fmt2
+      - 172.18.20.0/24 via 192.168.132.1 dev tun-fmt2
+  temporary_transports:
+    fmt2_openvpn_legacy:
+      status: active
+      observed_at: "2026-05-15T12:41:45Z"
+      service: openvpn.fmt2
+      service_manager: openrc
+      tunnel_interface: tun-fmt2
+      tunnel_local: 192.168.132.2
+      tunnel_peer: 192.168.132.1
+      remote_endpoint: gw-sfo200-vip.vernetzen.io:11948
+      protocol: tcp-client
+      cipher: AES-256-CBC
+      auth_digest: SHA512
+      compression: lz4-v2
+      config_path: /etc/openvpn/fmt2.conf
+      key_path: /etc/openvpn/fmt2/fmt2-static.key
+      key_material_repo_policy: never_commit_plaintext
+      forwarding:
+        ipv4_forwarding: enabled
+        sysctl_file: /etc/sysctl.d/90-forge-fmt2-openvpn.conf
+        lan_source_prefix: 172.16.99.0/24
+        temporary_snat: masquerade
+        iptables_chain: FORGE-FMT2-OPENVPN
+      routed_prefixes:
+        - 10.100.99.0/24
+        - 10.200.99.0/24
+        - 172.18.20.0/24
+      validation:
+        m70_ping_targets_ok:
+          - 192.168.132.1
+          - 10.200.99.1
+          - 172.18.20.1
+          - 172.18.20.4
+          - 10.100.99.1
+        lan_client_source: x12again 172.16.99.108
+        lan_client_ping_targets_ok:
+          - 10.200.99.1
+          - 172.18.20.1
+          - 172.18.20.4
+          - 10.100.99.1
+  bonds:
+    bond0:
+      role: forge-transfer-vm-staging
+      mode: 802.3ad
+      lacp_rate: fast
+      miimon: 100
+      xmit_hash_policy: layer3+4
+      address_family: unnumbered
+      switch: sw_mgmt_css326
+      switch_ports:
+        - ge17
+        - ge18
+      members:
+        - enp3s0
+        - eno1
+      validation:
+        mii_status: up
+        partner_mac: f4:1e:57:89:af:be
+        partner_key: 2
+        observed_at: "2026-05-15T03:08:21Z"
+      persistence:
+        openrc_service: net.bond0
+        enabled_runlevel: default
+        config_file: /etc/conf.d/net
+  notes:
+    - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
+    - bond0 is intentionally left unnumbered until a dedicated staging VLAN or VM bridge is explicitly assigned.
+    - M70 is the temporary FMT2/SFO200 OpenVPN compatibility transport as of 2026-05-15; remove after a cleaner BigNetwork or router replacement path is validated.
+
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-forge-automation-admin.yml"
+
+install_target_root: /
+install_hostname: admin-sun99-forge-099070
+install_storage_layout:
+  efi_boot_disk: /dev/sda
+  efi_boot_role: local-ipxe-chainloader-only
+  zfs_pool_name: zroot
+  zfs_pool_topology: mirror
+  zfs_mirror_disks:
+    - /dev/nvme0n1
+    - /dev/nvme1n1
+  destructive_wipe_approved: true
+  wipe_scope:
+    - /dev/sda
+    - /dev/nvme0n1
+    - /dev/nvme1n1
+  firmware_probe:
+    fwupd_candidate: true
+    expected_likely_result: vendor-bios-update-required
+hardware_acceleration:
+  intel_qat:
+    enabled: true
+    generation: c3000
+    pci_address: "0000:01:00.0"
+    pci_id: "8086:19e2"
+    kernel_driver_observed: c3xxx
+    kernel_modules:
+      - intel_qat
+      - qat_c3xxx
+    required_firmware:
+      - qat_c3xxx.bin
+      - qat_c3xxx_mmp.bin
+    consumer_enablement_status:
+      openssl: planned
+      haproxy_tls: planned
+      nginx_tls: planned
+      openzfs: ci_cd_required
+    validation_policy:
+      production_default: disabled_until_benchmarked
+      required_gates:
+        - kernel_module_load
+        - firmware_present
+        - qat_service_or_userspace_runtime
+        - openssl_provider_or_engine_smoke_test
+        - haproxy_tls_rps_baseline
+        - nginx_tls_rps_baseline
+        - openzfs_qat_build_pipeline
+        - zfs_compression_encryption_checksum_benchmark
+freeipa_client_apply_required: false
+freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host
+freeipa_client_short_hostname: admin-sun99-forge-099070
+freeipa_client_realm: RFC1918.HOST
+freeipa_client_domain: rfc1918.host
+freeipa_client_server: ipa01.rfc1918.host
+freeipa_client_server_ip: 172.16.99.63
+freeipa_client_controller_inventory_host: svc_identity_ipa01
+freeipa_client_validate_user: codex-admin
+freeipa_client_pam_validate_user: codex-admin
+freeipa_client_manage_hostname: true
+freeipa_client_manage_hosts_fallback: true
+freeipa_client_install_packages: false
+freeipa_client_build_binary_packages: true
+freeipa_client_package_atoms:
+  - sys-auth/sssd
+  - net-fs/samba
+  - app-crypt/mit-krb5
+  - net-nds/openldap
+  - app-misc/ca-certificates
+
+secure_firstboot_enrollment_enabled: false
+secure_firstboot_enrollment_expected_fqdn: admin-sun99-forge-099070.rfc1918.host
+secure_firstboot_enrollment_command: >-
+  ipa-client-install
+  --unattended
+  --domain="${STAGE5_ENROLL_DOMAIN}"
+  --realm="${STAGE5_ENROLL_REALM}"
+  --server="${STAGE5_ENROLL_IPA_SERVER}"
+  --hostname="${STAGE5_ENROLL_FQDN}"
+  --password="${STAGE5_ENROLL_OTP}"
+  --mkhomedir

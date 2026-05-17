@@ -1,0 +1,77 @@
+---
+gentoo_profile_definition:
+  profile_id: metal-forge-automation-admin
+  metadata:
+    stage5_profile: metal-forge-automation-admin
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-metal-intel-platform.packages
+    - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/stage5-storage-nfs-client.packages
+    - profile-package-lists/stage5-observability-metrics-client.packages
+    - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+    - profile-package-lists/stage5-metal-forge-automation-admin.packages
+  make_conf_append: |
+    ACCEPT_LICENSE="*.*"
+    USE="${USE} acl curl git gssapi kerberos ldap nfs ssh ssl zfs -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    40-forge-automation-admin: |
+      app-editors/emacs X acl gmp inotify ssl threads xattr xpm zlib -alsa -dbus -gtk -sound -systemd -wayland
+      dev-libs/cyrus-sasl kerberos
+      net-fs/nfs-utils kerberos nfsv4 nfsv41
+      net-misc/openssh kerberos ssl
+      sys-auth/sssd ssh sudo
+      sys-fs/zfs rootfs
+  portage_config_files:
+    /etc/eixrc/00-eixrc: |
+      # RFC1918 Stage5 Forge automation-admin eix cache policy.
+      OVERLAY_CACHE_METHOD="assign"
+  modules_load_files:
+    forge-automation-admin.conf: |
+      nvme
+      zfs
+      nfs
+      coretemp
+      it87
+      jc42
+      intel_qat
+      qat_c3xxx
+  openrc_services_enable:
+    - chronyd
+    - lm_sensors
+    - rsyslog
+    - rpcbind
+    - nfsmount
+    - sshd
+    - sssd
+  automation_admin:
+    enabled: true
+    host_class: forge-control-plane
+    migration_source: x12again
+    stage5_profile: metal-forge-automation-admin
+    x12again_sol_wrapper_path: /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin
+    forge_memory_spool_path: /var/lib/forge-memory/spool
+    restore_roots:
+      - /root
+      - /opt
+      - /var/lib/ansible
+      - /var/lib/codex
+      - /var/lib/forge-memory
+      - /var/lib/git
+    service_reachability_gates:
+      - hasslehoff-ssh
+      - x12again-sol
+      - ccr2004-routeros
+      - netbox-api
+      - freeipa-ldap-kerberos
+      - local-ntfy-https
+      - github-cli
+      - offhost-backup-target
+    external_tooling:
+      github_cli:
+        command: gh
+        status: source-required
+        note: >-
+          dev-vcs/github-cli was not available from the active Gentoo repo on
+          the 2026-05-14 M70 install; install from an overlay, upstream binary,
+          or internal package source before final X12AGAIN cutover.

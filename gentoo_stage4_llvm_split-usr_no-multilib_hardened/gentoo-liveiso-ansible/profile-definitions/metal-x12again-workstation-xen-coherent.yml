@@ -13,6 +13,7 @@ gentoo_profile_definition:
     - telemetry-node-exporter-client
     - slurm-worker-node
   package_list_files:
+    - profile-package-lists/stage5-metal-intel-platform.packages
     - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
     - profile-package-lists/stage5-metal-host-hypervisor.packages
     - profile-package-lists/stage5-storage-nfs-client.packages

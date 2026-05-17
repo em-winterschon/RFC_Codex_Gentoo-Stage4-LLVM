@@ -32,6 +32,7 @@ for profile in \
   hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  metal-forge-automation-admin.yml \
   logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
@@ -75,6 +76,7 @@ for metadata in \
   hardened-llvm-stage4-merged-usr.metadata.yml \
   hardened-llvm-stage4-split-usr.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
+  metal-forge-automation-admin.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
   nfs-storage-client.metadata.yml \
@@ -134,6 +136,8 @@ for package_list in \
   stage5-base-minimal-xorg-slim.packages \
   stage5-domain-client.packages \
   stage5-managed-access-zerotier.packages \
+  stage5-metal-intel-platform.packages \
+  stage5-metal-forge-automation-admin.packages \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \

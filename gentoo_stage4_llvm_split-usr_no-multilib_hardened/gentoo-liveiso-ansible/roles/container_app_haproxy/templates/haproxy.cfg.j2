@@ -26,7 +26,11 @@ frontend fe_{{ service_type.name | replace('-', '_') }}
 {% if service_type.log_requests is defined and not (service_type.log_requests | bool) %}
   option dontlog-normal
 {% endif %}
+{% if service_type.tls is defined and service_type.tls.enabled | default(false) | bool %}
+  bind {{ service_type.bind }} ssl crt {{ service_type.tls.cert_path }}
+{% else %}
   bind {{ service_type.bind }}
+{% endif %}
 {% if service_type.mode | default('http') == 'http' and service_type.host_acl is defined and service_type.host_acl | length > 0 %}
   acl host_match hdr(host) -i {{ service_type.host_acl }}
   use_backend {{ service_type.backend_name }} if host_match
@@ -81,7 +85,11 @@ frontend fe_http
 frontend fe_https
   mode http
   option httplog
+{% if haproxy_tls.crt_list is defined and haproxy_tls.crt_list | length > 0 %}
+  bind {{ haproxy_tls.bind | default('*:443') }} ssl crt-list {{ haproxy_tls.crt_list }}
+{% else %}
   bind {{ haproxy_tls.bind | default('*:443') }} ssl crt {{ haproxy_tls.cert_path | default('/etc/haproxy/tls/haproxy.pem') }}
+{% endif %}
 {% if nginx_ui_apps | length > 0 %}
 {% set nginx_ui_app = nginx_ui_apps | first %}
   acl host_nginx_ui hdr(host) -i {{ nginx_ui_app.hostnames | default(['nginx-ui.local']) | join(' ') }}
@@ -99,6 +107,12 @@ frontend fe_https
   acl host_ntfy hdr(host) -i {{ ntfy_app.hostnames | default(['ntfy.local']) | join(' ') }}
   use_backend be_ntfy if host_ntfy
 {% endif %}
+{% for service_type in configured_haproxy_service_types %}
+{% if service_type.mode | default('http') == 'http' and service_type.tls_https_route | default(false) | bool and service_type.host_acl is defined and service_type.host_acl | length > 0 %}
+  acl host_{{ service_type.name | replace('-', '_') }} hdr(host) -i {{ service_type.host_acl }}
+  use_backend {{ service_type.backend_name }} if host_{{ service_type.name | replace('-', '_') }}
+{% endif %}
+{% endfor %}
 {% if nginx_apps | length > 0 %}
   default_backend be_nginx
 {% else %}

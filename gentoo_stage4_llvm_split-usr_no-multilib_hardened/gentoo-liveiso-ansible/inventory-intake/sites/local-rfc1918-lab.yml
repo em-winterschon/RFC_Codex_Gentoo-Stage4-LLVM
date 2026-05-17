@@ -52,6 +52,20 @@ prefixes:
     vlan:
       id: 1078
       name: container-applications
+  - prefix: 10.78.0.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-management
+    vlan:
+      id: 1079
+      name: mcp-container-management
+  - prefix: 10.78.1.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-applications
+    vlan:
+      id: 1080
+      name: mcp-container-applications
 
 devices:
   - name: hasslehoff
@@ -99,8 +113,8 @@ devices:
       - name: ge6
         lag: hasslehoff-bond0
         status: active
-      - name: ge15
-        purpose: lap-sun99-chonkers-lom
+      - name: ge14
+        purpose: admin-sun99-forge-099070-primary
         status: active
       - name: ge24
         purpose: crs354-management
@@ -261,7 +275,7 @@ devices:
     role: routeros-gateway-candidate
     manufacturer: MikroTik
     model: CCR2004-1G-2XS-PCIe
-    status: planned
+    status: active
     management_ip: 172.16.99.120
   - name: svc_netbox_stage4
     site: local-rfc1918-lab
@@ -394,6 +408,38 @@ devices:
     notes:
       - Temporary Hasslehoff staging VM for safe container-services migration.
       - Do not assign the production Path B service IP until cutover validation passes.
+  - name: vm_mcp_control_plane
+    site: local-rfc1918-lab
+    role: mcp-control-plane
+    manufacturer: Gentoo
+    model: gentoo-stage5-container-vm
+    status: planned
+    management_ip: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    dns_aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1068
+    stage5_profile: vm-mcp-control-plane
+    service_tls_id: mcp_control_plane
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-and-mcp-frontdoor
+        status: planned
+      - name: podman-mcp-mgmt0
+        type: virtual
+        purpose: mcp-container-management
+        status: planned
+      - name: podman-mcp-apps0
+        type: virtual
+        purpose: mcp-container-applications
+        status: planned
+    notes:
+      - LAN-only MCP control-plane VM for Nginx-UI and future FastMCP wrappers.
+      - Required before live deployment: Nginx-UI vault secrets, RFC1918 TLS material, DNS records, and HAProxy config with MCP query-string logging disabled.
+      - Docker socket access must remain disabled unless a separate mutation proposal is approved.
   - name: gmktek_nucbox_k10_stage5_candidate
     site: local-rfc1918-lab
     role: baremetal-workstation-validation
@@ -419,31 +465,36 @@ devices:
       - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
       - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
       - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
-  - name: lap_sun99_chonkers
+  - name: admin_sun99_forge_099070
     site: local-rfc1918-lab
-    role: baremetal-workstation-validation
-    manufacturer: Alienware
-    model: 16X Aurora
-    status: active
-    management_ip: 172.16.99.157
-    management_interface: LOM
-    fqdn: lap-sun99-chonkers.rfc1918.dev
-    asset_tag: AC16251
+    role: automation-admin
+    manufacturer: M70
+    model: Atom C3758 appliance
+    status: planned
+    management_ip: 172.16.99.70
+    management_interface: eth0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    dns_aliases:
+      - admin-sun99-forge.rfc1918.host
+      - forge.rfc1918.host
+      - forge-sun99.rfc1918.host
     interfaces:
-      - name: LOM
+      - name: eth0
         type: 1000base-t
-        purpose: native-ipxe-httpv4-netboot
-        mac_address: "84:5C:31:A5:CF:51"
+        purpose: uefi-pxe-ipxe-netboot
+        mac_address: "00:07:32:78:65:C6"
         connected_device: sw_mgmt_css326
-        connected_interface: ge15
-        netboot_type: dynamic
-        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
+        connected_interface: ge14
+        netboot_type: static
+        netboot_protocol_flow: pxe-to-ipxe
         status: active
     notes:
-      - Alienware 16X Aurora Stage5 workstation validation laptop.
-      - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
-      - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
-      - Realtek RTL8111H 1GbE LOM is connected to CSS326 ge15.
+      - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
+      - CPU Intel Atom C3758; planned 64 GiB ECC RAM, but 2026-05-13 live serial validation observed 32 GiB available.
+      - Six 1GbE NICs; 32GB SATADOM iPXE boot anchor; two 238.5GB KIOXIA NVMe devices mirrored as zroot.
+      - Desired state remains UEFI PXE/TFTP to m70-forge-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
+      - Operational 2026-05-14 state is local SATADOM ESP chainload to the M70-specific iPXE EFI binary, then HTTP kernel/initramfs boot of local ZFS root zroot/ROOT/gentoo.
+      - Primary NIC eth0 MAC 00:07:32:78:65:C6 is connected to CSS326 ge14.
       - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab
@@ -462,9 +513,9 @@ devices:
         status: active
     power_outlets:
       - name: outlet4
-        label: host_lap_sun99_chonkers
+        label: admin-sun99-forge
         outlet_index: 4
-        target_device: lap_sun99_chonkers
+        target_device: admin_sun99_forge_099070
         target_power_port: power0
         status: active
       - name: outlet6
@@ -477,9 +528,9 @@ devices:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
       - Operator/control-panel name is pdu-rfc99-corectrl-099241.
-      - Outlet 4 maps to lap_sun99_chonkers.
+      - Outlet 4 control-panel label is admin-sun99-forge and maps to admin_sun99_forge_099070.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
-      - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
+      - PDU mutation automation must verify the expected outlet label before setting command OIDs.
 
 clusters:
   - name: hasslehoff-proxmox
@@ -506,6 +557,7 @@ clusters:
       - sched_sun99_slurmctl_099071
       - slurm_worker_node01
       - svc_container_services_safe_move_01
+      - vm_mcp_control_plane
 
 service_vips:
   - name: msg-sun99-ntfysys
@@ -607,6 +659,24 @@ service_vips:
     listeners:
       - protocol: http
         port: 5601
+  - name: mcp-control-plane
+    site: local-rfc1918-lab
+    address: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    owners:
+      - automation
+      - mcp-control-plane
+    listeners:
+      - protocol: http
+        port: 80
+      - protocol: https
+        port: 443
+    notes:
+      - HAProxy front door for Nginx-UI native MCP and future FastMCP infrastructure wrappers.
+      - TLS certificate service ID is mcp_control_plane.
   - name: sched-sun99-slurmctl
     site: local-rfc1918-lab
     address: 172.16.99.71

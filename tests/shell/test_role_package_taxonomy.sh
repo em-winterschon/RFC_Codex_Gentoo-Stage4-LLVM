@@ -54,7 +54,21 @@ done
 for atom in \
   '^app-admin/rsyslog$' \
   '^net-misc/openssh$' \
-  '^app-portage/gentoolkit$'; do
+  '^app-portage/gentoolkit$' \
+  '^sys-apps/lm-sensors$' \
+  '^sys-apps/ethtool$' \
+  '^sys-apps/net-tools$' \
+  '^sys-process/btop$' \
+  '^sys-process/iotop-c$' \
+  '^sys-process/time$' \
+  '^sys-process/psmisc$' \
+  '^sys-process/parallel$' \
+  '^sys-process/wait_on_pid$' \
+  '^sys-process/watchpid$' \
+  '^sys-process/numad$' \
+  '^sys-process/numactl$' \
+  '^sys-process/daemontools$' \
+  '^sys-process/anacron$'; do
   require_grep "${atom}" "${PACKAGE_LIST_DIR}/stage5-base-minimal-nox.packages"
 done
 
@@ -94,6 +108,8 @@ require_grep 'openrc_services:' "${SERVICE_ATOMS}"
 require_grep 'libvirtd' "${SERVICE_ATOMS}"
 require_grep 'xendomains' "${SERVICE_ATOMS}"
 require_grep 'sshd' "${SERVICE_ATOMS}"
+require_grep 'lm_sensors' "${PROFILE_DIR}/base-minimal-nox.yml"
+require_grep 'lm_sensors' "${PROFILE_DIR}/base-minimal-nox.metadata.yml"
 
 require_file "${DOC_FILE}"
 require_file "${WIKI_FILE}"

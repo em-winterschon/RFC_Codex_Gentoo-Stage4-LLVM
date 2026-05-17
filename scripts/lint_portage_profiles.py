@@ -35,6 +35,7 @@ ALLOWED_PROFILE_KEYS = {
     "package_mask_files",
     "package_unmask_files",
     "package_mask_symlinks",
+    "portage_config_files",
     "patch_files",
     "kernel_config_fragment_files",
     "kernel_config",
@@ -70,6 +71,7 @@ ALLOWED_PROFILE_KEYS = {
     "nfs_storage_client",
     "nscde_workstation",
     "haproxy_service_types",
+    "native_haproxy_tls_proxy",
     "service_readiness",
     "container_base_image",
     "container_app_build_defaults",
@@ -87,6 +89,7 @@ ALLOWED_PROFILE_KEYS = {
     "time_authority",
     "vm_redfish_emulator",
     "workstation_session_stack",
+    "automation_admin",
 }
 
 
@@ -117,6 +120,21 @@ def validate_profile_definition(path: Path) -> None:
     env_files = profile.get("env_files", {})
     if env_files is not None and not isinstance(env_files, dict):
         fail(f"{path} env_files must be a mapping")
+
+    portage_config_files = profile.get("portage_config_files", {})
+    if portage_config_files is not None and not isinstance(portage_config_files, dict):
+        fail(f"{path} portage_config_files must be a mapping")
+    allowed_config_prefixes = ("/etc/portage/", "/etc/eixrc/")
+    for config_path, config_body in (portage_config_files or {}).items():
+        if not isinstance(config_path, str) or not config_path.startswith(allowed_config_prefixes):
+            fail(
+                f"{path} portage_config_files keys must be absolute paths under "
+                "/etc/portage or /etc/eixrc"
+            )
+        if "/../" in config_path or config_path.endswith("/.."):
+            fail(f"{path} portage_config_files contains unsafe path {config_path}")
+        if not isinstance(config_body, str):
+            fail(f"{path} portage_config_files[{config_path}] must be a string fragment")
 
     package_env_files = profile.get("package_env_files", {})
     if package_env_files is not None and not isinstance(package_env_files, dict):

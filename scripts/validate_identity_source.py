@@ -233,7 +233,13 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
         required_string(host, "netbox_device", label, result)
         validate_group_refs(
             host.get("hostgroups", []) or [],
-            known_groups | {"linux-workstations", "aaa-first-linux-client"},
+            known_groups
+            | {
+                "linux-workstations",
+                "linux-servers",
+                "aaa-first-linux-client",
+                "automation-admin",
+            },
             "hostgroups",
             label,
             result,

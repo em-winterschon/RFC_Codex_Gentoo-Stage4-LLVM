@@ -22,13 +22,13 @@
 - Re-applied live FreeIPA client state to K10 using the gated playbook and
   validated floating central SSH login as `codex-admin`.
 - Updated K10 E2ET evidence to reflect the 2026-05-12 UTC rebuild and reboot.
-- Applied NetBox intake live with pre/post snapshots for K10, Chonkers, and
-  AP7901 power-chain modeling:
+- Applied NetBox intake live with pre/post snapshots for K10 and AP7901
+  power-chain modeling:
   - pre snapshot: `nb-pre-k10-power-chain-20260512T020911Z`
   - post snapshot: `nb-post-k10-power-chain-20260512T021338Z`
 - Modeled AP7901 power cabling in NetBox:
   - `outlet6 -> gmktek_nucbox_k10_stage5_candidate:power0`
-  - `outlet4 -> lap_sun99_chonkers:power0`
+  - `outlet4 -> admin_sun99_forge_099070:power0`
 - Verified NetBox intake idempotence after live apply:
   - `created=0`
   - `updated=0`
@@ -53,7 +53,6 @@
   - result: pass with the existing FMT2 warning for `172.16.40.10` outside declared prefixes
 - NetBox API readback confirmed:
   - K10 primary IP `172.16.99.156/24`
-  - Chonkers primary IP `172.16.99.157/24`
   - AP7901 primary IP `172.16.99.241/24`
   - both AP7901 outlet-to-host cable objects connected
 
@@ -104,8 +103,7 @@
 4. Rebuild or re-run K10 only after the enrollment producer/apply path is ready
    enough to improve the E2ET result.
 5. Continue NetBox DCIM deep modeling for interfaces, LAGs, optics, and cable
-   terminations across CRS309, CRS354, CSS326, Hasslehoff, QNAP, K10, and
-   Chonkers.
+   terminations across CRS309, CRS354, CSS326, Hasslehoff, QNAP, K10, and M70.
 6. Continue X12AGAIN reimage preparation:
    - workstation profile
    - AMDGPU display/compute policy

@@ -19,6 +19,8 @@ assert_file_contains() {
 
 profile="${ANSIBLE_ROOT}/profile-definitions/vm-mcp-control-plane.yml"
 metadata="${ANSIBLE_ROOT}/profile-definitions/vm-mcp-control-plane.metadata.yml"
+inventory="${ANSIBLE_ROOT}/inventories/local-network/hosts.yml"
+intake="${ANSIBLE_ROOT}/inventory-intake/sites/local-rfc1918-lab.yml"
 nginx_ui_role="${ANSIBLE_ROOT}/roles/container_app_nginx_ui"
 mcp_generic_role="${ANSIBLE_ROOT}/roles/container_app_mcp_generic"
 haproxy_template="${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2"
@@ -38,6 +40,19 @@ assert_file_contains "${profile}" 'mcp-control-plane.rfc1918.host'
 assert_file_contains "${profile}" 'mcp-generic.rfc1918.host'
 assert_file_contains "${profile}" 'log_requests: false'
 assert_file_contains "${metadata}" 'vm-mcp-control-plane'
+assert_file_contains "${inventory}" 'mcp_control_plane_hosts:'
+assert_file_contains "${inventory}" 'vm_mcp_control_plane:'
+assert_file_contains "${inventory}" 'ansible_host: 172.16.99.68'
+assert_file_contains "${inventory}" 'service_tls_id: mcp_control_plane'
+assert_file_contains "${inventory}" 'vault_nginx_ui_secrets_present'
+assert_file_contains "${inventory}" 'haproxy_query_string_logging_disabled'
+assert_file_contains "${inventory}" 'docker_socket_disabled'
+assert_file_contains "${intake}" 'vm_mcp_control_plane'
+assert_file_contains "${intake}" 'management_ip: 172.16.99.68'
+assert_file_contains "${intake}" 'mcp-control-plane.rfc1918.host'
+assert_file_contains "${intake}" 'nginx-ui.rfc1918.host'
+assert_file_contains "${intake}" 'mcp-generic.rfc1918.host'
+assert_file_contains "${intake}" 'service_tls_id: mcp_control_plane'
 
 for role_dir in "${nginx_ui_role}" "${mcp_generic_role}"; do
   test -d "${role_dir}" || fail "missing role ${role_dir}"
@@ -66,6 +81,8 @@ assert_file_contains "${haproxy_template}" 'option dontlog-normal'
 
 assert_file_contains "${REPO_ROOT}/docs/MCP-CONTROL-PLANE.md" 'Nginx-UI'
 assert_file_contains "${REPO_ROOT}/docs/MCP-CONTROL-PLANE.md" 'node_secret'
+assert_file_contains "${REPO_ROOT}/docs/MCP-CONTROL-PLANE.md" 'Live Readiness Gates'
+assert_file_contains "${REPO_ROOT}/docs/MCP-CONTROL-PLANE.md" '172.16.99.68'
 assert_file_contains "${REPO_ROOT}/docs/wiki/MCP-Control-Plane.md" 'Nginx-UI'
 assert_file_contains "${REPO_ROOT}/docs/ROADMAP-AND-TODO.md" 'MCP-001'
 assert_file_contains "${REPO_ROOT}/docs/wiki/Roadmap-and-TODO.md" 'MCP-001'
@@ -82,6 +99,8 @@ from jinja2 import Environment, StrictUndefined
 ansible_root = Path(os.environ["ANSIBLE_ROOT"])
 profile = yaml.safe_load((ansible_root / "profile-definitions/vm-mcp-control-plane.yml").read_text(encoding="utf-8"))
 apps = profile["gentoo_profile_definition"]["container_app_profiles"]
+inventory = yaml.safe_load((ansible_root / "inventories/local-network/hosts.yml").read_text(encoding="utf-8"))
+intake = yaml.safe_load((ansible_root / "inventory-intake/sites/local-rfc1918-lab.yml").read_text(encoding="utf-8"))
 
 nginx_ui = apps["nginx_ui"]
 if nginx_ui["docker_socket_enabled"] is not False:
@@ -95,6 +114,34 @@ haproxy = apps["haproxy"]
 service_names = {item["name"] for item in haproxy["mcp_routes"]}
 if {"nginx-ui-mcp", "generic-mcp"} - service_names:
     raise SystemExit("HAProxy MCP routes missing expected services")
+
+mcp_host = inventory["all"]["children"]["mcp_control_plane_hosts"]["hosts"]["vm_mcp_control_plane"]
+if mcp_host["ansible_host"] != "172.16.99.68":
+    raise SystemExit("MCP control-plane inventory host must use 172.16.99.68")
+if mcp_host["stage5_profile"] != "vm-mcp-control-plane":
+    raise SystemExit("MCP control-plane inventory host must use vm-mcp-control-plane profile")
+if mcp_host["service_tls_id"] != "mcp_control_plane":
+    raise SystemExit("MCP control-plane inventory host must link to mcp_control_plane TLS service")
+required_gates = {
+    "vault_nginx_ui_secrets_present",
+    "rfc1918_tls_material_present",
+    "dns_records_present",
+    "haproxy_query_string_logging_disabled",
+    "docker_socket_disabled",
+}
+if required_gates - set(mcp_host.get("mcp_control_plane_readiness_gates", [])):
+    raise SystemExit("MCP control-plane readiness gates are incomplete")
+
+devices = {item["name"]: item for item in intake.get("devices", [])}
+service_vips = {item["name"]: item for item in intake.get("service_vips", [])}
+if devices["vm_mcp_control_plane"]["management_ip"] != "172.16.99.68":
+    raise SystemExit("MCP control-plane NetBox intake device must use 172.16.99.68")
+if devices["vm_mcp_control_plane"]["stage5_profile"] != "vm-mcp-control-plane":
+    raise SystemExit("MCP control-plane NetBox intake device must track stage5 profile")
+if service_vips["mcp-control-plane"]["address"] != "172.16.99.68":
+    raise SystemExit("MCP control-plane service VIP must use 172.16.99.68")
+if "nginx-ui.rfc1918.host" not in service_vips["mcp-control-plane"].get("aliases", []):
+    raise SystemExit("MCP control-plane service VIP missing nginx-ui alias")
 
 env = Environment(undefined=StrictUndefined, trim_blocks=False, lstrip_blocks=False)
 env.filters["bool"] = bool

@@ -1,0 +1,301 @@
+---
+- name: Assert CheckMK recovery workflow is running on a supported host
+  ansible.builtin.assert:
+    that:
+      - checkmk_recovery_site | length > 0
+      - ansible_os_family | default('') in ['RedHat', 'Rocky']
+    fail_msg: "CheckMK recovery expects a Rocky/RedHat-family CheckMK host."
+  tags:
+    - checkmk_recovery_preflight
+
+- name: Record CheckMK host operating system release
+  ansible.builtin.command: cat /etc/os-release
+  register: checkmk_recovery_os_release
+  changed_when: false
+  tags:
+    - checkmk_recovery_preflight
+
+- name: Record enabled DNF repositories
+  ansible.builtin.command: dnf repolist --enabled
+  register: checkmk_recovery_enabled_repos
+  changed_when: false
+  tags:
+    - checkmk_recovery_preflight
+    - checkmk_recovery_repo_hygiene
+
+- name: Check OMD site status
+  ansible.builtin.command: "omd status {{ checkmk_recovery_site }}"
+  register: checkmk_recovery_omd_status
+  changed_when: false
+  tags:
+    - checkmk_recovery_preflight
+
+- name: Record installed OMD versions
+  ansible.builtin.command: omd versions
+  register: checkmk_recovery_omd_versions
+  changed_when: false
+  tags:
+    - checkmk_recovery_preflight
+    - checkmk_recovery_upgrade_plan
+
+- name: Validate CheckMK site user can read configuration
+  ansible.builtin.shell: "su - {{ checkmk_recovery_site }} -c 'cmk --version && cmk -D localhost >/dev/null || true'"
+  args:
+    executable: /bin/bash
+  register: checkmk_recovery_site_read_check
+  changed_when: false
+  failed_when: false
+  tags:
+    - checkmk_recovery_preflight
+
+- name: Create CheckMK backup directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop:
+    - "{{ checkmk_recovery_backup_root }}"
+    - "{{ checkmk_recovery_config_bundle_root }}"
+  when: checkmk_recovery_allow_backup | bool
+  tags:
+    - checkmk_recovery_backup
+
+- name: Back up OMD site before recovery or upgrade changes
+  ansible.builtin.command: "omd backup {{ checkmk_recovery_site }} {{ checkmk_recovery_omd_backup_archive }}"
+  changed_when: true
+  when: checkmk_recovery_allow_backup | bool
+  tags:
+    - checkmk_recovery_backup
+
+- name: Back up CheckMK-adjacent system configuration before changes  # noqa: command-instead-of-module
+  ansible.builtin.command: >-
+    tar -C / -czf {{ checkmk_recovery_config_bundle_archive }}
+    {{ checkmk_recovery_config_bundle_paths | map('regex_replace', '^/', '') | join(' ') }}
+  changed_when: true
+  when: checkmk_recovery_allow_backup | bool
+  tags:
+    - checkmk_recovery_backup
+
+- name: Disable known-broken external repositories only when explicitly allowed
+  ansible.builtin.command: "dnf config-manager --set-disabled {{ item }}"
+  loop: "{{ checkmk_recovery_disable_repos }}"
+  changed_when: true
+  when: checkmk_recovery_allow_repo_disable | bool
+  tags:
+    - checkmk_recovery_repo_hygiene
+
+- name: Inventory current Apache TLS certificate
+  ansible.builtin.command: "openssl x509 -in {{ checkmk_recovery_current_tls_cert_path }} -noout -subject -issuer -dates"
+  register: checkmk_recovery_current_tls_cert
+  changed_when: false
+  failed_when: false
+  tags:
+    - checkmk_recovery_cert_inventory
+
+- name: Install internal CA anchor for CheckMK HTTPS when explicitly allowed
+  ansible.builtin.copy:
+    src: "{{ checkmk_recovery_internal_ca_cert_path }}"
+    dest: "{{ checkmk_recovery_tls_ca_dest }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - checkmk_recovery_allow_cert_install | bool
+    - checkmk_recovery_internal_ca_cert_path | length > 0
+  tags:
+    - checkmk_recovery_cert_inventory
+
+- name: Install CheckMK Apache certificate when explicitly allowed
+  ansible.builtin.copy:
+    src: "{{ checkmk_recovery_tls_cert_path }}"
+    dest: "{{ checkmk_recovery_tls_cert_dest }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - checkmk_recovery_allow_cert_install | bool
+    - checkmk_recovery_tls_cert_path | length > 0
+  tags:
+    - checkmk_recovery_cert_inventory
+
+- name: Install CheckMK Apache private key when explicitly allowed
+  ansible.builtin.copy:
+    src: "{{ checkmk_recovery_tls_key_path }}"
+    dest: "{{ checkmk_recovery_tls_key_dest }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when:
+    - checkmk_recovery_allow_cert_install | bool
+    - checkmk_recovery_tls_key_path | length > 0
+  tags:
+    - checkmk_recovery_cert_inventory
+
+- name: Refresh CA trust after gated internal CA install
+  ansible.builtin.command: update-ca-trust
+  changed_when: true
+  when:
+    - checkmk_recovery_allow_cert_install | bool
+    - checkmk_recovery_internal_ca_cert_path | length > 0
+  tags:
+    - checkmk_recovery_cert_inventory
+
+- name: Probe old Elasticsearch rsyslog endpoint
+  ansible.builtin.shell: >-
+    timeout 3 bash -lc ':</dev/tcp/{{ checkmk_recovery_elasticsearch_endpoint }}/{{ checkmk_recovery_elasticsearch_port }}'
+  args:
+    executable: /bin/bash
+  register: checkmk_recovery_elasticsearch_socket_probe
+  changed_when: false
+  failed_when: false
+  tags:
+    - checkmk_recovery_rsyslog_gate
+
+- name: Check active rsyslog Elasticsearch config
+  ansible.builtin.stat:
+    path: "{{ checkmk_recovery_rsyslog_elastic_config }}"
+  register: checkmk_recovery_rsyslog_elastic_config_stat
+  tags:
+    - checkmk_recovery_rsyslog_gate
+
+- name: Disable old rsyslog to Elasticsearch action when endpoint remains unavailable
+  ansible.builtin.command: >-
+    mv {{ checkmk_recovery_rsyslog_elastic_config }}
+    {{ checkmk_recovery_rsyslog_elastic_config }}.disabled-{{ checkmk_recovery_backup_timestamp }}
+  changed_when: true
+  when:
+    - checkmk_recovery_allow_rsyslog_elastic_disable | bool
+    - checkmk_recovery_rsyslog_elastic_config_stat.stat.exists | bool
+    - checkmk_recovery_elasticsearch_socket_probe.rc != 0
+  tags:
+    - checkmk_recovery_rsyslog_gate
+
+- name: Restart rsyslog after gated Elasticsearch output disable
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
+  when:
+    - checkmk_recovery_allow_rsyslog_elastic_disable | bool
+    - checkmk_recovery_rsyslog_elastic_config_stat.stat.exists | bool
+    - checkmk_recovery_elasticsearch_socket_probe.rc != 0
+  tags:
+    - checkmk_recovery_rsyslog_gate
+
+- name: Generate Rocky package update plan without applying changes
+  ansible.builtin.shell: "dnf update --assumeno | tee {{ checkmk_recovery_update_plan_path }}"
+  args:
+    executable: /bin/bash
+  register: checkmk_recovery_dnf_update_plan
+  changed_when: false
+  failed_when: checkmk_recovery_dnf_update_plan.rc not in [0, 1]
+  tags:
+    - checkmk_recovery_os_update_plan
+
+- name: Apply Rocky package updates only when explicitly allowed
+  ansible.builtin.command: dnf update -y
+  changed_when: true
+  when: checkmk_recovery_allow_os_update | bool
+  tags:
+    - checkmk_recovery_os_update_apply
+
+- name: Reboot CheckMK host only when explicitly allowed
+  ansible.builtin.reboot:
+    msg: "Reboot requested by gated CheckMK recovery workflow."
+    reboot_timeout: 900
+  when: checkmk_recovery_allow_reboot | bool
+  tags:
+    - checkmk_recovery_reboot_validate
+
+- name: Validate OMD site after optional reboot
+  ansible.builtin.command: "omd status {{ checkmk_recovery_site }}"
+  register: checkmk_recovery_post_reboot_omd_status
+  changed_when: false
+  retries: 12
+  delay: 10
+  until: checkmk_recovery_post_reboot_omd_status.rc == 0
+  tags:
+    - checkmk_recovery_reboot_validate
+
+- name: Preview CheckMK active check state for selected live FMT2 hosts
+  ansible.builtin.shell: "su - {{ checkmk_recovery_site }} -c 'cmk -nv {{ item }}'"
+  args:
+    executable: /bin/bash
+  loop: "{{ checkmk_recovery_discovery_hosts }}"
+  register: checkmk_recovery_discovery_preview
+  changed_when: false
+  failed_when: false
+  tags:
+    - checkmk_recovery_discovery_preview
+
+- name: Apply CheckMK rediscovery only for selected live FMT2 hosts when explicitly allowed
+  ansible.builtin.shell: "su - {{ checkmk_recovery_site }} -c 'cmk -II {{ item }}'"
+  args:
+    executable: /bin/bash
+  loop: "{{ checkmk_recovery_discovery_hosts }}"
+  changed_when: true
+  when: checkmk_recovery_allow_discovery_apply | bool
+  tags:
+    - checkmk_recovery_discovery_apply
+
+- name: Activate CheckMK changes after gated rediscovery
+  ansible.builtin.shell: "su - {{ checkmk_recovery_site }} -c 'cmk -O'"
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when: checkmk_recovery_allow_discovery_apply | bool
+  tags:
+    - checkmk_recovery_discovery_apply
+
+- name: Assert CheckMK upgrade target is provided before upgrade apply
+  ansible.builtin.assert:
+    that:
+      - checkmk_recovery_upgrade_target_rpm | length > 0
+      - checkmk_recovery_upgrade_target_version | length > 0
+    fail_msg: >-
+      Set checkmk_recovery_upgrade_target_rpm and checkmk_recovery_upgrade_target_version
+      before enabling checkmk_recovery_allow_checkmk_upgrade.
+  when: checkmk_recovery_allow_checkmk_upgrade | bool
+  tags:
+    - checkmk_recovery_upgrade_apply
+
+- name: Install staged CheckMK RPM only when explicitly allowed
+  ansible.builtin.command: "dnf install -y {{ checkmk_recovery_upgrade_target_rpm }}"
+  changed_when: true
+  when: checkmk_recovery_allow_checkmk_upgrade | bool
+  tags:
+    - checkmk_recovery_upgrade_apply
+
+- name: Stop OMD site before gated CheckMK version upgrade
+  ansible.builtin.command: "omd stop {{ checkmk_recovery_site }}"
+  changed_when: true
+  when: checkmk_recovery_allow_checkmk_upgrade | bool
+  tags:
+    - checkmk_recovery_upgrade_apply
+
+- name: Run gated CheckMK site upgrade
+  ansible.builtin.command: >-
+    omd -f -V {{ checkmk_recovery_upgrade_target_version }}
+    update --conflict={{ checkmk_recovery_upgrade_conflict_mode }}
+    {{ checkmk_recovery_site }}
+  changed_when: true
+  when: checkmk_recovery_allow_checkmk_upgrade | bool
+  tags:
+    - checkmk_recovery_upgrade_apply
+
+- name: Start OMD site after gated CheckMK version upgrade
+  ansible.builtin.command: "omd start {{ checkmk_recovery_site }}"
+  changed_when: true
+  when: checkmk_recovery_allow_checkmk_upgrade | bool
+  tags:
+    - checkmk_recovery_upgrade_apply
+
+- name: Activate CheckMK configuration after gated CheckMK version upgrade
+  ansible.builtin.shell: "su - {{ checkmk_recovery_site }} -c 'cmk -O'"
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when: checkmk_recovery_allow_checkmk_upgrade | bool
+  tags:
+    - checkmk_recovery_upgrade_apply

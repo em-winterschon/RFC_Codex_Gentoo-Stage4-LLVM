@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-05-16 - RFC1918 CA TLS Deployment Planning
+
+- Added gated `rfc1918_ca_trust` and `rfc1918_service_tls` Ansible roles, wired
+  them into install role sequencing, and kept live mutation blocked behind
+  explicit apply variables.
+- Added RouterOS internal-CA certificate import mode for CA plus PKCS#12
+  bundles while preserving the existing self-signed fallback path.
+- Added `scripts/validate-rfc1918-service-tls.sh` for OpenSSL endpoint
+  validation, JSONL audit output, health URL checks, and optional local ntfy
+  notifications.
+- Added the non-secret RFC1918 service TLS certificate matrix for ntfy,
+  rsyslog, Elasticsearch VIP, NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, CheckMK, MCP control plane, RouterOS, Proxmox, and PDU
+  coverage.
+- Added the CA/TLS implementation plan and ITIL/ADR documentation for vault-only
+  secrets, trust-anchor rollout, HAProxy-first leaf deployment, network-device
+  imports, validation, and backout.
+- Extended Ansible Vault documentation with the
+  `vault_service_tls_certificates.<service_id>.*` leaf certificate namespace.
+- Added a shell guard test that validates the matrix structure and blocks
+  committed PEM material.
+
+## 2026-05-14 - M70 PDU Label And EOD Closeout
+
+- Normalized AP7901 outlet 4 inventory to the control-panel label
+  `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
+- Removed the paused validation laptop from active repo inventory, roadmap, and
+  docs until it is re-inventoried with stable IP, power, and switch metadata.
+- Added the 2026-05-13 EOD report and overnight execution plan, prioritizing
+  safe repo-only M70 hardening, Forge continuity restore planning, X12AGAIN
+  preflight expansion, SLURM observability, NetBox DCIM dry-run modeling, and
+  BigNetwork/FMT2 smoke-test prep.
+
 ## 2026-05-13 - X12AGAIN Reimage And Coherent Scale Model
 
 - Added host-specific `metal-x12again-workstation-xen-coherent` profile intent
@@ -118,7 +151,8 @@
   present, then re-applied and validated live FreeIPA client enrollment.
 - Extended NetBox intake/apply logic to create real DCIM power cable objects
   between AP7901 outlets and host power ports, then applied and verified
-  `outlet6 -> K10` and `outlet4 -> Chonkers` with pre/post NetBox snapshots.
+  `outlet6 -> K10` and `outlet4 -> M70 automation-admin` with pre/post
+  NetBox snapshots.
 - Added the `secure-firstboot-enrollment` profile, package list, role-service
   atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
   FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
@@ -388,9 +422,6 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
   NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
   and K10 `power0` metadata.
-- Added the Alienware `lap-sun99-chonkers.rfc1918.dev` laptop as the second
-  physical Stage5 workstation validation target, with Realtek RTL8111H LOM MAC,
-  CSS326 `ge15`, AP7901 outlet 4, and iPXE/HTTPv4 boot metadata.
 
 ### Changed
 

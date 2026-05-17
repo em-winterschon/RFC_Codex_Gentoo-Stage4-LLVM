@@ -22,7 +22,32 @@ usable while X12AGAIN is offline, being reimaged, or being validated.
 | --- | --- | --- | --- |
 | Controller | `sched-sun99-slurmctl-099071.rfc1918.host` | `172.16.99.71` | Runs `slurmctld`, local `slurmdbd`, MUNGE, and MariaDB for the pilot. |
 | First worker | `sched-sun99-slurmwkr-099072.rfc1918.host` | `172.16.99.72` | Disposable VM using the `slurm-worker-node` profile. |
+| First physical worker | `sched-sun99-slurmwkr-099073.rfc1918.host` | `172.16.99.73` | Planned second M70 physical worker after operator provides MAC, switch port, and PDU outlet. |
 | Future worker | X12AGAIN | `172.16.99.108` after install | Add only after workstation+hypervisor+RDMA E2ET passes. |
+
+## Physical M70 Expansion Recommendation
+
+Keep the controller on a small Hasslehoff VM or another non-X12AGAIN service VM
+and add the next available M70 as the first physical worker. Do not place the
+controller plus multiple worker VMs on the current Forge M70 unless there is no
+other hardware available; it would prove SLURM syntax, but it would not prove
+power control, physical provisioning, thermal behavior, disk behavior, or real
+worker node feature discovery.
+
+Preferred next assignment:
+
+- `sched-sun99-slurmwkr-099073.rfc1918.host` / `172.16.99.73`
+- profile: `slurm-worker-node`
+- hardware class: M70 Atom C3758 with Intel QAT
+- network: SUN99 management first, optional second-stage LACP/worker VLAN after
+  the node passes E2ET
+- required operator inputs before inventory mutation: primary MAC, CSS326 or
+  CRS354 switch port, PDU name, PDU outlet, serial-console path if connected
+
+The worker joins only after DNS/IPAM, NetBox, SSH, MUNGE, `slurmd`, rsyslog,
+Prometheus, and `srun hostname` pass. Additional M70 nodes should follow the
+same pattern as `sched-sun99-slurmwkr-099074+`, not as nested workers inside
+the current Forge automation-admin host.
 
 ## Partitions
 
@@ -123,6 +148,8 @@ The first pilot pass is online and validated:
 
 - Controller: `sched-sun99-slurmctl-099071.rfc1918.host` / `172.16.99.71`.
 - Worker: `sched-sun99-slurmwkr-099072.rfc1918.host` / `172.16.99.72`.
+- Next physical worker target:
+  `sched-sun99-slurmwkr-099073.rfc1918.host` / `172.16.99.73`.
 - `sinfo` lists `build`, `validation`, `gpu-test`, and drained `rdma-test`.
 - `scontrol show nodes` reports the first worker `IDLE` with 8 CPUs and 15000M
   configured memory.

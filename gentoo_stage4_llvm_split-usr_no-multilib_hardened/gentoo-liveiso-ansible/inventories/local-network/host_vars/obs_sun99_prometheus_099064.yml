@@ -7,6 +7,7 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/observability-native-haproxy-tls-proxy.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-observability-prometheus.yml"
 
 install_networkmanager: true
@@ -25,6 +26,20 @@ profile_rsyslog:
   forward_hostname: log-sun99-rsyslog.rfc1918.host
   forward_protocol: tcp
   forward_port: 6514
+
+profile_native_haproxy_tls_proxy:
+  frontends:
+    - name: prometheus
+      bind: "*:443"
+      mode: http
+      cert_path: /etc/ssl/rfc1918/obs-sun99-prometheus.crt
+      key_path: /etc/ssl/rfc1918/private/obs-sun99-prometheus.key
+      pem_path: /etc/haproxy/tls/obs-sun99-prometheus.pem
+      backend_name: be_prometheus
+      servers:
+        - name: prometheus
+          address: 127.0.0.1
+          port: 9090
 
 profile_telemetry:
   prometheus:

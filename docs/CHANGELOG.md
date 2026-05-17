@@ -1,5 +1,97 @@
 # Changelog
 
+## 2026-05-16 - RFC1918 CA TLS Deployment Planning
+
+- Added gated `rfc1918_ca_trust` and `rfc1918_service_tls` Ansible roles, wired
+  them into install role sequencing, and kept live mutation blocked behind
+  explicit apply variables.
+- Added RouterOS internal-CA certificate import mode for CA plus PKCS#12
+  bundles while preserving the existing self-signed fallback path.
+- Added `scripts/validate-rfc1918-service-tls.sh` for OpenSSL endpoint
+  validation, JSONL audit output, health URL checks, and optional local ntfy
+  notifications.
+- Added the non-secret RFC1918 service TLS certificate matrix for ntfy,
+  rsyslog, Elasticsearch VIP, NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, CheckMK, MCP control plane, RouterOS, Proxmox, and PDU
+  coverage.
+- Added the CA/TLS implementation plan and ITIL/ADR documentation for vault-only
+  secrets, trust-anchor rollout, HAProxy-first leaf deployment, network-device
+  imports, validation, and backout.
+- Extended Ansible Vault documentation with the
+  `vault_service_tls_certificates.<service_id>.*` leaf certificate namespace.
+- Added a shell guard test that validates the matrix structure and blocks
+  committed PEM material.
+
+## 2026-05-14 - M70 PDU Label And EOD Closeout
+
+- Added `PNR-034` / issue #123 and the Hasslehoff external scheduled-backup
+  readiness plan for Thursday 2026-05-14, covering off-host target
+  independence, config/state bundles, selected VM/LXC backups, ZFS or encrypted
+  repository paths, restore validation, retention, and local ntfy/observability
+  reporting.
+- Preserved the M70 SATADOM/iPXE boot path with an operator-private preinstall
+  backup, rebuilt `/dev/sda` as a clean `M70IPXE` ESP, created mirrored `zroot`
+  on the two KIOXIA NVMe devices, switched the M70 netboot role to
+  `forge-automation-admin-zfs`, and repeat-reboot validated persistent root
+  `zroot/ROOT/gentoo` at `172.16.99.70`.
+- Tracked `gh` as an external package-source follow-up because the active
+  Gentoo repo on the M70 did not expose `dev-vcs/github-cli`.
+- Added a reusable Intel bare-metal platform layer for
+  `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`, and tracked
+  Atom C3000 QAT kernel/module readiness for the M70 fleet while keeping
+  OpenSSL, HAProxy, Nginx, and OpenZFS acceleration gated behind benchmark and
+  CI/CD validation.
+- Installed the M70 live Intel platform layer and validated C3000 QAT firmware
+  presence, then re-applied the FreeIPA client playbook to the persistent ZFS
+  root and validated `codex-admin` NSS/PAM/SSH-key login through SSSD.
+- Installed the static GitHub CLI 2.88.1 binary on the M70, verified its
+  SHA256, and validated `gh auth status` with the current Forge token supplied
+  through the environment.
+- Staged the X12AGAIN BMC wrapper on the M70 and validated non-interactive
+  `ipmitool chassis status` against the BMC at `172.16.199.108`.
+- Installed `dev-vcs/git-lfs` on the M70 and added it to the
+  `metal-forge-automation-admin` package list after the restored Forge repo
+  failed `git status` without LFS filters available.
+- Restored the latest off-host X12AGAIN `/root` snapshot into a quarantined M70
+  path, merged only continuity-critical Forge/Codex/vault/token/operator/repo
+  paths into active `/root`, preserved a pre-merge backup, and validated the
+  restored repo and GitHub token path.
+- Deferred full `/opt` import because the latest off-host `/opt` snapshot is
+  about 227 GiB while the current M70 ZFS pool has about 223 GiB available.
+- Added `docs/runbooks/m70-automation-admin-install.md` so the remaining M70
+  nodes can reuse the SATADOM+iPXE+mirrored-ZFS pattern with host-specific
+  MAC/IP/hostid substitutions.
+- Normalized AP7901 outlet 4 inventory to the control-panel label
+  `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
+- Removed the paused validation laptop from active repo inventory, roadmap, and
+  docs until it is re-inventoried with stable IP, power, and switch metadata.
+- Added the 2026-05-13 EOD report and overnight execution plan, prioritizing
+  safe repo-only M70 hardening, Forge continuity restore planning, X12AGAIN
+  preflight expansion, SLURM observability, NetBox DCIM dry-run modeling, and
+  BigNetwork/FMT2 smoke-test prep.
+
+## 2026-05-13 - M70 Automation Admin Provisioning
+
+- Added the `metal-forge-automation-admin` Stage5 profile, package list,
+  metadata, service atoms, and local-network inventory entry for the first M70
+  automation-admin host.
+- Reserved `admin-sun99-forge-099070.rfc1918.host` at `172.16.99.70` with
+  primary MAC `00:07:32:78:65:C6`, RouterOS DNS desired state, and a static
+  PXE-to-iPXE DHCP handoff using `m70-forge-ipxe.efi`.
+- Rebuilt and published the M70-specific iPXE first-stage EFI binary, then
+  validated local SATADOM ESP chainload through HTTP rootfs boot and SSH at
+  `172.16.99.70` over CSS326 `ge14`.
+- Reboot-validated the corrected M70 `netboot0` dracut cmdline; the live OS now
+  returns SSH with the primary interface named `netboot0`.
+- Recorded the remaining live-rootfs acceptance blockers: K10 hostname leakage,
+  missing `sssd.conf`, missing FreeIPA host principal or OTP, crashed `dhcpcd`
+  on the live rootfs, and observed 32 GiB memory versus the planned 64 GiB
+  inventory expectation.
+- Documented the X12AGAIN migration acceptance gates: restored Forge/Codex
+  state, GitHub/vault/Ansible tooling, service reachability, and working
+  `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` SoL before any Prinzessin
+  reimage starts.
+
 ## 2026-05-12 - FastMCP And Scheduler Planning
 
 - Added the FastMCP infrastructure control-plane promotion plan for NetBox,
@@ -74,7 +166,8 @@
   present, then re-applied and validated live FreeIPA client enrollment.
 - Extended NetBox intake/apply logic to create real DCIM power cable objects
   between AP7901 outlets and host power ports, then applied and verified
-  `outlet6 -> K10` and `outlet4 -> Chonkers` with pre/post NetBox snapshots.
+  `outlet6 -> K10` and `outlet4 -> M70 automation-admin` with pre/post
+  NetBox snapshots.
 - Added the `secure-firstboot-enrollment` profile, package list, role-service
   atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
   FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
@@ -344,9 +437,6 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
   NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
   and K10 `power0` metadata.
-- Added the Alienware `lap-sun99-chonkers.rfc1918.dev` laptop as the second
-  physical Stage5 workstation validation target, with Realtek RTL8111H LOM MAC,
-  CSS326 `ge15`, AP7901 outlet 4, and iPXE/HTTPv4 boot metadata.
 
 ### Changed
 

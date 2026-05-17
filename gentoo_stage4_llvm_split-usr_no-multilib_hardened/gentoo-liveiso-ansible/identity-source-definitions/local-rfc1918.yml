@@ -85,6 +85,15 @@ identity_source_definition:
         - aaa-first-linux-client
       enrollment_secret_var: vault_identity_k10_ipa_enrollment_secret
       status: first-client
+    - name: admin_sun99_forge_099070
+      fqdn: admin-sun99-forge-099070.rfc1918.host
+      netbox_device: admin_sun99_forge_099070
+      role: automation-admin
+      hostgroups:
+        - linux-servers
+        - automation-admin
+      enrollment_secret_var: vault_identity_m70_ipa_enrollment_secret
+      status: first-automation-admin
   radius_clients:
     - name: pdu_rfc99_corectrl_ap7901
       shortname: pdu-rfc99-corectrl-099241

@@ -1,0 +1,40 @@
+---
+- name: Resolve RFC1918 service TLS runtime state
+  ansible.builtin.set_fact:
+    rfc1918_service_tls_live_root: "{{ rfc1918_service_tls_install_root in ['', '/'] }}"
+    rfc1918_service_tls_reload_commands_pending: []
+
+- name: Refuse RFC1918 service TLS mutation without explicit apply gate
+  ansible.builtin.assert:
+    that:
+      - rfc1918_service_tls_apply | bool
+      - rfc1918_service_tls_service_ids | length > 0
+    fail_msg: >-
+      RFC1918 service TLS deployment requires rfc1918_service_tls_enabled=true,
+      rfc1918_service_tls_apply=true, and at least one service ID in
+      rfc1918_service_tls_service_ids.
+  when: rfc1918_service_tls_enabled | bool
+
+- name: Assert selected RFC1918 service TLS matrix entries exist
+  ansible.builtin.assert:
+    that:
+      - rfc1918_service_tls_service_id in rfc1918_service_tls_matrix
+    fail_msg: >-
+      Missing service_tls_certificate_matrix entry for
+      {{ rfc1918_service_tls_service_id }}.
+  loop: "{{ rfc1918_service_tls_service_ids }}"
+  loop_control:
+    loop_var: rfc1918_service_tls_service_id
+  when:
+    - rfc1918_service_tls_enabled | bool
+    - rfc1918_service_tls_apply | bool
+
+- name: Deploy selected RFC1918 service TLS material
+  ansible.builtin.include_tasks: deploy_one.yml
+  loop: "{{ rfc1918_service_tls_service_ids }}"
+  loop_control:
+    loop_var: rfc1918_service_tls_service_id
+    label: "{{ rfc1918_service_tls_service_id }}"
+  when:
+    - rfc1918_service_tls_enabled | bool
+    - rfc1918_service_tls_apply | bool

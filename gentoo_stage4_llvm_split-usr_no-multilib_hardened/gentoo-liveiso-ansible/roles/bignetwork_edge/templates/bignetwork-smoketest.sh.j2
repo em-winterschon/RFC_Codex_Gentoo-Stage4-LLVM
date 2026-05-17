@@ -3,6 +3,8 @@ set -euo pipefail
 
 bn_bin="{{ resolved_bignetwork_edge.binary_path }}"
 bn_home="{{ resolved_bignetwork_edge.home }}"
+bn_port="{{ resolved_bignetwork_edge.daemon_port }}"
+bn_token_file="${bn_home}/authtoken.secret"
 
 printf 'BigNetwork binary: '
 "${bn_bin}" -v | head -1
@@ -10,6 +12,32 @@ printf 'BigNetwork binary: '
 printf '\nBigNetwork API query:\n'
 # Equivalent to: bn -q "${bn_home}"
 "${bn_bin}" -q "${bn_home}" || true
+
+printf '\nBigNetwork status:\n'
+"${bn_bin}" -D"${bn_home}" info || true
+
+printf '\nBigNetwork peers:\n'
+"${bn_bin}" -D"${bn_home}" peers || true
+
+printf '\nBigNetwork joined networks:\n'
+"${bn_bin}" -D"${bn_home}" listnetworks || true
+
+if [[ -r "${bn_token_file}" ]]; then
+  printf '\nBigNetwork local REST /network:\n'
+  header_file="$(mktemp)"
+  trap 'rm -f "${header_file}"' EXIT
+  printf 'X-ZT1-Auth: %s\n' "$(<"${bn_token_file}")" > "${header_file}"
+  curl -fsS \
+    -H "@${header_file}" \
+    "http://127.0.0.1:${bn_port}/network" || true
+  printf '\n'
+fi
+
+printf '\nInterface state:\n'
+ip -brief address || true
+
+printf '\nRoute state:\n'
+ip route || true
 
 {% for target in resolved_bignetwork_edge.smoketest_targets %}
 printf '\nTarget {{ target.name }} ({{ target.address }}):\n'

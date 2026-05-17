@@ -32,6 +32,37 @@ network_fabric_devices:
       - Proxmox 8.4 host.
       - Management bridge rides bond0 over CSS326 ge5/ge6.
       - ConnectX-5 ports are reserved for RoCE-v2 and must not join vmbr0.
+  admin_sun99_forge_099070:
+    role: automation-admin
+    management_ip: 172.16.99.70
+    management_interface: eth0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    dns_aliases:
+      - admin-sun99-forge.rfc1918.host
+    manufacturer: M70
+    model: Atom C3758 appliance
+    primary_mac: 00:07:32:78:65:C6
+    connected_switch: sw_mgmt_css326
+    connected_switch_port: ge14
+    pdu_name: pdu-rfc99-corectrl-099241
+    pdu_outlet: "4"
+    pdu_outlet_label: admin-sun99-forge
+    observed_memory_gib: 32
+    serial_console_host: hasslehoff
+    serial_console_current_tty: /dev/ttyUSB3
+    serial_console_by_id: /dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0
+    serial_baud: 115200
+    netboot_operational_bootstrap: local-esp-ipxe-chainloader
+    status: persistent-zfs-root-boot-validated
+    notes:
+      - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
+      - Desired UEFI PXE-to-iPXE boot uses static DHCP address 172.16.99.70 and boot file m70-forge-ipxe.efi.
+      - 2026-05-14 provisioning rebuilt the SATADOM as a clean M70IPXE ESP with the M70-specific iPXE binary.
+      - 2026-05-14 provisioning created zroot as a mirrored ZFS root on both KIOXIA NVMe devices and repeat-reboot validated persistent root at 172.16.99.70.
+      - 2026-05-15 CSS326 SNMP bridge FDB validated netboot0 on ge14, enp3s0 on ge17, and eno1 on ge18.
+      - 2026-05-15 bond0 LACP over CSS326 ge17/ge18 was activated for unnumbered Forge transfer and VM staging use.
+      - Observed memory is 32 GiB despite planned 64 GiB; validate DIMMs before scheduling memory-heavy workloads.
+      - Must validate X12AGAIN SoL through /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin before Prinzessin reimage.
   sw_mgmt_css326:
     role: access-switch
     management_ip: 172.16.99.6
@@ -56,6 +87,7 @@ network_fabric_devices:
       - Static management IP is 172.16.99.6.
       - Address acquisition mode is static.
       - ge5 and ge6 are active LACP members for Hasslehoff bond0.
+      - ge17 and ge18 are active LACP members for M70 Forge bond0.
       - sfp1 and sfp2 currently contain Intel FTLX8571D3BCV-IT 10G-SR MMF optics.
   sw_mgmt_mkcrs354:
     role: distribution-switch
@@ -270,6 +302,49 @@ network_fabric_links:
     lag: hasslehoff-bond0
   - endpoint_a:
       device: sw_mgmt_css326
+      interface: ge14
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: netboot0
+    purpose: forge-management
+    media: 1GBASE-T
+    status: active
+    validation:
+      method: css326-snmp-bridge-fdb
+      observed_mac: "00:07:32:78:65:C6"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge17
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: enp3s0
+    purpose: forge-transfer-lag-member
+    lag: forge-transfer-bond0
+    media: 1GBASE-T
+    status: active
+    validation:
+      method: css326-snmp-bridge-fdb-and-link-bounce
+      observed_mac: "00:07:32:78:65:C7"
+      lacp_partner: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge18
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno1
+    purpose: forge-transfer-lag-member
+    lag: forge-transfer-bond0
+    media: 1GBASE-T
+    status: active
+    validation:
+      method: css326-snmp-bridge-fdb
+      observed_mac: "00:07:32:78:65:C8"
+      lacp_partner: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
       interface: ge24
     endpoint_b:
       device: sw_mgmt_mkcrs354
@@ -408,6 +483,28 @@ network_fabric_lags:
       - eno1
       - eno2
     validated: true
+  forge-transfer-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge17
+      - ge18
+    host: admin_sun99_forge_099070
+    host_ports:
+      - enp3s0
+      - eno1
+    status: active
+    host_interface: bond0
+    address_family: unnumbered
+    validation:
+      m70_bond_mii_status: up
+      m70_partner_key: 2
+      m70_partner_mac: f4:1e:57:89:af:be
+      css326_partner_mac: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
+    notes:
+      - bond0 is live and intentionally unnumbered on the M70.
+      - Do not place bond0 into a bridge or assign IPs until a staging VLAN or VM bridge change is explicitly approved.
   crs309-crs354-lag:
     mode: 802.3ad
     switch_a: sw_spine_crs309_rfc99
