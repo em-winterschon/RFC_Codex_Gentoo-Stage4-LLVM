@@ -23,7 +23,7 @@ artifacts:
   public_base_url: http://172.16.99.88:8080
   tftp_first_stage: k10-ipxe.efi
   host_script: hosts/gmktek-k10-stage5.ipxe
-  role_script: roles/installer-k10.ipxe
+  role_script: roles/workstation-validation.ipxe
   kernel_url: http://172.16.99.88:8080/g/vmlinuz
   initramfs_url: http://172.16.99.88:8080/g/initramfs-gz.img
   initramfs_boot_name: initrd.magic
@@ -32,23 +32,25 @@ artifacts:
 builder:
   script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
   profile_definition_requirements:
-    - profile-definitions/aaa-domain-client.yml
+    - profile-definitions/metal-workstation-basic-xorg.yml
     - profile-definitions/secure-firstboot-enrollment.yml
   rootfs_package_list_requirements:
-    - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/stage5-domain-client-freeipa-minimal.packages
     - profile-package-lists/stage5-secure-firstboot-enrollment.packages
   rootfs_package_use_requirements:
-    - sys-auth/sssd samba
-    - net-fs/samba winbind
+    - app-admin/sudo -sendmail
+    - sys-apps/smartmontools -daemon
   package_requirements:
     - sys-kernel/linux-firmware
     - sys-auth/sssd
-    - net-fs/samba
     - app-crypt/mit-krb5
     - net-nds/openldap
     - app-crypt/age
     - net-misc/curl
     - app-misc/jq
+  installer_prerequisites:
+    - sys-apps/gptfdisk
+    - boot_create_efi_nvram_entry: false
   dracut_modules:
     add:
       - network
@@ -79,5 +81,5 @@ validation:
   last_validated: "2026-05-11"
   transient_live_aaa_gate: passed before reboot with repo-managed apply playbook.
   reboot_durable_aaa_gate: blocked on disk install or secure first-boot age-encrypted FreeIPA OTP bundle apply; /etc/krb5.keytab must be generated on the target, never embedded in HTTP netboot artifacts.
-  last_reboot_observation: AP7901 outlet 6 reboot returned the promoted rootfs with SSSD, Samba, Kerberos, OpenLDAP, and libsss_ipa.so present; post-boot FreeIPA live apply and codex-admin SSH validation passed.
+  last_reboot_observation: AP7901 outlet 6 reboot returned the promoted rootfs with SSSD, Kerberos, OpenLDAP, and libsss_ipa.so present; post-boot FreeIPA live apply and codex-admin SSH validation passed.
   backout: Remove K10 DHCP option 67 and leave CSS326 ge16 disconnected.

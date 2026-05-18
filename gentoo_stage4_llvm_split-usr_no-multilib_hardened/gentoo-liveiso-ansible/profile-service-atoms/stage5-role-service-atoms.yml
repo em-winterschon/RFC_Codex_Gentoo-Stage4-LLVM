@@ -39,7 +39,6 @@ role_service_atoms:
       - id: host-monitoring-local
         package_atoms:
           - sys-apps/lm-sensors
-          - sys-process/anacron
           - sys-process/btop
           - sys-process/htop
           - sys-process/iotop-c

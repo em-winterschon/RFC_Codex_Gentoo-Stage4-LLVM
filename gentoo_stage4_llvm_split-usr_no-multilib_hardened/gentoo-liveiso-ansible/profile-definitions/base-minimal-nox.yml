@@ -4,6 +4,11 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-base-minimal-nox.packages
   make_conf_append: |
     USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    15-base-minimal-nox-scheduler: |
+      app-admin/logrotate -cron
+      app-admin/sudo -sendmail
+      sys-apps/smartmontools -daemon
   modules_load_files:
     base-minimal-nox.conf: |
       nvme

@@ -1,0 +1,46 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-workstation-basic-xorg
+  purpose: Bare-metal Stage5 workstation validation profile with Intel display-only Xorg, SLiM, SSSD, local observability, and no Wayland dependency path.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-workstation
+    role_name: metal-workstation-basic-xorg
+    extends:
+      - base-minimal-xorg-slim
+      - aaa-domain-client
+      - secure-firstboot-enrollment
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+      - profile-package-lists/stage5-metal-intel-platform.packages
+      - profile-package-lists/stage5-domain-client-freeipa-minimal.packages
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+      - profile-package-lists/stage5-observability-metrics-client.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  display_policy:
+    renderer: intel
+    display_stack: xorg
+    display_manager: slim
+    wayland_policy: masked
+  package_pins:
+    platform_packages:
+      - sys-firmware/intel-microcode
+      - sys-kernel/linux-firmware
+    workstation_packages:
+      - x11-base/xorg-server
+      - x11-misc/slim
+      - x11-apps/xinit
+  openrc_services:
+    - chronyd
+    - dbus
+    - lm_sensors
+    - rsyslog
+    - sshd
+    - sssd
+    - xdm
+  acceptance_gates:
+    - PXE-to-iPXE or direct iPXE reaches the Stage5 installer rootfs.
+    - Disk install uses an explicit destructive storage target list.
+    - First boot reaches SSH on the static management address.
+    - SSSD can resolve the floating validation user after secure firstboot enrollment.

@@ -17,7 +17,6 @@ sys-apps/net-tools
 sys-apps/pciutils
 sys-apps/smartmontools
 sys-apps/usbutils
-sys-process/anacron
 sys-process/btop
 sys-process/daemontools
 sys-process/htop

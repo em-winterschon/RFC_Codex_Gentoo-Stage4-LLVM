@@ -19,7 +19,6 @@ gentoo_system_profile_metadata:
       - sys-apps/ethtool
       - sys-apps/lm-sensors
       - sys-apps/net-tools
-      - sys-process/anacron
       - sys-process/btop
       - sys-process/daemontools
       - sys-process/htop

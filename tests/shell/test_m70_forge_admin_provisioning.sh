@@ -42,7 +42,7 @@ assert_file "docs/runbooks/x11scl-if-forge-admin-build.md"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "profile_id: metal-forge-automation-admin"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "stage5_profile: metal-forge-automation-admin"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "stage5-metal-intel-platform.packages"
-assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" 'ACCEPT_LICENSE="*.*"'
+assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" 'ACCEPT_LICENSE="* *.*"'
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "automation_admin:"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "x12again_sol_wrapper_path: /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin"
 assert_contains "${ANSIBLE_ROOT}/profile-definitions/metal-forge-automation-admin.yml" "forge_memory_spool_path: /var/lib/forge-memory/spool"

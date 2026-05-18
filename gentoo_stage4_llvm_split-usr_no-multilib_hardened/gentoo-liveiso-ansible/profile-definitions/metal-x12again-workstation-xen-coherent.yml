@@ -22,7 +22,7 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-observability-metrics-client.packages
     - profile-package-lists/stage5-slurm-worker-node.packages
   make_conf_append: |
-    PKGDIR="${STAGE5_BINPKG_PKGDIR:-/var/cache/binpkgs/stage4-lox__stage5-x12again-workstation-xen-coherent__amd64__gpu-universal-xorg-rdma}"
+    PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-x12again-workstation-xen-coherent__amd64__gpu-universal-xorg-rdma"
     FEATURES="${FEATURES} buildpkg binpkg-multi-instance"
     VIDEO_CARDS="amdgpu intel nvidia qxl modesetting fbdev"
     INPUT_DEVICES="libinput evdev keyboard mouse"

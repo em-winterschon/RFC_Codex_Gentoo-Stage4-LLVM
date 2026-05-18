@@ -12,7 +12,7 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-secure-firstboot-enrollment.packages
     - profile-package-lists/stage5-metal-forge-automation-admin.packages
   make_conf_append: |
-    ACCEPT_LICENSE="*.*"
+    ACCEPT_LICENSE="* *.*"
     USE="${USE} acl curl git gssapi kerberos ldap nfs ssh ssl zfs -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
   package_use_files:
     40-forge-automation-admin: |

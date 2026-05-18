@@ -11,8 +11,9 @@ profiles.
   tooling, diagnostics, shell operations, and standard UNIX network tools
   including `ethtool`, `ifconfig`, and `netstat`. It also carries the stable
   local monitoring set: `lm_sensors`, `htop`, `btop`, `iotop-c`, `lsof`,
-  `psmisc`, `parallel`, `numactl`, `numad`, `time`, `anacron`,
-  `daemontools`, `wait_on_pid`, and `watchpid`.
+  `psmisc`, `parallel`, `numactl`, `numad`, `time`, `daemontools`,
+  `wait_on_pid`, and `watchpid`. MTA-backed schedulers such as `anacron`
+  are role-specific opt-ins, not part of base-minimal.
 - `base-minimal-xorg-slim`: extends `base-minimal-nox` with Xorg, SLiM, xinit,
   xterm, libinput, and basic font support. Wayland remains explicitly out of
   scope for this layer.

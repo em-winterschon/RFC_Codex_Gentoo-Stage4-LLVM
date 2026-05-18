@@ -67,10 +67,13 @@ for atom in \
   '^sys-process/watchpid$' \
   '^sys-process/numad$' \
   '^sys-process/numactl$' \
-  '^sys-process/daemontools$' \
-  '^sys-process/anacron$'; do
+  '^sys-process/daemontools$'; do
   require_grep "${atom}" "${PACKAGE_LIST_DIR}/stage5-base-minimal-nox.packages"
 done
+
+require_grep 'app-admin/logrotate -cron' "${PROFILE_DIR}/base-minimal-nox.yml"
+require_grep 'app-admin/sudo -sendmail' "${PROFILE_DIR}/base-minimal-nox.yml"
+require_grep 'sys-apps/smartmontools -daemon' "${PROFILE_DIR}/base-minimal-nox.yml"
 
 for atom in \
   '^x11-base/xorg-server$' \
