@@ -11,6 +11,9 @@ HASSLEHOFF_BACKUP_MIRROR_TARGET="${HASSLEHOFF_BACKUP_MIRROR_TARGET:-}"
 HASSLEHOFF_BACKUP_MIRROR_VERIFY="${HASSLEHOFF_BACKUP_MIRROR_VERIFY:-0}"
 HASSLEHOFF_BACKUP_RESTORE_VERIFY="${HASSLEHOFF_BACKUP_RESTORE_VERIFY:-0}"
 HASSLEHOFF_BACKUP_PREFLIGHT_ONLY="${HASSLEHOFF_BACKUP_PREFLIGHT_ONLY:-0}"
+if [[ -z "${HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS+x}" ]]; then
+  HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS="--no-owner --no-group"
+fi
 HASSLEHOFF_BACKUP_RETENTION_DAYS="${HASSLEHOFF_BACKUP_RETENTION_DAYS:-0}"
 HASSLEHOFF_BACKUP_RETENTION_APPLY="${HASSLEHOFF_BACKUP_RETENTION_APPLY:-0}"
 HASSLEHOFF_BACKUP_LOCKFILE="${HASSLEHOFF_BACKUP_LOCKFILE:-/tmp/hasslehoff-scheduled-backup.lock}"
@@ -37,6 +40,7 @@ Environment:
   HASSLEHOFF_BACKUP_MIRROR_VERIFY=1
   HASSLEHOFF_BACKUP_RESTORE_VERIFY=1
   HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1
+  HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS="--no-owner --no-group"
   HASSLEHOFF_BACKUP_RETENTION_DAYS=14
   HASSLEHOFF_BACKUP_RETENTION_APPLY=1
   HASSLEHOFF_BACKUP_NOTIFY=1
@@ -157,8 +161,12 @@ sync_manifest_to_mirror() {
   [[ -n "${target}" ]] || return 0
 
   local remote_dest="${target%/}/${HASSLEHOFF_BACKUP_STAMP}/"
+  local -a rsync_extra_opts=()
+  if [[ -n "${HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS}" ]]; then
+    read -r -a rsync_extra_opts <<< "${HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS}"
+  fi
   log "syncing final manifest to ${remote_dest}"
-  rsync -aH "${DEST}/manifest.json" "${remote_dest}manifest.json"
+  rsync -aH "${rsync_extra_opts[@]}" "${DEST}/manifest.json" "${remote_dest}manifest.json"
 }
 
 apply_retention() {
@@ -194,7 +202,11 @@ mirror_backup() {
   fi
 
   log "mirroring ${DEST}/ to ${remote_dest}"
-  rsync -aH --info=stats1 "${DEST}/" "${remote_dest}"
+  local -a rsync_extra_opts=()
+  if [[ -n "${HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS}" ]]; then
+    read -r -a rsync_extra_opts <<< "${HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS}"
+  fi
+  rsync -aH "${rsync_extra_opts[@]}" --info=stats1 "${DEST}/" "${remote_dest}"
 
   if [[ "${HASSLEHOFF_BACKUP_MIRROR_VERIFY}" == "1" && "${target}" == *:* ]]; then
     local remote_path="${target#*:}/${HASSLEHOFF_BACKUP_STAMP}"
@@ -223,6 +235,7 @@ main() {
     printf 'source=%s\n' "${HASSLEHOFF_SSH_TARGET}"
     printf 'dest=%s\n' "${DEST}"
     printf 'mirror_target=%s\n' "${HASSLEHOFF_BACKUP_MIRROR_TARGET:-<none>}"
+    printf 'mirror_rsync_opts=%s\n' "${HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS:-<none>}"
     printf 'lockfile=%s\n' "${HASSLEHOFF_BACKUP_LOCKFILE}"
     printf 'notify=%s\n' "${HASSLEHOFF_BACKUP_NOTIFY}"
     printf 'restore_verify=%s\n' "${HASSLEHOFF_BACKUP_RESTORE_VERIFY}"

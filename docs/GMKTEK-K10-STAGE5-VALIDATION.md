@@ -79,6 +79,16 @@ Current physical discovery state:
   `ipa-client-live-apply.yml` run then passed `sssctl config-check`, NSS lookup,
   FreeIPA SSH-key lookup, PAM account checks, and floating SSH login as
   `codex-admin`.
+- Installed-disk boot status: on 2026-05-18, K10 completed the netboot installer
+  and created a ZFSBootMenu UEFI entry for the mirrored `rpool`. The first
+  installed-disk boot reached dracut but failed before networking with repeated
+  `ZFS: Unable to import pool rpool` and `No sysroot.mount exists` messages on
+  the PiKVM capture. Root cause was boot-role command-line handling: the
+  ZFSBootMenu dataset property lost the required `root=ZFS=rpool/ROOT/gentoo`
+  token, so dracut's ZFS generator had no root target. The repo fix preserves
+  `root=ZFS=...` and writes the ZFSBootMenu property through argv-safe
+  `zfs set`; K10 must be returned to netboot/live rescue or local console before
+  that corrected property can be applied to the installed pool.
 - AAA durability caveat: the netboot rootfs is fetched over unauthenticated HTTP
   and must not embed `/etc/krb5.keytab`. The current safe model is package
   durability in the rootfs plus post-boot secure enrollment. Fully unattended
@@ -171,7 +181,11 @@ Use this timing model when K10 is rebuilt as the bare-metal E2ET candidate:
    durable E2ET gate complete only after disk install or another persistent
    identity path proves `/etc/krb5.keytab`, SSSD cache, hostname, sudo policy,
    and break-glass behavior survive a power-cycle.
-9. Conformance report: write pass/fail, timings, artifact IDs, package profile
+9. Installed-disk boot gate: confirm the ZFSBootMenu-selected kernel command
+   line includes `root=ZFS=rpool/ROOT/gentoo`, `ro`, `console=tty0`,
+   `console=ttyS0,115200`, and `spl_hostid=<target-hostid>`. A dracut boot that
+   reaches `No sysroot.mount exists` is a hard fail for this gate.
+10. Conformance report: write pass/fail, timings, artifact IDs, package profile
    IDs, and observed deviations before any X12AGAIN reimage action.
 
 ## Backout

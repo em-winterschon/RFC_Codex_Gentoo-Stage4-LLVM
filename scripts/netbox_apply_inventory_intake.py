@@ -360,6 +360,30 @@ def cable_between_terminations(
     return None
 
 
+def cable_for_termination(
+    client: NetBoxClient,
+    object_type: str,
+    object_id: int,
+) -> dict[str, Any] | None:
+    result = client.request_json("GET", "dcim/cables", query={"limit": "0"})
+    rows = result.get("results", [])
+    if not isinstance(rows, list):
+        return None
+    for row in rows:
+        if isinstance(row, dict) and cable_has_termination(row, object_type, object_id):
+            return row
+    return None
+
+
+def managed_power_intake_cable(cable: dict[str, Any]) -> bool:
+    label = str(cable.get("label") or "")
+    description = str(cable.get("description") or "")
+    return (
+        "->" in label
+        and "Power-chain cable tracked from inventory intake." in description
+    )
+
+
 def ensure_device_interface(
     client: NetBoxClient,
     device: dict[str, Any],
@@ -643,6 +667,25 @@ def ensure_power_cable(
             client.updated.append(label)
             return updated
         return existing
+
+    conflicting_cables = [
+        cable
+        for cable in (
+            cable_for_termination(client, "dcim.poweroutlet", int(source_outlet["id"])),
+            cable_for_termination(client, "dcim.powerport", int(target_power_port["id"])),
+        )
+        if cable
+    ]
+    unique_conflicts = {int(cable["id"]): cable for cable in conflicting_cables}.values()
+    for conflict in unique_conflicts:
+        conflict_label = str(conflict.get("label") or conflict.get("display") or conflict["id"])
+        if not client.update_existing or not managed_power_intake_cable(conflict):
+            raise RuntimeError(
+                "Refusing to replace unmanaged or non-update power cable "
+                f"{conflict_label!r} while creating {lookup_value!r}"
+            )
+        client.request_json("DELETE", f"dcim/cables/{conflict['id']}")
+        client.updated.append(f"dcim/cables:replaced:{conflict_label}")
 
     created = client.request_json("POST", "dcim/cables", payload)
     client.created.append(label)

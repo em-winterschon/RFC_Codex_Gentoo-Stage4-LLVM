@@ -71,6 +71,10 @@ The wrapper uses `rsync -aH` and does not delete remote data. Set
 `HASSLEHOFF_BACKUP_NOTIFY=1` to publish success/failure summaries to local ntfy.
 Set `HASSLEHOFF_BACKUP_RESTORE_VERIFY=1` to require manifest readback plus
 SHA256 validation from the mirrored target after rsync completes.
+Mirror rsync defaults to `HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS="--no-owner --no-group"`
+so squashed NFS relay targets such as NASA do not fail on ownership changes.
+Override that variable only for targets where preserving remote ownership is
+known to be supported and required.
 
 Preflight the first external target before scheduling:
 
@@ -180,6 +184,7 @@ local mountpoint:
 HASSLEHOFF_BACKUP_MIRROR_TARGET='root@admin-sun99-forge-099070:/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
 HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
+HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS='--no-owner --no-group' \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
@@ -191,6 +196,7 @@ the NASA mountpoint instead:
 HASSLEHOFF_BACKUP_MIRROR_TARGET='/mnt/nasa/hasslehoff/config-bundles' \
 HASSLEHOFF_BACKUP_MIRROR_VERIFY=1 \
 HASSLEHOFF_BACKUP_RESTORE_VERIFY=1 \
+HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS='--no-owner --no-group' \
 HASSLEHOFF_BACKUP_NOTIFY=1 \
 bash scripts/backup-hasslehoff-scheduled.sh
 ```
@@ -209,7 +215,9 @@ NASA exports with `all_squash` to UID/GID 8888, so write probes fail at the
 export root by design. The dedicated NASA-side directories
 `hasslehoff/config-bundles` and `forge/transfer-stage` were created with
 UID/GID 8888 and mode `2770`; M70 write/read/delete probes passed in both
-directories.
+directories. Because NASA uses `all_squash`, mirror jobs must not attempt
+remote `chown`; the scheduled wrapper's default `--no-owner --no-group` mirror
+options are required for this relay topology.
 
 ## Emergency Gateway Ethernet WAN Link
 

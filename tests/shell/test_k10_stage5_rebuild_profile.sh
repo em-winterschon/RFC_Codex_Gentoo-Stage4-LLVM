@@ -120,6 +120,7 @@ assert_before "${LIVEISO_PREPARE}" "Install LiveISO installer prerequisites" "Ch
 assert_contains "${RECOVERY_SCRIPT}" 'FEATURES="-distcc -ccache buildpkg parallel-install merge-sync -fail-clean"'
 assert_contains "${RECOVERY_SCRIPT}" "k10-resume-markers"
 assert_contains "${RECOVERY_SCRIPT}" "K10_REBOOT_ON_SUCCESS"
+assert_contains "${RECOVERY_SCRIPT}" "net-misc/networkmanager"
 assert_not_contains "${RECOVERY_SCRIPT}" "net-fs/samba"
 assert_not_contains "${RECOVERY_SCRIPT}" "sys-process/anacron"
 

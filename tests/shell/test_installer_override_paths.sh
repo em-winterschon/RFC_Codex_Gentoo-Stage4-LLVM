@@ -60,12 +60,17 @@ test_qemu_alias_inventory_uses_source_kernel_path() {
 
 test_boot_commandline_templates_do_not_regress_console_typo() {
   assert_file_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "console=tty0"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "install_kernel_cmdline | default('ro console=tty0 console=ttyS0,115200')"
+  assert_file_not_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "root=[^"
+  assert_file_not_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "reject('match', '^root=')"
   assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" "console=tty0"
   assert_file_not_contains_token "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "sole=tty0"
   assert_file_not_contains_token "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" "sole=tty0"
   assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "zgenhostid -f"
   assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "install_items+=\" /etc/hostid \""
   assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "spl_hostid="
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "argv:"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective }}"
   assert_file_not_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" "src: /etc/hostid"
 }
 

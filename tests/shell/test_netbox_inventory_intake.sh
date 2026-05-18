@@ -197,6 +197,18 @@ assert module.ip_host("172.16.99.96/32") == "172.16.99.96"
 assert module.ip_host("2001:db8::1/64") == "2001:db8::1"
 assert module.ip_hosts_match("172.16.99.96/24", "172.16.99.96/32")
 assert not module.ip_hosts_match("172.16.99.96/24", "172.16.99.97/24")
+assert module.managed_power_intake_cable(
+    {
+        "label": "pdu_rfc99_corectrl_ap7901:outlet4->admin_sun99_forge_099070:power0",
+        "description": "Power-chain cable tracked from inventory intake.",
+    }
+)
+assert not module.managed_power_intake_cable(
+    {
+        "label": "operator-owned-cable",
+        "description": "Do not replace automatically.",
+    }
+)
 PY
 
 invalid_fixture="$(mktemp --suffix=.yml)"

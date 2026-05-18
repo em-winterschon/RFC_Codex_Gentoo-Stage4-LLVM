@@ -39,6 +39,7 @@ app-editors/vim
 media-fonts/dejavu
 net-misc/chrony
 net-misc/curl
+net-misc/networkmanager
 net-misc/openssh
 net-misc/wget
 net-nds/openldap
