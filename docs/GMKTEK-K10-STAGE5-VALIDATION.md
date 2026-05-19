@@ -38,8 +38,9 @@ default network-boot design.
 ## Firmware Thermal Policy
 
 The K10 is treated as a sustained-build host, not a bursty desktop. Firmware
-tuning therefore prefers deterministic non-turbo behavior and maximum cooling
-over acoustic comfort or short turbo peaks.
+tuning therefore prefers deterministic non-turbo behavior and stable thermals
+without allowing the chassis fan to become louder than the larger X12-class
+hosts.
 
 Observed firmware identity on 2026-05-19:
 
@@ -48,34 +49,50 @@ Observed firmware identity on 2026-05-19:
 - BIOS build date/time: `02/12/2025 13:51:57`
 - EC firmware: `01.10`
 - CPU: `13th Gen Intel Core i9-13900HK`
-- Main page power preset observed before tuning: `Power Limit Select
+- Main page power preset observed before initial tuning: `Power Limit Select
   [Performance]`
 
-Applied PiKVM OTG-HID changes on 2026-05-19:
+Initial PiKVM OTG-HID thermal-recovery change on 2026-05-19:
 
 - `Advanced -> Hardware Monitor -> Smart Fan -> PWM Control Fan Speed` changed
   from `OFF` to `100%`.
 - `Advanced -> Power & Performance -> CPU - Power Management Control -> Turbo
   Mode` changed from `Enabled` to `Disabled`.
-- Existing CPU power envelope was left otherwise unchanged: boot performance
-  `Max Non-Turbo Performance`, platform PL1 `45000`, platform PL2 `54000`, and
-  PL1 time window `28`.
-- Existing CPU thermal policy was left unchanged: TCC activation offset `7`,
-  PROCHOT response enabled, and ACPI T-states enabled.
+- This proved the host could hold base-clock package builds without thermal
+  throttling, but the fixed fan speed was not acceptable as a sustained
+  acoustic profile.
 
-Post-save validation from the live/netboot root:
+Balanced acoustic revision on 2026-05-19:
+
+- `Main -> Power Limit Select` changed from `Performance` to `Balance`.
+- `Advanced -> Hardware Monitor -> Smart Fan` changed to `Disabled`. The BIOS
+  help text is counter-intuitive but explicit: `Enable` means manual fan speed
+  setting, while `Disable` means automatic fan speed.
+- `Advanced -> Power & Performance -> CPU - Power Management Control -> Turbo
+  Mode` remained `Disabled`.
+- CPU policy remained `Max Non-Turbo Performance` with platform PL1 `45000`,
+  platform PL2 `54000`, and PL1 time window `28`.
+- `Security -> Secure Boot` was verified `Disabled` and `Not Active`.
+- `Chipset -> System Agent -> PCI Express Root Port 1/2/3 -> ASPM` was verified
+  `Disabled`; `Chipset -> PCH-IO -> PCI Express Configuration -> DMI Link ASPM
+  Control` was also verified `Disabled`.
+- `Advanced -> AC Power Lost Policy` remained `Power on`.
+- BIOS Hardware Monitor reported valid fan telemetry after the balanced
+  revision: `CPU Fan Speed 3789 RPM` at about `36 C` to `37 C`.
+
+Post-save validation from the live/netboot root after the balanced revision:
 
 - Linux reports `/sys/devices/system/cpu/intel_pstate/no_turbo=1`.
 - `lscpu` reports CPU max MHz capped at `2600.0000`.
-- A 180 second 20-process synthetic CPU load held package temperature in the
-  `55 C` to `61 C` range, with max observed frequency around `2600007 kHz`.
+- The netboot path remained intact and the host accepted SSH as `root` on
+  `172.16.99.156`.
+- A 180 second 20-process synthetic CPU load held the package temperature from
+  `41 C` at start to a plateau of `68 C` to `69 C`, with max observed frequency
+  around `2600007 kHz` and average observed frequency around `2320000 kHz`.
 - No thermal throttling or machine-check events were observed in `dmesg` after
   the load test.
-
-Caveat: BIOS Hardware Monitor reported `CPU Fan Speed 0 RPM` even after setting
-PWM to `100%`. Treat the tachometer reading as unreliable until the physical fan
-header/sensor path is confirmed; the thermal result is the authoritative
-short-test signal.
+- Cooldown after load dropped package temperature from `53 C` to `45 C` over
+  two minutes.
 
 ## Intake State
 
