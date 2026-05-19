@@ -12,6 +12,12 @@
 - Created and documented the `dstore` dataset and libvirt storage-pool layout for
   `dstore/libvirt/images`, `dstore/libvirt/zvols`, backups, ISO cache, and
   staging paths.
+- Defined the live `dstore-images` libvirt directory pool on `ter`, validated a
+  disposable KVM domain lifecycle against a QCOW2 disk on `dstore`, and verified
+  `/var/lib/libvirt/images` remained empty.
+- Validated zvol creation/destruction under `dstore/libvirt/zvols`; native
+  libvirt ZFS pool management is deferred because the temporary Rocky libvirt
+  build reports ZFS storage pool support unavailable.
 - Added roadmap and FMT2 inventory-intake notes to prevent future automation
   from placing VM or backup payloads on `ter`'s OS mirror.
 

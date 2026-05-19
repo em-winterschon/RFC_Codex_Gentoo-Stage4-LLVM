@@ -85,17 +85,48 @@ automation is validated.
 
 ## Libvirt Storage Pools
 
-Define two libvirt pools on `ter`:
+The current Rocky 8.9 libvirt build on `ter` reports `pool type='zfs'
+supported='no'`, so do not model ZFS zvols as a native libvirt ZFS pool on the
+temporary OS. Use the directory pool for portable QCOW2 images and attach zvols
+explicitly by block-device path when a VM needs zvol-backed storage.
 
 | Pool | Type | Backing path | Use |
 | --- | --- | --- | --- |
-| `dstore-images` | `dir` | `/srv/libvirt/images` | QCOW2 imports, temporary VM disks, migration tests. |
-| `dstore-zvols` | logical/manual zvol mapping | `/dev/zvol/dstore/libvirt/zvols` | Stable high-I/O VM disks. |
+| `dstore-images` | libvirt `dir` pool | `/srv/libvirt/images` | QCOW2 imports, temporary VM disks, migration tests. |
+| `dstore-zvols` | manual zvol mapping | `/dev/zvol/dstore/libvirt/zvols/*` | Stable high-I/O VM disks after explicit zvol creation. |
 
 Do not define a default libvirt storage pool on the OS RAID1 root filesystem.
 If libvirt creates `/var/lib/libvirt/images`, it should remain empty or be
 replaced with a deliberate symlink only after the `dstore-images` dataset is
 mounted.
+
+## 2026-05-19 Live Libvirt Smoke Test
+
+Validation performed from M70 through the FMT2 OpenVPN path:
+
+1. Confirmed Rocky 8.9 has libvirt `8.0.0`, qemu-kvm `6.2.0`, `virt-install`,
+   and active `libvirtd`.
+2. Defined `dstore-images` as a persistent autostart libvirt `dir` pool backed
+   by `/srv/libvirt/images`.
+3. Confirmed libvirt storage capabilities report native ZFS pool support as
+   unavailable on the temporary Rocky install.
+4. Created and destroyed a 128 MiB zvol
+   `dstore/libvirt/zvols/forge-zvol-smoke`, confirming it appeared at
+   `/dev/zvol/dstore/libvirt/zvols/forge-zvol-smoke -> /dev/zd0`.
+5. Created a disposable no-network KVM domain `forge-dstore-smoke` with a
+   256 MiB QCOW2 disk at `/srv/libvirt/images/forge-dstore-smoke.qcow2`.
+6. Started the domain and verified `domstate-after-start=running`.
+7. Destroyed the domain and verified `domstate-after-destroy=shut off`.
+8. Created and listed a stopped-disk snapshot with `qemu-img snapshot`.
+9. Undefined the domain, removed the QCOW2 disk, refreshed the pool, and
+   verified no leftover domain exists.
+10. Verified `/var/lib/libvirt/images` remains empty.
+
+Result: `ter` can run KVM/libvirt workloads backed by `dstore-images` without
+placing VM payloads on the OS RAID1 mirror. Zvol-backed disks are viable as
+manual block-device mappings, but native libvirt ZFS pool management waits for
+the final Gentoo hypervisor profile or a libvirt build with ZFS storage-driver
+support.
 
 ## Staged Rebuild Sequence
 
@@ -140,8 +171,10 @@ Before using `ter` for VM migration:
 
 1. `zpool status dstore` reports `ONLINE`.
 2. The `dstore` live datasets exist and are mounted at the intended paths.
-3. Libvirt storage pools point only at `dstore` paths.
-4. A test VM can be created, started, stopped, snapshotted, and deleted without
+3. Libvirt `dstore-images` points only at `/srv/libvirt/images`.
+4. Zvol-backed VM disks are attached only through explicit
+   `/dev/zvol/dstore/libvirt/zvols/*` paths.
+5. A test VM can be created, started, stopped, snapshotted, and deleted without
    writing VM payloads to the OS RAID1 root filesystem.
 
 Before reimaging `ter`:
