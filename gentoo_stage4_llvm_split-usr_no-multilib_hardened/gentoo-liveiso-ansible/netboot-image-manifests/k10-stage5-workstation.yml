@@ -31,6 +31,12 @@ artifacts:
   hash_strategy: sha256sum sidecar files generated during Jenkins rebuilds
 builder:
   script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
+  rebuild_environment:
+    - PATHB_REUSE_INITRAMFS_NETWORK=0
+    - PATHB_STATIC_INTERFACE=enp4s0
+    - PATHB_STATIC_ADDRESS_CIDR=172.16.99.156/24
+    - PATHB_STATIC_GATEWAY=172.16.99.1
+    - PATHB_STATIC_DNS="172.16.99.63 172.16.99.1 9.9.9.9"
   profile_definition_requirements:
     - profile-definitions/metal-workstation-basic-xorg.yml
     - profile-definitions/secure-firstboot-enrollment.yml

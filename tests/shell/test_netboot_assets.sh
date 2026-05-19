@@ -58,6 +58,11 @@ test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "gmktek_nucbox_k10_stage5_candidate"
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "rtl_nic/rtl8125b-2.fw"
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "initrd=initrd.magic"
+  assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "PATHB_REUSE_INITRAMFS_NETWORK=0"
+  assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "PATHB_STATIC_INTERFACE=enp4s0"
+  assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "PATHB_STATIC_ADDRESS_CIDR=172.16.99.156/24"
+  assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "PATHB_STATIC_GATEWAY=172.16.99.1"
+  assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "PATHB_STATIC_DNS="
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/thinkpad-x1gen8-workstation.yml" "kind: NetbootImageManifest"
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/thinkpad-x1gen8-workstation.yml" "lab_sun99_x1gen8_099082"
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/thinkpad-x1gen8-workstation.yml" "54:05:DB:34:CC:75"
@@ -70,6 +75,12 @@ test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_PROFILE_PACKAGE_LIST_FILES"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_OPENRC_SERVICES_EXTRA"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_STAGE3_CACHE_DIR_EXPLICIT"
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_STATIC_INTERFACE"
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "PATHB_STATIC_ADDRESS_CIDR"
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'ln -sfn net.lo /etc/init.d/net.${PATHB_STATIC_INTERFACE}'
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'config_${PATHB_STATIC_INTERFACE}'
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'routes_${PATHB_STATIC_INTERFACE}'
+  assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'dns_servers_${PATHB_STATIC_INTERFACE}'
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "cleanup_mounts"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "findmnt -Rrn -o TARGET"
   assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" "sort -r"

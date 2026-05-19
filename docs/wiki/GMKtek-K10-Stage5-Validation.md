@@ -125,19 +125,24 @@ Current physical discovery state:
 - HTTPBoot note: native UEFI HTTPBoot accepted DHCP only after option 60
   `HTTPClient`, but then failed to issue ARP/TCP toward `172.16.99.108`;
   PXE IPv4 is the active fallback because it did ARP and attempt TFTP
-- Current status: AP7901 outlet 6 PDU reboot validated the repo-generated
-  `workstation-validation.ipxe` path from `172.16.99.88`: K10 loads the
-  patched initramfs, loads `rtl_nic/rtl8125b-2.fw`, fetches `g/rootfs.img`,
-  mounts `LiveOS_rootfs`, switches root, and accepts SSH as `root` on
-  `172.16.99.156`. OpenRC `netmount`, `sshd`, and `local` were started after
-  boot.
+- Current status: on 2026-05-19, AP7901 outlet 6 PDU reboot validated the
+  repo-generated `workstation-validation.ipxe` path from `172.16.99.88`: K10
+  loads the patched initramfs, loads `rtl_nic/rtl8125b-2.fw`, fetches
+  `g/rootfs.img`, mounts `LiveOS_rootfs`, switches root, and accepts SSH as
+  `root` on `172.16.99.156`. The active publisher rootfs checksum is
+  `23bfe6bb89aa4fae56345f995648ae2321956ba0e3d5e3b235b57159ea402a32`.
+  OpenRC `net.enp4s0`, `netmount`, `sshd`, and `local` were started after
+  boot. The pre-patch rollback rootfs is preserved on the publisher at
+  `/var/lib/netboot/path-b/artifacts/gentoo-installer/rollback-20260519T143743Z/rootfs.img`.
 - FreeIPA/SSSD status: K10 was transiently enrolled on the live Gentoo image as
   `gmktek-k10-stage5.rfc1918.host` on 2026-05-09. On 2026-05-11 the promoted
   Path B rootfs rebooted with SSSD, Samba, Kerberos, OpenLDAP, and
   `/usr/lib64/sssd/libsss_ipa.so` present. A post-boot
   `ipa-client-live-apply.yml` run then passed `sssctl config-check`, NSS lookup,
   FreeIPA SSH-key lookup, PAM account checks, and floating SSH login as
-  `codex-admin`.
+  `codex-admin`. On 2026-05-19, SSSD remained stopped after the stateless live
+  root reboot; durable AAA remains gated on secure firstboot or installed-disk
+  enrollment because public netboot artifacts must not embed host keytabs.
 - Installed-disk boot status: on 2026-05-18, K10 completed the netboot installer
   and created a ZFSBootMenu UEFI entry for the mirrored `rpool`. The first
   installed-disk boot reached dracut but failed before networking with repeated
@@ -175,11 +180,18 @@ Current physical discovery state:
   definitions directly. For the K10 AAA-capable rootfs, run with the
   whitespace-separated shell list
   `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`
+  plus `PATHB_REUSE_INITRAMFS_NETWORK=0`,
+  `PATHB_STATIC_INTERFACE=enp4s0`,
+  `PATHB_STATIC_ADDRESS_CIDR=172.16.99.156/24`,
+  `PATHB_STATIC_GATEWAY=172.16.99.1`, and
+  `PATHB_STATIC_DNS="172.16.99.63 172.16.99.1 9.9.9.9"`
   so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy,
   `app-crypt/age`, `curl`, `jq`, the `sssd` OpenRC service, and the opt-in
   secure first-boot enrollment scaffold are carried into the generated rootfs
-  instead of applied only as live mutations. Do not embed host keytabs in the
-  public netboot artifact set.
+  instead of applied only as live mutations. The static OpenRC networking
+  variables are required because the live root must not depend on dracut
+  preserving the initramfs-assigned address after switchroot. Do not embed host
+  keytabs in the public netboot artifact set.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.
@@ -227,7 +239,9 @@ Use this timing model when K10 is rebuilt as the bare-metal E2ET candidate:
 1. Pre-change capture: confirm RouterOS static lease, AP7901 outlet mapping,
    NetBox device/interface/IPAM data, and current publisher artifact checksums.
 2. Image build: run the Path B artifact builder with
-   `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`.
+   `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`
+   and the static OpenRC network builder variables from the rebuild source of
+   truth above.
    Expected duration depends on binpkg cache state; record start, finish, and
    elapsed wall time in the E2ET log.
 3. Publish: sync kernel, initramfs, rootfs, iPXE host script, and generated role

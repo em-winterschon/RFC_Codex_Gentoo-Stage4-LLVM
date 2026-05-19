@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-05-19 - K10 Live Root Network Durability
+
+- Added Path B builder inputs for static OpenRC networking in the switched
+  live root: `PATHB_STATIC_INTERFACE`, `PATHB_STATIC_ADDRESS_CIDR`,
+  `PATHB_STATIC_GATEWAY`, and `PATHB_STATIC_DNS`.
+- Updated the K10 stage5 manifest and shell regression coverage so the
+  generated rootfs brings up `net.enp4s0` directly instead of depending on
+  dracut to preserve initramfs network state after switchroot.
+- Patched the active Hasslehoff netboot publisher rootfs and AP7901 outlet 6
+  reboot-validated K10 SSH reachability on `172.16.99.156` with OpenRC
+  `net.enp4s0`, `netmount`, `sshd`, and `local` started.
+- Preserved the pre-patch publisher rollback rootfs at
+  `/var/lib/netboot/path-b/artifacts/gentoo-installer/rollback-20260519T143743Z/rootfs.img`
+  and recorded the active rootfs checksum
+  `23bfe6bb89aa4fae56345f995648ae2321956ba0e3d5e3b235b57159ea402a32`.
+
 ## 2026-05-17 - Hasslehoff Backup And ntfy Image Hardening
 
 - Hardened the Hasslehoff scheduled backup wrapper with preflight-only mirror
