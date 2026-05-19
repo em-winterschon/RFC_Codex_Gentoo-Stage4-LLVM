@@ -6,6 +6,15 @@
   `kvm-sfo200-pri-9922`, `kvm-sfo200-sec-9923`, and
   `kvm-sfo200-ter-9924`, using `pri` as the first destructive rebuild
   candidate and preserving `ter` as the storage/provisioning anchor.
+- Added the R630 network fabric policy: X710 `eno1`/`eno2` for host-management
+  LACP, X710 `eno3`/`eno4` for VM front-end LACP/OVS/SR-IOV, and ConnectX-4
+  2x50GbE for RDMA/RoCEv2 storage paths through the Arista 7060.
+- Captured 2026-05-19 R630 fabric evidence: X710 and ConnectX links are up on
+  `sec` and `ter`, RDMA links are active, SR-IOV exposure is inconsistent, and
+  `sec` reports placeholder ConnectX MACs requiring firmware follow-up.
+- Corrected the live Arista 7060 management record to `172.18.20.10`, noting
+  that HTTPS/eAPI is reachable while SSH is filtered and access must use
+  `verwalterin` rather than `root`.
 - Recorded the `ter` storage policy: existing ZFS pool `dstore` is the only
   local target for VM images, zvols, migration staging, backups, ISO caches,
   and provisioning artifacts; the OS RAID1 SATA SSDs are OS-only.

@@ -44,6 +44,29 @@ RoCE-v2 switch profiles need explicit, reversible configuration:
 - LACP behavior validated before carrying RDMA traffic
 - rollback configuration snapshot before mutation
 
+## FMT2 R630 / Arista 7060 Profile
+
+The FMT2 R630 HCI cluster uses Intel X710 ports for management and front-end VM
+traffic, and Mellanox ConnectX-4 ports for the back-end RDMA fabric:
+
+- `eno1` + `eno2`: host management LACP bond.
+- `eno3` + `eno4`: VM front-end LACP bond, OVS bridge, and X710 SR-IOV VFs
+  where firmware exposes them.
+- `enp130s0f0np0` + `enp130s0f1np1`: 2x 50GbE RoCEv2 storage paths connected
+  to the Arista DCS-7060CX-32S.
+
+For the ConnectX-4 RDMA path, use independent 50GbE fabrics first. Do not
+assume Linux bonding, LACP, or OVS will preserve RDMA offload semantics until
+the exact NIC firmware, kernel driver, OVS mode, and Arista lossless profile
+are validated. VMs that need RDMA should receive ConnectX VFs directly before
+any OVS switchdev or representor design is promoted.
+
+Arista DCS-7060CX-32S changes require a pre-change config snapshot, live port
+mapping, jumbo MTU, storage-class PFC only, ECN/WRED where available, and
+rollback commands. SSH was filtered during the 2026-05-19 check, while HTTPS
+eAPI on `172.18.20.10:443` was reachable, so switch automation should prefer
+eAPI if credentials are available and should not assume CLI SSH.
+
 ## Validation Gates
 
 Each RDMA-capable host must pass:

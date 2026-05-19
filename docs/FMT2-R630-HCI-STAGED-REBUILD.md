@@ -20,6 +20,61 @@ Destructive actions require a host-specific maintenance gate.
 All three iDRACs answered Redfish root service probes and IPMI chassis status
 on 2026-05-19. iDRAC firmware reported `2.83`.
 
+## Network Fabric Policy
+
+All three R630 virtualization hosts should converge on the same physical NIC
+role split:
+
+| Interface set | Hardware | Intended role | VM exposure |
+| --- | --- | --- | --- |
+| `eno1` + `eno2` | Intel X710 10GbE | Host management LACP bond. | Host-only management path. |
+| `eno3` + `eno4` | Intel X710 10GbE | VM front-end LACP bond. | Open vSwitch bridge plus SR-IOV VFs where host firmware exposes them. |
+| `enp130s0f0np0` + `enp130s0f1np1` | Mellanox ConnectX-4 50GbE | Back-end storage, RoCEv2, NVMe-oF, iSER, NFS-RDMA. | Prefer SR-IOV VF passthrough for RDMA VMs; only use OVS switchdev/representors after host and switch validation. |
+
+Do not put RDMA/RoCE traffic on the host management bond. Keep front-end VM
+traffic and lossless storage traffic in separate VLANs/classes even when both
+are attached to the same Arista leaf.
+
+The ConnectX-4 ports should not be modeled as a generic Linux LACP bond until
+RoCEv2 behavior is explicitly validated. The preferred first-pass design is two
+independent 50GbE RDMA paths with protocol-layer multipath or failover:
+NVMe-oF multipath, iSER multipath, NFS-RDMA path selection, or workload-level
+placement. Hardware LAG or OVS switchdev can be added later if the exact
+firmware, driver, and Arista configuration prove lossless behavior under link
+failure.
+
+Live evidence from `kvm-sfo200-sec-9923` and `kvm-sfo200-ter-9924` on
+2026-05-19:
+
+- All four X710 10GbE ports were `UP` at `10000Mb/s`.
+- Both ConnectX-4 ports were `UP` at `50000Mb/s`.
+- `rdma link show` reported `mlx5_0` and `mlx5_1` as `ACTIVE` on both hosts.
+- `sec` exposed `32` X710 SR-IOV VFs per port; `ter` exposed `0` X710 VFs.
+- Both hosts exposed `0` ConnectX-4 VFs at the time of discovery.
+- `sec` reported placeholder ConnectX MACs `00:00:00:00:12:34` and
+  `00:00:00:00:12:35`; fix or explain that firmware state before using those
+  MACs in NetBox, DHCP, switch ACLs, or VF policy.
+
+Acceptance gate before fabric automation mutates host or switch state:
+
+1. Confirm BIOS SR-IOV/IOMMU settings on all three R630s.
+2. Confirm firmware and driver versions for X710 and ConnectX-4.
+3. Confirm Arista DCS-7060CX-32S port mappings for every X710 and ConnectX
+   link.
+4. Snapshot Arista configuration and collect interface counters before changes.
+5. Validate MTU, VLANs, LACP groups, LLDP neighbors, PFC, ECN/WRED, and
+   DSCP/PCP mapping in read-only mode.
+6. Enable VFs only after persistent host profile and rollback commands exist.
+7. Run RDMA pairwise tests and one-path-failure tests before advertising the
+   hosts as RDMA-capable to SLURM, OpenStack, OpenShift, or storage roles.
+
+Arista access note: HTTPS/eAPI on `172.18.20.10:443` is reachable through the
+FMT2 path and redirects to `/eapi/`. SSH on `22/tcp` was filtered or disabled
+from both M70 and NASA during the 2026-05-19 check. The M70 FMT2 SSH profile
+must connect to the switch as `verwalterin`, never `root`; the typo alias
+`sw-sfo200-7060cx32s-2010.vernetzezn.io` is treated as an alias for the live
+management IP to prevent root fallback.
+
 ## `ter` Storage Policy
 
 `kvm-sfo200-ter-9924` is the temporary FMT2 storage and provisioning anchor.

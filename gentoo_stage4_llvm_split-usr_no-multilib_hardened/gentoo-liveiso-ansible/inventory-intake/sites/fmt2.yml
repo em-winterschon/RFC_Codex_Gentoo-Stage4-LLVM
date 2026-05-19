@@ -80,9 +80,12 @@ devices:
     manufacturer: Arista
     model: DCS-7060CX-32S
     status: planned
-    management_ip: 172.16.40.10
+    management_ip: 172.18.20.10
     notes:
-      - Legacy record uses 172.16.40.10; prefix validation should warn until FMT2 management routing is confirmed.
+      - Legacy record used 172.16.40.10; live FMT2 access on 2026-05-19 reached HTTPS/eAPI at 172.18.20.10:443.
+      - SSH on 22/tcp was filtered during 2026-05-19 checks; prefer eAPI automation until CLI SSH is intentionally enabled.
+      - Access user should be verwalterin, not root. Typo alias sw-sfo200-7060cx32s-2010.vernetzezn.io should resolve to this device to avoid root fallback from unmatched SSH config.
+      - Provides the 2x50GbE ConnectX-4 RDMA/RoCEv2 fabric for the R630 HCI hosts; snapshot configuration before any MTU/PFC/ECN/LACP change.
   - name: gw-sfo200-pri
     site: fmt2
     role: ha-wan-router
@@ -139,6 +142,10 @@ devices:
         mac: 24:6e:96:42:83:b2
       - name: idrac
         mac: 84:7b:eb:d8:f3:c6
+    notes:
+      - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE RDMA/RoCEv2.
+      - Live 2026-05-19 discovery showed X710 ports up at 10G with 32 SR-IOV VFs per port, ConnectX-4 ports up at 50G with RDMA ACTIVE, and ConnectX SR-IOV VFs not exposed.
+      - ConnectX MACs reported as 00:00:00:00:12:34 and 00:00:00:00:12:35; fix or explain firmware state before using those MACs in IPAM, DHCP, ACL, or switch automation.
   - name: kvm-sfo200-ter-9924
     site: fmt2
     role: virtualization-host
@@ -155,6 +162,8 @@ devices:
     notes:
       - Storage-preserving FMT2 rebuild anchor. Existing ZFS pool dstore is used for VM images, zvols, backups, staging, ISO caches, and provisioning artifacts.
       - OS RAID1 SATA SSDs are OS-only and must not be used for VM or backup payloads.
+      - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE RDMA/RoCEv2.
+      - Live 2026-05-19 discovery showed X710 ports up at 10G, ConnectX-4 ports up at 50G, and RDMA ACTIVE on mlx5_0/mlx5_1; X710 and ConnectX SR-IOV VFs were not exposed on the temporary Rocky install.
   - name: kvm-sfo200-nasa-9918
     site: fmt2
     role: virtualization-storage-host
