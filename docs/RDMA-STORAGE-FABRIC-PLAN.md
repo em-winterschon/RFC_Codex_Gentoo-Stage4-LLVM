@@ -22,7 +22,8 @@ Required protocol families:
 Bare-metal and VM profiles that opt into RDMA storage must include:
 
 - `rdma-core`
-- OFED/DOCA alignment for Mellanox/NVIDIA hosts where required
+- vendor OFED/DOCA alignment for Mellanox/NVIDIA ConnectX and BlueField hosts
+  admitted to the RDMA fabric; in-kernel `mlx5_core` alone is discovery-only
 - kernel support for SUNRPC RDMA, iSER, NVMe-RDMA, DM multipath, and ZFS
 - `multipath-tools` where block devices have redundant paths
 - metrics exporters for link state, queue drops, retransmits, RDMA counters,
@@ -61,11 +62,19 @@ the exact NIC firmware, kernel driver, OVS mode, and Arista lossless profile
 are validated. VMs that need RDMA should receive ConnectX VFs directly before
 any OVS switchdev or representor design is promoted.
 
+The current R630 discovery state uses in-kernel `mlx5_core`/`mlx5_ib` and has
+no `ofed_info` tool present. Treat that as a temporary inventory state only.
+Before these hosts are admitted as RDMA production endpoints, install or stage
+the selected vendor OFED/DOCA driver path, verify `ofed_info -s`, and converge
+SR-IOV enablement consistently across all three R630s.
+
 Arista DCS-7060CX-32S changes require a pre-change config snapshot, live port
 mapping, jumbo MTU, storage-class PFC only, ECN/WRED where available, and
 rollback commands. SSH was filtered during the 2026-05-19 check, while HTTPS
-eAPI on `172.18.20.10:443` was reachable, so switch automation should prefer
-eAPI if credentials are available and should not assume CLI SSH.
+eAPI on `172.18.20.10:443` was reachable. A second 2026-05-19 check from the
+CheckMK VM showed SSH open on `22/tcp`, but authentication failed. Until
+credentials or key placement are resolved, switch automation should use eAPI or
+CheckMK-sourced SSH only for read-only validation.
 
 ## Validation Gates
 

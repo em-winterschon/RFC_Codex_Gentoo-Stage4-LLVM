@@ -85,7 +85,7 @@ with live routing or provider records before use.
 | `gw-sfo200-sec` | Secondary HA router | Dell R630, management `10.200.99.3`, IPMI `172.18.20.103`. |
 | `sw-border-sfo200-ein-2005` | Border management switch | Aruba 2530-24G, legacy management `172.18.20.5`. |
 | `sw-ipmi-sfo200-ein-2004` | IPMI switch | Aruba 2530-24G, legacy management `172.18.20.4`. |
-| `sw-sfo200-7060cx32s-2010` | Access/data switch | Arista DCS-7060CX-32S, live management `172.18.20.10`, legacy reference `172.16.40.10`. HTTPS/eAPI is reachable; SSH was filtered during 2026-05-19 checks. |
+| `sw-sfo200-7060cx32s-2010` | Access/data switch | Arista DCS-7060CX-32S, live management `172.18.20.10`, legacy reference `172.16.40.10`. HTTPS/eAPI is reachable. SSH was filtered from M70/NASA but open from CheckMK on 2026-05-19; CheckMK-sourced SSH still needs auth material. |
 | `kvm-sfo200-pri-9922` | Virtualization host | Dell R630, legacy management `10.200.99.22`, IPMI `172.18.20.122`. |
 | `kvm-sfo200-sec-9923` | Virtualization host | Dell R630, legacy management `10.200.99.23`, IPMI `172.18.20.123`. |
 | `kvm-sfo200-ter-9924` | Virtualization/OOB host | Dell R630, legacy management `10.200.99.24`, IPMI `172.18.20.124`. |
@@ -188,3 +188,6 @@ management LACP pair, `eno3`/`eno4` form the VM front-end LACP/OVS pair, and
 the ConnectX-4 50GbE interfaces carry RDMA/RoCEv2 storage traffic through the
 Arista 7060. Do not mutate switch lossless settings or host SR-IOV state until
 read-only port mapping, config snapshots, and rollback commands are captured.
+Current R630 discovery uses the in-kernel `mlx5_core` path; production RDMA
+admission requires vendor OFED/DOCA driver validation and consistent SR-IOV
+enablement across the three hosts.

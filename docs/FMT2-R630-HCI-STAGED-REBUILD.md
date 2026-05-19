@@ -51,6 +51,9 @@ Live evidence from `kvm-sfo200-sec-9923` and `kvm-sfo200-ter-9924` on
 - `rdma link show` reported `mlx5_0` and `mlx5_1` as `ACTIVE` on both hosts.
 - `sec` exposed `32` X710 SR-IOV VFs per port; `ter` exposed `0` X710 VFs.
 - Both hosts exposed `0` ConnectX-4 VFs at the time of discovery.
+- Both hosts had `ofed_info` absent and `mlx5_core`/`mlx5_ib` loaded from the
+  in-kernel module tree. This is acceptable for discovery only; production
+  RDMA admission requires the selected vendor OFED/DOCA driver path.
 - `sec` reported placeholder ConnectX MACs `00:00:00:00:12:34` and
   `00:00:00:00:12:35`; fix or explain that firmware state before using those
   MACs in NetBox, DHCP, switch ACLs, or VF policy.
@@ -59,19 +62,25 @@ Acceptance gate before fabric automation mutates host or switch state:
 
 1. Confirm BIOS SR-IOV/IOMMU settings on all three R630s.
 2. Confirm firmware and driver versions for X710 and ConnectX-4.
-3. Confirm Arista DCS-7060CX-32S port mappings for every X710 and ConnectX
+3. Install or stage the vendor OFED/DOCA driver package compatible with the
+   target OS/kernel and verify `ofed_info -s`.
+4. Confirm Arista DCS-7060CX-32S port mappings for every X710 and ConnectX
    link.
-4. Snapshot Arista configuration and collect interface counters before changes.
-5. Validate MTU, VLANs, LACP groups, LLDP neighbors, PFC, ECN/WRED, and
+5. Snapshot Arista configuration and collect interface counters before changes.
+6. Validate MTU, VLANs, LACP groups, LLDP neighbors, PFC, ECN/WRED, and
    DSCP/PCP mapping in read-only mode.
-6. Enable VFs only after persistent host profile and rollback commands exist.
-7. Run RDMA pairwise tests and one-path-failure tests before advertising the
+7. Enable VFs only after persistent host profile and rollback commands exist.
+8. Run RDMA pairwise tests and one-path-failure tests before advertising the
    hosts as RDMA-capable to SLURM, OpenStack, OpenShift, or storage roles.
 
 Arista access note: HTTPS/eAPI on `172.18.20.10:443` is reachable through the
 FMT2 path and redirects to `/eapi/`. SSH on `22/tcp` was filtered or disabled
-from both M70 and NASA during the 2026-05-19 check. The M70 FMT2 SSH profile
-must connect to the switch as `verwalterin`, never `root`; the typo alias
+from both M70 and NASA during the first 2026-05-19 check, but was open from
+the CheckMK VM `app-sfo200-monitoring-9927` with `syn-ack` on the same day.
+Non-interactive SSH from CheckMK reached the daemon but failed authentication
+with `publickey,keyboard-interactive`, so the next access step is credential or
+key placement, not routing. The M70 FMT2 SSH profile must connect to the switch
+as `verwalterin`, never `root`; the typo alias
 `sw-sfo200-7060cx32s-2010.vernetzezn.io` is treated as an alias for the live
 management IP to prevent root fallback.
 

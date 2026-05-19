@@ -83,7 +83,7 @@ devices:
     management_ip: 172.18.20.10
     notes:
       - Legacy record used 172.16.40.10; live FMT2 access on 2026-05-19 reached HTTPS/eAPI at 172.18.20.10:443.
-      - SSH on 22/tcp was filtered during 2026-05-19 checks; prefer eAPI automation until CLI SSH is intentionally enabled.
+      - SSH on 22/tcp was filtered from M70 and NASA but open from CheckMK during 2026-05-19 checks; CheckMK-sourced SSH reached the daemon but needs auth material.
       - Access user should be verwalterin, not root. Typo alias sw-sfo200-7060cx32s-2010.vernetzezn.io should resolve to this device to avoid root fallback from unmatched SSH config.
       - Provides the 2x50GbE ConnectX-4 RDMA/RoCEv2 fabric for the R630 HCI hosts; snapshot configuration before any MTU/PFC/ECN/LACP change.
   - name: gw-sfo200-pri
@@ -145,6 +145,7 @@ devices:
     notes:
       - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE RDMA/RoCEv2.
       - Live 2026-05-19 discovery showed X710 ports up at 10G with 32 SR-IOV VFs per port, ConnectX-4 ports up at 50G with RDMA ACTIVE, and ConnectX SR-IOV VFs not exposed.
+      - Live 2026-05-19 discovery showed ofed_info absent and mlx5 modules loaded from the kernel tree; production RDMA admission requires vendor OFED/DOCA driver validation.
       - ConnectX MACs reported as 00:00:00:00:12:34 and 00:00:00:00:12:35; fix or explain firmware state before using those MACs in IPAM, DHCP, ACL, or switch automation.
   - name: kvm-sfo200-ter-9924
     site: fmt2
@@ -164,6 +165,7 @@ devices:
       - OS RAID1 SATA SSDs are OS-only and must not be used for VM or backup payloads.
       - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE RDMA/RoCEv2.
       - Live 2026-05-19 discovery showed X710 ports up at 10G, ConnectX-4 ports up at 50G, and RDMA ACTIVE on mlx5_0/mlx5_1; X710 and ConnectX SR-IOV VFs were not exposed on the temporary Rocky install.
+      - Live 2026-05-19 discovery showed ofed_info absent and mlx5 modules loaded from the kernel tree; production RDMA admission requires vendor OFED/DOCA driver validation.
   - name: kvm-sfo200-nasa-9918
     site: fmt2
     role: virtualization-storage-host

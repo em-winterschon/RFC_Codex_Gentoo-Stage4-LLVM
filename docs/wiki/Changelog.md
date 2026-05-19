@@ -12,9 +12,15 @@
 - Captured 2026-05-19 R630 fabric evidence: X710 and ConnectX links are up on
   `sec` and `ter`, RDMA links are active, SR-IOV exposure is inconsistent, and
   `sec` reports placeholder ConnectX MACs requiring firmware follow-up.
+- Captured that `sec` and `ter` currently lack `ofed_info` and are using
+  in-kernel `mlx5` modules; production RDMA admission now requires the selected
+  vendor OFED/DOCA path and consistent SR-IOV enablement.
 - Corrected the live Arista 7060 management record to `172.18.20.10`, noting
-  that HTTPS/eAPI is reachable while SSH is filtered and access must use
-  `verwalterin` rather than `root`.
+  that HTTPS/eAPI is reachable, SSH is open from the CheckMK VM but filtered
+  from M70/NASA, and access must use `verwalterin` rather than `root`.
+- Extended the gated NVIDIA DOCA/OFED role markers to include ConnectX-4 and
+  `ofed_info -s` validation so FMT2 R630 ConnectX-4 hosts are tracked by the
+  same vendor-driver admission policy.
 - Recorded the `ter` storage policy: existing ZFS pool `dstore` is the only
   local target for VM images, zvols, migration staging, backups, ISO caches,
   and provisioning artifacts; the OS RAID1 SATA SSDs are OS-only.
