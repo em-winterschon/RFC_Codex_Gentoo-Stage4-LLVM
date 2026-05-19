@@ -35,6 +35,48 @@ PXE support for K10, X12AGAIN, Hasslehoff, workstation, or server-class hosts.
 U-Boot embedded systems are a separate future class and are not part of the
 default network-boot design.
 
+## Firmware Thermal Policy
+
+The K10 is treated as a sustained-build host, not a bursty desktop. Firmware
+tuning therefore prefers deterministic non-turbo behavior and maximum cooling
+over acoustic comfort or short turbo peaks.
+
+Observed firmware identity on 2026-05-19:
+
+- BIOS: Aptio Setup AMI `2.22.1289`
+- BIOS version string: `NucBox K10`
+- BIOS build date/time: `02/12/2025 13:51:57`
+- EC firmware: `01.10`
+- CPU: `13th Gen Intel Core i9-13900HK`
+- Main page power preset observed before tuning: `Power Limit Select
+  [Performance]`
+
+Applied PiKVM OTG-HID changes on 2026-05-19:
+
+- `Advanced -> Hardware Monitor -> Smart Fan -> PWM Control Fan Speed` changed
+  from `OFF` to `100%`.
+- `Advanced -> Power & Performance -> CPU - Power Management Control -> Turbo
+  Mode` changed from `Enabled` to `Disabled`.
+- Existing CPU power envelope was left otherwise unchanged: boot performance
+  `Max Non-Turbo Performance`, platform PL1 `45000`, platform PL2 `54000`, and
+  PL1 time window `28`.
+- Existing CPU thermal policy was left unchanged: TCC activation offset `7`,
+  PROCHOT response enabled, and ACPI T-states enabled.
+
+Post-save validation from the live/netboot root:
+
+- Linux reports `/sys/devices/system/cpu/intel_pstate/no_turbo=1`.
+- `lscpu` reports CPU max MHz capped at `2600.0000`.
+- A 180 second 20-process synthetic CPU load held package temperature in the
+  `55 C` to `61 C` range, with max observed frequency around `2600007 kHz`.
+- No thermal throttling or machine-check events were observed in `dmesg` after
+  the load test.
+
+Caveat: BIOS Hardware Monitor reported `CPU Fan Speed 0 RPM` even after setting
+PWM to `100%`. Treat the tachometer reading as unreliable until the physical fan
+header/sensor path is confirmed; the thermal result is the authoritative
+short-test signal.
+
 ## Intake State
 
 The local Ansible inventory carries a placeholder host:
@@ -79,6 +121,21 @@ Current physical discovery state:
   `ipa-client-live-apply.yml` run then passed `sssctl config-check`, NSS lookup,
   FreeIPA SSH-key lookup, PAM account checks, and floating SSH login as
   `codex-admin`.
+- Installed-disk boot status: on 2026-05-18, K10 completed the netboot installer
+  and created a ZFSBootMenu UEFI entry for the mirrored `rpool`. The first
+  installed-disk boot reached dracut but failed before networking with repeated
+  `ZFS: Unable to import pool rpool` and `No sysroot.mount exists` messages on
+  the PiKVM capture. Root cause was boot-role command-line handling: the
+  ZFSBootMenu dataset property lost the required `root=ZFS=rpool/ROOT/gentoo`
+  token, so dracut's ZFS generator had no root target. The repo fix preserves
+  `root=ZFS=...` and writes the ZFSBootMenu property through argv-safe
+  `zfs set`. On 2026-05-19, while booted through live rescue, the installed
+  pool was imported and both `rpool/ROOT` and `rpool/ROOT/gentoo` were corrected
+  to `root=ZFS=rpool/ROOT/gentoo ro console=tty0 console=ttyS0,115200
+  spl_hostid=075156b1`.
+- Installed-disk boot caveat: after saving firmware changes on 2026-05-19, the
+  machine still preferred the iPXE/live netboot path. A local-disk boot through
+  ZFSBootMenu remains the next gate to prove the corrected dataset command line.
 - AAA durability caveat: the netboot rootfs is fetched over unauthenticated HTTP
   and must not embed `/etc/krb5.keytab`. The current safe model is package
   durability in the rootfs plus post-boot secure enrollment. Fully unattended
