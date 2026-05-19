@@ -32,6 +32,7 @@ for profile in \
   hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  metal-fmt2-r630-openstack-roce.yml \
   metal-forge-automation-admin.yml \
   logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
@@ -76,6 +77,7 @@ for metadata in \
   hardened-llvm-stage4-merged-usr.metadata.yml \
   hardened-llvm-stage4-split-usr.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
+  metal-fmt2-r630-openstack-roce.metadata.yml \
   metal-forge-automation-admin.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \

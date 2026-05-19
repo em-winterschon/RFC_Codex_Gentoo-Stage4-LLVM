@@ -64,9 +64,22 @@ any OVS switchdev or representor design is promoted.
 
 The current R630 discovery state uses in-kernel `mlx5_core`/`mlx5_ib` and has
 no `ofed_info` tool present. Treat that as a temporary inventory state only.
+For admission policy, in-kernel `mlx5_core` remains discovery-only until the
+selected vendor OFED/DOCA path and E2ET gates pass.
 Before these hosts are admitted as RDMA production endpoints, install or stage
 the selected vendor OFED/DOCA driver path, verify `ofed_info -s`, and converge
 SR-IOV enablement consistently across all three R630s.
+
+Gentoo stage4 R630 admission target: `kvm-sfo200-pri-9922` should be rebuilt
+first with `metal-fmt2-r630-openstack-roce`, `kernel_strategy: gentoo-kernel`,
+and `=sys-kernel/gentoo-kernel-6.18.18`. That profile carries the R630
+hypervisor, NFS, iSER, NVMe-RDMA, RoCEv2, ZFS, OVS, AAA, rsyslog, and
+observability contract for FMT2. The old Rocky 8.9 `ter` MLNX_OFED source
+builder is diagnostic-only after the iSER API mismatch on kernel
+`6.3.8-1.el8.elrepo.x86_64`; do not make it the production driver path unless
+a separate maintenance gate keeps a RHEL-like OS on one of the R630s.
+MLNX_OFED source builder is diagnostic-only for the current FMT2 R630 rebuild
+path.
 
 Arista DCS-7060CX-32S changes require a pre-change config snapshot, live port
 mapping, jumbo MTU, storage-class PFC only, ECN/WRED where available, and
@@ -81,6 +94,15 @@ Follow-up on 2026-05-19 resolved CheckMK-sourced SSH by using the
 `ProxyJump verwalterin@checkmk`. The switch management ACL still restricts SSH
 to approved source IPs; do not add M70 or NASA to the ACL until a switch
 change-control snapshot and rollback plan exist.
+
+The live 7060 config already has jumbo MTU on the ConnectX-facing interfaces
+and VLAN 50 named `cx4-dual-50g-ceph`, but it does not yet have an explicit
+lossless RoCEv2 QoS profile. The current ConnectX ports are configured as
+LACP port-channels (`Po713` for `sec`, `Po813` for `ter`) in `dot1q-tunnel`
+mode; those port-channels were down during discovery because the temporary
+host OS was not running matching bonds. First-pass RoCEv2 admission should
+prefer independent 50GbE paths on VLAN 50, then add LACP or switchdev only
+after host OFED, switch QoS, RDMA pair tests, and one-path-failure tests pass.
 
 ## Validation Gates
 

@@ -58,6 +58,70 @@ Live evidence from `kvm-sfo200-sec-9923` and `kvm-sfo200-ter-9924` on
   `00:00:00:00:12:35`; fix or explain that firmware state before using those
   MACs in NetBox, DHCP, switch ACLs, or VF policy.
 
+## Gentoo stage4 kernel pivot
+
+The production path for `kvm-sfo200-pri-9922` is now a Gentoo stage4 rebuild
+using the `metal-fmt2-r630-openstack-roce` profile and the validated source
+kernel atom:
+
+```text
+kernel_strategy: gentoo-kernel
+kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.18.18
+profile: metal-fmt2-r630-openstack-roce
+```
+
+This avoids spending production time forcing MLNX_OFED 24.10 onto the old
+Rocky 8.9 ELRepo `6.3.8` kernel. The first rebuilt R630 should boot a
+repo-defined Gentoo kernel with the R630 hypervisor, NFS, iSER, NVMe-RDMA,
+RoCEv2, ZFS, OVS, AAA, rsyslog, and observability fragments applied before
+OpenStack is admitted as a workload.
+
+Keep `ter` as the storage-preserving anchor while `pri` is rebuilt. Do not
+convert `ter` to this profile until `pri` and then `sec` provide replacement
+capacity or `dstore` has a separate preservation decision.
+
+## `ter` MLNX_OFED diagnostic-only source-build path
+
+`kvm-sfo200-ter-9924` runs the ELRepo kernel
+`6.3.8-1.el8.elrepo.x86_64`. The NVIDIA MLNX_OFED 24.10 RHEL 8.9 repository
+contains prebuilt `kmod-mlnx-ofa_kernel` packages for the stock
+`4.18.0-513.5.1.el8_9` kernel, so those kmods must not be installed as the
+driver answer for `ter`.
+
+The old Rocky source-build path is retained as diagnostic-only evidence and as
+a reusable builder pattern for RHEL-like hosts. It is not the current
+production critical path for the FMT2 R630 rebuild. The diagnostic attempt uses
+the staged source bundle:
+
+```text
+/var/tmp/MLNX_OFED_SRC-24.10-4.1.4.0.tgz
+sha256: 6401c0e49f12da0bceb1b03037e39eed2b11e3624dcba139485d2e1631ce5682
+kernel: 6.3.8-1.el8.elrepo.x86_64
+kernel sources: /usr/src/kernels/6.3.8-1.el8.elrepo.x86_64
+```
+
+Build tooling lives in an isolated buildroot under `dstore`, not in the live
+OS package set:
+
+```text
+buildroot: /srv/stage/mlnx-ofed-buildroot
+output: /srv/stage/mlnx-ofed-builds/24.10-4.1.4.0/6.3.8-1.el8.elrepo.x86_64
+script: scripts/fmt2-build-mlnx-ofed-rhel-kernel.sh
+```
+
+The live host remains admitted for storage-anchor duties only after the source
+build and install gates are explicit. A successful source build is not itself
+permission to install or reboot; install and reboot require a host-specific
+change gate because `ter` is the current FMT2 storage anchor.
+
+First source-build result: the full kernel-only package set failed at `iser`
+against kernel `6.3.8-1.el8.elrepo.x86_64` because MLNX_OFED 24.10 iSER source
+references `struct scsi_cmnd.request`, which is absent from that kernel API.
+This is tracked as a kernel/package compatibility gate, not a missing
+dependency. Do not chase this as the steady-state FMT2 solution unless a
+separate maintenance gate explicitly chooses to keep a RHEL-like OS on one of
+the R630s.
+
 Acceptance gate before fabric automation mutates host or switch state:
 
 1. Confirm BIOS SR-IOV/IOMMU settings on all three R630s.
@@ -91,6 +155,35 @@ checks showed `Management1` at `172.18.20.10/24` via DHCP, default route via
 `172.18.20.1`, and SSH enabled in the default VRF. The archived ACL line
 `permit host 172.18.20.0` permits only the `.0` address, not the whole
 `172.18.20.0/24` subnet.
+
+Live Arista port evidence collected on 2026-05-19:
+
+- `pri` X710 ports are `Et3/1`-`Et3/4`, split into `Po312` for management and
+  `Po334` for VM front-end VLAN 20.
+- `sec` X710 ports are `Et4/1`-`Et4/4`, split into `Po412` for management and
+  `Po434` for VM front-end VLAN 20.
+- `ter` X710 ports are `Et5/1`-`Et5/4`, split into `Po512` for management and
+  `Po534` for VM front-end VLAN 20.
+- `sec` ConnectX-4 ports are `Et7/1` and `Et7/3`, currently attached to
+  `Po713` as `dot1q-tunnel` access VLAN 50.
+- `ter` ConnectX-4 ports are `Et8/1` and `Et8/3`, currently attached to
+  `Po813` as `dot1q-tunnel` access VLAN 50.
+- Existing R630 port-channels `Po312`, `Po334`, `Po412`, `Po434`, `Po512`,
+  `Po534`, `Po713`, and `Po813` were down because the hosts are not currently
+  running matching LACP bonds.
+- R630-facing switch interfaces reported zero error counters during the
+  read-only sample.
+- ConnectX switch-side MTU is `9214`, while `ter` host-side X710 and
+  ConnectX interfaces are still MTU `1500` on the temporary Rocky install.
+- No live QoS, PFC, ECN, WRED, class-map, or policy-map config was found in
+  the EOS running-config include scan.
+
+RoCEv2 tuning must therefore start from an explicit change plan: either keep
+the current `Po713`/`Po813` LACP design and configure matching host bonds only
+after RDMA behavior is tested, or remove ConnectX ports from LACP and run two
+independent VLAN 50 jumbo paths first. The safer first admission path is two
+independent 50GbE RoCEv2 links with protocol-layer multipath; promote LACP or
+OVS switchdev only after one-link-failure testing is clean.
 
 ## `ter` Storage Policy
 
@@ -207,8 +300,9 @@ support.
 3. Use `ter` for FMT2 staging storage and, if needed, a temporary provisioning
    VM or service backed by `dstore`.
 4. Reimage `pri` first through iDRAC PXE or virtual media.
-5. Validate `pri` as a Gentoo stage4 hypervisor with AAA, NTP, observability,
-   rsyslog, ZFS, libvirt, and iDRAC control.
+5. Validate `pri` as a Gentoo stage4 hypervisor using
+   `metal-fmt2-r630-openstack-roce` with AAA, NTP, observability, rsyslog,
+   ZFS, libvirt, OVS, RDMA storage fragments, and iDRAC control.
 6. Reimage `sec` second after `pri` can host migrated services or test VMs.
 7. Keep `ter` on its existing OS until the `dstore` preservation or migration
    plan is complete.

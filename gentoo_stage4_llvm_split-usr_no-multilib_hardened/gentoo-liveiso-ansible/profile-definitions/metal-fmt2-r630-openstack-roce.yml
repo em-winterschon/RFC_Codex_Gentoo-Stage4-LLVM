@@ -1,0 +1,135 @@
+---
+gentoo_profile_definition:
+  name: metal-fmt2-r630-openstack-roce
+  profile_id: metal-fmt2-r630-openstack-roce
+  description: Dell R630 FMT2 Gentoo stage4 QEMU/libvirt hypervisor profile with X710 front-end networking and ConnectX-4 RoCEv2/NVMe-oF storage admission gates.
+  profile_parents:
+    - hardened-llvm-stage4-merged-usr
+    - base-hypervisor-qemu-libvirt
+    - aaa-domain-client
+    - nfs-storage-client
+    - logging-rsyslog-client
+    - telemetry-node-exporter-client
+  kernel_strategy: gentoo-kernel
+  kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.18.18
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-metal-intel-platform.packages
+    - profile-package-lists/stage5-base-hypervisor-common.packages
+    - profile-package-lists/stage5-base-hypervisor-qemu-libvirt.packages
+    - profile-package-lists/stage5-storage-nfs-client.packages
+    - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/stage5-observability-client.packages
+    - profile-package-lists/stage5-observability-metrics-client.packages
+  make_conf_append: |
+    ACCEPT_LICENSE="* *.*"
+    PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-fmt2-r630-openstack-roce__amd64__roce-xorgless"
+    FEATURES="${FEATURES} buildpkg binpkg-multi-instance"
+    QEMU_SOFTMMU_TARGETS="x86_64 aarch64"
+    QEMU_USER_TARGETS="x86_64 aarch64"
+    USE="${USE} acl aio curl gssapi infiniband iscsi kerberos ldap nfs numa python sasl seccomp ssl vhost-net virtfs zfs -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    30-fmt2-r630-openstack-roce: |
+      app-emulation/qemu aio curl gnutls iscsi ncurses numa pin-upstream-blobs ssh vhost-net virtfs
+      app-emulation/libvirt libvirtd lvm numa parted qemu virt-network zfs
+      dev-libs/cyrus-sasl kerberos
+      net-fs/nfs-utils kerberos nfsv4 nfsv41
+      net-misc/openvswitch modules ssl
+      net-nds/openldap experimental sasl
+      sys-apps/nvme-cli json
+      sys-auth/sssd samba ssh sudo
+      sys-fs/zfs rootfs
+  package_accept_keywords_files:
+    30-fmt2-r630-openstack-roce-testing: |
+      =net-misc/openvswitch-3.3.8 ~amd64
+      =sys-fs/zfs-2.4.1 ~amd64
+      =sys-fs/zfs-kmod-2.4.0_rc2-r1 ~amd64
+  kernel_config_fragment_files:
+    - fragments/machine/metal-host.config
+    - fragments/machine/hypervisor-qemu-libvirt.config
+    - fragments/network/roce-v2-host.config
+    - fragments/storage/rdma-storage-fabric.config
+    - fragments/storage/nvmeof-initiator.config
+    - fragments/storage/nfs-client.config
+    - fragments/storage/zfs-host.config
+    - fragments/observability/redfish-ipmi.config
+  modules_load_files:
+    fmt2-r630-openstack-roce.conf: |
+      ib_iser
+      ib_uverbs
+      kvm
+      kvm_intel
+      mlx5_core
+      mlx5_ib
+      nvme
+      nvme-fabrics
+      nvme-rdma
+      openvswitch
+      qede
+      rpcrdma
+      vfio
+      vfio_iommu_type1
+      vfio_pci
+      zfs
+  openrc_services_enable:
+    - chronyd
+    - iscsid
+    - libvirtd
+    - nfsmount
+    - openvswitch
+    - rpcbind
+    - rsyslog
+    - sshd
+    - sssd
+  roles:
+    - nvidia_doca_ofed
+  rdma_fabric:
+    driver_policy: vendor-ofed-required-for-production-admission
+    rdma_admission_state: gated-until-ofed-and-roce-e2et-pass
+    roce_mode: independent-dual-50g-paths-first
+    switch: sw-sfo200-7060cx32s-2010
+    switch_model: Arista DCS-7060CX-32S
+    host_nics:
+      management_bond:
+        members:
+          - eno1
+          - eno2
+        bond_mode: lacp
+      vm_frontend_bond:
+        members:
+          - eno3
+          - eno4
+        bond_mode: lacp
+        ovs_bridge: br-vm-frontend
+      roce_backend:
+        members:
+          - enp130s0f0np0
+          - enp130s0f1np1
+        initial_mode: independent-paths
+        mtu: 9000
+        vlan: 50
+    validation_required:
+      - ofed_info -s
+      - ibv_devinfo
+      - rdma link show
+      - pairwise-rdma-smoke
+      - nvme-rdma-multipath-smoke
+      - nfs-rdma-smoke
+      - one-path-failure-test
+  nfs_storage_client:
+    enable_nfsv3: true
+    enable_nfsv4: true
+    enable_rdma: false
+    enable_multipath: true
+    rdma_admission_state: gated-until-ofed-and-roce-e2et-pass
+  storage_protocols:
+    nfs_v3_default: true
+    nfs_v4_uid_gid_consistency_required: true
+    nfs_tcp_required: true
+    nfs_rdma_gated: true
+    nvme_rdma_gated: true
+    iser_gated: true
+    multipath_required: true
+  mutation_policy:
+    enabled_by_default: false
+    required_variable: fmt2_r630_reimage_apply_required
