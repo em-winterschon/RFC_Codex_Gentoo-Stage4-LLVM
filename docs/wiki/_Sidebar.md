@@ -42,6 +42,7 @@
 - [ITIL ADR RFC1918 CA TLS Deployment](ITIL-ADR-RFC1918-CA-TLS-Deployment)
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
 - [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
+- [FMT2 R630 HCI Staged Rebuild](FMT2-R630-HCI-Staged-Rebuild)
 - [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
 - [CheckMK FMT2 Recovery Upgrade](CheckMK-FMT2-Recovery-Upgrade)
 - [BigNetwork FMT2 Smoke-Test](BigNetwork-FMT2-Smoke-Test)

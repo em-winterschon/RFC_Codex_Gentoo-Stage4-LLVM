@@ -173,3 +173,12 @@ Create or update these NetBox objects only after validation:
    hosts and compare live results with the legacy evidence map.
 4. Promote verified records into NetBox in small batches:
    prefixes first, then routers/switches, then hosts/BMCs, then services.
+
+## R630 HCI Rebuild Note
+
+The three Dell R630 virtualization hosts are now tracked in
+`docs/FMT2-R630-HCI-STAGED-REBUILD.md`. The key storage rule is that
+`kvm-sfo200-ter-9924` must preserve and use its existing `dstore` ZFS pool for
+VM hosting, migration staging, backups, ISO caches, and provisioning artifacts.
+The `ter` OS RAID1 SATA SSD set is OS-only and must not become a VM or backup
+payload target.

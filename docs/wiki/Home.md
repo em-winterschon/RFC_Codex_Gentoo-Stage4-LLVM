@@ -70,6 +70,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Identity AAA](Identity-AAA)
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
 - [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
+- [FMT2 R630 HCI Staged Rebuild](FMT2-R630-HCI-Staged-Rebuild)
 - [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
 - [BigNetwork FMT2 Smoke-Test](BigNetwork-FMT2-Smoke-Test)
 - [Telemetry Observability](Telemetry-Observability)

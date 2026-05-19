@@ -152,6 +152,9 @@ devices:
         mac: 24:6e:96:38:0a:d8
       - name: idrac
         mac: 64:00:6a:c3:82:2a
+    notes:
+      - Storage-preserving FMT2 rebuild anchor. Existing ZFS pool dstore is used for VM images, zvols, backups, staging, ISO caches, and provisioning artifacts.
+      - OS RAID1 SATA SSDs are OS-only and must not be used for VM or backup payloads.
   - name: kvm-sfo200-nasa-9918
     site: fmt2
     role: virtualization-storage-host

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-19 - FMT2 R630 HCI Staged Rebuild Planning
+
+- Added the FMT2 R630 HCI staged rebuild runbook for
+  `kvm-sfo200-pri-9922`, `kvm-sfo200-sec-9923`, and
+  `kvm-sfo200-ter-9924`, using `pri` as the first destructive rebuild
+  candidate and preserving `ter` as the storage/provisioning anchor.
+- Recorded the `ter` storage policy: existing ZFS pool `dstore` is the only
+  local target for VM images, zvols, migration staging, backups, ISO caches,
+  and provisioning artifacts; the OS RAID1 SATA SSDs are OS-only.
+- Created and documented the `dstore` dataset and libvirt storage-pool layout for
+  `dstore/libvirt/images`, `dstore/libvirt/zvols`, backups, ISO cache, and
+  staging paths.
+- Added roadmap and FMT2 inventory-intake notes to prevent future automation
+  from placing VM or backup payloads on `ter`'s OS mirror.
+
 ## 2026-05-19 - K10 Live Root Network Durability
 
 - Added Path B builder inputs for static OpenRC networking in the switched
