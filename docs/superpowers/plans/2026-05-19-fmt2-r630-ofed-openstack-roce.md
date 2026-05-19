@@ -22,6 +22,7 @@
 - `docs/RDMA-STORAGE-FABRIC-PLAN.md`: RDMA protocol and host admission policy.
 - `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/fmt2.yml`: Inventory metadata for `pri`, `sec`, `ter`, Arista 7060, and fabric roles.
 - `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/nvidia_doca_ofed/defaults/main.yml`: Cross-platform policy that marks in-kernel `mlx5` as discovery-only.
+- `/root/operator-private/fmt2/r630/r630-provisioning-forge-inspection.kvm-sfo200-sec-9923.tar`: Off-repo Foreman/kickstart evidence for the IDSDM EFI handoff and SATA OS mirror workflow.
 
 ## Task 1: Record the `ter` OFED Builder as Diagnostic-Only Evidence
 
@@ -176,7 +177,38 @@ Expected: any EOS mutation plan scopes PFC only to the storage class/ports/VLANs
 - Modify: `docs/FMT2-R630-HCI-STAGED-REBUILD.md`
 - Modify: `gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/fmt2.yml`
 
-- [ ] **Step 1: Confirm iDRAC access and destructive gate**
+- [ ] **Step 1: Preserve the R630 boot-storage contract**
+
+Expected installer target split:
+
+```text
+IDSDM: EFI and /boot handoff only
+two ATA/SATA OS devices: mirrored operating-system payload
+SAS hot-swap bays: excluded from OS install target set and reserved for ZFS data pools
+```
+
+Use the archived `sec` Foreman evidence on M70 to validate the old workflow:
+
+```bash
+ssh forge 'tar -xOf /root/operator-private/fmt2/r630/r630-provisioning-forge-inspection.kvm-sfo200-sec-9923.tar r630-provisioning-forge-inspection/kickstart/original-ks.cfg | sed -n "/Partition Table for RAID-1/,/EOF/p"'
+```
+
+Expected: the kickstart creates `/boot` and `/boot/efi` on the IDSDM USB device
+and RAID1 root/swap on the two small ATA/SATA OS drives. No SAS bay appears as
+an OS install target.
+
+- [ ] **Step 2: Run disposable firmware-maintenance boot if needed**
+
+Expected flow:
+
+```text
+ter dstore zvol or file LUN -> pri UEFI iSCSI maintenance boot -> Dell DSU/OMSA firmware inventory and gated apply -> discard maintenance LUN -> Gentoo stage4 install
+```
+
+Use iDRAC virtual media instead of UEFI iSCSI if it is faster. The maintenance
+OS exists only to run firmware tooling and must not become the final host OS.
+
+- [ ] **Step 3: Confirm iDRAC access and destructive gate**
 
 Run:
 
@@ -186,11 +218,11 @@ ssh forge 'ipmitool -I lanplus -H 172.18.20.122 chassis status'
 
 Expected: iDRAC responds. Do not wipe `pri` until the boot method and rollback path are written into the issue and docs.
 
-- [ ] **Step 2: Validate netboot or virtual media path**
+- [ ] **Step 4: Validate netboot or virtual media path**
 
 Expected: iDRAC can boot an approved Gentoo stage4 installer profile from PXE/iPXE or virtual media without relying on `ter`'s OS RAID1 disks.
 
-- [ ] **Step 3: Install hypervisor substrate first**
+- [ ] **Step 5: Install hypervisor substrate first**
 
 Expected host baseline:
 
@@ -198,7 +230,7 @@ Expected host baseline:
 Gentoo stage4, =sys-kernel/gentoo-kernel-6.18.18, OpenRC, ZFS, QEMU/libvirt, OVS, FreeIPA/SSSD, rsyslog, node exporter, collectd, Check_MK agent, iDRAC inventory hooks, R630 RDMA/NFS/NVMe-oF fragments
 ```
 
-- [ ] **Step 4: Stage OpenStack single-node after substrate validation**
+- [ ] **Step 6: Stage OpenStack single-node after substrate validation**
 
 Expected: OpenStack is admitted only after the Gentoo hypervisor can boot, authenticate, emit metrics/logs, expose OVS bridges, and pass network/storage conformance.
 

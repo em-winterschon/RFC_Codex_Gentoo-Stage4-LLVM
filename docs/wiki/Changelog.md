@@ -39,6 +39,9 @@
   build reports ZFS storage pool support unavailable.
 - Added roadmap and FMT2 inventory-intake notes to prevent future automation
   from placing VM or backup payloads on `ter`'s OS mirror.
+- Added the R630 IDSDM EFI handoff policy from the archived `sec` Foreman
+  kickstart: IDSDM carries `/boot` and `/boot/efi`, the two small SATA devices
+  carry the OS mirror, and SAS hot-swap bays remain reserved for ZFS payloads.
 
 ## 2026-05-19 - K10 Live Root Network Durability
 

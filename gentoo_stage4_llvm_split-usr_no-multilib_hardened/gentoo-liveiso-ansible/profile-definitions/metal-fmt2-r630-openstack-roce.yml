@@ -21,6 +21,14 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-domain-client.packages
     - profile-package-lists/stage5-observability-client.packages
     - profile-package-lists/stage5-observability-metrics-client.packages
+  boot_storage_policy:
+    idsdm_efi_boot: true
+    idsdm_role: efi_binary_and_boot_handoff_only
+    idsdm_expected_selector: usb_idsdm_device_between_8gb_and_100gb
+    sata_os_mirror_required: true
+    sata_os_role: operating_system_root_swap_and_host_config
+    sas_bays_reserved_for_zfs: true
+    destructive_install_gate: fmt2_r630_reimage_apply_required
   make_conf_append: |
     ACCEPT_LICENSE="* *.*"
     PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-fmt2-r630-openstack-roce__amd64__roce-xorgless"

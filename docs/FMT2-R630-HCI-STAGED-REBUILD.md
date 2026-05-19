@@ -20,6 +20,63 @@ Destructive actions require a host-specific maintenance gate.
 All three iDRACs answered Redfish root service probes and IPMI chassis status
 on 2026-05-19. iDRAC firmware reported `2.83`.
 
+## Boot Storage Policy
+
+The R630 boot and OS storage layout is not generic. Preserve the existing
+three-tier storage split during firmware maintenance, Gentoo installation, and
+OpenStack staging:
+
+| Layer | Physical media | Role | Mutation rule |
+| --- | --- | --- | --- |
+| IDSDM | Dual-SD Dell IDSDM presented as a small USB device | IDSDM EFI handoff and `/boot` payload. | Only EFI and boot handoff artifacts belong here. |
+| OS mirror | Two small ATA/SATA OS devices on the PCIe carrier | Operating system root, swap, host config, package state, and logs. | Recreate only under a host-specific destructive apply gate. |
+| SAS hot-swap bays | Eight SAS SSD bays | Local ZFS data pools such as `dstore`. | Never select these as OS installer targets. |
+
+Historical Foreman/kickstart evidence for `kvm-sfo200-sec-9923` is archived on
+M70 at:
+
+```text
+/root/operator-private/fmt2/r630/r630-provisioning-forge-inspection.kvm-sfo200-sec-9923.tar
+```
+
+The archived kickstart dynamically selected two small ATA OS drives between
+100GB and 240GB, then selected the IDSDM USB device between 8GB and 100GB for
+the boot path. The key directives were:
+
+```kickstart
+bootloader --location=mbr --driveorder=$sd_pri
+part /boot     --asprimary --fstype="ext4" --ondrive=$sd_pri --size 1024
+part /boot/efi --asprimary --fstype="efi"  --ondrive=$sd_pri --size 512
+raid /         --device=2 --fstype="xfs"  --level=RAID1 raid.12 raid.22
+raid swap      --device=3 --fstype="swap" --level=RAID1 raid.13 raid.23
+```
+
+The Gentoo stage4 installer must carry the same intent even if the final root
+filesystem differs from the old Rocky `mdraid` plus XFS layout. The invariant is
+IDSDM for EFI/boot handoff, mirrored SATA for OS payload, and SAS bays reserved
+for ZFS data pools.
+
+## Firmware Maintenance Staging
+
+Before the destructive Gentoo rebuild of `pri`, run a firmware-maintenance
+phase if Dell DSU/OMSA or vendor NIC tooling is needed. The preferred approach
+is temporary and disposable:
+
+1. Create a `dstore`-backed zvol or file LUN on `ter` for a RHEL-like
+   maintenance OS.
+2. Boot `pri` through UEFI iSCSI from the X710 firmware, or use iDRAC virtual
+   media if that proves faster.
+3. Run Dell firmware inventory, preview, and gated update passes for BIOS,
+   iDRAC, HBA/RAID, SAS backplane, X710, and any Dell-packaged device firmware.
+4. Use Mellanox/NVIDIA firmware tooling separately for ConnectX-4 if DSU does
+   not own those adapters.
+5. Capture firmware versions and reboot evidence, then discard the maintenance
+   LUN before starting the Gentoo install.
+
+Do not install the maintenance OS onto the SAS bays. Do not let the maintenance
+phase redefine the final Gentoo boot layout. Its only durable output should be
+firmware state, evidence logs, and the decision to proceed or stop.
+
 ## Network Fabric Policy
 
 All three R630 virtualization hosts should converge on the same physical NIC

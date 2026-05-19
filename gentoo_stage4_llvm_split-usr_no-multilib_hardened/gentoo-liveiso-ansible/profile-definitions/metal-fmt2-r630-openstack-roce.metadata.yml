@@ -38,6 +38,8 @@ gentoo_system_profile_metadata:
     data_switch: Arista DCS-7060CX-32S
     frontend_nic: Intel X710
     rdma_nic: Mellanox ConnectX-4
+    boot_storage: IDSDM EFI handoff to SATA OS mirror
+    payload_storage: SAS bays reserved for local ZFS pools and not OS install targets
   package_pins:
     exact_atoms:
       - =sys-kernel/gentoo-kernel-6.18.18
@@ -63,6 +65,8 @@ gentoo_system_profile_metadata:
     - zfs
   acceptance_gates:
     - iDRAC boot path and rollback path recorded before wiping pri
+    - IDSDM EFI boot and SATA OS mirror target selection verified before installer apply
+    - SAS hot-swap bays excluded from operating-system installer target set
     - Gentoo stage4 boots with OpenRC, AAA, rsyslog, observability, ZFS, libvirt, and OVS
     - ofed_info reports the selected vendor OFED line before production RDMA admission
     - ConnectX-4 links pass pairwise RDMA tests and one-path-failure tests
