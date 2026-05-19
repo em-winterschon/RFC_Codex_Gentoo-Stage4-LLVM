@@ -18,6 +18,10 @@
 - Corrected the live Arista 7060 management record to `172.18.20.10`, noting
   that HTTPS/eAPI is reachable, SSH is open from the CheckMK VM but filtered
   from M70/NASA, and access must use `verwalterin` rather than `root`.
+- Validated read-only Arista CLI access from M70 through CheckMK using the
+  `7060` SSH alias, the `verwalterin.vernetzen.id_rsa` key, and the existing
+  switch `mgmt-acl` permit for `10.200.99.27`; documented that M70 and NASA
+  remain outside the ACL.
 - Extended the gated NVIDIA DOCA/OFED role markers to include ConnectX-4 and
   `ofed_info -s` validation so FMT2 R630 ConnectX-4 hosts are tracked by the
   same vendor-driver admission policy.

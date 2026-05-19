@@ -74,15 +74,23 @@ Acceptance gate before fabric automation mutates host or switch state:
    hosts as RDMA-capable to SLURM, OpenStack, OpenShift, or storage roles.
 
 Arista access note: HTTPS/eAPI on `172.18.20.10:443` is reachable through the
-FMT2 path and redirects to `/eapi/`. SSH on `22/tcp` was filtered or disabled
-from both M70 and NASA during the first 2026-05-19 check, but was open from
-the CheckMK VM `app-sfo200-monitoring-9927` with `syn-ack` on the same day.
-Non-interactive SSH from CheckMK reached the daemon but failed authentication
-with `publickey,keyboard-interactive`, so the next access step is credential or
-key placement, not routing. The M70 FMT2 SSH profile must connect to the switch
-as `verwalterin`, never `root`; the typo alias
-`sw-sfo200-7060cx32s-2010.vernetzezn.io` is treated as an alias for the live
-management IP to prevent root fallback.
+FMT2 path and redirects to `/eapi/`. SSH on `22/tcp` is restricted by the
+switch `mgmt-acl`, which permits CheckMK `10.200.99.27` and Prometheus
+`10.200.99.46`, but not M70 `172.16.99.70` or NASA `10.200.99.18`. Live
+read-only access works from M70 by proxying through CheckMK with the
+`verwalterin.vernetzen.id_rsa` key:
+
+```bash
+ssh 7060 "show hostname"
+```
+
+The M70 FMT2 SSH profile must connect to the switch as `verwalterin`, never
+`root`; the typo alias `sw-sfo200-7060cx32s-2010.vernetzezn.io` is treated as
+an alias for the live management IP to prevent root fallback. Live 2026-05-19
+checks showed `Management1` at `172.18.20.10/24` via DHCP, default route via
+`172.18.20.1`, and SSH enabled in the default VRF. The archived ACL line
+`permit host 172.18.20.0` permits only the `.0` address, not the whole
+`172.18.20.0/24` subnet.
 
 ## `ter` Storage Policy
 

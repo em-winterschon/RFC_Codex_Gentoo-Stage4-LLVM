@@ -83,8 +83,10 @@ devices:
     management_ip: 172.18.20.10
     notes:
       - Legacy record used 172.16.40.10; live FMT2 access on 2026-05-19 reached HTTPS/eAPI at 172.18.20.10:443.
-      - SSH on 22/tcp was filtered from M70 and NASA but open from CheckMK during 2026-05-19 checks; CheckMK-sourced SSH reached the daemon but needs auth material.
+      - SSH on 22/tcp is restricted by mgmt-acl. Permitted live sources include CheckMK 10.200.99.27 and Prometheus 10.200.99.46; M70 172.16.99.70 and NASA 10.200.99.18 are not permitted.
+      - M70 alias 7060 reaches SSH read-only by ProxyJump through CheckMK using the verwalterin.vernetzen.id_rsa key.
       - Access user should be verwalterin, not root. Typo alias sw-sfo200-7060cx32s-2010.vernetzezn.io should resolve to this device to avoid root fallback from unmatched SSH config.
+      - Live Management1 state on 2026-05-19 was 172.18.20.10/24 by DHCP with default route through 172.18.20.1.
       - Provides the 2x50GbE ConnectX-4 RDMA/RoCEv2 fabric for the R630 HCI hosts; snapshot configuration before any MTU/PFC/ECN/LACP change.
   - name: gw-sfo200-pri
     site: fmt2

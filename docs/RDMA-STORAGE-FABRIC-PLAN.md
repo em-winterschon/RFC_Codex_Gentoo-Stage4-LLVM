@@ -76,6 +76,12 @@ CheckMK VM showed SSH open on `22/tcp`, but authentication failed. Until
 credentials or key placement are resolved, switch automation should use eAPI or
 CheckMK-sourced SSH only for read-only validation.
 
+Follow-up on 2026-05-19 resolved CheckMK-sourced SSH by using the
+`verwalterin.vernetzen.id_rsa` key and the M70 `7060` SSH alias with
+`ProxyJump verwalterin@checkmk`. The switch management ACL still restricts SSH
+to approved source IPs; do not add M70 or NASA to the ACL until a switch
+change-control snapshot and rollback plan exist.
+
 ## Validation Gates
 
 Each RDMA-capable host must pass:
