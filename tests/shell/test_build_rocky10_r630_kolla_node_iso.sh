@@ -18,6 +18,8 @@ bash -n "${SCRIPT}"
 assert_file_contains "${SCRIPT}" 'Rocky Linux 10'
 assert_file_contains "${SCRIPT}" 'ROCKY_BASEOS_URL'
 assert_file_contains "${SCRIPT}" 'ROCKY_APPSTREAM_URL'
+assert_file_contains "${SCRIPT}" 'BOOT_IP_DNS_ARGS'
+assert_file_contains "${SCRIPT}" '${INSTALL_NET_DEVICE}:none:${BOOT_IP_DNS_ARGS}'
 assert_file_contains "${SCRIPT}" 'IDSDM'
 assert_file_contains "${SCRIPT}" 'SSDSCKKB240G8R'
 assert_file_contains "${SCRIPT}" 'HUSMM3240ASS'

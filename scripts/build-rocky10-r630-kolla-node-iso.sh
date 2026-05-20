@@ -89,7 +89,17 @@ rm -rf "$WORKDIR/extract" "$WORKDIR/mnt"
 mkdir -p "$WORKDIR/extract" "$WORKDIR/mnt"
 
 network_line="network --device=${INSTALL_NET_DEVICE} --bootproto=static --ip=${STATIC_IP} --netmask=${NETMASK} --gateway=${GATEWAY} --nameserver=${DNS} --hostname=${NODE_HOSTNAME} --activate"
-boot_network_args="ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none rd.neednet=1 nameserver=${DNS%%,*}"
+BOOT_DNS1="${DNS%%,*}"
+BOOT_DNS2=""
+if [[ "$DNS" == *,* ]]; then
+  BOOT_DNS2="${DNS#*,}"
+  BOOT_DNS2="${BOOT_DNS2%%,*}"
+fi
+BOOT_IP_DNS_ARGS="$BOOT_DNS1"
+if [[ -n "$BOOT_DNS2" && "$BOOT_DNS2" != "$BOOT_DNS1" ]]; then
+  BOOT_IP_DNS_ARGS="${BOOT_DNS1}:${BOOT_DNS2}"
+fi
+boot_network_args="ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none:${BOOT_IP_DNS_ARGS} rd.neednet=1 nameserver=${BOOT_DNS1}"
 
 cat >"$KS_PATH" <<EOF
 # RFC1918 FMT2 R630 Rocky Linux 10 Kolla node installer.

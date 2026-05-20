@@ -45,6 +45,16 @@ DNS="${DNS:-10.200.99.1}"
 INSTALL_NET_DEVICE="${INSTALL_NET_DEVICE:-link}"
 INSTALL_NET_MAC="${INSTALL_NET_MAC:-}"
 INSTALL_MODE="${INSTALL_MODE:-cmdline}"
+INSTALL_DNS1="${DNS%%,*}"
+INSTALL_DNS2=""
+if [[ "$DNS" == *,* ]]; then
+  INSTALL_DNS2="${DNS#*,}"
+  INSTALL_DNS2="${INSTALL_DNS2%%,*}"
+fi
+INSTALL_IP_DNS_ARGS="$INSTALL_DNS1"
+if [[ -n "$INSTALL_DNS2" && "$INSTALL_DNS2" != "$INSTALL_DNS1" ]]; then
+  INSTALL_IP_DNS_ARGS="${INSTALL_DNS1}:${INSTALL_DNS2}"
+fi
 REBOOT_AFTER_STAGE="${REBOOT_AFTER_STAGE:-0}"
 BOOT_DIR="${BOOT_DIR:-/boot/rfc1918-rocky10-kolla}"
 TITLE="${TITLE:-RFC1918 Rocky Linux 10 Kolla node installer}"
@@ -139,7 +149,7 @@ curl -fL -o "$BOOT_DIR/initrd-rocky10.img" "$INITRD_URL"
 args=(
   "inst.ks=${KICKSTART_URL}"
   "inst.repo=${ROCKY_REPO_URL}"
-  "ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none"
+  "ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none:${INSTALL_IP_DNS_ARGS}"
   "nameserver=${DNS}"
   "rd.neednet=1"
   "inst.${INSTALL_MODE}"
