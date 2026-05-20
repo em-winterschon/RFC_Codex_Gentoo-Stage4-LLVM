@@ -2,19 +2,16 @@
 - name: Manage NVIDIA DOCA/OFED host repository
   when: nvidia_doca_ofed_enabled | bool
   block:
-    - name: Read running kernel release
-      ansible.builtin.command: uname -r
+    - name: Preflight-compatible raw command path - read running kernel release
+      ansible.builtin.raw: uname -r
       register: nvidia_doca_ofed_uname
       changed_when: false
 
     - name: Detect NVIDIA/Mellanox PCI devices
-      ansible.builtin.shell: >-
-        set -o pipefail;
-        lspci -Dnn |
+      ansible.builtin.raw: >-
+        /bin/bash -lc "lspci -Dnn |
         grep -Ei '{{ (nvidia_doca_ofed_supported_pci_vendor_ids + nvidia_doca_ofed_supported_device_markers) | join("|") }}'
-        || true
-      args:
-        executable: /bin/bash
+        || true"
       register: nvidia_doca_ofed_detected_devices
       changed_when: false
       failed_when: false

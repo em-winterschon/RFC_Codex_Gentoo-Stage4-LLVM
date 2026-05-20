@@ -2,6 +2,12 @@
 
 ## 2026-05-20 - FMT2 R630 `sec` RDMA Positive-Control Workflow
 
+- Added `sec` and `ter` to the local-network `roce_hosts` inventory with
+  `admin_sun99_forge_099070` as the required FMT2 execution host, because the
+  M70 holds the OpenVPN route and SSH identity required for those hosts.
+- Updated the NVIDIA DOCA/OFED role's preflight discovery tasks to use raw
+  commands so `apply=false` can inspect old Rocky/RHEL-like hosts that only
+  provide Python 3.6, while keeping live package/driver mutation disabled.
 - Captured `kvm-sfo200-sec-9923` as the non-destructive positive-control R630
   while `pri` remains physically blocked on missing ConnectX inventory.
 - Verified live `sec` evidence: SSH and sudo path works from M70, X710 ports
