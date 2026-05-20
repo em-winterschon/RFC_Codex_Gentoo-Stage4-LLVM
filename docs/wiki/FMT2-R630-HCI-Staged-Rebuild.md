@@ -115,6 +115,61 @@ Live evidence from `kvm-sfo200-sec-9923` and `kvm-sfo200-ter-9924` on
   `00:00:00:00:12:35`; fix or explain that firmware state before using those
   MACs in NetBox, DHCP, switch ACLs, or VF policy.
 
+## sec RDMA Positive-Control Path
+
+`kvm-sfo200-sec-9923` is now the positive-control R630 for the RDMA workflow
+while `pri` remains blocked on physical ConnectX replacement. This does not
+authorize a destructive rebuild of `sec`; it authorizes read-only evidence
+capture, vendor-driver preflight, switch-side comparison, and preparation for
+pairwise RDMA testing.
+
+Live 2026-05-20 `sec` evidence:
+
+- SSH from M70 succeeded as `verwalterin`; `sudo -n true` succeeded.
+- Kernel is still `6.3.8-1.el8.elrepo.x86_64`, so this is not the final
+  Gentoo stage4 admission OS.
+- X710 endpoints enumerate at `0000:01:00.0-3`; `eno1` through `eno4` are
+  linked at 10G full duplex using `i40e`, firmware `5.04 0x800024d4 17.5.11`,
+  and each reports `32` total SR-IOV VFs with `0` currently enabled.
+- ConnectX-4 endpoints enumerate at `0000:82:00.0` and `0000:82:00.1` as
+  Mellanox MT27700 `[15b3:1013]`; `enp130s0f0np0` and `enp130s0f1np1` link at
+  50G full duplex using `mlx5_core`, firmware `12.28.2006 (MT_2190110032)`.
+- `rdma link show` reports `mlx5_0` and `mlx5_1` as `ACTIVE` and `LINK_UP`.
+- `mlx5_core`, `mlx5_ib`, `ib_uverbs`, and `ib_core` are loaded from the kernel
+  tree.
+- `ofed_info`, `ibv_devinfo`, `rping`, `ibv_rc_pingpong`, `ib_write_bw`, and
+  `ib_send_bw` are absent on `sec` and `ter`; production RDMA admission remains
+  blocked until the selected vendor OFED/DOCA path and userspace test tooling
+  are present.
+- Placeholder ConnectX MACs `00:00:00:00:12:34` and
+  `00:00:00:00:12:35` remain a firmware/inventory follow-up.
+
+Live 2026-05-20 Arista positive-control evidence:
+
+- `Et7/1` and `Et7/3` are connected at 50G full duplex with type
+  `100GBASE-CR4`.
+- LLDP sees `kvm-sfo200-sec-9923.vernetzen.io` on both ports with port
+  descriptions `enp130s0f0np0` and `enp130s0f1np1`.
+- Error counters sampled on both ports were zero for FCS, align, symbol, Rx,
+  runt, giant, and Tx errors.
+- `Po713` remains configured as LACP `dot1q-tunnel` VLAN 50, but LLDP reports
+  host-side link aggregation capable and disabled. First-pass admission still
+  prefers independent 50G paths before any LACP, OVS switchdev, or production
+  storage promotion.
+
+The repo-tracked workflow is:
+
+```text
+docs/workflows/fmt2-sec-rdma-positive-control.json
+```
+
+The current E2ET manifest is intentionally blocked until vendor-driver and
+pairwise RDMA evidence is added:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/host-e2et-definitions/fmt2-sec-rdma-positive-control.yml
+```
+
 ## Gentoo stage4 kernel pivot
 
 The production path for `kvm-sfo200-pri-9922` is now a Gentoo stage4 rebuild
