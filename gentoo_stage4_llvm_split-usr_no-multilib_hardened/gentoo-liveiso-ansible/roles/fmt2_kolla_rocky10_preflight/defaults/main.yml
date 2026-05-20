@@ -1,0 +1,39 @@
+---
+fmt2_kolla_preflight_enabled: true
+fmt2_kolla_preflight_apply: false
+
+fmt2_kolla_target_os_name: Rocky Linux
+fmt2_kolla_target_os_id: rocky
+fmt2_kolla_target_os_major: "10"
+
+fmt2_kolla_container_engine: podman
+fmt2_kolla_base_distro: rocky
+fmt2_kolla_openstack_release: "2026.1"
+fmt2_kolla_require_container_engine: true
+
+fmt2_kolla_required_sol: true
+fmt2_kolla_sol_evidence_state: unknown
+fmt2_kolla_skip_sol_assert: false
+
+fmt2_kolla_required_interfaces:
+  - eno1
+  - eno2
+  - eno3
+  - eno4
+
+fmt2_kolla_required_rdma_interfaces:
+  - enp130s0f0np0
+  - enp130s0f1np1
+
+fmt2_kolla_require_rdma_interfaces: true
+
+fmt2_kolla_disallowed_storage_patterns:
+  - HUSMM3240ASS
+  - INTEL SSDPED1D480GA
+
+fmt2_kolla_allowed_os_media_patterns:
+  - SSDSCKKB240G8R
+  - IDSDM
+
+fmt2_kolla_candidate_os_devices: []
+fmt2_kolla_storage_selection_required: true
