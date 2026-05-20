@@ -217,6 +217,9 @@ Live 2026-05-20 `sec` evidence:
 - `rdma link show` reports `mlx5_0` and `mlx5_1` as `ACTIVE` and `LINK_UP`.
 - `mlx5_core`, `mlx5_ib`, `ib_uverbs`, and `ib_core` are loaded from the kernel
   tree.
+- M70-run Ansible DOCA/OFED `apply=false` preflight detected both ConnectX-4
+  PCI functions, reported kernel `6.3.8-1.el8.elrepo.x86_64`, and stopped
+  before mutation with `ok=3`, `changed=0`, and `failed=0`.
 - `ofed_info`, `ibv_devinfo`, `rping`, `ibv_rc_pingpong`, `ib_write_bw`, and
   `ib_send_bw` are absent on `sec` and `ter`; production RDMA admission remains
   blocked until the selected vendor OFED/DOCA path and userspace test tooling

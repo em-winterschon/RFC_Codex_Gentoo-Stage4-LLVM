@@ -68,6 +68,7 @@ PY
 assert_file_contains "${MANIFEST}" 'pre-rdma-admission-discovery-positive'
 assert_file_contains "${MANIFEST}" 'ConnectX-4 endpoint enumerates in Linux PCI tree'
 assert_file_contains "${MANIFEST}" 'rdma link show reported mlx5_0 and mlx5_1 as ACTIVE'
+assert_file_contains "${MANIFEST}" 'DOCA/OFED apply=false preflight detected both ConnectX-4 PCI functions'
 assert_file_contains "${MANIFEST}" 'ofed_info is absent'
 assert_file_contains "${MANIFEST}" 'placeholder ConnectX MACs'
 assert_file_contains "${WORKFLOW}" 'Do not mutate sec storage, pri, ter, or X12AGAIN'

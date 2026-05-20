@@ -53,6 +53,9 @@ gates:
       - name: Kernel mlx5 RDMA modules are loaded
         status: pass
         evidence: lsmod showed mlx5_core, mlx5_ib, ib_uverbs, and ib_core loaded from the active kernel tree.
+      - name: DOCA OFED apply false preflight detects ConnectX endpoints
+        status: pass
+        evidence: 2026-05-20 M70-run Ansible DOCA/OFED apply=false preflight detected both ConnectX-4 PCI functions [15b3:1013], reported kernel 6.3.8-1.el8.elrepo.x86_64, and stopped before mutation with ok=3 changed=0 failed=0.
       - name: Vendor OFED or DOCA line is installed and reported
         status: fail
         hard_fail: true

@@ -8,6 +8,10 @@
 - Updated the NVIDIA DOCA/OFED role's preflight discovery tasks to use raw
   commands so `apply=false` can inspect old Rocky/RHEL-like hosts that only
   provide Python 3.6, while keeping live package/driver mutation disabled.
+- Ran the M70-hosted `nvidia-doca-ofed.yml` preflight against `sec` with
+  `apply=false`; it detected both ConnectX-4 PCI functions, reported kernel
+  `6.3.8-1.el8.elrepo.x86_64`, and stopped before mutation with
+  `ok=3 changed=0 failed=0`.
 - Captured `kvm-sfo200-sec-9923` as the non-destructive positive-control R630
   while `pri` remains physically blocked on missing ConnectX inventory.
 - Verified live `sec` evidence: SSH and sudo path works from M70, X710 ports
