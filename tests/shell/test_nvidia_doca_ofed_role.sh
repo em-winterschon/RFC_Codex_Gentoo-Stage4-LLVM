@@ -36,6 +36,10 @@ assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nvidia_doca_ofed_vendor_dr
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'missing ofed_info'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nvidia_doca_ofed_roce_validation_commands:'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'ofed_info -s'
+if grep -q '{{ item }}' "${ROLE_DIR}/defaults/main.yml"; then
+  printf 'FAIL: nvidia_doca_ofed defaults must not contain unbound Jinja item placeholders\n' >&2
+  exit 1
+fi
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'Preflight-compatible raw command path'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'ansible.builtin.raw: uname -r'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'Detect NVIDIA/Mellanox PCI devices'

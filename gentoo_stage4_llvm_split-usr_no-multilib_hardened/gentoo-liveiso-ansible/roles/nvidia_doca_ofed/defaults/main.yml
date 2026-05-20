@@ -35,4 +35,4 @@ nvidia_doca_ofed_roce_validation_commands:
   - ibv_devinfo
   - rdma link show
   - rdma resource show
-  - ethtool -i "{{ item }}"
+  - ethtool -i <rdma-netdev>
