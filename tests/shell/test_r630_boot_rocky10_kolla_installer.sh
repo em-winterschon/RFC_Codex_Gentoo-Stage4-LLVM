@@ -16,6 +16,8 @@ test -f "${SCRIPT}"
 bash -n "${SCRIPT}"
 
 assert_file_contains "${SCRIPT}" 'REBOOT_AFTER_STAGE="${REBOOT_AFTER_STAGE:-0}"'
+assert_file_contains "${SCRIPT}" 'INSTALL_NET_MAC="${INSTALL_NET_MAC:-}"'
+assert_file_contains "${SCRIPT}" 'ifname=${INSTALL_NET_DEVICE}:${INSTALL_NET_MAC}'
 assert_file_contains "${SCRIPT}" 'inst.ks=${KICKSTART_URL}'
 assert_file_contains "${SCRIPT}" 'inst.repo=${ROCKY_REPO_URL}'
 assert_file_contains "${SCRIPT}" 'console=ttyS0,115200n8'
