@@ -39,6 +39,10 @@ assert_file_contains "${DEFAULTS}" 'enp130s0f1np1'
 
 assert_file_contains "${TASKS}" 'ansible.builtin.raw'
 assert_file_contains "${TASKS}" '/etc/os-release'
+if grep -q -- 'regex_search' "${TASKS}"; then
+  printf 'FAIL: avoid regex_search in live preflight parsing; use line selection plus regex_replace for M70 Ansible compatibility\n' >&2
+  exit 1
+fi
 assert_file_contains "${TASKS}" 'ansible_distribution'
 assert_file_contains "${TASKS}" 'ansible_distribution_major_version'
 assert_file_contains "${TASKS}" 'SOL remains enabled'

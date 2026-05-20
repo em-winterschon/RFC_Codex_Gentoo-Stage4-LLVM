@@ -41,9 +41,9 @@
     - name: Derive ansible_distribution compatibility values from os-release
       ansible.builtin.set_fact:
         ansible_distribution: >-
-          {{ 'Rocky' if (fmt2_kolla_os_release.stdout is regex_search('(?m)^ID="?rocky"?$')) else 'unknown' }}
+          {{ 'Rocky' if (((fmt2_kolla_os_release.stdout_lines | select('match', '^ID=') | list | first | default('ID=unknown')) | regex_replace('^ID="?([^"]+)"?$', '\1')) == 'rocky') else 'unknown' }}
         ansible_distribution_major_version: >-
-          {{ (fmt2_kolla_os_release.stdout | regex_search('(?m)^VERSION_ID="?([0-9]+)', '\\1') | first | default('unknown')) }}
+          {{ (fmt2_kolla_os_release.stdout_lines | select('match', '^VERSION_ID=') | list | first | default('unknown') | regex_replace('^VERSION_ID="?([0-9]+).*$','\1')) }}
 
     - name: Publish FMT2 Kolla preflight facts
       ansible.builtin.debug:
