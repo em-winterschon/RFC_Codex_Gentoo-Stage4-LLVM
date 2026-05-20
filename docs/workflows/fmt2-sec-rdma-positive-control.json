@@ -19,14 +19,14 @@
     {
       "name": "sec_host",
       "required": true,
-      "default": "kvm-sfo200-sec-9923",
-      "description": "FMT2 R630 host with working X710 and ConnectX-4 discovery paths."
+      "default": "kvm_sfo200_sec_9923",
+      "description": "FMT2 R630 inventory host with working X710 and ConnectX-4 discovery paths."
     },
     {
       "name": "ter_host",
       "required": true,
-      "default": "kvm-sfo200-ter-9924",
-      "description": "FMT2 R630 peer used for later pairwise RDMA smoke because it also has active ConnectX-4 links."
+      "default": "kvm_sfo200_ter_9924",
+      "description": "FMT2 R630 inventory peer used for later pairwise RDMA smoke because it also has active ConnectX-4 links."
     },
     {
       "name": "arista_host",
@@ -39,6 +39,12 @@
       "required": true,
       "default": "host-e2et-definitions/fmt2-sec-rdma-positive-control.yml",
       "description": "Positive-control admission manifest that remains blocked until vendor driver and pairwise RDMA gates pass."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/local-network/hosts.yml",
+      "description": "Inventory containing the FMT2 roce_hosts entries. Execute this workflow from admin-sun99-forge-099070/M70 so the OpenVPN route and FMT2 SSH keys are available."
     }
   ],
   "stages": [
@@ -74,6 +80,8 @@
       "cwd": "${ansible_root}",
       "command": [
         "ansible-playbook",
+        "-i",
+        "${inventory}",
         "playbooks/nvidia-doca-ofed.yml",
         "-l",
         "${sec_host}",

@@ -123,6 +123,14 @@ tooling required for later `sec` to `ter` pairwise smoke. Destructive `sec`
 rebuild, live vendor-driver install, LACP promotion, and storage protocol
 promotion remain separate gates.
 
+Ansible DOCA/OFED preflight for `sec` and `ter` must run from M70
+(`admin-sun99-forge-099070`) or an equivalent FMT2 transit host. X12AGAIN can
+reach M70, but it does not hold the target FMT2 SSH identity for
+`verwalterin@10.200.99.23` or `verwalterin@10.200.99.24`; direct local
+ProxyCommand attempts fail with public-key rejection. The inventory therefore
+records `fmt2_ansible_execution_host: admin_sun99_forge_099070` and keeps
+`nvidia_doca_ofed_apply: false` until the non-mutating role output is captured.
+
 ## Validation Gates
 
 Each RDMA-capable host must pass:
