@@ -336,19 +336,34 @@ label rfc1918-kolla-node
 PY
 
 rm -f "$OUT_ISO"
-mkisofs \
-  -o "$OUT_ISO" \
-  -V "$ISO_LABEL" \
-  -J -joliet-long -R \
-  -b isolinux/isolinux.bin \
-  -c isolinux/boot.cat \
-  -no-emul-boot \
-  -boot-load-size 4 \
-  -boot-info-table \
-  -eltorito-alt-boot \
-  -e images/efiboot.img \
-  -no-emul-boot \
-  "$WORKDIR/extract"
+efi_boot_image="images/efiboot.img"
+if [[ ! -f "$WORKDIR/extract/$efi_boot_image" ]]; then
+  efi_boot_image="images/eltorito.img"
+fi
+
+if [[ -d "$WORKDIR/extract/isolinux" ]]; then
+  mkisofs \
+    -o "$OUT_ISO" \
+    -V "$ISO_LABEL" \
+    -J -joliet-long -R \
+    -b isolinux/isolinux.bin \
+    -c isolinux/boot.cat \
+    -no-emul-boot \
+    -boot-load-size 4 \
+    -boot-info-table \
+    -eltorito-alt-boot \
+    -e "$efi_boot_image" \
+    -no-emul-boot \
+    "$WORKDIR/extract"
+else
+  mkisofs \
+    -o "$OUT_ISO" \
+    -V "$ISO_LABEL" \
+    -J -joliet-long -R \
+    -e "$efi_boot_image" \
+    -no-emul-boot \
+    "$WORKDIR/extract"
+fi
 
 sha256sum "$OUT_ISO" | tee "$OUT_ISO.sha256"
 echo "built: $OUT_ISO"

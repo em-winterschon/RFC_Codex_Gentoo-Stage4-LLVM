@@ -33,6 +33,8 @@ assert_file_contains "${SCRIPT}" 'nmcli connection add type bond ifname bond1'
 assert_file_contains "${SCRIPT}" 'podman'
 assert_file_contains "${SCRIPT}" 'kolla-ansible'
 assert_file_contains "${SCRIPT}" 'PermitRootLogin prohibit-password'
+assert_file_contains "${SCRIPT}" 'images/eltorito.img'
+assert_file_contains "${SCRIPT}" 'if [[ -d "$WORKDIR/extract/isolinux" ]]'
 
 if grep -q -- 'clearpart --all --initlabel$' "${SCRIPT}"; then
   printf 'FAIL: Rocky 10 Kolla node installer must scope clearpart to selected IDSDM and OS mirror devices\n' >&2
