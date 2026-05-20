@@ -47,6 +47,35 @@ The gated actions are:
 The wrapper validates Dell-like manufacturer/model facts when
 `bmc_idrac_validate_vendor: true`.
 
+## Serial-over-LAN Baseline
+
+Server BMCs must keep Serial-over-LAN available by default. Disabling SOL is
+allowed only for a documented maintenance reason, and the same change must
+include restoration and validation before the maintenance window is closed.
+
+For Dell iDRAC systems, the required live baseline is:
+
+- `iDRAC.IPMILan.Enable=Enabled`
+- `iDRAC.IPMISOL.Enable=Enabled`
+- `iDRAC.IPMISol.BaudRate=115200`
+- `iDRAC.IPMISol.MinPrivilege=3`
+- `iDRAC.Users.<operator-user-id>.SolEnable=Enabled`
+
+The required BIOS serial-redirection baseline is:
+
+- `BIOS.SerialCommSettings.SerialComm=OnConRedirCom1`
+- `BIOS.SerialCommSettings.SerialPortAddress=Serial1Com2Serial2Com1`
+- `BIOS.SerialCommSettings.ExtSerialConnector=Serial1`
+- `BIOS.SerialCommSettings.FailSafeBaud=115200`
+- `BIOS.SerialCommSettings.ConTermType=Vt100Vt220`
+- `BIOS.SerialCommSettings.RedirAfterBoot=Enabled`
+
+Use `scripts/idrac-ensure-sol-baseline.sh` from a vault-backed wrapper to
+enforce BMC-level SOL settings and validate BIOS serial redirection. BIOS
+serial-redirection mutation is intentionally gated by
+`IDRAC_SOL_APPLY_BIOS=1` because those changes are applied through the BIOS
+job queue and require a reboot.
+
 ## Inventory Groups
 
 Use these groups in `inventories/local-network/hosts.yml`:

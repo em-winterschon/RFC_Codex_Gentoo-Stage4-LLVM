@@ -20,6 +20,24 @@ Destructive actions require a host-specific maintenance gate.
 All three iDRACs answered Redfish root service probes and IPMI chassis status
 on 2026-05-19. iDRAC firmware reported `2.83`.
 
+All three R630 iDRACs also have SOL enabled and BIOS serial redirection
+validated as of 2026-05-19. The durable requirement is that SOL remains
+available unless a host-specific maintenance step explicitly disables it, and
+that same step must restore and validate SOL before closing the change.
+
+Verified live Dell iDRAC SOL baseline:
+
+- `iDRAC.IPMILan.Enable=Enabled`
+- `iDRAC.IPMISOL.Enable=Enabled`
+- `iDRAC.IPMISol.BaudRate=115200`
+- `iDRAC.Users.2.SolEnable=Enabled`
+- `BIOS.SerialCommSettings.SerialComm=OnConRedirCom1`
+- `BIOS.SerialCommSettings.SerialPortAddress=Serial1Com2Serial2Com1`
+- `BIOS.SerialCommSettings.ExtSerialConnector=Serial1`
+- `BIOS.SerialCommSettings.FailSafeBaud=115200`
+- `BIOS.SerialCommSettings.ConTermType=Vt100Vt220`
+- `BIOS.SerialCommSettings.RedirAfterBoot=Enabled`
+
 ## Boot Storage Policy
 
 The R630 boot and OS storage layout is not generic. Preserve the existing
@@ -76,6 +94,39 @@ is temporary and disposable:
 Do not install the maintenance OS onto the SAS bays. Do not let the maintenance
 phase redefine the final Gentoo boot layout. Its only durable output should be
 firmware state, evidence logs, and the decision to proceed or stop.
+
+### `pri` Firmware-Maintenance iSCSI Boot Evidence
+
+On 2026-05-19, `pri` was booted from a `ter`-hosted iSCSI LUN:
+
+- LUN: `dstore/provisioning/pri-firmware-maint`
+- Portal: `10.200.99.24:3260`
+- Initiator: `iqn.2026-05.host.rfc1918:fmt2.pri-x710-1`
+- Target used by Linux netroot: `iqn.2026-05.hostfmt2.pri-firmware-maint`
+
+The boot failure was caused by stale dracut cmdline embedded in the initramfs:
+`ip=ibft rd.iscsi.firmware=1 rd.iscsi.ibft=1`. GRUB had already been updated
+to explicit static `netroot=iscsi:...`, but dracut still sourced the embedded
+iBFT firmware path from `/etc/cmdline.d/01-default.conf`, causing userspace to
+try the wrong firmware-discovery flow.
+
+Fix applied to the maintenance image:
+
+- `/etc/dracut.conf.d/90-rfc1918-iscsi-root.conf` now keeps only network+iSCSI
+  modules and drivers.
+- `hostonly_cmdline="no"` prevents dracut from carrying stale iBFT boot state.
+- GRUB owns the explicit static IP, initiator IQN, and `netroot=iscsi:...`
+  arguments.
+
+Post-fix validation:
+
+- SOL showed Linux logging into the iSCSI target, mounting `/sysroot`, and
+  switching root.
+- `pri` answered ICMP on `10.200.99.22`.
+- SSH port `22/tcp` opened on `10.200.99.22`.
+- `targetcli sessions detail` on `ter` showed the `pri` initiator logged in.
+- `sshd`, `NetworkManager`, and `iscsid` were active with zero failed systemd
+  units in the maintenance OS.
 
 ## Network Fabric Policy
 

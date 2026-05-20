@@ -42,6 +42,19 @@ Validates that source-of-truth data matches the physical or virtual host:
 - DNS A/CNAME records and `/etc/hosts` fallback intent match inventory.
 - Ansible inventory and host variables point to the same canonical host.
 
+### Out-of-Band Gate
+
+Validates that the host remains recoverable when the installed OS is broken:
+
+- Server BMC, IPMI, Redfish, or vendor-equivalent management endpoint is
+  reachable when the platform supports it.
+- Serial-over-LAN is enabled by default and validated after firmware, BIOS, or
+  maintenance changes.
+- Any workflow that temporarily disables SOL must include the restoration and
+  validation step before the change is closed.
+- Console redirection covers pre-boot, bootloader, kernel, and post-boot
+  stages where the hardware supports it.
+
 ### Provisioning Gate
 
 Validates the intended install path:
