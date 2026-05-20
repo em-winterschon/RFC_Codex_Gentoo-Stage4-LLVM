@@ -97,12 +97,21 @@ change-control snapshot and rollback plan exist.
 
 The live 7060 config already has jumbo MTU on the ConnectX-facing interfaces
 and VLAN 50 named `cx4-dual-50g-ceph`, but it does not yet have an explicit
-lossless RoCEv2 QoS profile. The current ConnectX ports are configured as
-LACP port-channels (`Po713` for `sec`, `Po813` for `ter`) in `dot1q-tunnel`
-mode; those port-channels were down during discovery because the temporary
-host OS was not running matching bonds. First-pass RoCEv2 admission should
-prefer independent 50GbE paths on VLAN 50, then add LACP or switchdev only
-after host OFED, switch QoS, RDMA pair tests, and one-path-failure tests pass.
+lossless RoCEv2 QoS profile. The current ConnectX-facing ports are configured
+as LACP port-channels (`Po613` for `pri`, `Po713` for `sec`, `Po813` for
+`ter`) in VLAN 50 or `dot1q-tunnel` VLAN 50 modes; those port-channels were
+down during discovery because the temporary host OS instances are not running
+matching bonds. First-pass RoCEv2 admission should prefer independent 50GbE
+paths on VLAN 50, then add LACP or switchdev only after host OFED, switch QoS,
+RDMA pair tests, and one-path-failure tests pass.
+
+`pri` has an additional 2026-05-20 admission blocker: its disposable
+firmware-maintenance OS and iDRAC hardware inventory do not enumerate any
+Mellanox/ConnectX device, even though the Arista reports `Et6/1` and `Et6/3`
+connected at 50G and assigned to `Po613`. BIOS SR-IOV and MMIO above 4G are
+enabled, and DMI reports Slot 1 as available, so resolve the physical
+slot/card/cabling or inventory mismatch before using `pri` as the first RDMA
+endpoint.
 
 ## Validation Gates
 

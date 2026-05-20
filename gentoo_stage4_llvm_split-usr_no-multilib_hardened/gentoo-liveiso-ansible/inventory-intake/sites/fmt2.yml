@@ -88,8 +88,8 @@ devices:
       - Access user should be verwalterin, not root. Typo alias sw-sfo200-7060cx32s-2010.vernetzezn.io should resolve to this device to avoid root fallback from unmatched SSH config.
       - Live Management1 state on 2026-05-19 was 172.18.20.10/24 by DHCP with default route through 172.18.20.1.
       - Provides the 2x50GbE ConnectX-4 RDMA/RoCEv2 fabric for the R630 HCI hosts; snapshot configuration before any MTU/PFC/ECN/LACP change.
-      - Live R630 port map on 2026-05-19 was pri X710 Et3/1-Et3/4, sec X710 Et4/1-Et4/4, ter X710 Et5/1-Et5/4, sec ConnectX Et7/1+Et7/3, and ter ConnectX Et8/1+Et8/3.
-      - Existing ConnectX switch config uses LACP port-channels Po713 and Po813 in dot1q-tunnel VLAN 50 with MTU 9214, but no explicit QoS/PFC/ECN/WRED policy was found in the running-config include scan.
+      - Live R630 port map on 2026-05-20 was pri X710 Et3/1-Et3/4, pri ConnectX-facing Et6/1+Et6/3, sec X710 Et4/1-Et4/4, ter X710 Et5/1-Et5/4, sec ConnectX Et7/1+Et7/3, and ter ConnectX Et8/1+Et8/3.
+      - Existing ConnectX switch config uses LACP port-channels Po613, Po713, and Po813 in VLAN 50 or dot1q-tunnel VLAN 50 with MTU 9214, but no explicit QoS/PFC/ECN/WRED policy was found in the running-config include scan.
       - First-pass RoCEv2 admission should prefer independent VLAN 50 jumbo paths until host OFED, switch QoS, RDMA pair tests, and one-path-failure tests pass.
   - name: gw-sfo200-pri
     site: fmt2
@@ -139,6 +139,10 @@ devices:
       - stage4_profile: metal-fmt2-r630-openstack-roce
       - Target kernel policy is kernel_strategy gentoo-kernel with =sys-kernel/gentoo-kernel-6.18.18.
       - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE independent RoCEv2 paths before any ConnectX LACP promotion.
+      - Live 2026-05-20 state is a disposable Rocky 8.10 firmware-maintenance OS booted from a ter-hosted iSCSI LUN. root SSH works, but the normal verwalterin alias rejects the current Forge FMT2 keys.
+      - iDRAC firmware is 2.86.86.86 after the 2026-05-19 update; BIOS is 2.13.0; iDRAC job queue showed completed BIOS setup and reboot jobs.
+      - Live 2026-05-20 discovery showed X710 rNDC ports up with NVM 5.04, firmware 5.0.40043, and 32 VFs per PF.
+      - Live 2026-05-20 discovery did not enumerate a Mellanox/ConnectX device in Linux or iDRAC hardware inventory. Arista Et6/1+Et6/3 still show 50G link on Po613, so resolve the physical slot/card/cabling or inventory mismatch before admitting pri to RDMA.
   - name: kvm-sfo200-sec-9923
     site: fmt2
     role: virtualization-host

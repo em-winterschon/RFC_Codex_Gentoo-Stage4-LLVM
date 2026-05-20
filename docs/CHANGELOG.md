@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-05-20 - FMT2 R630 `pri` Live Firmware-Maintenance Evidence
+
+- Verified `kvm-sfo200-pri-9922` is booted into the disposable Rocky 8.10
+  firmware-maintenance OS from the `ter`-hosted iSCSI LUN and that root SSH is
+  available while the normal `verwalterin` alias still rejects the Forge keys.
+- Captured `pri` iDRAC update state: firmware `2.86.86.86`, BIOS `2.13.0`,
+  completed BIOS setup and power-cycle jobs, and no chassis power/cooling/drive
+  faults reported.
+- Captured protected local storage visibility from the maintenance OS: IDSDM,
+  two SATA OS SSDs, SATADOM, eight SAS SSDs, and one Intel Optane NVMe device
+  are visible while the maintenance root remains on iSCSI.
+- Captured the current `pri` RDMA blocker: Linux and iDRAC do not enumerate a
+  Mellanox/ConnectX device even though the Arista reports `Et6/1` and `Et6/3`
+  connected at 50G on `Po613`.
+- Updated the Arista 7060 port map to include `pri` ConnectX-facing `Et6/1`
+  and `Et6/3`, and documented that `Po613` remains down until the missing
+  host-side ConnectX inventory is resolved.
+
 ## 2026-05-19 - FMT2 R630 HCI Staged Rebuild Planning
 
 - Added the FMT2 R630 HCI staged rebuild runbook for

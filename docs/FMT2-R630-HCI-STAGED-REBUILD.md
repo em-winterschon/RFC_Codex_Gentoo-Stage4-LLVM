@@ -13,12 +13,22 @@ Destructive actions require a host-specific maintenance gate.
 
 | Host | LAN IP | iDRAC IP | Current state | Rebuild role |
 | --- | --- | --- | --- | --- |
-| `kvm-sfo200-pri-9922` | `10.200.99.22` | `172.18.20.122` | Ping and iDRAC reachable; current Forge SSH key rejected. | First destructive rebuild candidate. |
+| `kvm-sfo200-pri-9922` | `10.200.99.22` | `172.18.20.122` | Disposable Rocky 8.10 firmware-maintenance OS booted from `ter` iSCSI LUN; root SSH works, normal `verwalterin` alias still rejects. | First destructive rebuild candidate. |
 | `kvm-sfo200-sec-9923` | `10.200.99.23` | `172.18.20.123` | Rocky 8.9, kernel `6.3.8-1.el8.elrepo`, libvirt inactive. | Second rebuild candidate after `pri` validates. |
 | `kvm-sfo200-ter-9924` | `10.200.99.24` | `172.18.20.124` | Rocky 8.9, kernel `6.3.8-1.el8.elrepo`, libvirt inactive, healthy `dstore` ZFS pool. | Storage-preserving provisioning anchor. |
 
 All three iDRACs answered Redfish root service probes and IPMI chassis status
 on 2026-05-19. iDRAC firmware reported `2.83`.
+
+`pri` iDRAC was updated on 2026-05-19 and verified on 2026-05-20:
+
+- iDRAC firmware: `2.86.86.86`, last firmware update
+  `05/19/2026 14:56:41`.
+- System BIOS: `2.13.0`.
+- Service tag: `162DDH2`.
+- Job queue showed completed BIOS setup and completed power-cycle jobs.
+- Chassis status was powered on with no power, drive, cooling, or intrusion
+  faults reported.
 
 All three R630 iDRACs also have SOL enabled and BIOS serial redirection
 validated as of 2026-05-19. The durable requirement is that SOL remains
@@ -123,10 +133,29 @@ Post-fix validation:
 - SOL showed Linux logging into the iSCSI target, mounting `/sysroot`, and
   switching root.
 - `pri` answered ICMP on `10.200.99.22`.
-- SSH port `22/tcp` opened on `10.200.99.22`.
+- SSH port `22/tcp` opened on `10.200.99.22`; `root` key auth works on the
+  disposable firmware-maintenance image, while the normal `verwalterin` alias
+  still rejects the current Forge FMT2 keys.
 - `targetcli sessions detail` on `ter` showed the `pri` initiator logged in.
 - `sshd`, `NetworkManager`, and `iscsid` were active with zero failed systemd
   units in the maintenance OS.
+
+Live 2026-05-20 maintenance OS state:
+
+- Kernel: `4.18.0-553.124.1.el8_10.x86_64`.
+- Root disk: 80G iSCSI LUN `pri-firmware-ma`, mounted as `/`, `/boot`,
+  `/boot/efi`, and swap.
+- Protected local storage visible but not used for the maintenance root:
+  IDSDM `29.7G`, two `SSDSCKKB240G8R` SATA OS devices, one SATADOM, eight
+  `HUSMM3240ASS20x` SAS SSDs, and one Intel Optane `INTEL SSDPED1D480GA`.
+- `ter` targetcli reported `iqn.2026-05.host.rfc1918:fmt2.pri-x710-1` logged
+  in from `10.200.99.22` to backstore `block/pri-firmware-maint`.
+- `fwupd` is installed. Dell DSU/OMSA/RACADM, `mstflint`, and Mellanox/NVIDIA
+  firmware tooling are not installed in the disposable OS yet.
+- `NetworkManager` DHCP-configured extra X710 ports `eno2`, `eno3`, and `eno4`
+  with additional `10.200.99.x/24` addresses. Keep firmware-maintenance access
+  pinned to `bootnet` or disable DHCP on non-boot X710 ports before running
+  network-sensitive tests.
 
 ## Network Fabric Policy
 
@@ -165,6 +194,20 @@ Live evidence from `kvm-sfo200-sec-9923` and `kvm-sfo200-ter-9924` on
 - `sec` reported placeholder ConnectX MACs `00:00:00:00:12:34` and
   `00:00:00:00:12:35`; fix or explain that firmware state before using those
   MACs in NetBox, DHCP, switch ACLs, or VF policy.
+
+Live `pri` evidence from the disposable firmware-maintenance OS on 2026-05-20:
+
+- The X710 rNDC enumerated as four `i40e` devices with NVM `5.04`, firmware
+  `5.0.40043`, and 32 VFs per PF exposed by the driver.
+- Linux and iDRAC hardware inventory did not enumerate a Mellanox/ConnectX
+  device on `pri`.
+- DMI slot state showed PCIe Slot 1 as `Available`, Slot 2 populated by the
+  Intel Optane `900P`, and Slot 3 populated by the ASMedia SATA controller.
+- BIOS has `SriovGlobalEnable=Enabled` and `MmioAbove4Gb=Enabled`, so current
+  evidence points away from a simple OS driver omission and toward physical
+  slot/card state or an inventory/cabling mismatch.
+- `pri` must not be admitted to the RDMA/RoCE path until the missing ConnectX
+  inventory is resolved and revalidated.
 
 ## Gentoo stage4 kernel pivot
 
@@ -272,13 +315,17 @@ Live Arista port evidence collected on 2026-05-19:
   `Po434` for VM front-end VLAN 20.
 - `ter` X710 ports are `Et5/1`-`Et5/4`, split into `Po512` for management and
   `Po534` for VM front-end VLAN 20.
+- `pri` ConnectX-facing switch ports are `Et6/1` and `Et6/3`, currently
+  attached to `Po613` as VLAN 50 but not bundled because the host does not
+  currently enumerate a ConnectX device.
 - `sec` ConnectX-4 ports are `Et7/1` and `Et7/3`, currently attached to
   `Po713` as `dot1q-tunnel` access VLAN 50.
 - `ter` ConnectX-4 ports are `Et8/1` and `Et8/3`, currently attached to
   `Po813` as `dot1q-tunnel` access VLAN 50.
 - Existing R630 port-channels `Po312`, `Po334`, `Po412`, `Po434`, `Po512`,
-  `Po534`, `Po713`, and `Po813` were down because the hosts are not currently
-  running matching LACP bonds.
+  `Po534`, `Po613`, `Po713`, and `Po813` were down because the hosts are not
+  currently running matching LACP bonds or, for `pri` `Po613`, Linux does not
+  currently see the ConnectX device.
 - R630-facing switch interfaces reported zero error counters during the
   read-only sample.
 - ConnectX switch-side MTU is `9214`, while `ter` host-side X710 and
