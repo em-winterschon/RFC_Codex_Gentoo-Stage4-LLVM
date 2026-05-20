@@ -215,6 +215,61 @@ Live `pri` evidence from the disposable firmware-maintenance OS on 2026-05-20:
 - `pri` must not be admitted to the RDMA/RoCE path until the missing ConnectX
   inventory is resolved and revalidated.
 
+## Physical ConnectX Replacement Path
+
+The current `pri` evidence is consistent with a failed, absent, unseated, or
+mis-cabled ConnectX adapter. Treat this as a physical datacenter maintenance
+task, not as an OFED/kernel blocker.
+
+Before replacing or reseating hardware:
+
+1. Capture host-side `lspci -Dnn`, `lspci -tvnn`, `dmidecode -t slot`, loaded
+   network modules, and current interface names.
+2. Capture iDRAC hardware inventory, lifecycle log, job queue, SEL, and chassis
+   power state.
+3. Capture Arista `Et6/1`, `Et6/3`, and `Po613` interface status, counters,
+   LLDP neighbor detail, and running-config snippets.
+4. Snapshot the Arista configuration before any switch mutation.
+5. Keep SOL enabled and verified before and after the maintenance window.
+
+Replacement or reseat requirements:
+
+1. Power off `pri` and verify iDRAC reports chassis power off before opening the
+   host.
+2. Install a known-good ConnectX adapter in the intended R630 PCIe slot or
+   reseat the current adapter if hands find an obvious mechanical problem.
+3. Record model, PSID, serial, firmware version if visible, port MACs, optics or
+   DAC identifiers, riser, slot, and Arista port mapping for NetBox.
+4. Reconnect the two 50GbE links to Arista `Et6/1` and `Et6/3`.
+5. Do not touch `sec`, `ter`, or X12AGAIN during this maintenance action.
+
+Post-replacement evidence required before RDMA admission:
+
+1. Linux `lspci -Dnn` shows a Mellanox vendor ID `15b3` endpoint.
+2. `dmidecode -t slot` no longer reports the intended ConnectX slot as
+   `Available`.
+3. iDRAC hardware inventory shows the replacement adapter.
+4. Linux exposes both ConnectX ports with stable interface names.
+5. Arista `Et6/1` and `Et6/3` show expected link state and LLDP neighbors.
+6. `ofed_info -s`, `ibv_devinfo`, `rdma link show`, pairwise RDMA smoke,
+   NVMe-RDMA or iSER smoke, NFS-RDMA smoke, and one-path-failure testing pass.
+
+The repo-tracked workflow is:
+
+```text
+docs/workflows/fmt2-pri-connectx-replacement.json
+```
+
+The current blocked admission manifest is:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/host-e2et-definitions/fmt2-pri-rdma-admission.yml
+```
+
+Until that E2ET manifest is updated with post-replacement passing evidence,
+`pri` can continue firmware, X710, IDSDM, SATA OS mirror, and non-RDMA Gentoo
+preparation only.
+
 ## Gentoo stage4 kernel pivot
 
 The production path for `kvm-sfo200-pri-9922` is now a Gentoo stage4 rebuild

@@ -114,6 +114,14 @@ available, `lspci -tvnn` shows no Mellanox endpoint, and Arista LLDP reports no
 neighbors on `Et6/1` or `Et6/3`. Resolve the physical slot/card/cabling or
 inventory mismatch before using `pri` as the first RDMA endpoint.
 
+The physical ConnectX replacement path is now the preferred unblock route for
+`pri`. A replacement or reseat is not enough by itself: production RDMA
+admission requires Linux PCI enumeration, iDRAC hardware inventory, Arista LLDP,
+vendor OFED/DOCA reporting, pairwise RDMA smoke, protocol-specific storage
+smoke, and one-path-failure evidence. Until those gates pass, use `sec` and
+`ter` for RDMA discovery and keep `pri` limited to firmware, X710, and
+non-RDMA Gentoo preparation.
+
 ## Validation Gates
 
 Each RDMA-capable host must pass:

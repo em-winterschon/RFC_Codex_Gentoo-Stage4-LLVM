@@ -17,6 +17,10 @@
 - Added read-only follow-up evidence that Slot 1 is BIOS-enabled but still
   reported `Available`, no Mellanox endpoint appears in the PCIe tree, and
   Arista LLDP sees no neighbors on `Et6/1` or `Et6/3`.
+- Added the blocked `fmt2-pri-rdma-admission` E2ET manifest and the
+  `fmt2-pri-connectx-replacement` workflow so a card replacement or reseat has
+  explicit pre-swap capture, physical maintenance, post-swap inventory, Arista
+  validation, and RDMA admission gates.
 - Updated the Arista 7060 port map to include `pri` ConnectX-facing `Et6/1`
   and `Et6/3`, and documented that `Po613` remains down until the missing
   host-side ConnectX inventory is resolved.
