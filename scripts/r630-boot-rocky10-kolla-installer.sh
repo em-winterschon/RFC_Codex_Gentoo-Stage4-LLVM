@@ -22,6 +22,7 @@ Optional environment:
   DNS                  Installer DNS server.
   INSTALL_NET_DEVICE   Installer device selector, default: link.
   INSTALL_NET_MAC      Optional MAC binding for installer network device.
+  INSTALL_MODE         Anaconda mode suffix, default: cmdline.
   REBOOT_AFTER_STAGE    Set to 1 to reboot after staging.
 EOF
 }
@@ -43,6 +44,7 @@ GATEWAY="${GATEWAY:-10.200.99.1}"
 DNS="${DNS:-10.200.99.1}"
 INSTALL_NET_DEVICE="${INSTALL_NET_DEVICE:-link}"
 INSTALL_NET_MAC="${INSTALL_NET_MAC:-}"
+INSTALL_MODE="${INSTALL_MODE:-cmdline}"
 REBOOT_AFTER_STAGE="${REBOOT_AFTER_STAGE:-0}"
 BOOT_DIR="${BOOT_DIR:-/boot/rfc1918-rocky10-kolla}"
 TITLE="${TITLE:-RFC1918 Rocky Linux 10 Kolla node installer}"
@@ -140,8 +142,7 @@ args=(
   "ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none"
   "nameserver=${DNS}"
   "rd.neednet=1"
-  "inst.text"
-  "console=tty0"
+  "inst.${INSTALL_MODE}"
   "console=ttyS0,115200n8"
 )
 

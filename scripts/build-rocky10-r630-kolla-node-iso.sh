@@ -174,13 +174,13 @@ bootloader --location=mbr --driveorder=\$sd_pri --boot-drive=\$sd_pri --append="
 part /boot/efi --asprimary --fstype="efi" --ondrive=\$sd_pri --size=600 --fsoptions="defaults,uid=0,gid=0,umask=077,shortname=winnt"
 part /boot --asprimary --fstype="ext4" --ondrive=\$sd_pri --size=1024
 
-part raid.12 --asprimary --fstype="mdmember" --ondrive=\$os_pri --size=1 --grow
 part raid.13 --asprimary --fstype="mdmember" --ondrive=\$os_pri --size=8192
-part raid.22 --asprimary --fstype="mdmember" --ondrive=\$os_sec --size=1 --grow
+part raid.12 --asprimary --fstype="mdmember" --ondrive=\$os_pri --size=1 --grow
 part raid.23 --asprimary --fstype="mdmember" --ondrive=\$os_sec --size=8192
+part raid.22 --asprimary --fstype="mdmember" --ondrive=\$os_sec --size=1 --grow
 
-raid / --device=2 --fstype="xfs" --level=RAID1 raid.12 raid.22
 raid swap --device=3 --fstype="swap" --level=RAID1 raid.13 raid.23
+raid / --device=2 --fstype="xfs" --level=RAID1 raid.12 raid.22
 PART
 
 echo "Selected IDSDM boot media: \$sd_pri"

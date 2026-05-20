@@ -28,6 +28,12 @@ assert_file_contains "${SCRIPT}" 'part /boot/efi'
 assert_file_contains "${SCRIPT}" 'part /boot'
 assert_file_contains "${SCRIPT}" 'raid /'
 assert_file_contains "${SCRIPT}" 'raid swap'
+swap_part_line="$(grep -n 'part raid.13' "${SCRIPT}" | head -n1 | cut -d: -f1)"
+root_part_line="$(grep -n 'part raid.12' "${SCRIPT}" | head -n1 | cut -d: -f1)"
+if (( swap_part_line >= root_part_line )); then
+  printf 'FAIL: fixed swap mdmember must be declared before grow-root mdmember\n' >&2
+  exit 1
+fi
 assert_file_contains "${SCRIPT}" 'nmcli connection add type bond ifname bond0'
 assert_file_contains "${SCRIPT}" 'nmcli connection add type bond ifname bond1'
 assert_file_contains "${SCRIPT}" 'podman'
