@@ -44,10 +44,17 @@ assert_file_contains "${SCRIPT}" 'eno3np2,eno4np3'
 assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bootnet.nmconnection'
 assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bond0.nmconnection'
 assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bond1.nmconnection'
+assert_file_contains "${SCRIPT}" 'bond_options_to_nm_keyfile'
+assert_file_contains "${SCRIPT}" 'lacp_rate=fast'
+assert_file_contains "${SCRIPT}" 'xmit_hash_policy=layer3+4'
 assert_file_contains "${SCRIPT}" 'master=bond0'
 assert_file_contains "${SCRIPT}" 'master=bond1'
 assert_file_contains "${SCRIPT}" 'if [[ "${MGMT_BOND_ENABLED}" == "true" ]]'
 assert_file_contains "${SCRIPT}" 'R630 management LACP remains disabled by default'
+if grep -F -q -- 'options=${MGMT_BOND_OPTIONS}' "${SCRIPT}" || grep -F -q -- 'options=${FRONTEND_BOND_OPTIONS}' "${SCRIPT}"; then
+  printf 'FAIL: NetworkManager keyfiles must use native [bond] keys; options= imports as balance-rr on Rocky 10\n' >&2
+  exit 1
+fi
 if grep -F -q -- 'nmcli connection add type bond' "${SCRIPT}"; then
   printf 'FAIL: installer must persist target NetworkManager keyfiles instead of mutating installer NetworkManager with nmcli\n' >&2
   exit 1

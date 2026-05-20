@@ -30,8 +30,8 @@ Optional environment:
   MGMT_BOND_ENABLED     Enable bond0 for management, default: false.
   MGMT_BOND_MEMBERS     Comma-separated bond0 members, default: bootnet,eno2np1.
   FRONTEND_BOND_MEMBERS Comma-separated bond1 members, default: eno3np2,eno4np3.
-  MGMT_BOND_OPTIONS     NetworkManager bond0 options.
-  FRONTEND_BOND_OPTIONS NetworkManager bond1 options.
+  MGMT_BOND_OPTIONS     Comma-separated NetworkManager bond0 key=value options.
+  FRONTEND_BOND_OPTIONS Comma-separated NetworkManager bond1 key=value options.
   OS_DISK_MODEL         Required OS disk model substring, default: SSDSCKKB240G8R.
   IDSDM_MODEL           Required boot disk model substring, default: IDSDM.
   ROCKY_BASEOS_URL      Rocky 10 BaseOS install URL.
@@ -111,6 +111,44 @@ if [[ -n "$BOOT_DNS2" && "$BOOT_DNS2" != "$BOOT_DNS1" ]]; then
 fi
 boot_network_args="ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none:${BOOT_IP_DNS_ARGS} rd.neednet=1 nameserver=${BOOT_DNS1}"
 DNS_KEYFILE="$(printf '%s' "$DNS" | tr ',' ';');"
+
+bond_options_to_nm_keyfile() {
+  local raw_options=$1
+  local item key value
+  local -a option_items
+
+  IFS=',' read -r -a option_items <<<"$raw_options"
+  for item in "${option_items[@]}"; do
+    item="${item//[[:space:]]/}"
+    [[ -n "$item" ]] || continue
+    key="${item%%=*}"
+    value="${item#*=}"
+    if [[ "$key" == "$item" || -z "$key" || -z "$value" ]]; then
+      echo "invalid bond option: $item" >&2
+      exit 1
+    fi
+
+    case "$key" in
+      lacp-rate) key="lacp_rate" ;;
+      xmit-hash-policy) key="xmit_hash_policy" ;;
+      ad-select) key="ad_select" ;;
+      min-links) key="min_links" ;;
+    esac
+
+    case "$key" in
+      mode|miimon|lacp_rate|xmit_hash_policy|ad_select|min_links|updelay|downdelay)
+        printf '%s=%s\n' "$key" "$value"
+        ;;
+      *)
+        echo "unsupported bond option for Rocky 10 NetworkManager keyfile: $key" >&2
+        exit 1
+        ;;
+    esac
+  done
+}
+
+MGMT_BOND_KEYFILE_OPTIONS="$(bond_options_to_nm_keyfile "$MGMT_BOND_OPTIONS")"
+FRONTEND_BOND_KEYFILE_OPTIONS="$(bond_options_to_nm_keyfile "$FRONTEND_BOND_OPTIONS")"
 
 cat >"$KS_PATH" <<EOF
 # RFC1918 FMT2 R630 Rocky Linux 10 Kolla node installer.
@@ -320,7 +358,7 @@ interface-name=bond0
 autoconnect=true
 
 [bond]
-options=${MGMT_BOND_OPTIONS}
+${MGMT_BOND_KEYFILE_OPTIONS}
 
 [ipv4]
 method=manual
@@ -368,7 +406,7 @@ interface-name=bond1
 autoconnect=true
 
 [bond]
-options=${FRONTEND_BOND_OPTIONS}
+${FRONTEND_BOND_KEYFILE_OPTIONS}
 
 [ipv4]
 method=disabled
