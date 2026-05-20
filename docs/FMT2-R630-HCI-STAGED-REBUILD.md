@@ -203,9 +203,15 @@ Live `pri` evidence from the disposable firmware-maintenance OS on 2026-05-20:
   device on `pri`.
 - DMI slot state showed PCIe Slot 1 as `Available`, Slot 2 populated by the
   Intel Optane `900P`, and Slot 3 populated by the ASMedia SATA controller.
+- iDRAC BIOS slot-disablement state showed Slot 1, Slot 2, and Slot 3 all
+  `Enabled`, with `GlobalSlotDriverDisable=Disabled`.
+- `lspci -tvnn` showed empty downstream PCIe buses where an additional adapter
+  could train, but no Mellanox vendor/device ID and no kernel `mlx` probe.
 - BIOS has `SriovGlobalEnable=Enabled` and `MmioAbove4Gb=Enabled`, so current
   evidence points away from a simple OS driver omission and toward physical
   slot/card state or an inventory/cabling mismatch.
+- Arista `Et6/1` and `Et6/3` reported no LLDP neighbors, despite earlier
+  switch-side 50G link evidence on the `pri` ConnectX-facing ports.
 - `pri` must not be admitted to the RDMA/RoCE path until the missing ConnectX
   inventory is resolved and revalidated.
 

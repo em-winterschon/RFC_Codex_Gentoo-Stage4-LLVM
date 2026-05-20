@@ -109,9 +109,10 @@ RDMA pair tests, and one-path-failure tests pass.
 firmware-maintenance OS and iDRAC hardware inventory do not enumerate any
 Mellanox/ConnectX device, even though the Arista reports `Et6/1` and `Et6/3`
 connected at 50G and assigned to `Po613`. BIOS SR-IOV and MMIO above 4G are
-enabled, and DMI reports Slot 1 as available, so resolve the physical
-slot/card/cabling or inventory mismatch before using `pri` as the first RDMA
-endpoint.
+enabled, BIOS slot-disablement reports Slot 1 enabled, DMI reports Slot 1 as
+available, `lspci -tvnn` shows no Mellanox endpoint, and Arista LLDP reports no
+neighbors on `Et6/1` or `Et6/3`. Resolve the physical slot/card/cabling or
+inventory mismatch before using `pri` as the first RDMA endpoint.
 
 ## Validation Gates
 
