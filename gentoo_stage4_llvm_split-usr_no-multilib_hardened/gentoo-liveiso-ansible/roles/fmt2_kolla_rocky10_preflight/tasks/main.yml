@@ -18,7 +18,7 @@
     - name: Read interface presence without requiring target Python
       ansible.builtin.raw: >-
         /bin/bash -lc 'for iface in
-        {{ (fmt2_kolla_required_interfaces + (fmt2_kolla_required_rdma_interfaces if fmt2_kolla_require_rdma_interfaces | bool else [])) | join(" ") }};
+        {{ ((fmt2_kolla_required_interfaces + ([fmt2_kolla_management_bond_interface] if fmt2_kolla_require_management_bond | bool else [])) + (fmt2_kolla_required_rdma_interfaces if fmt2_kolla_require_rdma_interfaces | bool else [])) | join(" ") }};
         do if [ -d "/sys/class/net/${iface}" ]; then echo "present ${iface}";
         else echo "missing ${iface}"; fi; done'
       register: fmt2_kolla_interface_presence

@@ -27,6 +27,11 @@ Optional environment:
   GATEWAY               Static gateway.
   DNS                   Comma-separated DNS servers.
   INSTALL_NET_DEVICE    Installer network device selector, default: link.
+  MGMT_BOND_ENABLED     Enable bond0 for management, default: false.
+  MGMT_BOND_MEMBERS     Comma-separated bond0 members, default: bootnet,eno2np1.
+  FRONTEND_BOND_MEMBERS Comma-separated bond1 members, default: eno3np2,eno4np3.
+  MGMT_BOND_OPTIONS     NetworkManager bond0 options.
+  FRONTEND_BOND_OPTIONS NetworkManager bond1 options.
   OS_DISK_MODEL         Required OS disk model substring, default: SSDSCKKB240G8R.
   IDSDM_MODEL           Required boot disk model substring, default: IDSDM.
   ROCKY_BASEOS_URL      Rocky 10 BaseOS install URL.
@@ -54,6 +59,11 @@ NETMASK="${NETMASK:-255.255.255.0}"
 GATEWAY="${GATEWAY:-10.200.99.1}"
 DNS="${DNS:-10.200.99.1,9.9.9.9}"
 INSTALL_NET_DEVICE="${INSTALL_NET_DEVICE:-link}"
+MGMT_BOND_ENABLED="${MGMT_BOND_ENABLED:-false}"
+MGMT_BOND_MEMBERS="${MGMT_BOND_MEMBERS:-bootnet,eno2np1}"
+FRONTEND_BOND_MEMBERS="${FRONTEND_BOND_MEMBERS:-eno3np2,eno4np3}"
+MGMT_BOND_OPTIONS="${MGMT_BOND_OPTIONS:-mode=802.3ad,miimon=100,lacp_rate=fast,xmit_hash_policy=layer3+4}"
+FRONTEND_BOND_OPTIONS="${FRONTEND_BOND_OPTIONS:-mode=802.3ad,miimon=100,lacp_rate=fast,xmit_hash_policy=layer3+4}"
 OS_DISK_MODEL="${OS_DISK_MODEL:-SSDSCKKB240G8R}"
 IDSDM_MODEL="${IDSDM_MODEL:-IDSDM}"
 ROCKY_BASEOS_URL="${ROCKY_BASEOS_URL:-https://dl.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/}"
@@ -100,6 +110,7 @@ if [[ -n "$BOOT_DNS2" && "$BOOT_DNS2" != "$BOOT_DNS1" ]]; then
   BOOT_IP_DNS_ARGS="${BOOT_DNS1}:${BOOT_DNS2}"
 fi
 boot_network_args="ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${NODE_HOSTNAME}:${INSTALL_NET_DEVICE}:none:${BOOT_IP_DNS_ARGS} rd.neednet=1 nameserver=${BOOT_DNS1}"
+DNS_KEYFILE="$(printf '%s' "$DNS" | tr ',' ';');"
 
 cat >"$KS_PATH" <<EOF
 # RFC1918 FMT2 R630 Rocky Linux 10 Kolla node installer.
@@ -272,16 +283,125 @@ systemctl enable sshd NetworkManager chronyd rsyslog podman.socket
 # Kolla-Ansible target host prerequisites live on the node; kolla-ansible itself runs on the deployer VM.
 dnf -y config-manager --set-enabled crb || true
 
-nmcli connection delete bond0 >/dev/null 2>&1 || true
-nmcli connection delete bond1 >/dev/null 2>&1 || true
-nmcli connection add type bond ifname bond0 con-name bond0 mode 802.3ad ipv4.method manual ipv4.addresses ${STATIC_IP}/${PREFIX} ipv4.gateway ${GATEWAY} ipv4.dns "$(printf '%s' "${DNS}" | tr ',' ' ')" ipv6.method ignore
-nmcli connection add type ethernet ifname eno1 con-name bond0-eno1 master bond0
-nmcli connection add type ethernet ifname eno2 con-name bond0-eno2 master bond0
-nmcli connection add type bond ifname bond1 con-name bond1 mode 802.3ad ipv4.method disabled ipv6.method ignore
-nmcli connection add type ethernet ifname eno3 con-name bond1-eno3 master bond1
-nmcli connection add type ethernet ifname eno4 con-name bond1-eno4 master bond1
-nmcli connection modify bond0 connection.autoconnect yes
-nmcli connection modify bond1 connection.autoconnect yes
+install -d -m 0700 /etc/NetworkManager/system-connections
+rm -f /etc/NetworkManager/system-connections/bond0*.nmconnection
+rm -f /etc/NetworkManager/system-connections/bond1*.nmconnection
+
+cat >/etc/NetworkManager/system-connections/bootnet.nmconnection <<'NMEOF'
+[connection]
+id=bootnet
+uuid=__BOOTNET_UUID__
+type=ethernet
+interface-name=bootnet
+autoconnect=true
+
+[ethernet]
+
+[ipv4]
+method=manual
+address1=${STATIC_IP}/${PREFIX},${GATEWAY}
+dns=${DNS_KEYFILE}
+dns-search=rfc1918.host;
+
+[ipv6]
+method=ignore
+NMEOF
+
+sed -i "s/__BOOTNET_UUID__/\$(uuidgen)/" /etc/NetworkManager/system-connections/bootnet.nmconnection
+
+if [[ "${MGMT_BOND_ENABLED}" == "true" ]]; then
+  rm -f /etc/NetworkManager/system-connections/bootnet.nmconnection
+  cat >/etc/NetworkManager/system-connections/bond0.nmconnection <<'NMEOF'
+[connection]
+id=bond0
+uuid=__BOND0_UUID__
+type=bond
+interface-name=bond0
+autoconnect=true
+
+[bond]
+options=${MGMT_BOND_OPTIONS}
+
+[ipv4]
+method=manual
+address1=${STATIC_IP}/${PREFIX},${GATEWAY}
+dns=${DNS_KEYFILE}
+dns-search=rfc1918.host;
+
+[ipv6]
+method=ignore
+NMEOF
+
+  sed -i "s/__BOND0_UUID__/\$(uuidgen)/" /etc/NetworkManager/system-connections/bond0.nmconnection
+
+  IFS=',' read -r -a mgmt_bond_members <<<"${MGMT_BOND_MEMBERS}"
+  for member in "\${mgmt_bond_members[@]}"; do
+    cat >"/etc/NetworkManager/system-connections/bond0-\${member}.nmconnection" <<NMEOF
+[connection]
+id=bond0-\${member}
+uuid=\$(uuidgen)
+type=ethernet
+interface-name=\${member}
+autoconnect=true
+master=bond0
+slave-type=bond
+
+[ethernet]
+
+[ipv4]
+method=disabled
+
+[ipv6]
+method=ignore
+NMEOF
+  done
+else
+  echo "R630 management LACP remains disabled by default; bootnet owns ${STATIC_IP}/${PREFIX}."
+fi
+
+cat >/etc/NetworkManager/system-connections/bond1.nmconnection <<'NMEOF'
+[connection]
+id=bond1
+uuid=__BOND1_UUID__
+type=bond
+interface-name=bond1
+autoconnect=true
+
+[bond]
+options=${FRONTEND_BOND_OPTIONS}
+
+[ipv4]
+method=disabled
+
+[ipv6]
+method=ignore
+NMEOF
+
+sed -i "s/__BOND1_UUID__/\$(uuidgen)/" /etc/NetworkManager/system-connections/bond1.nmconnection
+
+IFS=',' read -r -a frontend_bond_members <<<"${FRONTEND_BOND_MEMBERS}"
+for member in "\${frontend_bond_members[@]}"; do
+  cat >"/etc/NetworkManager/system-connections/bond1-\${member}.nmconnection" <<NMEOF
+[connection]
+id=bond1-\${member}
+uuid=\$(uuidgen)
+type=ethernet
+interface-name=\${member}
+autoconnect=true
+master=bond1
+slave-type=bond
+
+[ethernet]
+
+[ipv4]
+method=disabled
+
+[ipv6]
+method=ignore
+NMEOF
+done
+
+chmod 0600 /etc/NetworkManager/system-connections/*.nmconnection
 
 cat >/etc/motd <<'MOTDEOF'
 RFC1918 FMT2 R630 Rocky Linux 10 Kolla node.

@@ -26,7 +26,7 @@ gates:
       - name: X710 front-end bonds are active
         status: fail
         hard_fail: true
-        evidence: bond0 must exist on eno1+eno2 for management/API and bond1 must exist on eno3+eno4 for provider traffic before Kolla-Ansible prechecks.
+        evidence: bootnet must remain the standalone management interface until Arista management port-channel state is explicit; bond1 must exist on eno3np2+eno4np3 for provider traffic before Kolla-Ansible prechecks.
       - name: ConnectX independent RDMA paths stay out of first-pass LACP
         status: warn
         evidence: First-pass API deployment does not require RDMA, but ConnectX paths must remain independent until pairwise RDMA evidence exists.

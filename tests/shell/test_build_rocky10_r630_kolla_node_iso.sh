@@ -36,8 +36,22 @@ if (( swap_part_line >= root_part_line )); then
   printf 'FAIL: fixed swap mdmember must be declared before grow-root mdmember\n' >&2
   exit 1
 fi
-assert_file_contains "${SCRIPT}" 'nmcli connection add type bond ifname bond0'
-assert_file_contains "${SCRIPT}" 'nmcli connection add type bond ifname bond1'
+assert_file_contains "${SCRIPT}" 'MGMT_BOND_MEMBERS'
+assert_file_contains "${SCRIPT}" 'FRONTEND_BOND_MEMBERS'
+assert_file_contains "${SCRIPT}" 'MGMT_BOND_ENABLED'
+assert_file_contains "${SCRIPT}" 'MGMT_BOND_ENABLED:-false'
+assert_file_contains "${SCRIPT}" 'eno3np2,eno4np3'
+assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bootnet.nmconnection'
+assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bond0.nmconnection'
+assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bond1.nmconnection'
+assert_file_contains "${SCRIPT}" 'master=bond0'
+assert_file_contains "${SCRIPT}" 'master=bond1'
+assert_file_contains "${SCRIPT}" 'if [[ "${MGMT_BOND_ENABLED}" == "true" ]]'
+assert_file_contains "${SCRIPT}" 'R630 management LACP remains disabled by default'
+if grep -F -q -- 'nmcli connection add type bond' "${SCRIPT}"; then
+  printf 'FAIL: installer must persist target NetworkManager keyfiles instead of mutating installer NetworkManager with nmcli\n' >&2
+  exit 1
+fi
 assert_file_contains "${SCRIPT}" 'podman'
 assert_file_contains "${SCRIPT}" 'kolla-ansible'
 assert_file_contains "${SCRIPT}" 'PermitRootLogin prohibit-password'

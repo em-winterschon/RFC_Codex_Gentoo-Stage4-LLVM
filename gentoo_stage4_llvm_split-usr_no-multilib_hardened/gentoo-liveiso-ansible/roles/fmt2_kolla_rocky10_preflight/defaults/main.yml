@@ -10,16 +10,19 @@ fmt2_kolla_container_engine: podman
 fmt2_kolla_base_distro: rocky
 fmt2_kolla_openstack_release: "2026.1"
 fmt2_kolla_require_container_engine: true
+fmt2_kolla_require_management_bond: false
+fmt2_kolla_management_bond_interface: bond0
 
 fmt2_kolla_required_sol: true
 fmt2_kolla_sol_evidence_state: unknown
 fmt2_kolla_skip_sol_assert: false
 
 fmt2_kolla_required_interfaces:
-  - eno1
-  - eno2
-  - eno3
-  - eno4
+  - bond1
+  - bootnet
+  - eno2np1
+  - eno3np2
+  - eno4np3
 
 fmt2_kolla_required_rdma_interfaces:
   - enp130s0f0np0
