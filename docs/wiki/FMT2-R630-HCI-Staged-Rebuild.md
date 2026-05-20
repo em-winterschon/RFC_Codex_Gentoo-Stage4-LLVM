@@ -410,6 +410,43 @@ support.
 
 ## Staged Rebuild Sequence
 
+## OpenStack Deployment Decision
+
+As of 2026-05-20, the selected first-pass OpenStack deployment path for the
+R630 cluster is Kolla-Ansible + Podman on Rocky Linux 10. This supersedes the
+earlier assumption that `pri` and `sec` would be rebuilt as Gentoo stage4
+OpenStack-capable hosts before the OpenStack pilot. Gentoo remains the
+preferred substrate for RFC1918 non-OpenStack hypervisor and infrastructure
+roles, but the OpenStack pilot should stay on a Kolla-supported host OS so the
+initial failure domain is firmware, networking, Kolla, and OpenStack behavior,
+not custom Gentoo service packaging.
+
+The implementation plan is tracked in:
+
+```text
+docs/superpowers/plans/2026-05-20-fmt2-r630-kolla-podman-rocky10.md
+```
+
+Operational decision:
+
+1. Use Rocky Linux only for `pri` and `sec` during Dell OMSA/DSU firmware
+   cycles and for the selected Kolla OpenStack pilot.
+2. Use `kolla_container_engine: podman`.
+3. Use Rocky Linux 10 and `kolla_base_distro: "rocky"` for the Kolla
+   deployment to maximize lifecycle runway.
+4. Keep OpenStack-Ansible + LXC as the fallback track if Kolla's Neutron,
+   SR-IOV, or RDMA behavior blocks the pilot.
+5. Do not use native Gentoo OpenStack services for the first FMT2 OpenStack
+   pilot.
+6. Do not wipe `ter`; it remains the storage/provisioning anchor until
+   replacement capacity and `dstore` preservation are explicitly approved.
+7. SOL remains enabled on all R630s before and after every maintenance gate.
+
+The previous Gentoo stage4 R630 profile and RDMA admission work remains useful
+for non-OpenStack hypervisor roles, kernel/storage feature validation, and as a
+future fallback if Kolla/OpenStack is abandoned. It is no longer the first-pass
+OpenStack control-plane substrate for `pri` and `sec`.
+
 1. Keep M70 as the out-of-band automation source and FMT2 OpenVPN transport.
 2. Keep `ter` powered and avoid destructive changes to `dstore`.
 3. Use `ter` for FMT2 staging storage and, if needed, a temporary provisioning
