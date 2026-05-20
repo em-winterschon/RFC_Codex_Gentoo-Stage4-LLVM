@@ -45,12 +45,88 @@ REBOOT_AFTER_STAGE="${REBOOT_AFTER_STAGE:-0}"
 BOOT_DIR="${BOOT_DIR:-/boot/rfc1918-rocky10-kolla}"
 TITLE="${TITLE:-RFC1918 Rocky Linux 10 Kolla node installer}"
 
-for cmd in curl grub2-reboot grubby; do
+for cmd in curl grub2-mkconfig grub2-reboot grubby; do
   command -v "$cmd" >/dev/null || {
     echo "missing required command: $cmd" >&2
     exit 1
   }
 done
+
+grub_path_for_boot_file() {
+  local path=$1
+
+  if [[ "$path" == /boot/* ]]; then
+    printf '/%s\n' "${path#/boot/}"
+    return
+  fi
+
+  printf '%s\n' "$path"
+}
+
+find_grub_cfg() {
+  local cfg
+
+  for cfg in \
+    /etc/grub2-efi.cfg \
+    /etc/grub2.cfg \
+    /boot/efi/EFI/rocky/grub.cfg \
+    /boot/grub2/grub.cfg; do
+    if [[ -e "$cfg" ]]; then
+      readlink -f "$cfg"
+      return
+    fi
+  done
+
+  printf '/boot/grub2/grub.cfg\n'
+}
+
+write_custom_grub_entry() {
+  local custom_file=/etc/grub.d/40_custom
+  local begin="# BEGIN RFC1918 Rocky Linux 10 Kolla node installer"
+  local end="# END RFC1918 Rocky Linux 10 Kolla node installer"
+  local kernel_path
+  local initrd_path
+  local linux_cmd=linux
+  local initrd_cmd=initrd
+  local tmp
+
+  kernel_path="$(grub_path_for_boot_file "$BOOT_DIR/vmlinuz-rocky10")"
+  initrd_path="$(grub_path_for_boot_file "$BOOT_DIR/initrd-rocky10.img")"
+
+  if [[ -d /sys/firmware/efi ]]; then
+    linux_cmd=linuxefi
+    initrd_cmd=initrdefi
+  fi
+
+  tmp="$(mktemp)"
+
+  if [[ -f "$custom_file" ]]; then
+    awk -v begin="$begin" -v end="$end" '
+      $0 == begin { skip = 1; next }
+      $0 == end { skip = 0; next }
+      !skip { print }
+    ' "$custom_file" >"$tmp"
+  else
+    {
+      printf '#!/bin/sh\n'
+      printf 'exec tail -n +3 "$0"\n'
+    } >"$tmp"
+  fi
+
+  {
+    printf '\n%s\n' "$begin"
+    printf "menuentry '%s' --id rfc1918-rocky10-kolla-installer {\n" "$TITLE"
+    printf '  %s %s %s\n' "$linux_cmd" "$kernel_path" "${args[*]}"
+    printf '  %s %s\n' "$initrd_cmd" "$initrd_path"
+    printf '}\n'
+    printf '%s\n' "$end"
+  } >>"$tmp"
+
+  install -m 0755 "$tmp" "$custom_file"
+  rm -f "$tmp"
+
+  grub2-mkconfig -o "$(find_grub_cfg)"
+}
 
 mkdir -p "$BOOT_DIR"
 curl -fL -o "$BOOT_DIR/vmlinuz-rocky10" "$KERNEL_URL"
@@ -71,10 +147,13 @@ if grubby --info=ALL | grep -F "title=${TITLE}" >/dev/null 2>&1; then
   grubby --remove-kernel="$BOOT_DIR/vmlinuz-rocky10" || true
 fi
 
-grubby --add-kernel="$BOOT_DIR/vmlinuz-rocky10" \
+if ! grubby --add-kernel="$BOOT_DIR/vmlinuz-rocky10" \
   --initrd="$BOOT_DIR/initrd-rocky10.img" \
   --title="$TITLE" \
-  --args="${args[*]}"
+  --args="${args[*]}"; then
+  echo "grubby could not add the installer kernel; falling back to /etc/grub.d/40_custom" >&2
+  write_custom_grub_entry
+fi
 
 grub2-reboot "$TITLE"
 
