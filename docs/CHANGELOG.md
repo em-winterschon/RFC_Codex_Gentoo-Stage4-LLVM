@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-05-20 - FMT2 R630 `sec` RDMA Positive-Control Workflow
+
+- Captured `kvm-sfo200-sec-9923` as the non-destructive positive-control R630
+  while `pri` remains physically blocked on missing ConnectX inventory.
+- Verified live `sec` evidence: SSH and sudo path works from M70, X710 ports
+  enumerate at 10G with 32 total VFs per PF, ConnectX-4 endpoints enumerate as
+  Mellanox MT27700 `[15b3:1013]`, both ConnectX ports link at 50G, and
+  `rdma link show` reports `mlx5_0` and `mlx5_1` as `ACTIVE`.
+- Captured Arista positive-control evidence: `Et7/1` and `Et7/3` are connected
+  at 50G, LLDP sees `kvm-sfo200-sec-9923.vernetzen.io`, sampled port errors are
+  zero, and `Po713` remains a later LACP/switchdev promotion gate.
+- Added the blocked `fmt2-sec-rdma-positive-control` E2ET manifest and workflow
+  so `sec` can progress through read-only capture, NVIDIA DOCA/OFED preflight,
+  RDMA tooling closeout, and later `sec` to `ter` pairwise smoke without
+  touching `pri`, `ter`, X12AGAIN, or `sec` storage.
+- Documented that the same vendor driver family should cover ConnectX-4 now and
+  BlueField-2 after the datacenter NIC migration, but `sec` is not production
+  admitted until `ofed_info`, ibverbs/perftest tooling, pairwise RDMA smoke,
+  protocol smoke, and one-path-failure gates pass.
+
 ## 2026-05-20 - FMT2 R630 `pri` Live Firmware-Maintenance Evidence
 
 - Verified `kvm-sfo200-pri-9922` is booted into the disposable Rocky 8.10

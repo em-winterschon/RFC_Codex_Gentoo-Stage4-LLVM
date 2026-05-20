@@ -1,0 +1,105 @@
+---
+run:
+  id: fmt2-sec-rdma-positive-control-20260520
+  phase: pre-rdma-admission-discovery-positive
+  timestamp: "2026-05-20T00:00:00-07:00"
+host:
+  name: kvm_sfo200_sec_9923
+  fqdn: kvm-sfo200-sec-9923.rfc1918.host
+  profile: metal-fmt2-r630-openstack-roce
+baseline:
+  name: RFC99 FMT2 R630 RDMA positive-control admission
+  target_tier: p99
+gates:
+  - name: Read-Only Reachability Gate
+    weight: 10
+    hard_required: true
+    checks:
+      - name: Host SSH and sudo control path is reachable
+        status: pass
+        evidence: 2026-05-20 M70 path reached kvm-sfo200-sec-9923 as verwalterin; sudo -n true succeeded.
+      - name: Current OS state is captured
+        status: warn
+        evidence: Host is still Rocky 8.9 style state on kernel 6.3.8-1.el8.elrepo.x86_64; this is discovery-positive only and not the final Gentoo stage4 admission OS.
+      - name: No destructive action is implied by this manifest
+        status: pass
+        evidence: This positive-control pass is read-only; sec disk layout, pri, ter, and X12AGAIN remain out of mutation scope.
+  - name: NIC Inventory Gate
+    weight: 25
+    hard_required: true
+    checks:
+      - name: X710 endpoints enumerate and link
+        status: pass
+        evidence: 2026-05-20 lspci showed four Intel X710 10GbE endpoints at 0000:01:00.0-3 with i40e; ethtool reported 10G full link on eno1-eno4.
+      - name: X710 SR-IOV exposure is discoverable
+        status: pass
+        evidence: eno1, eno2, eno3, and eno4 each reported sriov_totalvfs=32 with sriov_numvfs=0.
+      - name: ConnectX-4 endpoint enumerates in Linux PCI tree
+        status: pass
+        evidence: 2026-05-20 lspci showed two Mellanox MT27700 Family ConnectX-4 endpoints [15b3:1013] at 0000:82:00.0 and 0000:82:00.1.
+      - name: ConnectX-4 links are physically up at 50G
+        status: pass
+        evidence: ethtool reported enp130s0f0np0 and enp130s0f1np1 on mlx5_core with firmware 12.28.2006 (MT_2190110032), 50000Mb/s full duplex, link detected yes.
+      - name: ConnectX MAC identity is production-usable
+        status: warn
+        evidence: Live LLDP and host inventory still show placeholder ConnectX MACs 00:00:00:00:12:34 and 00:00:00:00:12:35; fix or explain firmware state before IPAM, DHCP, ACL, or VF policy use.
+  - name: RDMA Discovery Gate
+    weight: 25
+    hard_required: true
+    checks:
+      - name: RDMA links are ACTIVE
+        status: pass
+        evidence: 2026-05-20 rdma link show reported mlx5_0 and mlx5_1 as ACTIVE and LINK_UP on enp130s0f0np0 and enp130s0f1np1.
+      - name: Kernel mlx5 RDMA modules are loaded
+        status: pass
+        evidence: lsmod showed mlx5_core, mlx5_ib, ib_uverbs, and ib_core loaded from the active kernel tree.
+      - name: Vendor OFED or DOCA line is installed and reported
+        status: fail
+        hard_fail: true
+        evidence: ofed_info is absent; in-kernel mlx5 is acceptable for discovery only and cannot satisfy production RDMA admission.
+      - name: Pairwise RDMA smoke tooling is installed
+        status: fail
+        hard_fail: true
+        evidence: ibv_devinfo, rping, ibv_rc_pingpong, ib_write_bw, and ib_send_bw are absent on sec and ter; install the selected rdma-core/perftest tooling before pairwise admission.
+  - name: Arista Fabric Positive-Control Gate
+    weight: 20
+    hard_required: true
+    checks:
+      - name: Arista sees both sec ConnectX-facing ports linked
+        status: pass
+        evidence: 2026-05-20 Arista Et7/1 and Et7/3 showed connected, full duplex, forced 50G, type 100GBASE-CR4.
+      - name: Arista LLDP sees sec neighbors
+        status: pass
+        evidence: LLDP on Et7/1 and Et7/3 reported system kvm-sfo200-sec-9923.vernetzen.io with port descriptions enp130s0f0np0 and enp130s0f1np1.
+      - name: Arista port error counters are clean
+        status: pass
+        evidence: Et7/1 and Et7/3 showed zero FCS, align, symbol, Rx, runt, giant, and Tx errors in the sampled counter view.
+      - name: Port-channel state matches first-pass RDMA design
+        status: warn
+        evidence: Arista Po713 is configured for LACP dot1q-tunnel VLAN 50, but LLDP reports host link aggregation capable and disabled; first-pass RDMA admission should use independent 50G paths before enabling LACP/switchdev.
+  - name: Pairwise Protocol Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: sec to ter pairwise RDMA smoke passes
+        status: skip
+        evidence: Deferred until vendor OFED/DOCA and RDMA userspace tools are installed on both endpoints.
+      - name: NVMe-RDMA or iSER smoke passes
+        status: skip
+        evidence: Deferred until pairwise RDMA tooling, storage target selection, and lossless class policy are ready.
+      - name: NFS-RDMA smoke passes
+        status: skip
+        evidence: Deferred until NFS-RDMA server/client policy and rdma-core tooling are present.
+      - name: One-path-failure test passes
+        status: skip
+        evidence: Deferred until the two independent 50G paths have protocol-layer multipath or failover configured.
+  - name: Concurrent Rebuild Sequencing Gate
+    weight: 5
+    hard_required: false
+    checks:
+      - name: sec can progress while pri is physically gated
+        status: pass
+        evidence: sec has working X710 and ConnectX inventory, so read-only evidence capture, vendor-driver preflight, Arista positive-control capture, and Gentoo profile preparation can proceed without waiting for pri card replacement.
+      - name: sec destructive rebuild is separately gated
+        status: warn
+        evidence: Do not destructively rebuild sec until a host-specific maintenance gate selects the boot targets and preserves any required evidence from the current Rocky install.

@@ -161,6 +161,8 @@ devices:
       - Live 2026-05-19 discovery showed X710 ports up at 10G with 32 SR-IOV VFs per port, ConnectX-4 ports up at 50G with RDMA ACTIVE, and ConnectX SR-IOV VFs not exposed.
       - Live 2026-05-19 discovery showed ofed_info absent and mlx5 modules loaded from the kernel tree; production RDMA admission requires vendor OFED/DOCA driver validation.
       - ConnectX MACs reported as 00:00:00:00:12:34 and 00:00:00:00:12:35; fix or explain firmware state before using those MACs in IPAM, DHCP, ACL, or switch automation.
+      - Live 2026-05-20 positive-control evidence confirmed Mellanox MT27700 ConnectX-4 [15b3:1013] endpoints at 0000:82:00.0 and 0000:82:00.1, 50G full-duplex link, RDMA ACTIVE on mlx5_0/mlx5_1, Arista LLDP neighbors on Et7/1+Et7/3, and zero sampled Arista port errors.
+      - Live 2026-05-20 production RDMA admission remains blocked because ofed_info and ibverbs/perftest smoke tools are absent; keep the workflow non-destructive until vendor-driver and pairwise sec-to-ter gates pass.
   - name: kvm-sfo200-ter-9924
     site: fmt2
     role: virtualization-host

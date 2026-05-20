@@ -70,6 +70,17 @@ Before these hosts are admitted as RDMA production endpoints, install or stage
 the selected vendor OFED/DOCA driver path, verify `ofed_info -s`, and converge
 SR-IOV enablement consistently across all three R630s.
 
+`kvm-sfo200-sec-9923` is the current positive-control host for the R630 RDMA path.
+Live 2026-05-20 evidence shows the intended successful physical path:
+X710 ports enumerate and link at 10G with 32 total VFs per PF, ConnectX-4
+endpoints enumerate as Mellanox MT27700 `[15b3:1013]`, both ConnectX ports link
+at 50G, `rdma link show` reports `mlx5_0` and `mlx5_1` as `ACTIVE`, and the
+Arista 7060 sees LLDP neighbors on `Et7/1` and `Et7/3`. That makes `sec` the
+right comparison target for `pri`, but not a production RDMA endpoint yet:
+`ofed_info` and ibverbs/perftest tooling are absent, the driver is still
+in-kernel `mlx5`, and the placeholder ConnectX MACs must be fixed or explained
+before NetBox/IPAM/VF policy consumes them.
+
 Gentoo stage4 R630 admission target: `kvm-sfo200-pri-9922` should be rebuilt
 first with `metal-fmt2-r630-openstack-roce`, `kernel_strategy: gentoo-kernel`,
 and `=sys-kernel/gentoo-kernel-6.18.18`. That profile carries the R630
@@ -121,6 +132,14 @@ vendor OFED/DOCA reporting, pairwise RDMA smoke, protocol-specific storage
 smoke, and one-path-failure evidence. Until those gates pass, use `sec` and
 `ter` for RDMA discovery and keep `pri` limited to firmware, X710, and
 non-RDMA Gentoo preparation.
+
+The `sec` positive-control workflow therefore runs concurrently with the `pri`
+replacement workflow but does not depend on it. Safe concurrent work is:
+read-only `sec` evidence capture, Arista `Et7/1`/`Et7/3` comparison capture,
+NVIDIA DOCA/OFED preflight with `apply=false`, and staging the userspace RDMA
+tooling required for later `sec` to `ter` pairwise smoke. Destructive `sec`
+rebuild, live vendor-driver install, LACP promotion, and storage protocol
+promotion remain separate gates.
 
 ## Validation Gates
 
