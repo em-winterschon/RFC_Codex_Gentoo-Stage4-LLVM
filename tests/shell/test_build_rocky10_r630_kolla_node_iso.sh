@@ -47,6 +47,7 @@ assert_file_contains "${SCRIPT}" '/etc/NetworkManager/system-connections/bond1.n
 assert_file_contains "${SCRIPT}" 'bond_options_to_nm_keyfile'
 assert_file_contains "${SCRIPT}" 'lacp_rate=fast'
 assert_file_contains "${SCRIPT}" 'xmit_hash_policy=layer3+4'
+assert_file_contains "${SCRIPT}" 'autoconnect-ports=1'
 assert_file_contains "${SCRIPT}" 'master=bond0'
 assert_file_contains "${SCRIPT}" 'master=bond1'
 assert_file_contains "${SCRIPT}" 'if [[ "${MGMT_BOND_ENABLED}" == "true" ]]'

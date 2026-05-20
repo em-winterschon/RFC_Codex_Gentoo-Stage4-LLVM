@@ -356,6 +356,7 @@ uuid=__BOND0_UUID__
 type=bond
 interface-name=bond0
 autoconnect=true
+autoconnect-ports=1
 
 [bond]
 ${MGMT_BOND_KEYFILE_OPTIONS}
@@ -404,6 +405,7 @@ uuid=__BOND1_UUID__
 type=bond
 interface-name=bond1
 autoconnect=true
+autoconnect-ports=1
 
 [bond]
 ${FRONTEND_BOND_KEYFILE_OPTIONS}
