@@ -167,14 +167,41 @@ The C3758 is not the heavy compiler or AI compute target. Its value is stable
 always-on orchestration, network-adjacent automation, low-power workers, and
 distributed validation across six identical nodes.
 
+## Canary Validation Lane
+
+The second M70 should become the ring-0 canary for the M70 pool. It should use
+the same baseline machine profile as the primary Forge M70, but with distinct
+identity, NetBox records, serial path, runtime state, and workload assignment.
+
+Approved network split:
+
+- Intel i211 `netboot0`: primary management, iPXE, rescue, first boot.
+- Intel i211 `enp3s0`: post-boot management backup.
+- i211 management bond: active-backup, outside Open vSwitch.
+- Intel X553 `eno1` through `eno4`: OVS-owned workload LACP trunk.
+- OVS bridge `br-ovs0`: VM/container/Kata/Firecracker/QEMU/LXC workload
+  networks.
+
+Management remains the recovery path. The X553/OVS side is the intentional
+blast-test area for workload networking. Promote changes from canary to primary
+Forge M70 only after boot, management failover, X553 LACP, OVS, and
+runtime-specific network gates pass.
+
+Operator runbook:
+
+- [`M70-CANARY-VALIDATION-LANE.md`](M70-CANARY-VALIDATION-LANE.md)
+- [canary validation lane design](superpowers/specs/2026-05-21-m70-canary-validation-lane-design.md)
+
 ## Safe Next Actions
 
 1. Stage the Intel+AMD microcode boot fix and verify artifact order without a
    reboot.
-2. Add the M70 runtime package policy for Podman/QEMU/SLURM/MUNGE and dry-run
-   the merge plan.
-3. Add NetBox records for the `bond0` workload intent before assigning IPs or
-   bridges.
-4. Decide whether Firecracker comes from the masked Gentoo binary ebuild or a
+2. Bring the second M70 online as the ring-0 canary using the approved i211
+   management and X553 OVS/LACP split.
+3. Add the M70 runtime package policy for Podman/QEMU/SLURM/MUNGE and dry-run
+   the merge plan on the canary first.
+4. Add NetBox records for the canary workload intent before assigning OVS
+   bridges, VLANs, or runtime networks.
+5. Decide whether Firecracker comes from the masked Gentoo binary ebuild or a
    pinned upstream release artifact.
-5. Decide whether Kata requires an overlay, binary package path, or deferral.
+6. Decide whether Kata requires an overlay, binary package path, or deferral.
