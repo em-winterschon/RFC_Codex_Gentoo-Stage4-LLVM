@@ -104,9 +104,10 @@ Recommended first implementation:
 - Local spool: `/var/lib/forge-memory/spool/<session-id>.jsonl`.
 - Sync path: append locally, upload object, write manifest, then mark local spool
   synced.
-- MCP facade: implement `memory.append_event`,
-  `memory.get_session_summary`, `memory.list_recent_sessions`,
-  `memory.search_artifact_refs`, and `memory.render_eod_context`.
+- MCP facade: `scripts/mcp_servers/forge_memory_mcp.py` exposes
+  `memory.append_event`, `memory.get_session_summary`,
+  `memory.list_recent_sessions`, `memory.search_artifact_refs`, and
+  `memory.render_eod_context`.
 - GitHub bridge: link memory manifests to issue comments or EOD reports rather
   than storing long raw event logs in GitHub.
 
@@ -237,11 +238,10 @@ runtime secret path and is never written to the manifest.
 Current limitations:
 
 - Vault/SSH/internal-CA signing backends remain future hardening options
-- MCP methods still need to wrap the CLI and enforce operator policy
 
 ## MCP Integration Direction
 
-The MCP control plane should expose these methods:
+The Forge memory MCP facade exposes these methods:
 
 - `memory.append_event`
 - `memory.get_session_summary`
@@ -249,9 +249,10 @@ The MCP control plane should expose these methods:
 - `memory.search_artifact_refs`
 - `memory.render_eod_context`
 
-Write methods must be gated by repository identity, branch, and an explicit
-operator policy. Read methods may use cached summaries first and raw event logs
-only when higher fidelity is required.
+`memory.append_event` is a write method and is gated by `MCP_ALLOW_MUTATIONS`,
+an idempotency key, and an audit artifact. Read methods operate from the local
+spool path selected by `FORGE_MEMORY_SPOOL_ROOT`, defaulting to
+`/var/lib/forge-memory/spool`.
 
 ## Open Decisions
 
