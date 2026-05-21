@@ -66,6 +66,12 @@ default and requires both `hasslehoff_backup_scheduler_enabled=true` and
 `hasslehoff_backup_scheduler_apply=true` before writing
 `/etc/cron.d/hasslehoff-backup`.
 
+The role installs a small runtime bundle under
+`/opt/rfc1918/hasslehoff-backup` instead of requiring a full git checkout on
+the Proxmox host. The runtime bundle contains `backup-hasslehoff-config.sh`,
+`backup-hasslehoff-scheduled.sh`, `validate-hasslehoff-backup-policy.py`, and
+`docs/backup-policies/hasslehoff-backup-policy.yml`.
+
 Before installing a recurring job, run the same role with
 `hasslehoff_backup_scheduler_run_preflight=true`. That executes the scheduled
 wrapper with `HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1`, validates

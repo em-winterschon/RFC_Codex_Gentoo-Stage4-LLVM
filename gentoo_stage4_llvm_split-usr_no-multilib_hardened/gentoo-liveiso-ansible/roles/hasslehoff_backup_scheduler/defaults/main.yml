@@ -7,6 +7,8 @@ hasslehoff_backup_scheduler_cron_minute: "17"
 hasslehoff_backup_scheduler_cron_hour: "9"
 hasslehoff_backup_scheduler_cron_user: root
 hasslehoff_backup_scheduler_repo_root: /root/RFC_Codex_Gentoo-Stage4-LLVM
+hasslehoff_backup_scheduler_runtime_root: /opt/rfc1918/hasslehoff-backup
+hasslehoff_backup_scheduler_install_runtime_bundle: true
 hasslehoff_backup_scheduler_policy_path: docs/backup-policies/hasslehoff-backup-policy.yml
 hasslehoff_backup_scheduler_script_path: scripts/backup-hasslehoff-scheduled.sh
 hasslehoff_backup_scheduler_validate_policy: true
@@ -22,3 +24,16 @@ hasslehoff_backup_scheduler_forbidden_target_patterns:
   - x12again
   - prinzessin
   - 172.16.99.108
+hasslehoff_backup_scheduler_runtime_files:
+  - src: scripts/backup-hasslehoff-config.sh
+    dest: scripts/backup-hasslehoff-config.sh
+    mode: "0755"
+  - src: scripts/backup-hasslehoff-scheduled.sh
+    dest: scripts/backup-hasslehoff-scheduled.sh
+    mode: "0755"
+  - src: scripts/validate-hasslehoff-backup-policy.py
+    dest: scripts/validate-hasslehoff-backup-policy.py
+    mode: "0755"
+  - src: docs/backup-policies/hasslehoff-backup-policy.yml
+    dest: docs/backup-policies/hasslehoff-backup-policy.yml
+    mode: "0644"
