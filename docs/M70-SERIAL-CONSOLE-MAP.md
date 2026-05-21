@@ -13,18 +13,18 @@ USB serial adapter is attached.
 | --- | --- | --- | --- | --- | --- |
 | `gw_rfc99_mkccr2004_16g` | CCR2004 gateway RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` | `115200` | Previously validated prompt `[admin@gw-rfc99-mkccr2004-16g] >`; adapter still present on M70. |
 | `sw_mgmt_mkcrs354` | CRS354 distribution switch RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` | `115200` | Previously validated prompt `[admin@sw-mgmt-mkcrs354] >`; adapter still present on M70. |
-| `sw_spine_crs309_rfc99` | CRS309 spine switch RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB4` | `115200` | Previously validated prompt `[admin@sw-spine-crs309-rfc99] >`; adapter still present on M70. |
+| `sw_spine_crs309_rfc99` | CRS309 spine switch RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB2` | `115200` | Previously validated prompt `[admin@sw-spine-crs309-rfc99] >`; adapter still present on M70. |
 
-The older Hasslehoff-era notes showed CRS309 at `/dev/ttyUSB2`. On M70 it is
-currently `/dev/ttyUSB4` because another dual-port FT2232H adapter is present
-ahead of it in enumeration order.
+The older Hasslehoff-era notes showed CRS309 at `/dev/ttyUSB2`. After the M70
+USB hub power swap on 2026-05-21T22:40Z, CRS309 is again enumerated as
+`/dev/ttyUSB2`. Continue using the stable by-id path for automation.
 
 ## Unassigned Live Ports
 
 | Adapter | Stable M70 path | Current tty | Notes |
 | --- | --- | --- | --- |
-| FTDI FT2232H `FT5W5FZH`, interface 0 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0` | `/dev/ttyUSB2` | Unassigned. One of the FT2232H ports is known to be physically disconnected as of 2026-05-21. |
-| FTDI FT2232H `FT5W5FZH`, interface 1 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | `/dev/ttyUSB3` | Unassigned. Candidate for a future ATS/PDU/UPS RJ12 console adapter path after physical cabling is installed. |
+| FTDI FT2232H `FT5W5FZH`, interface 0 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0` | `/dev/ttyUSB3` | Unassigned. One of the FT2232H ports is known to be physically disconnected as of 2026-05-21. |
+| FTDI FT2232H `FT5W5FZH`, interface 1 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | `/dev/ttyUSB4` | Unassigned. Candidate for a future ATS/PDU/UPS RJ12 console adapter path after physical cabling is installed. |
 
 Power devices in the SUN99/RFC99 rack use RJ12 serial ports. They are not
 modeled as attached to M70 serial paths yet because the RJ12 adapter cabling is
@@ -100,7 +100,7 @@ Proposed `dcim.console-server-ports` on `admin_sun99_forge_099070`:
 | --- | --- | --- |
 | `rfc99-serial/ccr2004-gateway` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`; current tty `/dev/ttyUSB0`; 115200 baud. |
 | `rfc99-serial/crs354-distribution` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`; current tty `/dev/ttyUSB1`; 115200 baud. |
-| `rfc99-serial/crs309-spine` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`; current tty `/dev/ttyUSB4`; 115200 baud. |
+| `rfc99-serial/crs309-spine` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`; current tty `/dev/ttyUSB2`; 115200 baud. |
 
 Proposed target `dcim.console-ports`:
 
