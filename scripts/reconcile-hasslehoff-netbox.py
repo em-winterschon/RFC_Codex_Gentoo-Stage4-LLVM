@@ -304,11 +304,14 @@ def ensure_mac(
     if existing:
         assigned = existing.get("assigned_object")
         if not assigned:
-            return nb.patch(
-                existing,
-                {"assigned_object_type": assigned_type, "assigned_object_id": assigned_id},
-                f"MAC {mac} assign {label}",
-            ) or existing
+            return (
+                nb.patch(
+                    existing,
+                    {"assigned_object_type": assigned_type, "assigned_object_id": assigned_id},
+                    f"MAC {mac} assign {label}",
+                )
+                or existing
+            )
         return existing
     return nb.post(
         "dcim/mac-addresses",
