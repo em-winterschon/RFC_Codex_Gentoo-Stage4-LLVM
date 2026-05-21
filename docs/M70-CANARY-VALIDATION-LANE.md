@@ -73,6 +73,39 @@ Create or validate these NetBox records before applying live network state:
 NetBox is authoritative. Host-local observations are evidence used to update
 NetBox, not a replacement for NetBox.
 
+## Planned Physical Intake
+
+Operator-provided planned canary cabling on 2026-05-21:
+
+| Canary endpoint | Planned connection | Role |
+| --- | --- | --- |
+| `netboot0` | CSS326 `ge19` | iPXE, rescue, primary management |
+| `enp3s0` | CSS326 `ge20` | post-boot management backup |
+| `eno1` | CSS326 `ge21` | OVS workload LACP member |
+| `eno2` | CSS326 `ge22` | OVS workload LACP member |
+| `eno3` | CSS326 `ge23` | OVS workload LACP member |
+| `eno4` | CSS326 `ge24` | OVS workload LACP member |
+| RS232 console | remaining spare M70 USB-hub RS232 path | BIOS/iPXE console work |
+| Power inlet | AP7901 PDU outlet 7 | canary power |
+
+Known canary NIC facts:
+
+- `netboot0`: PCI `0000:02:00.0`, driver `igb`, MAC `00:07:32:58:73:34`.
+- `enp3s0`: PCI `0000:03:00.0`, driver `igb`, MAC pending host discovery.
+- `eno1` through `eno4`: X553 `ixgbe`, MAC addresses pending host discovery.
+
+Required CSS326 prep:
+
+- Move CRS354 `ether49` management copper from CSS326 `ge24` to CSS326 `ge15`.
+- Free CSS326 `ge19` through `ge24` for the canary M70's six Ethernet links.
+- Resolve the existing source-of-truth conflict before NetBox apply: the
+  current structured inventory and NetBox description still mark CSS326 `ge15`
+  as `lap-sun99-chonkers-lom`.
+
+Do not update live NetBox cabling to this target state until the physical moves
+are complete or explicitly confirmed. Once the canary boots, discover the
+remaining five NIC MAC addresses from the host and reconcile NetBox.
+
 ## Serial-Hub Handling
 
 During USB hub power changes, all attached serial paths are considered
@@ -101,6 +134,9 @@ Required evidence:
 - RS232 is physically attached
 - NetBox has the canary device, interfaces, cabling, IPs, and serial intent
 - `/dev/serial/by-id` is stable after the USB hub power swap
+- CSS326 `ge15` conflict with Chonkers is resolved before CRS354 management is
+  recorded there
+- CSS326 `ge19` through `ge24` match the canary physical cabling plan
 
 Do not continue to OVS testing until this passes.
 

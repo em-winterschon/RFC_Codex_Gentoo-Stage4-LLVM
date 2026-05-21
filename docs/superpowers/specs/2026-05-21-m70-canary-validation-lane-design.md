@@ -56,6 +56,28 @@ Before live network changes, NetBox should contain:
 NetBox remains the source of truth. Local host inventory is evidence, not the
 authority.
 
+## Planned Physical Topology
+
+The initial canary cabling plan uses CSS326 `ge19` through `ge24` for the six
+M70 Ethernet links:
+
+- canary `netboot0`, PCI `0000:02:00.0`, MAC `00:07:32:58:73:34` to CSS326
+  `ge19`
+- canary `enp3s0`, PCI `0000:03:00.0` to CSS326 `ge20`
+- canary `eno1` to CSS326 `ge21`
+- canary `eno2` to CSS326 `ge22`
+- canary `eno3` to CSS326 `ge23`
+- canary `eno4` to CSS326 `ge24`
+
+CRS354 `ether49` management must move from CSS326 `ge24` to CSS326 `ge15` to
+free `ge24` for the canary workload LACP set. Before live NetBox apply, resolve
+the current inventory conflict where CSS326 `ge15` is still described as the
+Chonkers laptop LOM path.
+
+The canary power feed is planned for AP7901 PDU outlet 7. The canary RS232
+console should use the remaining spare M70 USB-hub RS232 path, with serial
+console available for BIOS and iPXE repair.
+
 ## Validation Gates
 
 1. Cable and inventory gate:

@@ -75,6 +75,25 @@ The current SFP modules are Intel `FTLX8571D3BCV-IT` 10G-SR MMF optics. The
 fabric default remains FS.com `SFP-10GSR-85` or 10Gtek `AXS85-192-M3` for new
 10G-SR links unless a device record explicitly states otherwise.
 
+## Planned M70 Canary Recable
+
+Operator-provided physical plan on 2026-05-21:
+
+| CSS326 port | Planned endpoint | Purpose |
+| --- | --- | --- |
+| `ge15` | CRS354 `ether49` | move CRS354 management here from `ge24` |
+| `ge19` | M70 canary `netboot0`, MAC `00:07:32:58:73:34` | iPXE, rescue, primary management |
+| `ge20` | M70 canary `enp3s0` | post-boot management backup |
+| `ge21` | M70 canary `eno1` | OVS workload LACP member |
+| `ge22` | M70 canary `eno2` | OVS workload LACP member |
+| `ge23` | M70 canary `eno3` | OVS workload LACP member |
+| `ge24` | M70 canary `eno4` | OVS workload LACP member |
+
+Source-of-truth caveat: the current structured inventory and NetBox interface
+description still mark CSS326 `ge15` as `lap-sun99-chonkers-lom`. Reconcile or
+retire that connection before recording CRS354 management on `ge15` as live
+NetBox cabling.
+
 ## Automation Boundary
 
 SwOS is not RouterOS. It does not provide SSH, RouterOS CLI, or RouterOS
