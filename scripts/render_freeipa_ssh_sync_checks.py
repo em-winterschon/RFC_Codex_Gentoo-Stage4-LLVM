@@ -19,7 +19,9 @@ from validate_identity_source import (  # noqa: E402
 )
 
 
-def user_controller_checks(user: dict[str, Any], hosts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def user_controller_checks(
+    user: dict[str, Any], hosts: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     checks: list[dict[str, Any]] = [
         {
             "name": f"ipa user-show {user['name']}",
@@ -122,11 +124,7 @@ def render_freeipa_ssh_sync_checks(source: dict[str, Any]) -> dict[str, Any]:
         "realm": plan["realm"],
         "domain": plan["domain"],
         "requires_vars": sorted(
-            {
-                var_name
-                for user in users
-                for var_name in user.get("ssh_public_key_vars", []) or []
-            }
+            {var_name for user in users for var_name in user.get("ssh_public_key_vars", []) or []}
         ),
         "users": [
             {
