@@ -125,11 +125,15 @@ Implemented operations:
 - `list-sessions`: summarizes local continuity sessions for bootstrap,
   including event count, event hash, last event type, last intent, and whether
   a closeout manifest exists
+- `bootstrap-session`: appends a session-start event after summarizing current
+  repo branch/commit/dirty state, latest EOD/SITREP/closeout documents, recent
+  local memory sessions, optional issue state, optional blocker state, and
+  operator-provided memory notes
 
 The CLI records session, agent, repo, branch, commit, host, timestamp, intent,
 actions, artifact references, and notes. It rejects secret-looking JSON keys
 before writing an event or manifest so token material cannot be accidentally
-stored through the structured `--extra-json` path.
+stored through structured JSON paths.
 
 Example:
 
@@ -156,10 +160,25 @@ scripts/forge_memory_spool.py list-sessions \
   --limit 10
 ```
 
+Session bootstrap example:
+
+```bash
+scripts/forge_memory_spool.py bootstrap-session \
+  --spool-root /var/lib/forge-memory/spool \
+  --session-id "$(date -u +%Y%m%dT%H%M%SZ)-forge" \
+  --agent-id forge \
+  --repo-path /root/RFC_Codex_Gentoo-Stage4-LLVM \
+  --intent "resume cross-machine continuity" \
+  --issue-state-file project-management/open-issues.json \
+  --blocker-state-file project-management/blockers.json \
+  --memory-note "M70 is the preferred Forge runtime"
+```
+
 Use this before live infrastructure work when object storage is unavailable or
 not yet selected. It gives a new Forge runtime enough local continuity context
-to find recent session streams and closeout manifests, then reconcile those
-artifact references against GitHub issues and committed docs.
+to find recent session streams and closeout manifests, reconcile those artifact
+references against GitHub issues and committed docs, and append a durable
+session-start event before taking action.
 
 Current limitations:
 

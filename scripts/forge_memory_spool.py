@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 import socket
+import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,6 +16,7 @@ from typing import Any
 
 EVENT_SCHEMA = "rfc-codex.forge-memory-event.v1"
 MANIFEST_SCHEMA = "rfc-codex.forge-memory-manifest.v1"
+BOOTSTRAP_SCHEMA = "rfc-codex.forge-bootstrap-summary.v1"
 SAFE_ID = re.compile(r"^[A-Za-z0-9._:-]+$")
 SECRET_KEY = re.compile(
     r"(api[_-]?key|api[_-]?token|auth[_-]?token|bearer|client[_-]?secret|"
@@ -91,6 +93,32 @@ def parse_extra_json(raw: str | None) -> dict[str, Any]:
     return value
 
 
+def load_json_file(
+    path_text: str | None, label: str, base_path: Path | None = None
+) -> dict[str, Any]:
+    if not path_text:
+        return {"path": "", "items": []}
+    path = Path(path_text)
+    if not path.is_absolute() and base_path is not None:
+        path = base_path / path
+    if not path.exists():
+        raise SpoolError(f"{label} JSON does not exist: {path}")
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SpoolError(f"{label} JSON is invalid: {exc.msg}") from exc
+    if isinstance(value, list):
+        items = value
+    elif isinstance(value, dict):
+        items = value.get("items", value.get("issues", value.get("blockers", [])))
+        if not isinstance(items, list):
+            raise SpoolError(f"{label} JSON items must be a list")
+    else:
+        raise SpoolError(f"{label} JSON must be an object or list")
+    reject_secret_keys(items)
+    return {"path": str(path), "items": items}
+
+
 def reject_secret_keys(value: Any, path: str = "$") -> None:
     if isinstance(value, dict):
         for key, nested in value.items():
@@ -101,6 +129,70 @@ def reject_secret_keys(value: Any, path: str = "$") -> None:
     elif isinstance(value, list):
         for index, nested in enumerate(value):
             reject_secret_keys(nested, f"{path}[{index}]")
+
+
+def run_git(repo_path: Path, *args: str) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_path), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SpoolError(f"git {' '.join(args)} failed for {repo_path}: {exc}") from exc
+    return result.stdout.strip()
+
+
+def summarize_repo(repo_path: Path) -> dict[str, Any]:
+    if not repo_path.exists():
+        raise SpoolError(f"repo path does not exist: {repo_path}")
+    branch = run_git(repo_path, "branch", "--show-current")
+    commit = run_git(repo_path, "rev-parse", "HEAD")
+    status_lines = run_git(repo_path, "status", "--short").splitlines()
+    summary = {
+        "path": str(repo_path),
+        "branch": branch,
+        "commit": commit,
+        "dirty": bool(status_lines),
+        "status_short": status_lines[:50],
+    }
+    reject_secret_keys(summary)
+    return summary
+
+
+def latest_documents(repo_path: Path, limit: int) -> list[dict[str, str]]:
+    patterns = [
+        "docs/EOD-STATUS-*.md",
+        "docs/SITREP-*.md",
+        "docs/MORNING-SITREP*.md",
+        "docs/OVERNIGHT-*.md",
+        "docs/closeouts/*.yml",
+        "docs/closeouts/*.yaml",
+    ]
+    candidates: list[Path] = []
+    for pattern in patterns:
+        candidates.extend(path for path in repo_path.glob(pattern) if path.is_file())
+    candidates = sorted(
+        candidates, key=lambda path: (path.stat().st_mtime, str(path)), reverse=True
+    )
+    documents: list[dict[str, str]] = []
+    for path in candidates[:limit]:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        title = ""
+        for line in text.splitlines():
+            if line.startswith("#"):
+                title = line.lstrip("#").strip()
+                break
+        documents.append(
+            {
+                "path": str(path.relative_to(repo_path)),
+                "title": title,
+                "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            }
+        )
+    reject_secret_keys(documents)
+    return documents
 
 
 def append_event(args: argparse.Namespace) -> dict[str, Any]:
@@ -140,6 +232,50 @@ def append_event(args: argparse.Namespace) -> dict[str, Any]:
         "session_id": session_id,
         "agent_id": agent_id,
     }
+
+
+def bootstrap_session(args: argparse.Namespace) -> dict[str, Any]:
+    spool_root = Path(args.spool_root)
+    agent_id = require_safe_id(args.agent_id, "agent-id")
+    session_id = require_safe_id(args.session_id, "session-id")
+    repo_path = Path(args.repo_path).resolve()
+    repo = summarize_repo(repo_path)
+    recent_sessions = list_sessions(
+        argparse.Namespace(spool_root=str(spool_root), agent_id=agent_id, limit=args.session_limit)
+    )
+    issue_state = load_json_file(args.issue_state_file, "issue-state", repo_path)
+    blocker_state = load_json_file(args.blocker_state_file, "blocker-state", repo_path)
+
+    bootstrap_summary = {
+        "bootstrap_schema": BOOTSTRAP_SCHEMA,
+        "repo": repo,
+        "latest_documents": latest_documents(repo_path, args.document_limit),
+        "recent_sessions": recent_sessions,
+        "issue_state": issue_state,
+        "blocker_state": blocker_state,
+        "latest_memory_notes": args.memory_note,
+        "object_store_state": args.object_store_state,
+        "mcp_state": args.mcp_state,
+    }
+    reject_secret_keys(bootstrap_summary)
+
+    event_args = argparse.Namespace(
+        spool_root=str(spool_root),
+        agent_id=agent_id,
+        session_id=session_id,
+        repo=repo_path.name,
+        branch=repo["branch"],
+        commit=repo["commit"],
+        event_type="session-start",
+        intent=args.intent,
+        action=["continuity-bootstrap"],
+        artifact=["repo-state", "memory-state", "issue-state", "blocker-state"],
+        note=args.note,
+        extra_json=json.dumps(bootstrap_summary, sort_keys=True),
+    )
+    result = append_event(event_args)
+    result["bootstrap_summary"] = bootstrap_summary
+    return result
 
 
 def closeout(args: argparse.Namespace) -> dict[str, Any]:
@@ -276,6 +412,25 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--agent-id", default="forge")
     list_parser.add_argument("--limit", type=int, default=10)
     list_parser.set_defaults(func=list_sessions)
+
+    bootstrap = subparsers.add_parser(
+        "bootstrap-session",
+        help="append a session-start event with repo, memory, issue, and blocker summaries",
+    )
+    bootstrap.add_argument("--spool-root", required=True)
+    bootstrap.add_argument("--session-id", required=True)
+    bootstrap.add_argument("--agent-id", default="forge")
+    bootstrap.add_argument("--repo-path", required=True)
+    bootstrap.add_argument("--intent", default="resume continuity")
+    bootstrap.add_argument("--issue-state-file")
+    bootstrap.add_argument("--blocker-state-file")
+    bootstrap.add_argument("--memory-note", action="append", default=[])
+    bootstrap.add_argument("--note", action="append", default=[])
+    bootstrap.add_argument("--document-limit", type=int, default=5)
+    bootstrap.add_argument("--session-limit", type=int, default=5)
+    bootstrap.add_argument("--object-store-state", default="unavailable")
+    bootstrap.add_argument("--mcp-state", default="unavailable")
+    bootstrap.set_defaults(func=bootstrap_session)
 
     return parser
 
