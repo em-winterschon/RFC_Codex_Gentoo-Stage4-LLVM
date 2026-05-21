@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Stage a one-shot Rocky Linux 10 Kolla-node netinstall boot entry on an R630.
 
 This script runs on the target R630. It does not reboot unless
@@ -60,7 +60,7 @@ BOOT_DIR="${BOOT_DIR:-/boot/rfc1918-rocky10-kolla}"
 TITLE="${TITLE:-RFC1918 Rocky Linux 10 Kolla node installer}"
 
 for cmd in curl grub2-mkconfig grub2-reboot grubby; do
-  command -v "$cmd" >/dev/null || {
+  command -v "$cmd" > /dev/null || {
     echo "missing required command: $cmd" >&2
     exit 1
   }
@@ -119,12 +119,12 @@ write_custom_grub_entry() {
       $0 == begin { skip = 1; next }
       $0 == end { skip = 0; next }
       !skip { print }
-    ' "$custom_file" >"$tmp"
+    ' "$custom_file" > "$tmp"
   else
     {
       printf '#!/bin/sh\n'
       printf 'exec tail -n +3 "$0"\n'
-    } >"$tmp"
+    } > "$tmp"
   fi
 
   {
@@ -134,7 +134,7 @@ write_custom_grub_entry() {
     printf '  %s %s\n' "$initrd_cmd" "$initrd_path"
     printf '}\n'
     printf '%s\n' "$end"
-  } >>"$tmp"
+  } >> "$tmp"
 
   install -m 0755 "$tmp" "$custom_file"
   rm -f "$tmp"
@@ -160,7 +160,7 @@ if [[ -n "$INSTALL_NET_MAC" ]]; then
   args+=("ifname=${INSTALL_NET_DEVICE}:${INSTALL_NET_MAC}")
 fi
 
-if grubby --info=ALL | grep -F "title=${TITLE}" >/dev/null 2>&1; then
+if grubby --info=ALL | grep -F "title=${TITLE}" > /dev/null 2>&1; then
   grubby --remove-kernel="$BOOT_DIR/vmlinuz-rocky10" || true
 fi
 

@@ -13,12 +13,12 @@ SLEEP_SECONDS="${K10_WATCH_SLEEP_SECONDS:-60}"
 
 notify() {
   local body="$1"
-  command -v curl >/dev/null 2>&1 || return 0
+  command -v curl > /dev/null 2>&1 || return 0
   curl -fsS --max-time 5 \
     -H "Host: ${NTFY_HOST}" \
     -H "Title: K10 Ansible resume" \
     -d "${body}" \
-    "${NTFY_URL}" >/dev/null 2>&1 || true
+    "${NTFY_URL}" > /dev/null 2>&1 || true
 }
 
 ssh_k10() {
@@ -87,7 +87,7 @@ main() {
       printf '%s package-pass-running; waiting\n' "$(date -Is)"
       sleep "${SLEEP_SECONDS}"
     done
-  } >>"${LOG_FILE}" 2>&1
+  } >> "${LOG_FILE}" 2>&1
 }
 
 main "$@"

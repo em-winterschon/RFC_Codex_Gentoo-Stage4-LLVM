@@ -55,6 +55,24 @@ test_dry_run_local_root() {
   assert_contains "${output}" "local-repo=${local_root}/stage4-test__stage5-test__amd64__x86_64_v2"
 }
 
+test_dry_run_nested_repo_id() {
+  local temp_dir output local_root
+  temp_dir="$(mktemp -d)"
+  local_root="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}" "${local_root}"' RETURN
+
+  output="$(
+    bash "${SYNC_SCRIPT}" \
+      --pkgdir "${temp_dir}" \
+      --repo-id contracts/x86_64-pc-linux-gnu/baseline-portable-openrc-llvm \
+      --local-root "${local_root}" \
+      --dry-run
+  )"
+
+  assert_contains "${output}" "repo-id=contracts/x86_64-pc-linux-gnu/baseline-portable-openrc-llvm"
+  assert_contains "${output}" "local-repo=${local_root}/contracts/x86_64-pc-linux-gnu/baseline-portable-openrc-llvm"
+}
+
 test_rejects_unsafe_repo_id() {
   local temp_dir output
   temp_dir="$(mktemp -d)"
@@ -70,7 +88,25 @@ test_rejects_unsafe_repo_id() {
     fail "expected unsafe repo-id to fail"
   fi
 
-  assert_contains "${output}" 'repo-id contains unsafe characters'
+  assert_contains "${output}" 'repo-id contains unsafe path component'
+}
+
+test_rejects_repo_id_traversal_component() {
+  local temp_dir output
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "${temp_dir}"' RETURN
+
+  if output="$(
+    bash "${SYNC_SCRIPT}" \
+      --pkgdir "${temp_dir}" \
+      --repo-id 'contracts/../bad' \
+      --remote root@example.invalid \
+      --dry-run 2>&1
+  )"; then
+    fail "expected repo-id traversal to fail"
+  fi
+
+  assert_contains "${output}" 'repo-id contains unsafe path component'
 }
 
 test_rejects_missing_destination() {
@@ -92,7 +128,9 @@ test_rejects_missing_destination() {
 
 test_dry_run
 test_dry_run_local_root
+test_dry_run_nested_repo_id
 test_rejects_unsafe_repo_id
+test_rejects_repo_id_traversal_component
 test_rejects_missing_destination
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

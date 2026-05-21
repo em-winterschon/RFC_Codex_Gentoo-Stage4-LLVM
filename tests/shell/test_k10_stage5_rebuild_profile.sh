@@ -47,7 +47,7 @@ assert_before() {
   second_line="$(grep -Fn -- "${second}" "${path}" | head -n1 | cut -d: -f1 || true)"
   [[ -n "${first_line}" ]] || fail "missing '${first}' in ${path}"
   [[ -n "${second_line}" ]] || fail "missing '${second}' in ${path}"
-  (( first_line < second_line )) || fail "'${first}' must appear before '${second}' in ${path}"
+  ((first_line < second_line)) || fail "'${first}' must appear before '${second}' in ${path}"
 }
 
 assert_file "${HOST_VARS}"
