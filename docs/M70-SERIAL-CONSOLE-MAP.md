@@ -23,8 +23,8 @@ USB hub power swap on 2026-05-21T22:40Z, CRS309 is again enumerated as
 
 | Adapter | Stable M70 path | Current tty | Notes |
 | --- | --- | --- | --- |
-| FTDI FT2232H `FT5W5FZH`, interface 0 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0` | `/dev/ttyUSB3` | Unassigned. One of the FT2232H ports is known to be physically disconnected as of 2026-05-21. |
-| FTDI FT2232H `FT5W5FZH`, interface 1 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | `/dev/ttyUSB4` | Unassigned. Candidate for a future ATS/PDU/UPS RJ12 console adapter path after physical cabling is installed. |
+| FTDI FT2232H `FT5W5FZH`, interface 0 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0` | `/dev/ttyUSB3` | Candidate M70 canary RS232 path after operator-reported cable install. Passive 115200 capture on 2026-05-21 produced no bytes. |
+| FTDI FT2232H `FT5W5FZH`, interface 1 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | `/dev/ttyUSB4` | Candidate M70 canary RS232 path after operator-reported cable install. Passive 115200 capture on 2026-05-21 produced no bytes. |
 
 Power devices in the SUN99/RFC99 rack use RJ12 serial ports. They are not
 modeled as attached to M70 serial paths yet because the RJ12 adapter cabling is
@@ -118,8 +118,8 @@ Proposed `dcim.cables`:
 | `admin_sun99_forge_099070:rfc99-serial/crs354-distribution` | `sw_mgmt_mkcrs354:serial0` | `connected` | `m70-console-crs354-distribution` |
 | `admin_sun99_forge_099070:rfc99-serial/crs309-spine` | `sw_spine_crs309_rfc99:serial0` | `connected` | `m70-console-crs309-spine` |
 
-Do not add ATS/PDU/UPS console cables until the RJ12 adapters are installed and
-the live FTDI path is revalidated from M70.
+Do not add ATS/PDU/UPS or M70 canary console cables until the RJ12 adapters or
+canary RS232 path are positively identified from M70.
 
 ## Serial Tooling Readiness
 

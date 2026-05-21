@@ -41,10 +41,10 @@ the recovery path if OVS or workload networking breaks.
 
 ## NetBox Source Of Truth
 
-Before live network changes, NetBox should contain:
+Before workload network changes, NetBox should contain:
 
-- the canary M70 device record, hostname, FQDN, management IP, and rack/cabling
-  placement
+- the canary M70 device record, site, role, device type, and cabling placement
+- hostname, FQDN, management IP, rack placement, and serial after discovery
 - all six physical NIC interfaces, with MAC addresses where known
 - `bond-mgmt` as the i211 management LAG intent
 - `br-ovs0` and the X553 workload LAG/OVS intent
@@ -56,10 +56,11 @@ Before live network changes, NetBox should contain:
 NetBox remains the source of truth. Local host inventory is evidence, not the
 authority.
 
-## Planned Physical Topology
+## Confirmed Physical Topology
 
 The initial canary cabling plan uses CSS326 `ge19` through `ge24` for the six
-M70 Ethernet links:
+M70 Ethernet links. Those links were operator-confirmed active on 2026-05-21
+and verified by CSS326 SwOS snapshot `20260521T232928Z`:
 
 - canary `netboot0`, PCI `0000:02:00.0`, MAC `00:07:32:58:73:34` to CSS326
   `ge19`
@@ -75,15 +76,18 @@ confirmed on 2026-05-21. NetBox cable `4` now records CSS326 `ge15` to CRS354
 `ether49` as connected, and the structured inventory records Chonkers' former
 CSS326 `ge15` connection as historical.
 
-The canary power feed is planned for AP7901 PDU outlet 7. The canary RS232
+NetBox device `m70_canary` now has six physical Ethernet interfaces. NetBox
+cables `5` through `10` record the CSS326 `ge19` through `ge24` links, and
+cable `11` records AP7901 outlet 7 to the canary power input. The canary RS232
 console should use the remaining spare M70 USB-hub RS232 path, with serial
-console available for BIOS and iPXE repair.
+console available for BIOS and iPXE repair after the exact path is identified.
 
 ## Validation Gates
 
 1. Cable and inventory gate:
    - power, Ethernet, and RS232 are physically attached
-   - NetBox device, interface, cable, IP, and serial-console records exist
+   - NetBox device, interface, Ethernet-cable, and power-cable records exist
+   - IP, hostname/FQDN, and serial-console records are added after discovery
    - `/dev/serial/by-id` is stable after the USB hub power change
 
 2. Boot gate:

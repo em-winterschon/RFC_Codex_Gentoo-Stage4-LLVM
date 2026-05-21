@@ -103,23 +103,23 @@ devices:
         purpose: crs354-management
         status: active
       - name: ge19
-        purpose: m70-canary-netboot0-planned
-        status: planned
+        purpose: m70-canary-netboot0
+        status: active
       - name: ge20
-        purpose: m70-canary-enp3s0-planned
-        status: planned
+        purpose: m70-canary-enp3s0
+        status: active
       - name: ge21
-        purpose: m70-canary-eno1-planned
-        status: planned
+        purpose: m70-canary-eno1
+        status: active
       - name: ge22
-        purpose: m70-canary-eno2-planned
-        status: planned
+        purpose: m70-canary-eno2
+        status: active
       - name: ge23
-        purpose: m70-canary-eno3-planned
-        status: planned
+        purpose: m70-canary-eno3
+        status: active
       - name: ge24
-        purpose: m70-canary-eno4-planned
-        status: planned
+        purpose: m70-canary-eno4
+        status: active
       - name: sfp1
         purpose: crs309-spine-target
         media: 10G-SR
@@ -396,6 +396,63 @@ devices:
     notes:
       - Disposable first worker for SLURM pilot smoke validation.
       - Replace or expand with K10/X12AGAIN only after host E2ET passes.
+  - name: m70_canary
+    site: local-rfc1918-lab
+    role: m70-canary-validation
+    manufacturer: M70
+    model: Atom C3758 appliance
+    status: active
+    interfaces:
+      - name: netboot0
+        type: 1000base-t
+        purpose: i211-management-ipxe-rescue
+        mac_address: "00:07:32:58:73:34"
+        connected_device: sw_mgmt_css326
+        connected_interface: ge19
+        pci_address: "0000:02:00.0"
+        netboot_type: dynamic
+        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
+        status: active
+      - name: enp3s0
+        type: 1000base-t
+        purpose: i211-post-boot-management-backup
+        connected_device: sw_mgmt_css326
+        connected_interface: ge20
+        pci_address: "0000:03:00.0"
+        status: active
+      - name: eno1
+        type: 1000base-t
+        purpose: x553-ovs-workload-lacp-member
+        connected_device: sw_mgmt_css326
+        connected_interface: ge21
+        status: active
+      - name: eno2
+        type: 1000base-t
+        purpose: x553-ovs-workload-lacp-member
+        connected_device: sw_mgmt_css326
+        connected_interface: ge22
+        status: active
+      - name: eno3
+        type: 1000base-t
+        purpose: x553-ovs-workload-lacp-member
+        connected_device: sw_mgmt_css326
+        connected_interface: ge23
+        status: active
+      - name: eno4
+        type: 1000base-t
+        purpose: x553-ovs-workload-lacp-member
+        connected_device: sw_mgmt_css326
+        connected_interface: ge24
+        status: active
+    notes:
+      - M70 ring-0 canary and blast-test node for Forge workloads.
+      - CSS326 ge19-ge24 links are active by operator confirmation.
+      - SwOS snapshot 20260521T232928Z independently confirms those links.
+      - Use i211 netboot0 for iPXE, rescue, and primary management.
+      - Use i211 enp3s0 only as post-boot management backup.
+      - Use X553 eno1-eno4 for future OVS 802.3ad workload trunk validation.
+      - MAC addresses for enp3s0 and eno1-eno4 are pending host boot discovery.
+      - RS232 is attached, but the exact spare FT2232H path is pending console output.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging
@@ -487,12 +544,19 @@ devices:
         target_device: gmktek_nucbox_k10_stage5_candidate
         target_power_port: power0
         status: active
+      - name: outlet7
+        label: m70-canary
+        outlet_index: 7
+        target_device: m70_canary
+        target_power_port: power0
+        status: active
     notes:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
       - Operator/control-panel name is pdu-rfc99-corectrl-099241.
       - Outlet 4 maps to lap_sun99_chonkers.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
+      - Outlet 7 label is m70-canary and maps to m70_canary.
       - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
 
 clusters:

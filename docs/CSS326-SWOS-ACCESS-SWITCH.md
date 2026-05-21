@@ -68,7 +68,12 @@ Expected normalized state:
 | `ge5` | Hasslehoff `bond0` LACP member | active LACP group 1 |
 | `ge6` | Hasslehoff `bond0` LACP member | active LACP group 1 |
 | `ge15` | CRS354 `ether49` management copper | moved from `ge24` on 2026-05-21 |
-| `ge24` | planned M70 canary `eno4` workload member | reserved; was CRS354 management |
+| `ge19` | M70 canary `netboot0` | linked; NetBox cable `5` |
+| `ge20` | M70 canary `enp3s0` | linked; NetBox cable `6` |
+| `ge21` | M70 canary `eno1` workload member | linked; NetBox cable `7` |
+| `ge22` | M70 canary `eno2` workload member | linked; NetBox cable `8` |
+| `ge23` | M70 canary `eno3` workload member | linked; NetBox cable `9` |
+| `ge24` | M70 canary `eno4` workload member | linked; NetBox cable `10` |
 | `sfp1` | planned CRS309 `sfp-sfpplus8` access/aggregation uplink | 10G-SR optic present |
 | `sfp2` | legacy CRS354 uplink / temporary access path | 10G-SR optic present |
 
@@ -76,13 +81,14 @@ The current SFP modules are Intel `FTLX8571D3BCV-IT` 10G-SR MMF optics. The
 fabric default remains FS.com `SFP-10GSR-85` or 10Gtek `AXS85-192-M3` for new
 10G-SR links unless a device record explicitly states otherwise.
 
-## Planned M70 Canary Recable
+## Confirmed M70 Canary Recable
 
-Operator-provided physical plan on 2026-05-21:
+Operator-provided physical plan on 2026-05-21, confirmed active by operator
+report and SwOS snapshot `20260521T232928Z`:
 
-| CSS326 port | Planned endpoint | Purpose |
+| CSS326 port | Endpoint | Purpose |
 | --- | --- | --- |
-| `ge15` | CRS354 `ether49` | move CRS354 management here from `ge24` |
+| `ge15` | CRS354 `ether49` | CRS354 management moved here from `ge24` |
 | `ge19` | M70 canary `netboot0`, MAC `00:07:32:58:73:34` | iPXE, rescue, primary management |
 | `ge20` | M70 canary `enp3s0` | post-boot management backup |
 | `ge21` | M70 canary `eno1` | OVS workload LACP member |
@@ -91,9 +97,10 @@ Operator-provided physical plan on 2026-05-21:
 | `ge24` | M70 canary `eno4` | OVS workload LACP member |
 
 Source-of-truth update: NetBox now records CSS326 `ge15` as
-`crs354-management`, CSS326 `ge24` as `m70-canary-eno4-planned`, and cable `4`
-as the connected cable between CSS326 `ge15` and CRS354 `ether49`. The
-structured inventory now marks Chonkers' former CSS326 `ge15` connection as
+`crs354-management`, device `m70_canary` as the active M70 canary, CSS326
+`ge19` through `ge24` as active M70 canary links, cable `4` for the CRS354
+management move, and cables `5` through `10` for the six canary Ethernet links.
+The structured inventory now marks Chonkers' former CSS326 `ge15` connection as
 historical.
 
 ## Automation Boundary

@@ -59,8 +59,8 @@ X553:
 
 Create or validate these NetBox records before applying live network state:
 
-- canary device record, hostname, FQDN, site, rack, role, platform, serial
-- management IP on the planned i211 management path
+- canary device record, site, role, and device type
+- hostname, FQDN, management IP, rack placement, and serial after discovery
 - six physical Ethernet interfaces with MAC addresses where known
 - switch-port cabling for all six Ethernet links
 - `bond-mgmt` or equivalent LAG intent for the two i211 ports
@@ -73,11 +73,12 @@ Create or validate these NetBox records before applying live network state:
 NetBox is authoritative. Host-local observations are evidence used to update
 NetBox, not a replacement for NetBox.
 
-## Planned Physical Intake
+## Confirmed Physical Intake
 
-Operator-provided planned canary cabling on 2026-05-21:
+Operator-provided canary cabling on 2026-05-21, confirmed active by operator
+report and SwOS snapshot `20260521T232928Z`:
 
-| Canary endpoint | Planned connection | Role |
+| Canary endpoint | Connection | Role |
 | --- | --- | --- |
 | `netboot0` | CSS326 `ge19` | iPXE, rescue, primary management |
 | `enp3s0` | CSS326 `ge20` | post-boot management backup |
@@ -98,15 +99,17 @@ Required CSS326 prep:
 
 - CRS354 `ether49` management copper was moved from CSS326 `ge24` to CSS326
   `ge15` on 2026-05-21.
-- Free CSS326 `ge19` through `ge24` for the canary M70's six Ethernet links.
 - NetBox cable `4` records CSS326 `ge15` to CRS354 `ether49` as connected.
+- NetBox device `m70_canary` records the active M70 canary.
+- NetBox cables `5` through `10` record CSS326 `ge19` through `ge24` to the
+  canary's six Ethernet interfaces.
+- NetBox cable `11` records AP7901 outlet 7 to the canary power input.
 - The structured inventory records Chonkers' former CSS326 `ge15` connection as
   historical.
 
-Do not update live NetBox cabling for the canary Ethernet links until those
-physical moves are complete or explicitly confirmed. Once the canary boots,
-discover the remaining five NIC MAC addresses from the host and reconcile
-NetBox.
+Once the canary boots, discover the remaining five NIC MAC addresses from the
+host and reconcile NetBox. Do not add IP addresses or services until the canary
+actually owns them.
 
 ## Serial-Hub Handling
 
@@ -134,10 +137,11 @@ Required evidence:
 - power is stable
 - all six Ethernet links are physically cabled
 - RS232 is physically attached
-- NetBox has the canary device, interfaces, cabling, IPs, and serial intent
+- NetBox has the canary device, interfaces, Ethernet cabling, and power cabling
 - `/dev/serial/by-id` is stable after the USB hub power swap
 - CSS326 `ge15` is recorded as CRS354 management, not Chonkers LOM
 - CSS326 `ge19` through `ge24` match the canary physical cabling plan
+- management IP, hostname/FQDN, and serial intent are added after discovery
 
 Do not continue to OVS testing until this passes.
 
