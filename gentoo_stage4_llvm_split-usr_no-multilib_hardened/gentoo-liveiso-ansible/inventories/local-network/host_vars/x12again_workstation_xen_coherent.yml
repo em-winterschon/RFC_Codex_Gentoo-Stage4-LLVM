@@ -59,3 +59,25 @@ slurm_node_features:
   - optane-nvdimm
   - bluefield2
   - project-coherent-scale
+
+profile_distcc_farm:
+  enabled: true
+  client_enabled: false
+  worker_enabled: true
+  listen_address: 172.16.99.108
+  port: 3632
+  jobs: 48
+  nice: 10
+  service_user: distcc
+  service_group: distcc
+  allowed_client_cidrs:
+    - 172.16.99.70/32
+  builder_fabric_name: sun99-build-fabric
+  builder_fabric_cidr: 172.16.99.0/24
+  worker_metadata:
+    cpu_class: x12-icelake-server
+    cpu_model: Intel Xeon Platinum 8370C
+    role: restricted_distcc_worker_for_m70
+    guardrail: >-
+      X12AGAIN compiles for the requesting client's explicit target flags only;
+      never use -march=native for M70-targeted builds on this worker.

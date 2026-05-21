@@ -277,3 +277,40 @@ secure_firstboot_enrollment_command: >-
   --hostname="${STAGE5_ENROLL_FQDN}"
   --password="${STAGE5_ENROLL_OTP}"
   --mkhomedir
+
+portage_buildpkg_enabled: true
+portage_getbinpkg_enabled: true
+portage_usepkg_enabled: true
+portage_pkgdir: /srv/build-cache/binpkgs
+portage_features:
+  - buildpkg
+  - parallel-fetch
+  - distcc
+portage_emerge_default_opts_extra:
+  - --binpkg-changed-deps=y
+  - --verbose-conflicts
+
+profile_distcc_farm:
+  enabled: true
+  client_enabled: true
+  worker_enabled: false
+  compression: true
+  cpp_mode: false
+  makeopts_jobs: "16 -l12"
+  hosts:
+    - name: x12again
+      address: 172.16.99.108
+      slots: 48
+      options:
+        - lzo
+  builder_fabric_name: sun99-build-fabric
+  builder_fabric_cidr: 172.16.99.0/24
+
+nasa_binpkg_publish_root: /mnt/nasa/forge/gentoo-binpkgs
+nasa_binpkg_default_contract: baseline-portable-openrc-llvm
+nasa_binpkg_contract_path: /mnt/nasa/forge/gentoo-binpkgs/contracts/x86_64-pc-linux-gnu/baseline-portable-openrc-llvm
+nasa_binpkg_publish_policy:
+  publish_mode: local_nfs_rsync_after_success
+  direct_build_into_nfs: false
+  index_command: emaint binhost --fix
+  sync_helper: scripts/sync-binpkgs-to-repo.sh

@@ -75,7 +75,14 @@ done
 [[ -n "${PKGDIR}" ]] || die "--pkgdir is required"
 [[ -n "${REPO_ID}" ]] || die "--repo-id is required"
 [[ -d "${PKGDIR}" ]] || die "pkgdir not found: ${PKGDIR}"
-[[ "${REPO_ID}" =~ ^[A-Za-z0-9._-]+$ ]] || die "repo-id contains unsafe characters: ${REPO_ID}"
+[[ "${REPO_ID}" != /* ]] || die "repo-id must be relative: ${REPO_ID}"
+[[ "${REPO_ID}" =~ ^[A-Za-z0-9._/-]+$ ]] || die "repo-id contains unsafe characters: ${REPO_ID}"
+IFS='/' read -r -a repo_id_components <<< "${REPO_ID}"
+for repo_id_component in "${repo_id_components[@]}"; do
+  if [[ -z "${repo_id_component}" || "${repo_id_component}" == "." || "${repo_id_component}" == ".." ]]; then
+    die "repo-id contains unsafe path component: ${REPO_ID}"
+  fi
+done
 if [[ -z "${REMOTE}" && -z "${LOCAL_ROOT}" ]]; then
   die "one of --remote or --local-root is required"
 fi
