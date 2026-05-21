@@ -67,7 +67,8 @@ Expected normalized state:
 | `ge4` | CCR2004-1G-2XS-PCIe management copper | linked |
 | `ge5` | Hasslehoff `bond0` LACP member | active LACP group 1 |
 | `ge6` | Hasslehoff `bond0` LACP member | active LACP group 1 |
-| `ge24` | CRS354 `ether49` management copper | linked |
+| `ge15` | CRS354 `ether49` management copper | moved from `ge24` on 2026-05-21 |
+| `ge24` | planned M70 canary `eno4` workload member | reserved; was CRS354 management |
 | `sfp1` | planned CRS309 `sfp-sfpplus8` access/aggregation uplink | 10G-SR optic present |
 | `sfp2` | legacy CRS354 uplink / temporary access path | 10G-SR optic present |
 
@@ -89,10 +90,11 @@ Operator-provided physical plan on 2026-05-21:
 | `ge23` | M70 canary `eno3` | OVS workload LACP member |
 | `ge24` | M70 canary `eno4` | OVS workload LACP member |
 
-Source-of-truth caveat: the current structured inventory and NetBox interface
-description still mark CSS326 `ge15` as `lap-sun99-chonkers-lom`. Reconcile or
-retire that connection before recording CRS354 management on `ge15` as live
-NetBox cabling.
+Source-of-truth update: NetBox now records CSS326 `ge15` as
+`crs354-management`, CSS326 `ge24` as `m70-canary-eno4-planned`, and cable `4`
+as the connected cable between CSS326 `ge15` and CRS354 `ether49`. The
+structured inventory now marks Chonkers' former CSS326 `ge15` connection as
+historical.
 
 ## Automation Boundary
 

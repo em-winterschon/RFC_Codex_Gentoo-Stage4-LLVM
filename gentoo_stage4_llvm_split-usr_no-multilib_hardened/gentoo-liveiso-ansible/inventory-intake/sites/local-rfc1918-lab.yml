@@ -100,11 +100,26 @@ devices:
         lag: hasslehoff-bond0
         status: active
       - name: ge15
-        purpose: lap-sun99-chonkers-lom
-        status: active
-      - name: ge24
         purpose: crs354-management
         status: active
+      - name: ge19
+        purpose: m70-canary-netboot0-planned
+        status: planned
+      - name: ge20
+        purpose: m70-canary-enp3s0-planned
+        status: planned
+      - name: ge21
+        purpose: m70-canary-eno1-planned
+        status: planned
+      - name: ge22
+        purpose: m70-canary-eno2-planned
+        status: planned
+      - name: ge23
+        purpose: m70-canary-eno3-planned
+        status: planned
+      - name: ge24
+        purpose: m70-canary-eno4-planned
+        status: planned
       - name: sfp1
         purpose: crs309-spine-target
         media: 10G-SR
@@ -434,8 +449,6 @@ devices:
         type: 1000base-t
         purpose: native-ipxe-httpv4-netboot
         mac_address: "84:5C:31:A5:CF:51"
-        connected_device: sw_mgmt_css326
-        connected_interface: ge15
         netboot_type: dynamic
         netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
         status: active
@@ -443,7 +456,8 @@ devices:
       - Alienware 16X Aurora Stage5 workstation validation laptop.
       - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
       - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
-      - Realtek RTL8111H 1GbE LOM is connected to CSS326 ge15.
+      - Realtek RTL8111H 1GbE LOM was previously connected to CSS326 ge15.
+      - CSS326 ge15 is reassigned to CRS354 management as of 2026-05-21.
       - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab

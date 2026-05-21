@@ -96,15 +96,17 @@ Known canary NIC facts:
 
 Required CSS326 prep:
 
-- Move CRS354 `ether49` management copper from CSS326 `ge24` to CSS326 `ge15`.
+- CRS354 `ether49` management copper was moved from CSS326 `ge24` to CSS326
+  `ge15` on 2026-05-21.
 - Free CSS326 `ge19` through `ge24` for the canary M70's six Ethernet links.
-- Resolve the existing source-of-truth conflict before NetBox apply: the
-  current structured inventory and NetBox description still mark CSS326 `ge15`
-  as `lap-sun99-chonkers-lom`.
+- NetBox cable `4` records CSS326 `ge15` to CRS354 `ether49` as connected.
+- The structured inventory records Chonkers' former CSS326 `ge15` connection as
+  historical.
 
-Do not update live NetBox cabling to this target state until the physical moves
-are complete or explicitly confirmed. Once the canary boots, discover the
-remaining five NIC MAC addresses from the host and reconcile NetBox.
+Do not update live NetBox cabling for the canary Ethernet links until those
+physical moves are complete or explicitly confirmed. Once the canary boots,
+discover the remaining five NIC MAC addresses from the host and reconcile
+NetBox.
 
 ## Serial-Hub Handling
 
@@ -134,8 +136,7 @@ Required evidence:
 - RS232 is physically attached
 - NetBox has the canary device, interfaces, cabling, IPs, and serial intent
 - `/dev/serial/by-id` is stable after the USB hub power swap
-- CSS326 `ge15` conflict with Chonkers is resolved before CRS354 management is
-  recorded there
+- CSS326 `ge15` is recorded as CRS354 management, not Chonkers LOM
 - CSS326 `ge19` through `ge24` match the canary physical cabling plan
 
 Do not continue to OVS testing until this passes.

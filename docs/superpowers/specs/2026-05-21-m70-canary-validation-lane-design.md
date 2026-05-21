@@ -70,9 +70,10 @@ M70 Ethernet links:
 - canary `eno4` to CSS326 `ge24`
 
 CRS354 `ether49` management must move from CSS326 `ge24` to CSS326 `ge15` to
-free `ge24` for the canary workload LACP set. Before live NetBox apply, resolve
-the current inventory conflict where CSS326 `ge15` is still described as the
-Chonkers laptop LOM path.
+free `ge24` for the canary workload LACP set. That move was physically
+confirmed on 2026-05-21. NetBox cable `4` now records CSS326 `ge15` to CRS354
+`ether49` as connected, and the structured inventory records Chonkers' former
+CSS326 `ge15` connection as historical.
 
 The canary power feed is planned for AP7901 PDU outlet 7. The canary RS232
 console should use the remaining spare M70 USB-hub RS232 path, with serial
