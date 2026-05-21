@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Build a Rocky Linux 10 R630 Kolla-node boot ISO with an embedded kickstart.
 
 This installer is intentionally narrow:
@@ -70,7 +70,7 @@ ROCKY_BASEOS_URL="${ROCKY_BASEOS_URL:-https://dl.rockylinux.org/pub/rocky/10/Bas
 ROCKY_APPSTREAM_URL="${ROCKY_APPSTREAM_URL:-https://dl.rockylinux.org/pub/rocky/10/AppStream/x86_64/os/}"
 
 for cmd in awk grep mkisofs mount rsync sed sort umount; do
-  command -v "$cmd" >/dev/null || {
+  command -v "$cmd" > /dev/null || {
     echo "missing required command: $cmd" >&2
     exit 1
   }
@@ -82,7 +82,7 @@ if [[ ! -s "$BASE_ISO" ]]; then
 fi
 
 if [[ -z "$ISO_LABEL" ]]; then
-  command -v isoinfo >/dev/null || {
+  command -v isoinfo > /dev/null || {
     echo "ISO_LABEL is unset and isoinfo is unavailable for source ISO label detection" >&2
     exit 1
   }
@@ -117,7 +117,7 @@ bond_options_to_nm_keyfile() {
   local item key value
   local -a option_items
 
-  IFS=',' read -r -a option_items <<<"$raw_options"
+  IFS=',' read -r -a option_items <<< "$raw_options"
   for item in "${option_items[@]}"; do
     item="${item//[[:space:]]/}"
     [[ -n "$item" ]] || continue
@@ -129,20 +129,20 @@ bond_options_to_nm_keyfile() {
     fi
 
     case "$key" in
-      lacp-rate) key="lacp_rate" ;;
-      xmit-hash-policy) key="xmit_hash_policy" ;;
-      ad-select) key="ad_select" ;;
-      min-links) key="min_links" ;;
+    lacp-rate) key="lacp_rate" ;;
+    xmit-hash-policy) key="xmit_hash_policy" ;;
+    ad-select) key="ad_select" ;;
+    min-links) key="min_links" ;;
     esac
 
     case "$key" in
-      mode|miimon|lacp_rate|xmit_hash_policy|ad_select|min_links|updelay|downdelay)
-        printf '%s=%s\n' "$key" "$value"
-        ;;
-      *)
-        echo "unsupported bond option for Rocky 10 NetworkManager keyfile: $key" >&2
-        exit 1
-        ;;
+    mode | miimon | lacp_rate | xmit_hash_policy | ad_select | min_links | updelay | downdelay)
+      printf '%s=%s\n' "$key" "$value"
+      ;;
+    *)
+      echo "unsupported bond option for Rocky 10 NetworkManager keyfile: $key" >&2
+      exit 1
+      ;;
     esac
   done
 }
@@ -150,7 +150,7 @@ bond_options_to_nm_keyfile() {
 MGMT_BOND_KEYFILE_OPTIONS="$(bond_options_to_nm_keyfile "$MGMT_BOND_OPTIONS")"
 FRONTEND_BOND_KEYFILE_OPTIONS="$(bond_options_to_nm_keyfile "$FRONTEND_BOND_OPTIONS")"
 
-cat >"$KS_PATH" <<EOF
+cat > "$KS_PATH" << EOF
 # RFC1918 FMT2 R630 Rocky Linux 10 Kolla node installer.
 # This install fails closed unless IDSDM and exactly two ${OS_DISK_MODEL} OS disks are visible.
 text
@@ -458,7 +458,7 @@ rsync -aH --delete "$WORKDIR/mnt/" "$WORKDIR/extract/"
 umount "$WORKDIR/mnt"
 cp "$KS_PATH" "$WORKDIR/extract/ks-r630-kolla-node.cfg"
 
-python3 - "$WORKDIR/extract" "$ISO_LABEL" "$boot_network_args" <<'PY'
+python3 - "$WORKDIR/extract" "$ISO_LABEL" "$boot_network_args" << 'PY'
 from pathlib import Path
 import sys
 

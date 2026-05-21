@@ -378,10 +378,7 @@ def cable_for_termination(
 def managed_power_intake_cable(cable: dict[str, Any]) -> bool:
     label = str(cable.get("label") or "")
     description = str(cable.get("description") or "")
-    return (
-        "->" in label
-        and "Power-chain cable tracked from inventory intake." in description
-    )
+    return "->" in label and "Power-chain cable tracked from inventory intake." in description
 
 
 def ensure_device_interface(

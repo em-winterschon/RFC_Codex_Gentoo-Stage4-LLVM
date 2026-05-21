@@ -66,8 +66,8 @@ require_rhel_like() {
   # shellcheck disable=SC1091
   . /etc/os-release
   case " ${ID:-} ${ID_LIKE:-} " in
-    *" rhel "*|*" centos "*|*" rocky "*|*" fedora "*) ;;
-    *) die "expected a RHEL-like build host, got ID=${ID:-unknown} ID_LIKE=${ID_LIKE:-unknown}" ;;
+  *" rhel "* | *" centos "* | *" rocky "* | *" fedora "*) ;;
+  *) die "expected a RHEL-like build host, got ID=${ID:-unknown} ID_LIKE=${ID_LIKE:-unknown}" ;;
   esac
 }
 
@@ -109,7 +109,7 @@ create_buildroot() {
   fi
 
   sudo mkdir -p "${BUILDROOT}/etc/pki/rpm-gpg"
-  sudo cp -a /etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial "${BUILDROOT}/etc/pki/rpm-gpg/" 2>/dev/null || true
+  sudo cp -a /etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial "${BUILDROOT}/etc/pki/rpm-gpg/" 2> /dev/null || true
   sudo dnf \
     --installroot="${BUILDROOT}" \
     --releasever=8 \
@@ -155,17 +155,17 @@ build_kernel_rpms() {
 }
 
 case "${ACTION}" in
-  preflight) preflight ;;
-  create-buildroot) create_buildroot ;;
-  build-kernel-rpms) build_kernel_rpms ;;
-  *)
-    cat >&2 <<USAGE
+preflight) preflight ;;
+create-buildroot) create_buildroot ;;
+build-kernel-rpms) build_kernel_rpms ;;
+*)
+  cat >&2 << USAGE
 Usage: $0 [preflight|create-buildroot|build-kernel-rpms]
 
 Safety gates:
   APPLY_CREATE_BUILDROOT=1  allow isolated buildroot creation
   APPLY_BUILD=1             allow kernel RPM build inside systemd-nspawn
 USAGE
-    exit 64
-    ;;
+  exit 64
+  ;;
 esac

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Build a Rocky 8 boot ISO with an embedded firmware-maintenance kickstart.
 
 Required environment:
@@ -65,7 +65,7 @@ ROCKY_BASEOS_URL="${ROCKY_BASEOS_URL:-https://download.rockylinux.org/pub/rocky/
 ROCKY_APPSTREAM_URL="${ROCKY_APPSTREAM_URL:-https://download.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/}"
 
 for cmd in mount umount rsync mkisofs sed awk; do
-  command -v "$cmd" >/dev/null || {
+  command -v "$cmd" > /dev/null || {
     echo "missing required command: $cmd" >&2
     exit 1
   }
@@ -81,21 +81,21 @@ rm -rf "$WORKDIR/extract" "$WORKDIR/mnt"
 mkdir -p "$WORKDIR/extract" "$WORKDIR/mnt"
 
 case "$INSTALL_BOOTPROTO" in
-  static)
-    network_line="network --device=${INSTALL_NET_DEVICE} --bootproto=static --ip=${STATIC_IP} --netmask=${NETMASK} --gateway=${GATEWAY} --nameserver=${DNS} --hostname=${MAINT_HOSTNAME} --activate"
-    boot_network_args="ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${MAINT_HOSTNAME}:${INSTALL_NET_DEVICE}:none rd.neednet=1"
-    ;;
-  dhcp)
-    network_line="network --device=${INSTALL_NET_DEVICE} --bootproto=dhcp --hostname=${MAINT_HOSTNAME} --activate"
-    boot_network_args="ip=dhcp rd.neednet=1"
-    ;;
-  *)
-    echo "INSTALL_BOOTPROTO must be static or dhcp, got: $INSTALL_BOOTPROTO" >&2
-    exit 1
-    ;;
+static)
+  network_line="network --device=${INSTALL_NET_DEVICE} --bootproto=static --ip=${STATIC_IP} --netmask=${NETMASK} --gateway=${GATEWAY} --nameserver=${DNS} --hostname=${MAINT_HOSTNAME} --activate"
+  boot_network_args="ip=${STATIC_IP}::${GATEWAY}:${NETMASK}:${MAINT_HOSTNAME}:${INSTALL_NET_DEVICE}:none rd.neednet=1"
+  ;;
+dhcp)
+  network_line="network --device=${INSTALL_NET_DEVICE} --bootproto=dhcp --hostname=${MAINT_HOSTNAME} --activate"
+  boot_network_args="ip=dhcp rd.neednet=1"
+  ;;
+*)
+  echo "INSTALL_BOOTPROTO must be static or dhcp, got: $INSTALL_BOOTPROTO" >&2
+  exit 1
+  ;;
 esac
 
-cat >"$KS_PATH" <<EOF
+cat > "$KS_PATH" << EOF
 # RFC1918 R630 firmware-maintenance installer.
 # This install must fail closed unless the expected iSCSI LUN is visible.
 text
@@ -338,7 +338,7 @@ rsync -aH --delete "$WORKDIR/mnt/" "$WORKDIR/extract/"
 umount "$WORKDIR/mnt"
 cp "$KS_PATH" "$WORKDIR/extract/ks-r630-pri-fwmaint.cfg"
 
-python3 - "$WORKDIR/extract" "$ISO_LABEL" "$boot_network_args" <<'PY'
+python3 - "$WORKDIR/extract" "$ISO_LABEL" "$boot_network_args" << 'PY'
 from pathlib import Path
 import sys
 

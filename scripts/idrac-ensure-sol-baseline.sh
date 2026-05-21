@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Ensure Dell iDRAC Serial-over-LAN stays enabled.
 
 Required environment:
@@ -40,7 +40,7 @@ require_var() {
 
 require_cmd() {
   local cmd=$1
-  if ! command -v "${cmd}" >/dev/null 2>&1; then
+  if ! command -v "${cmd}" > /dev/null 2>&1; then
     printf 'ERROR: required command not found: %s\n' "${cmd}" >&2
     exit 2
   fi
@@ -57,7 +57,7 @@ IDRAC_SOL_MIN_PRIV="${IDRAC_SOL_MIN_PRIV:-3}"
 IDRAC_SOL_APPLY_BIOS="${IDRAC_SOL_APPLY_BIOS:-0}"
 
 if [[ -n "${IDRAC_PASSWORD_FILE:-}" ]]; then
-  IDRAC_PASSWORD="$(<"${IDRAC_PASSWORD_FILE}")"
+  IDRAC_PASSWORD="$(< "${IDRAC_PASSWORD_FILE}")"
 fi
 require_var IDRAC_PASSWORD
 
@@ -69,7 +69,7 @@ ssh_racadm() {
     -o UserKnownHostsFile=/dev/null \
     -o ConnectTimeout=20 \
     "${IDRAC_USER}@${IDRAC_HOST}" \
-    "${command}" 2>/dev/null
+    "${command}" 2> /dev/null
 }
 
 get_value() {
@@ -81,7 +81,7 @@ get_value() {
 set_value() {
   local object=$1
   local value=$2
-  ssh_racadm "racadm set ${object} ${value}" >/dev/null
+  ssh_racadm "racadm set ${object} ${value}" > /dev/null
 }
 
 assert_value() {
@@ -119,7 +119,7 @@ bios_checks=(
 
 missing_bios=0
 for check in "${bios_checks[@]}"; do
-  IFS=: read -r object key expected <<<"${check}"
+  IFS=: read -r object key expected <<< "${check}"
   actual="$(get_value "${object}" "${key}")"
   if [[ "${actual}" == "${expected}" ]]; then
     printf '%s=%s\n' "${object}" "${actual}"
@@ -145,7 +145,7 @@ set_value BIOS.SerialCommSettings.FailSafeBaud 115200
 set_value BIOS.SerialCommSettings.ConTermType Vt100Vt220
 set_value BIOS.SerialCommSettings.RedirAfterBoot Enabled
 
-if ssh_racadm 'racadm jobqueue create BIOS.Setup.1-1' >/dev/null; then
+if ssh_racadm 'racadm jobqueue create BIOS.Setup.1-1' > /dev/null; then
   printf 'BIOS serial-redirection settings staged; reboot required for application.\n'
 else
   printf 'WARN: BIOS settings were requested, but jobqueue creation did not report success. Check iDRAC pending jobs before reboot.\n' >&2
