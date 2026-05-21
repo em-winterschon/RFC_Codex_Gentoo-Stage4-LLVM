@@ -1,0 +1,14 @@
+# Draft M70 RFC99 serial-console aliases.
+#
+# Install only after confirming M70 is the durable serial-console host, or copy
+# the same intent into the dedicated serial gateway VM. These aliases are
+# additive and do not change kernel ttyUSB enumeration.
+
+SUBSYSTEM=="tty", ENV{ID_SERIAL}=="FTDI_FT232R_USB_UART_A9888PID", SYMLINK+="rfc99-serial/ccr2004-gateway"
+SUBSYSTEM=="tty", ENV{ID_SERIAL}=="FTDI_FT232R_USB_UART_AB0MRY3W", SYMLINK+="rfc99-serial/crs354-distribution"
+SUBSYSTEM=="tty", ENV{ID_SERIAL}=="FTDI_FT232R_USB_UART_AB0MRY3X", SYMLINK+="rfc99-serial/crs309-spine"
+
+# Unassigned FT2232H dual-port adapter. Keep both ports named by interface
+# number until physical labels identify final targets.
+SUBSYSTEM=="tty", ENV{ID_SERIAL}=="FTDI_FT2232H_device_FT5W5FZH", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="rfc99-serial/spare-ft2232h-a"
+SUBSYSTEM=="tty", ENV{ID_SERIAL}=="FTDI_FT2232H_device_FT5W5FZH", ENV{ID_USB_INTERFACE_NUM}=="01", SYMLINK+="rfc99-serial/spare-ft2232h-b"
