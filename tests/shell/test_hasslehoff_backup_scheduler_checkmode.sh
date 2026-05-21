@@ -32,14 +32,14 @@ EOF
     ANSIBLE_CONFIG="${ANSIBLE_ROOT}/ansible.cfg" \
     ANSIBLE_ROLES_PATH="${ANSIBLE_ROOT}/roles" \
     ansible-playbook \
-      -i "${tmp_inventory}" \
-      "${PLAYBOOK}" \
-      --check \
-      -e hasslehoff_backup_scheduler_enabled=true \
-      -e hasslehoff_backup_scheduler_apply=true \
-      -e hasslehoff_backup_scheduler_run_preflight=false \
-      -e hasslehoff_backup_scheduler_runtime_root="${tmp_runtime}" \
-      > /tmp/hasslehoff-backup-scheduler-checkmode.out
+    -i "${tmp_inventory}" \
+    "${PLAYBOOK}" \
+    --check \
+    -e hasslehoff_backup_scheduler_enabled=true \
+    -e hasslehoff_backup_scheduler_apply=true \
+    -e hasslehoff_backup_scheduler_run_preflight=false \
+    -e hasslehoff_backup_scheduler_runtime_root="${tmp_runtime}" \
+    > /tmp/hasslehoff-backup-scheduler-checkmode.out
   grep -Fq "PLAY RECAP" /tmp/hasslehoff-backup-scheduler-checkmode.out ||
     fail "check-mode run did not reach recap"
 fi
