@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import re
 import socket
@@ -106,6 +107,38 @@ def parse_extra_json(raw: str | None) -> dict[str, Any]:
         raise SpoolError("extra JSON must be an object")
     reject_secret_keys(value)
     return value
+
+
+def canonical_json(value: dict[str, Any]) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def sign_manifest(manifest: dict[str, Any], signing_key_file: str, signing_key_id: str) -> None:
+    key_id = require_safe_id(signing_key_id, "signing-key-id")
+    key_path = Path(signing_key_file)
+    if not key_path.exists():
+        raise SpoolError(f"signing key file does not exist: {key_path}")
+    signing_key = key_path.read_bytes().strip()
+    if not signing_key:
+        raise SpoolError(f"signing key file is empty: {key_path}")
+
+    signed_payload = dict(manifest)
+    signed_payload["signature_state"] = "signed"
+    signed_payload["signature"] = {
+        "algorithm": "hmac-sha256",
+        "key_id": key_id,
+    }
+    payload = canonical_json(signed_payload)
+    signature = hmac.new(signing_key, payload.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    manifest["signature_state"] = "signed"
+    manifest["signature_payload"] = payload
+    manifest["signature_payload_sha256"] = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    manifest["signature"] = {
+        "algorithm": "hmac-sha256",
+        "key_id": key_id,
+        "value": signature,
+    }
 
 
 def load_json_file(
@@ -320,6 +353,8 @@ def closeout(args: argparse.Namespace) -> dict[str, Any]:
         "signature_state": "unsigned",
         "signature": None,
     }
+    if args.signing_key_file:
+        sign_manifest(manifest, args.signing_key_file, args.signing_key_id)
     reject_secret_keys(manifest)
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -492,6 +527,8 @@ def build_parser() -> argparse.ArgumentParser:
     close.add_argument("--session-id", required=True)
     close.add_argument("--agent-id", default="forge")
     close.add_argument("--summary", required=True)
+    close.add_argument("--signing-key-file")
+    close.add_argument("--signing-key-id", default="forge-local-hmac")
     close.set_defaults(func=closeout)
 
     publish = subparsers.add_parser(
