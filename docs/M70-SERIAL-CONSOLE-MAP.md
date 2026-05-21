@@ -77,6 +77,50 @@ is additive modeling only:
 
 No NetBox console cabling changes were applied during this note capture.
 
+### Proposed Additive NetBox Objects
+
+Read-only API validation on 2026-05-21 found these live NetBox device IDs:
+
+| Device | NetBox device ID |
+| --- | ---: |
+| `admin_sun99_forge_099070` | `36` |
+| `gw_rfc99_mkccr2004_16g` | `16` |
+| `sw_mgmt_mkcrs354` | `7` |
+| `sw_spine_crs309_rfc99` | `14` |
+
+All four devices currently have zero matching console-server or console-port
+records for these links. NetBox accepts `rj-45` as both a console-server-port
+and console-port type. Use `rj-45` for the active MikroTik rollover-console
+links, omit cable `type` until physical cable category is worth recording, and
+set cable `status` to `connected`.
+
+Proposed `dcim.console-server-ports` on `admin_sun99_forge_099070`:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `rfc99-serial/ccr2004-gateway` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`; current tty `/dev/ttyUSB0`; 115200 baud. |
+| `rfc99-serial/crs354-distribution` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`; current tty `/dev/ttyUSB1`; 115200 baud. |
+| `rfc99-serial/crs309-spine` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`; current tty `/dev/ttyUSB4`; 115200 baud. |
+
+Proposed target `dcim.console-ports`:
+
+| Device | Port name | Type |
+| --- | --- | --- |
+| `gw_rfc99_mkccr2004_16g` | `serial0` | `rj-45` |
+| `sw_mgmt_mkcrs354` | `serial0` | `rj-45` |
+| `sw_spine_crs309_rfc99` | `serial0` | `rj-45` |
+
+Proposed `dcim.cables`:
+
+| A termination | B termination | Status | Label |
+| --- | --- | --- | --- |
+| `admin_sun99_forge_099070:rfc99-serial/ccr2004-gateway` | `gw_rfc99_mkccr2004_16g:serial0` | `connected` | `m70-console-ccr2004-gateway` |
+| `admin_sun99_forge_099070:rfc99-serial/crs354-distribution` | `sw_mgmt_mkcrs354:serial0` | `connected` | `m70-console-crs354-distribution` |
+| `admin_sun99_forge_099070:rfc99-serial/crs309-spine` | `sw_spine_crs309_rfc99:serial0` | `connected` | `m70-console-crs309-spine` |
+
+Do not add ATS/PDU/UPS console cables until the RJ12 adapters are installed and
+the live FTDI path is revalidated from M70.
+
 ## Serial Tooling Readiness
 
 The RouterOS serial helper exists at
