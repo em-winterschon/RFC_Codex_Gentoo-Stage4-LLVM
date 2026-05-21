@@ -39,6 +39,14 @@ depends on it.
 
 Target backup layers:
 
+## Hasslehoff Backup Policy
+
+The canonical scheduling and coverage policy is
+`docs/backup-policies/hasslehoff-backup-policy.yml`. It selects the
+`nasa-m70-nfs-relay` target, forbids X12AGAIN as a durable backup dependency,
+and records the selected VM/LXC service classes, retention expectations,
+notifications, and restore-validation gates.
+
 - Config and control-plane state from `scripts/backup-hasslehoff-config.sh`,
   mirrored off-host after capture by `scripts/backup-hasslehoff-scheduled.sh`.
 - VM and LXC recoverability through `vzdump` or Proxmox Backup Server for

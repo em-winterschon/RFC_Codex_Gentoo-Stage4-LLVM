@@ -47,6 +47,16 @@ The current script is only the first layer. It captures host configuration and
 Proxmox state into operator-private local storage, but it does not yet provide a
 durable off-host copy, VM disk coverage, retention, or restore validation.
 
+## Hasslehoff Backup Policy
+
+The scheduling and coverage decision record lives in
+`docs/backup-policies/hasslehoff-backup-policy.yml` and is validated by
+`scripts/validate-hasslehoff-backup-policy.py`. It makes the first durable
+target explicit as the NASA relay through M70, rejects X12AGAIN as a backup
+dependency, and defines the minimum VM/LXC coverage set.
+
+Required first-wave VM/LXC service coverage is NetBox, FreeIPA, observability, syslog/search, netboot publisher, container-services, and workstation validation. Each class requires a daily backup path using `vzdump` or Proxmox Backup Server plus restore validation through disposable restore and offline image inspection.
+
 The second-layer scheduled wrapper is:
 
 ```bash
