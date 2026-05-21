@@ -130,4 +130,83 @@ assert session["last_timestamp_utc"].endswith("Z")
 assert session["event_sha256"]
 PY
 
+repo_dir="${tmpdir}/repo"
+mkdir -p "${repo_dir}/docs" "${repo_dir}/project-management"
+git -C "${repo_dir}" init -q
+git -C "${repo_dir}" config user.email forge@example.invalid
+git -C "${repo_dir}" config user.name Forge
+cat > "${repo_dir}/docs/EOD-STATUS-2026-05-21.md" << 'EOF'
+# EOD 2026-05-21
+
+- SLURM closeout completed.
+- Forge memory bootstrap remains active.
+EOF
+cat > "${repo_dir}/project-management/open-issues.json" << 'EOF'
+[
+  {"number": 115, "title": "MEM-003: Implement Forge cross-machine continuity bootstrap"},
+  {"number": 130, "title": "FMT2-007: Validate R630 front-end and RDMA fabric policy on Arista 7060"}
+]
+EOF
+cat > "${repo_dir}/project-management/blockers.json" << 'EOF'
+[
+  {"id": "object-store-upload", "status": "open"},
+  {"id": "manifest-signing", "status": "open"}
+]
+EOF
+git -C "${repo_dir}" add docs project-management
+git -C "${repo_dir}" commit -qm "seed continuity inputs"
+
+"${SPOOLER}" bootstrap-session \
+  --spool-root "${tmpdir}" \
+  --agent-id "forge" \
+  --session-id "session-bootstrap-002" \
+  --repo-path "${repo_dir}" \
+  --intent "resume cross-machine continuity" \
+  --issue-state-file "project-management/open-issues.json" \
+  --blocker-state-file "project-management/blockers.json" \
+  --memory-note "M70 has the active Forge runtime" \
+  > "${tmpdir}/bootstrap.json"
+
+bootstrap_event_file="${tmpdir}/agents/forge/sessions/session-bootstrap-002/events.jsonl"
+test -f "${bootstrap_event_file}" || fail "missing bootstrap session event log"
+
+python3 - "${tmpdir}/bootstrap.json" "${bootstrap_event_file}" "${repo_dir}" << 'PY'
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+bootstrap = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+event_file = Path(sys.argv[2])
+repo_dir = Path(sys.argv[3])
+lines = event_file.read_text(encoding="utf-8").splitlines()
+assert len(lines) == 1
+event = json.loads(lines[0])
+
+assert bootstrap["session_id"] == "session-bootstrap-002"
+assert bootstrap["event_count"] == 1
+assert bootstrap["bootstrap_summary"]["repo"]["branch"] in {"main", "master"}
+assert bootstrap["bootstrap_summary"]["repo"]["commit"] == subprocess.check_output(
+    ["git", "-C", str(repo_dir), "rev-parse", "HEAD"], text=True
+).strip()
+assert event["event_type"] == "session-start"
+assert event["intent"] == "resume cross-machine continuity"
+assert "continuity-bootstrap" in event["actions"]
+assert "repo-state" in event["artifacts"]
+assert "memory-state" in event["artifacts"]
+assert "issue-state" in event["artifacts"]
+assert "blocker-state" in event["artifacts"]
+
+extra = event["extra"]
+assert extra["bootstrap_schema"] == "rfc-codex.forge-bootstrap-summary.v1"
+assert extra["repo"]["dirty"] is False
+assert extra["repo"]["path"] == str(repo_dir)
+assert extra["latest_memory_notes"] == ["M70 has the active Forge runtime"]
+assert extra["latest_documents"][0]["path"] == "docs/EOD-STATUS-2026-05-21.md"
+assert extra["issue_state"]["items"][0]["number"] == 115
+assert extra["blocker_state"]["items"][0]["id"] == "object-store-upload"
+assert extra["recent_sessions"]["total_session_count"] >= 1
+assert "api_token" not in json.dumps(extra).lower()
+PY
+
 printf 'PASS: %s\n' "$(basename "$0")"
