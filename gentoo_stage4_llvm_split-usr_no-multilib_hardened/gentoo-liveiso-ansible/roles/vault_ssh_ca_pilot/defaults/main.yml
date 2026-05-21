@@ -1,0 +1,13 @@
+---
+vault_ssh_ca_pilot_enabled: false
+vault_ssh_ca_pilot_apply: false
+vault_ssh_ca_pilot_ca_public_key: ""
+vault_ssh_ca_pilot_trusted_user_ca_path: /etc/ssh/rfc1918_user_ca.pub
+vault_ssh_ca_pilot_sshd_config_path: /etc/ssh/sshd_config
+vault_ssh_ca_pilot_service_name: sshd
+vault_ssh_ca_pilot_validation_user: codex-admin
+vault_ssh_ca_pilot_expected_vault_mount: ssh-client-signer
+vault_ssh_ca_pilot_expected_vault_role: rfc1918-operator-codex-admin
+vault_ssh_ca_pilot_install_root: "{{ install_target_root | default('') }}"
+vault_ssh_ca_pilot_validate_freeipa_user: true
+vault_ssh_ca_pilot_restart_sshd: true

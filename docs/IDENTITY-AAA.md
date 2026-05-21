@@ -154,6 +154,40 @@ log. Controller-side validation requires a Kerberos ticket for the FreeIPA admin
 principal; client-side validation should be run from enrolled hosts to prove
 SSSD/NSS/PAM/SSH policy resolution end-to-end.
 
+## Vault SSH CA Pilot
+
+The first short-lived SSH certificate pilot is represented by:
+
+- `roles/vault_ssh_ca_pilot`
+- `playbooks/vault-ssh-ca-pilot.yml`
+
+This is not a replacement for FreeIPA. Vault signs a public key with a short TTL
+and the host trusts the Vault user CA through OpenSSH `TrustedUserCAKeys`.
+FreeIPA and SSSD must still resolve the user principal, and HBAC/sudo policy
+remain authoritative.
+
+The expected initial Vault mount and role are:
+
+- mount: `ssh-client-signer`
+- role: `rfc1918-operator-codex-admin`
+
+The Ansible role is disabled by default and requires both gates before it edits
+`sshd_config`:
+
+```yaml
+vault_ssh_ca_pilot_enabled: true
+vault_ssh_ca_pilot_apply: true
+```
+
+It installs the CA public key at `/etc/ssh/rfc1918_user_ca.pub`, validates
+`sshd_config` with `sshd -t -f`, checks `sshd -T` for the effective
+`trustedusercakeys` value, and validates that the pilot principal such as
+`codex-admin` resolves through NSS/SSSD with `getent passwd`.
+
+Do not place the A6-capable human operator private key on a Forge-readable host.
+The first pilot should use an operator-held key, a non-critical host, and a
+short TTL such as 30 minutes.
+
 ## Live Bootstrap
 
 Because native FreeIPA server packaging is not available in the current Gentoo
