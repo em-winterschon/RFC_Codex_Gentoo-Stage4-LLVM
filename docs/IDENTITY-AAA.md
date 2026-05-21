@@ -115,6 +115,45 @@ Current apply scope:
   because the current `radiusd` account uses a FreeIPA sysaccount DN rather than
   a normal IPA user object.
 
+## FreeIPA SSH Key Sync Workflow
+
+The repo now includes a focused FreeIPA SSH key sync workflow for centralizing
+operator SSH keys without copying `authorized_keys` files between hosts:
+
+- `scripts/render_freeipa_ssh_sync_checks.py`
+- `playbooks/freeipa-ssh-key-sync.yml`
+
+The renderer derives non-secret validation commands from
+`identity-source-definitions/local-rfc1918.yml`. It reports the vault variable
+names required for SSH public keys, FreeIPA controller checks such as
+`ipa user-show`, `ipa group-show`, `ipa host-show`, `ipa hostgroup-show`, and
+`ipa hbactest`, plus Linux client checks such as `getent passwd`,
+`sss_ssh_authorizedkeys`, and `sudo -l -U`.
+
+The playbook is dry-run by default. Live mutation requires
+`identity_freeipa_ssh_sync_enabled=true`, which sets both mutation gates for the
+underlying apply tool:
+
+```bash
+IDENTITY_SYNC_APPLY=1
+IDENTITY_SYNC_APPLY_FREEIPA=1
+```
+
+Use vault-backed environment variables for SSH public key values:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/freeipa-ssh-key-sync.yml \
+  -e identity_freeipa_ssh_sync_enabled=true \
+  -e identity_freeipa_ssh_sync_validate_live=true
+```
+
+The workflow keeps resolved SSH key material out of the JSON summary and audit
+log. Controller-side validation requires a Kerberos ticket for the FreeIPA admin
+principal; client-side validation should be run from enrolled hosts to prove
+SSSD/NSS/PAM/SSH policy resolution end-to-end.
+
 ## Live Bootstrap
 
 Because native FreeIPA server packaging is not available in the current Gentoo
