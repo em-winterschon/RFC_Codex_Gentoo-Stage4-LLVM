@@ -1,0 +1,7 @@
+---
+- name: Install Hasslehoff scheduled external backup job
+  hosts: "{{ hasslehoff_backup_scheduler_target_hosts | default('hasslehoff_backup_scheduler_hosts') }}"
+  gather_facts: false
+  become: true
+  roles:
+    - role: hasslehoff_backup_scheduler

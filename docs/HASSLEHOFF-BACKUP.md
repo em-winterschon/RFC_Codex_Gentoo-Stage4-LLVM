@@ -57,6 +57,22 @@ dependency, and defines the minimum VM/LXC coverage set.
 
 Required first-wave VM/LXC service coverage is NetBox, FreeIPA, observability, syslog/search, netboot publisher, container-services, and workstation validation. Each class requires a daily backup path using `vzdump` or Proxmox Backup Server plus restore validation through disposable restore and offline image inspection.
 
+## Recurring Scheduler Installation
+
+Use
+`gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hasslehoff-backup-scheduler.yml`
+to install the recurring root cron job on Hasslehoff. The role is disabled by
+default and requires both `hasslehoff_backup_scheduler_enabled=true` and
+`hasslehoff_backup_scheduler_apply=true` before writing
+`/etc/cron.d/hasslehoff-backup`.
+
+Before installing a recurring job, run the same role with
+`hasslehoff_backup_scheduler_run_preflight=true`. That executes the scheduled
+wrapper with `HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1`, validates
+`docs/backup-policies/hasslehoff-backup-policy.yml`, checks wrapper shell
+syntax, and rejects any mirror target containing `x12again`, `prinzessin`, or
+`172.16.99.108`.
+
 The second-layer scheduled wrapper is:
 
 ```bash
