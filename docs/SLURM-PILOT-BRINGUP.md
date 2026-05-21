@@ -206,3 +206,16 @@ If the pilot destabilizes DNS, routing, or VM host resources:
   job pass.
 - Prometheus, VictoriaMetrics, Grafana, rsyslog, and Elasticsearch have defined
   scheduler integration targets.
+
+## HPC-002 Closeout Manifest
+
+The pilot acceptance closeout is tracked in:
+
+```text
+docs/closeouts/HPC-002-slurm-pilot-closeout.yml
+```
+
+That manifest marks the non-production controller/first-worker pilot
+`ready-to-close` and separates remaining work into follow-up issues:
+observability integration, NetBox-driven node features, node health checks,
+RDMA fabric validation, and later X12AGAIN worker admission.
