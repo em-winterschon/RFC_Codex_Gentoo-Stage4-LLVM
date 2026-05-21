@@ -1,0 +1,215 @@
+---
+policy_id: fmt2-r630-arista7060-fabric-policy
+issue: 130
+status: pre-mutation-validation
+mutation_default: blocked
+summary: >-
+  Validate Dell R630 X710 front-end and ConnectX-4 RoCEv2 storage fabric
+  policy on the Arista DCS-7060CX-32S before live switch or host network
+  mutation.
+change_control_note: >-
+  Do not mutate Arista, pri, sec, ter, or storage paths from this policy
+  artifact alone. This file defines required evidence and rollback gates; a
+  separate approved apply plan must name exact commands and target devices.
+mutation_warning: Do not mutate Arista, pri, sec, ter, or storage paths from this policy artifact alone.
+
+switch:
+  hostname: sw-sfo200-7060cx32s-2010
+  fqdn: sw-sfo200-7060cx32s-2010.vernetzen.io
+  management_ip: 172.18.20.10
+  platform: Arista DCS-7060CX-32S
+  access_path:
+    preferred: ssh-proxyjump-checkmk
+    alias: 7060
+    user: verwalterin
+    proxyjump: verwalterin@checkmk
+    direct_m70_ssh: blocked-by-mgmt-acl
+    notes:
+      - CheckMK 10.200.99.27 is permitted by mgmt-acl.
+      - M70 172.16.99.70 is not directly permitted by mgmt-acl.
+      - Use read-only capture until a switch ACL change-control exists.
+  live_config_evidence:
+    vlan: 50
+    vlan_name: cx4-dual-50g-ceph
+    connectx_mtu: 9214
+    connectx_port_channels:
+      pri: Po613
+      sec: Po713
+      ter: Po813
+    qos_gap: no explicit QoS/PFC/ECN/WRED profile found in include scan
+
+hosts:
+  kvm-sfo200-pri-9922:
+    management_ip: 10.200.99.22
+    serial: 162DDH2
+    arista_ports:
+      x710:
+        - Et3/1
+        - Et3/2
+        - Et3/3
+        - Et3/4
+      connectx4:
+        - Et6/1
+        - Et6/3
+      connectx_port_channel: Po613
+    intended_host_network:
+      management:
+        - eno1
+        - eno2
+      vm_frontend:
+        - eno3
+        - eno4
+      rdma:
+        - enp130s0f0np0
+        - enp130s0f1np1
+    rdma_admission:
+      blocked: true
+      blockers:
+        - missing-linux-connectx-enumeration
+        - missing-idrac-connectx-inventory
+        - missing-arista-lldp-neighbor
+      notes:
+        - Linux and iDRAC do not currently enumerate the ConnectX adapter.
+        - Arista Et6/1 and Et6/3 require LLDP neighbor confirmation after physical maintenance.
+  kvm-sfo200-sec-9923:
+    management_ip: 10.200.99.23
+    serial: 7Q25CH2
+    arista_ports:
+      x710:
+        - Et4/1
+        - Et4/2
+        - Et4/3
+        - Et4/4
+      connectx4:
+        - Et7/1
+        - Et7/3
+      connectx_port_channel: Po713
+    intended_host_network:
+      management:
+        - eno1
+        - eno2
+      vm_frontend:
+        - eno3
+        - eno4
+      rdma:
+        - enp130s0f0np0
+        - enp130s0f1np1
+    rdma_admission:
+      blocked: true
+      blockers:
+        - vendor-ofed-doca-not-installed
+        - ibverbs-perftest-tooling-absent
+        - placeholder-connectx-macs
+      notes:
+        - Positive-control host for physical ConnectX path and Arista LLDP.
+        - Placeholder ConnectX MACs must not enter IPAM, DHCP, ACL, or VF automation.
+  kvm-sfo200-ter-9924:
+    management_ip: 10.200.99.24
+    serial: JK9SDB2
+    arista_ports:
+      x710:
+        - Et5/1
+        - Et5/2
+        - Et5/3
+        - Et5/4
+      connectx4:
+        - Et8/1
+        - Et8/3
+      connectx_port_channel: Po813
+    intended_host_network:
+      management:
+        - eno1
+        - eno2
+      vm_frontend:
+        - eno3
+        - eno4
+      rdma:
+        - enp130s0f0np0
+        - enp130s0f1np1
+    rdma_admission:
+      blocked: true
+      blockers:
+        - vendor-ofed-doca-not-installed
+        - pairwise-rdma-smoke-not-captured
+        - sriov-exposure-inconsistent
+      notes:
+        - Storage-preserving anchor host; do not destructively rebuild for this workflow.
+
+fabric_classes:
+  management:
+    devices: Intel X710 eno1 eno2
+    topology: host-management-lacp
+    switch_role: management and host control-plane only
+  vm_frontend:
+    devices: Intel X710 eno3 eno4
+    topology: vm-front-end-lacp-ovs-sriov
+    switch_role: provider and tenant front-end traffic after validation
+  rocev2_storage:
+    devices: Mellanox ConnectX-4 enp130s0f0np0 enp130s0f1np1
+    vlan: 50
+    vlan_name: cx4-dual-50g-ceph
+    mtu: 9214
+    first_pass_topology: independent-50g-paths
+    pfc: required-storage-class-only
+    ecn_wred: required-explicit-profile-before-mutation
+    dscp_pcp_mapping: required-before-mutation
+    lacp_promotion: blocked-until-pairwise-rdma-and-one-path-failure-pass
+    allowed_protocols_after_admission:
+      - nvme-rdma
+      - iser
+      - nfs-rdma
+    disallowed_until_admission:
+      - scheduler-rdma-feature-advertisement
+      - storage-production-rdma-mounts
+      - ovs-switchdev-rdma-vm-promotion
+
+acceptance_gates:
+  - id: arista-config-snapshot
+    required_before: switch-mutation
+    evidence: running-config and interface snippets archived with timestamp
+  - id: lldp-port-map-confirmed
+    required_before: switch-mutation
+    evidence: LLDP neighbors match all X710 and ConnectX-facing ports
+  - id: bios-sriov-iommu-confirmed
+    required_before: rdma-admission
+    evidence: BIOS SR-IOV, VT-d/IOMMU, MMIO above 4G, and slot enablement captured
+  - id: nic-firmware-inventory
+    required_before: rdma-admission
+    evidence: X710 NVM and ConnectX model, PSID, serial, firmware, and port MACs captured
+  - id: sec-placeholder-macs-resolved
+    required_before: rdma-admission
+    evidence: sec ConnectX MACs are real values or documented firmware-safe placeholders
+  - id: rocev2-qos-profile-defined
+    required_before: switch-mutation
+    evidence: VLAN, MTU, PFC, ECN/WRED, DSCP, and PCP mapping documented per EOS syntax
+  - id: rollback-commands-generated
+    required_before: switch-mutation
+    evidence: rollback commands are reviewed before any configure terminal session
+  - id: pairwise-rdma-smoke
+    required_before: rdma-admission
+    evidence: sec-to-ter and later pri-to-peer RDMA smoke tests pass
+  - id: one-path-failure
+    required_before: rdma-admission
+    evidence: one ConnectX path down does not corrupt or wedge protocol-layer multipath
+
+read_only_validation_commands:
+  - ssh 7060 "show running-config"
+  - ssh 7060 "show running-config interfaces Ethernet3/1-8/3"
+  - ssh 7060 "show lldp neighbors"
+  - ssh 7060 "show interfaces status"
+  - ssh 7060 "show interfaces counters errors"
+  - ssh 7060 "show vlan id 50"
+  - ssh 7060 "show port-channel summary"
+  - ssh 7060 "show qos interfaces"
+
+rollback:
+  required_before_apply: true
+  forbidden_commands:
+    - write memory before validation
+    - persistent ACL expansion without alternate access path
+    - destructive interface default without captured current stanza
+  candidate_commands:
+    - configure replace flash:rollback-fmt2-r630-arista7060.cfg force
+    - configure terminal ; interface range Ethernet6/1,6/3,7/1,7/3,8/1,8/3 ; shutdown
+    - reload cancel
+    - reload now rollback reason "revert failed R630 RoCEv2 fabric mutation"

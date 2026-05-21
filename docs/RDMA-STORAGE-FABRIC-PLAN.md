@@ -116,6 +116,13 @@ matching bonds. First-pass RoCEv2 admission should prefer independent 50GbE
 paths on VLAN 50, then add LACP or switchdev only after host OFED, switch QoS,
 RDMA pair tests, and one-path-failure tests pass.
 
+The machine-readable switch/host admission policy is tracked at
+`docs/fabric-policies/fmt2-r630-arista7060-fabric-policy.yml`. That policy is
+the current gate source for Arista port mappings, R630 NIC roles, RoCEv2 QoS
+requirements, rollback command expectations, and the explicit rule that all
+switch or host network mutations remain blocked until the acceptance evidence
+is captured.
+
 `pri` has an additional 2026-05-20 admission blocker: its disposable
 firmware-maintenance OS and iDRAC hardware inventory do not enumerate any
 Mellanox/ConnectX device, even though the Arista reports `Et6/1` and `Et6/3`
