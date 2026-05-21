@@ -130,9 +130,9 @@ Implemented operations:
   repo branch/commit/dirty state, latest EOD/SITREP/closeout documents, recent
   local memory sessions, optional issue state, optional blocker state, and
   operator-provided memory notes
-- `publish-session`: publishes a closed session into a filesystem-backed
-  object-store layout, copying the event log and closeout manifest and writing
-  a checksummed publish manifest
+- `publish-session`: publishes a closed session into a filesystem-backed or
+  S3-compatible object-store layout, copying the event log, closeout manifest,
+  and publish manifest with checksum metadata
 
 The CLI records session, agent, repo, branch, commit, host, timestamp, intent,
 actions, artifact references, and notes. It rejects secret-looking JSON keys
@@ -201,6 +201,23 @@ This makes the upload contract testable before selecting MinIO, Garage, Ceph
 RGW, or another service. It rejects existing destination objects unless
 `--overwrite` is explicitly supplied.
 
+S3-compatible publish example:
+
+```bash
+scripts/forge_memory_spool.py publish-session \
+  --spool-root /var/lib/forge-memory/spool \
+  --backend s3 \
+  --s3-bucket forge-memory \
+  --s3-prefix forge-memory/v1 \
+  --session-id 20260521T220000Z-forge \
+  --agent-id forge
+```
+
+The S3-compatible backend invokes `aws s3 cp` by default, or another compatible
+CLI supplied with `--s3-cli`. Credentials, endpoints, and profile selection
+must come from the runtime environment or CLI configuration, not from Forge
+memory arguments or manifests.
+
 Signed closeout example:
 
 ```bash
@@ -219,8 +236,6 @@ runtime secret path and is never written to the manifest.
 
 Current limitations:
 
-- direct S3/Garage/MinIO transport is not implemented yet; use a mounted
-  filesystem target or relay until the service role is selected
 - Vault/SSH/internal-CA signing backends remain future hardening options
 - MCP methods still need to wrap the CLI and enforce operator policy
 

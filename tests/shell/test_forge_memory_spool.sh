@@ -207,6 +207,63 @@ fi
 grep -qi 'already exists' "${tmpdir}/publish-again.stderr" ||
   fail "duplicate publish rejection did not explain the cause"
 
+fake_bin="${tmpdir}/bin"
+mkdir -p "${fake_bin}"
+cat > "${fake_bin}/aws" << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >> "${FAKE_S3_LOG:?}"
+test "$1" = "s3" || exit 64
+test "$2" = "cp" || exit 64
+test -f "$3" || exit 66
+test "${4#s3://}" != "$4" || exit 65
+EOF
+chmod +x "${fake_bin}/aws"
+
+FAKE_S3_LOG="${tmpdir}/fake-s3.log" PATH="${fake_bin}:${PATH}" "${SPOOLER}" publish-session \
+  --spool-root "${tmpdir}" \
+  --backend "s3" \
+  --s3-bucket "forge-memory-ci" \
+  --s3-prefix "forge-memory/v1" \
+  --agent-id "forge" \
+  --session-id "session-night-001" \
+  > "${tmpdir}/publish-s3.json"
+
+python3 - "${tmpdir}/publish-s3.json" "${tmpdir}/fake-s3.log" << 'PY'
+import json
+import sys
+from pathlib import Path
+
+publish = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+log_lines = Path(sys.argv[2]).read_text(encoding="utf-8").splitlines()
+
+assert publish["schema"] == "rfc-codex.forge-object-store-publish.v1"
+assert publish["backend"] == "s3"
+assert publish["s3_bucket"] == "forge-memory-ci"
+assert publish["prefix"] == "forge-memory/v1"
+assert publish["object_count"] == 3
+assert publish["publish_manifest_key"] == "forge-memory/v1/publish-manifests/forge/session-night-001.json"
+assert publish["publish_manifest_uri"] == "s3://forge-memory-ci/forge-memory/v1/publish-manifests/forge/session-night-001.json"
+assert publish["publish_manifest_file"].endswith("/session-night-001.json")
+
+objects_by_kind = {item["kind"]: item for item in publish["objects"]}
+assert objects_by_kind["event-log"]["object_uri"] == (
+    "s3://forge-memory-ci/forge-memory/v1/agents/forge/sessions/session-night-001/events.jsonl"
+)
+assert objects_by_kind["closeout-manifest"]["object_uri"].startswith(
+    "s3://forge-memory-ci/forge-memory/v1/manifests/"
+)
+assert objects_by_kind["publish-manifest"]["object_uri"] == publish["publish_manifest_uri"]
+assert objects_by_kind["publish-manifest"]["sha256"] == "pending-upload"
+assert objects_by_kind["publish-manifest"]["size_bytes"] == 0
+
+assert len(log_lines) == 3
+assert all(line.startswith("s3 cp ") for line in log_lines)
+assert any("events.jsonl s3://forge-memory-ci/" in line for line in log_lines)
+assert any("session-night-001.json s3://forge-memory-ci/" in line for line in log_lines)
+assert "api_token" not in json.dumps(publish).lower()
+PY
+
 "${SPOOLER}" list-sessions \
   --spool-root "${tmpdir}" \
   --agent-id "forge" \

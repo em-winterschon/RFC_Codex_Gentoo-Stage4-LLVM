@@ -78,6 +78,17 @@ def file_metadata(
     }
 
 
+def s3_file_metadata(source_file: Path, bucket: str, object_key: str, kind: str) -> dict[str, Any]:
+    return {
+        "kind": kind,
+        "source_file": str(source_file),
+        "object_key": object_key,
+        "object_uri": f"s3://{bucket}/{object_key}",
+        "sha256": sha256_file(source_file),
+        "size_bytes": source_file.stat().st_size,
+    }
+
+
 def read_jsonl_events(path: Path) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     if not path.exists():
@@ -395,12 +406,29 @@ def copy_object(source_file: Path, object_file: Path, overwrite: bool) -> None:
     object_file.write_bytes(source_file.read_bytes())
 
 
+def require_s3_bucket(bucket: str) -> str:
+    if not bucket or "/" in bucket or bucket in {".", ".."}:
+        raise SpoolError("s3 bucket must be a bucket name, not a path or URI")
+    return bucket
+
+
+def upload_s3_object(source_file: Path, object_uri: str, cli: str) -> None:
+    try:
+        subprocess.run(
+            [cli, "s3", "cp", str(source_file), object_uri],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SpoolError(f"S3 upload failed for {object_uri}: {exc}") from exc
+
+
 def publish_session(args: argparse.Namespace) -> dict[str, Any]:
     spool_root = Path(args.spool_root)
-    object_store_root = Path(args.object_store_root)
     agent_id = require_safe_id(args.agent_id, "agent-id")
     session_id = require_safe_id(args.session_id, "session-id")
-    prefix = normalized_prefix(args.prefix)
+    prefix = normalized_prefix(args.prefix if args.backend == "filesystem" else args.s3_prefix)
 
     event_path = event_file_for(spool_root, agent_id, session_id)
     if not event_path.exists():
@@ -414,38 +442,86 @@ def publish_session(args: argparse.Namespace) -> dict[str, Any]:
     manifest_key = f"{prefix}/manifests/{closeout_manifest.relative_to(spool_root / 'manifests')}"
     publish_manifest_key = f"{prefix}/publish-manifests/{agent_id}/{session_id}.json"
 
-    objects = [
-        file_metadata(event_path, object_store_root, event_key, "event-log"),
-        file_metadata(closeout_manifest, object_store_root, manifest_key, "closeout-manifest"),
-    ]
-
-    for item in objects:
-        copy_object(Path(item["source_file"]), Path(item["object_file"]), args.overwrite)
-
-    publish_manifest_file = object_store_root / publish_manifest_key
-    if publish_manifest_file.exists() and not args.overwrite:
-        raise SpoolError(f"object already exists: {publish_manifest_file}")
-
     published_at = utc_now()
+
+    if args.backend == "filesystem":
+        if not args.object_store_root:
+            raise SpoolError("object-store-root is required for filesystem backend")
+        object_store_root = Path(args.object_store_root)
+        objects = [
+            file_metadata(event_path, object_store_root, event_key, "event-log"),
+            file_metadata(closeout_manifest, object_store_root, manifest_key, "closeout-manifest"),
+        ]
+
+        for item in objects:
+            copy_object(Path(item["source_file"]), Path(item["object_file"]), args.overwrite)
+
+        publish_manifest_file = object_store_root / publish_manifest_key
+        if publish_manifest_file.exists() and not args.overwrite:
+            raise SpoolError(f"object already exists: {publish_manifest_file}")
+
+        publish_manifest = {
+            "schema": PUBLISH_SCHEMA,
+            "published_at_utc": published_at,
+            "backend": "filesystem",
+            "object_store_root": str(object_store_root),
+            "prefix": prefix,
+            "session_id": session_id,
+            "agent_id": agent_id,
+            "host": socket.gethostname(),
+            "object_count": len(objects),
+            "objects": objects,
+            "publish_manifest_key": publish_manifest_key,
+            "publish_manifest_file": str(publish_manifest_file),
+        }
+        reject_secret_keys(publish_manifest)
+        publish_manifest_file.parent.mkdir(parents=True, exist_ok=True)
+        publish_manifest_file.write_text(
+            json.dumps(publish_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        return publish_manifest
+
+    bucket = require_s3_bucket(args.s3_bucket)
+    publish_manifest_file = (
+        session_dir(spool_root, agent_id, session_id) / "publish-manifests" / f"{session_id}.json"
+    )
+    publish_manifest_uri = f"s3://{bucket}/{publish_manifest_key}"
+    objects = [
+        s3_file_metadata(event_path, bucket, event_key, "event-log"),
+        s3_file_metadata(closeout_manifest, bucket, manifest_key, "closeout-manifest"),
+    ]
     publish_manifest = {
         "schema": PUBLISH_SCHEMA,
         "published_at_utc": published_at,
-        "backend": "filesystem",
-        "object_store_root": str(object_store_root),
+        "backend": "s3",
+        "s3_bucket": bucket,
         "prefix": prefix,
         "session_id": session_id,
         "agent_id": agent_id,
         "host": socket.gethostname(),
-        "object_count": len(objects),
+        "object_count": len(objects) + 1,
         "objects": objects,
         "publish_manifest_key": publish_manifest_key,
+        "publish_manifest_uri": publish_manifest_uri,
         "publish_manifest_file": str(publish_manifest_file),
     }
+    publish_manifest["objects"].append(
+        {
+            "kind": "publish-manifest",
+            "source_file": str(publish_manifest_file),
+            "object_key": publish_manifest_key,
+            "object_uri": publish_manifest_uri,
+            "sha256": "pending-upload",
+            "size_bytes": 0,
+        }
+    )
     reject_secret_keys(publish_manifest)
     publish_manifest_file.parent.mkdir(parents=True, exist_ok=True)
     publish_manifest_file.write_text(
         json.dumps(publish_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    for item in publish_manifest["objects"]:
+        upload_s3_object(Path(item["source_file"]), str(item["object_uri"]), args.s3_cli)
     return publish_manifest
 
 
@@ -533,10 +609,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     publish = subparsers.add_parser(
         "publish-session",
-        help="publish a closed session to a filesystem-backed object-store layout",
+        help="publish a closed session to a filesystem-backed or S3-compatible object-store layout",
     )
     publish.add_argument("--spool-root", required=True)
-    publish.add_argument("--object-store-root", required=True)
+    publish.add_argument("--backend", choices=["filesystem", "s3"], default="filesystem")
+    publish.add_argument("--object-store-root")
+    publish.add_argument("--s3-bucket", default="")
+    publish.add_argument("--s3-prefix", default="forge-memory/v1")
+    publish.add_argument("--s3-cli", default="aws")
     publish.add_argument("--session-id", required=True)
     publish.add_argument("--agent-id", default="forge")
     publish.add_argument("--prefix", default="forge-memory/v1")
