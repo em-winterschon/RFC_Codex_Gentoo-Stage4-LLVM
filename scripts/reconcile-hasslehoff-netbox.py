@@ -26,7 +26,6 @@ from typing import Any
 
 import requests
 
-
 DEFAULT_API_URL = "http://172.16.99.62/api"
 DEFAULT_TOKEN_FILE = "/root/operator-private/netbox/svc-netbox-stage4-admin-token"
 DEFAULT_PROXMOX_SSH_HOST = "hasslehoff"
@@ -150,14 +149,20 @@ class NetBox:
         if not self.apply:
             self.created.append(f"DRY create {label}")
             return self.dry_object(payload)
-        response = self.session.post(f"{self.api_url}/{endpoint.strip('/')}/", json=payload, timeout=20)
+        response = self.session.post(
+            f"{self.api_url}/{endpoint.strip('/')}/", json=payload, timeout=20
+        )
         if response.status_code >= 400:
-            self.conflicts.append(f"create failed {label}: {response.status_code} {response.text[:500]}")
+            self.conflicts.append(
+                f"create failed {label}: {response.status_code} {response.text[:500]}"
+            )
             return None
         self.created.append(f"created {label}")
         return response.json()
 
-    def patch(self, obj: dict[str, Any], payload: dict[str, Any], label: str) -> dict[str, Any] | None:
+    def patch(
+        self, obj: dict[str, Any], payload: dict[str, Any], label: str
+    ) -> dict[str, Any] | None:
         if not payload:
             return obj
         if not self.apply:
@@ -165,7 +170,9 @@ class NetBox:
             return {**obj, **payload}
         response = self.session.patch(obj["url"], json=payload, timeout=20)
         if response.status_code >= 400:
-            self.conflicts.append(f"update failed {label}: {response.status_code} {response.text[:500]}")
+            self.conflicts.append(
+                f"update failed {label}: {response.status_code} {response.text[:500]}"
+            )
             return None
         self.updated.append(f"updated {label}")
         return response.json()
@@ -290,7 +297,9 @@ def ensure_vm_role(nb: NetBox, role_slug: str) -> dict[str, Any] | None:
     )
 
 
-def ensure_mac(nb: NetBox, mac: str, assigned_type: str, assigned_id: int, label: str) -> dict[str, Any] | None:
+def ensure_mac(
+    nb: NetBox, mac: str, assigned_type: str, assigned_id: int, label: str
+) -> dict[str, Any] | None:
     existing = nb.first("dcim/mac-addresses", mac_address=mac)
     if existing:
         assigned = existing.get("assigned_object")
@@ -342,12 +351,15 @@ def ensure_ip(
     if current_type == assigned_type and current_id == assigned_id:
         return existing
     nb.conflicts.append(
-        f"IP {normalized} already assigned to {current_type}:{current_id}; left unchanged for {label}"
+        f"IP {normalized} already assigned to {current_type}:{current_id}; "
+        f"left unchanged for {label}"
     )
     return existing
 
 
-def ensure_service(nb: NetBox, vm: dict[str, Any], ip_ids: list[int], name: str, protocol: str, ports: list[int]) -> None:
+def ensure_service(
+    nb: NetBox, vm: dict[str, Any], ip_ids: list[int], name: str, protocol: str, ports: list[int]
+) -> None:
     services = nb.all(
         "ipam/services",
         parent_object_type="virtualization.virtualmachine",
@@ -403,7 +415,9 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
 
     hasslehoff = nb.first("dcim/devices", name=args.proxmox_node)
     if hasslehoff and cluster and not hasslehoff.get("cluster"):
-        nb.patch(hasslehoff, {"cluster": cluster["id"]}, f"device {args.proxmox_node} cluster membership")
+        nb.patch(
+            hasslehoff, {"cluster": cluster["id"]}, f"device {args.proxmox_node} cluster membership"
+        )
 
     nanoprime = nb.ensure(
         "dcim/devices",
@@ -416,7 +430,10 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
             "role": hypervisor_role["id"],
             "status": "active",
             "cluster": cluster["id"] if cluster else None,
-            "comments": "Observed online in Proxmox cluster prx-rfc99-prime and verified by SSH from M70 on 2026-05-21.",
+            "comments": (
+                "Observed online in Proxmox cluster prx-rfc99-prime and verified by SSH "
+                "from M70 on 2026-05-21."
+            ),
         },
     )
     if nanoprime and cluster and not nanoprime.get("cluster"):
@@ -424,11 +441,41 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
 
     if nanoprime:
         for iface_name, iface_type, description, address, dns_name in [
-            ("eth0", "1000base-t", "Observed physical interface; bridge member of mgmt-net0", None, None),
-            ("eth1", "1000base-t", "Observed physical interface; bridge member of ceph-net0", None, None),
-            ("eth2", "1000base-t", "Observed physical interface; bridge member of ceph-net0", None, None),
-            ("mgmt-net0", "bridge", "Management bridge 172.16.99.13/24 via eth0", "172.16.99.13/24", "nanoprime.rfc1918.host"),
-            ("ceph-net0", "bridge", "Ceph/private bridge 10.232.232.13/24 via eth1 eth2", "10.232.232.13/24", "nanoprime-ceph.rfc1918.host"),
+            (
+                "eth0",
+                "1000base-t",
+                "Observed physical interface; bridge member of mgmt-net0",
+                None,
+                None,
+            ),
+            (
+                "eth1",
+                "1000base-t",
+                "Observed physical interface; bridge member of ceph-net0",
+                None,
+                None,
+            ),
+            (
+                "eth2",
+                "1000base-t",
+                "Observed physical interface; bridge member of ceph-net0",
+                None,
+                None,
+            ),
+            (
+                "mgmt-net0",
+                "bridge",
+                "Management bridge 172.16.99.13/24 via eth0",
+                "172.16.99.13/24",
+                "nanoprime.rfc1918.host",
+            ),
+            (
+                "ceph-net0",
+                "bridge",
+                "Ceph/private bridge 10.232.232.13/24 via eth1 eth2",
+                "10.232.232.13/24",
+                "nanoprime-ceph.rfc1918.host",
+            ),
         ]:
             iface = nb.ensure(
                 "dcim/interfaces",
@@ -476,7 +523,10 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
                 "memory": evidence.memory_mb,
                 "disk": evidence.disk_gb,
                 "description": f"Proxmox VMID {evidence.vmid} on {args.proxmox_node}",
-                "comments": f"Observed from Hasslehoff pvesh/qm config on 2026-05-21. VMID={evidence.vmid}.",
+                "comments": (
+                    "Observed from Hasslehoff pvesh/qm config on 2026-05-21. "
+                    f"VMID={evidence.vmid}."
+                ),
             },
         )
         if not vm:
@@ -501,9 +551,19 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
             iface_by_name[net["name"]] = iface
             mac = net.get("mac")
             if mac:
-                mac_obj = ensure_mac(nb, mac, "virtualization.vminterface", iface["id"], f"{evidence.name} {net['name']}")
+                mac_obj = ensure_mac(
+                    nb,
+                    mac,
+                    "virtualization.vminterface",
+                    iface["id"],
+                    f"{evidence.name} {net['name']}",
+                )
                 if mac_obj and iface.get("primary_mac_address") is None:
-                    nb.patch(iface, {"primary_mac_address": mac_obj["id"]}, f"VM {evidence.name} {net['name']} primary MAC")
+                    nb.patch(
+                        iface,
+                        {"primary_mac_address": mac_obj["id"]},
+                        f"VM {evidence.name} {net['name']} primary MAC",
+                    )
 
         for iface_name, address in evidence.addresses:
             iface = iface_by_name.get(iface_name)
@@ -520,7 +580,10 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
             )
             if ip and ip.get("assigned_object_type") == "virtualization.vminterface":
                 vm_ip_ids.append(ip["id"])
-                if vm.get("primary_ip4") is None and ipaddress.ip_interface(ip["address"]).version == 4:
+                if (
+                    vm.get("primary_ip4") is None
+                    and ipaddress.ip_interface(ip["address"]).version == 4
+                ):
                     nb.patch(vm, {"primary_ip4": ip["id"]}, f"VM {evidence.name} primary_ip4")
 
         if evidence.name in SERVICE_PLAN:
