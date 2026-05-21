@@ -47,6 +47,14 @@ The canonical scheduling and coverage policy is
 and records the selected VM/LXC service classes, retention expectations,
 notifications, and restore-validation gates.
 
+## Recurring Scheduler Installation
+
+Install recurring execution with
+`gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hasslehoff-backup-scheduler.yml`.
+The role is disabled by default, requires explicit apply, validates the backup
+policy, and supports a preflight run with `HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1`
+before it writes `/etc/cron.d/hasslehoff-backup`.
+
 - Config and control-plane state from `scripts/backup-hasslehoff-config.sh`,
   mirrored off-host after capture by `scripts/backup-hasslehoff-scheduled.sh`.
 - VM and LXC recoverability through `vzdump` or Proxmox Backup Server for
