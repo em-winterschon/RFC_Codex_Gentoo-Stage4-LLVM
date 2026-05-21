@@ -17,6 +17,7 @@ from typing import Any
 EVENT_SCHEMA = "rfc-codex.forge-memory-event.v1"
 MANIFEST_SCHEMA = "rfc-codex.forge-memory-manifest.v1"
 BOOTSTRAP_SCHEMA = "rfc-codex.forge-bootstrap-summary.v1"
+PUBLISH_SCHEMA = "rfc-codex.forge-object-store-publish.v1"
 SAFE_ID = re.compile(r"^[A-Za-z0-9._:-]+$")
 SECRET_KEY = re.compile(
     r"(api[_-]?key|api[_-]?token|auth[_-]?token|bearer|client[_-]?secret|"
@@ -60,6 +61,20 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def file_metadata(
+    source_file: Path, object_store_root: Path, object_key: str, kind: str
+) -> dict[str, Any]:
+    object_file = object_store_root / object_key
+    return {
+        "kind": kind,
+        "source_file": str(source_file),
+        "object_key": object_key,
+        "object_file": str(object_file),
+        "sha256": sha256_file(source_file),
+        "size_bytes": source_file.stat().st_size,
+    }
 
 
 def read_jsonl_events(path: Path) -> list[dict[str, Any]]:
@@ -327,6 +342,78 @@ def manifest_files_for(spool_root: Path, session_id: str) -> list[str]:
     )
 
 
+def normalized_prefix(raw_prefix: str) -> str:
+    prefix = raw_prefix.strip("/")
+    if not prefix:
+        raise SpoolError("prefix must not be empty")
+    parts = prefix.split("/")
+    for part in parts:
+        if part in {"", ".", ".."}:
+            raise SpoolError("prefix contains an unsafe path component")
+    return prefix
+
+
+def copy_object(source_file: Path, object_file: Path, overwrite: bool) -> None:
+    if object_file.exists() and not overwrite:
+        raise SpoolError(f"object already exists: {object_file}")
+    object_file.parent.mkdir(parents=True, exist_ok=True)
+    object_file.write_bytes(source_file.read_bytes())
+
+
+def publish_session(args: argparse.Namespace) -> dict[str, Any]:
+    spool_root = Path(args.spool_root)
+    object_store_root = Path(args.object_store_root)
+    agent_id = require_safe_id(args.agent_id, "agent-id")
+    session_id = require_safe_id(args.session_id, "session-id")
+    prefix = normalized_prefix(args.prefix)
+
+    event_path = event_file_for(spool_root, agent_id, session_id)
+    if not event_path.exists():
+        raise SpoolError(f"event log does not exist: {event_path}")
+    manifest_files = manifest_files_for(spool_root, session_id)
+    if not manifest_files:
+        raise SpoolError(f"closeout manifest does not exist for session: {session_id}")
+    closeout_manifest = Path(manifest_files[-1])
+
+    event_key = f"{prefix}/agents/{agent_id}/sessions/{session_id}/events.jsonl"
+    manifest_key = f"{prefix}/manifests/{closeout_manifest.relative_to(spool_root / 'manifests')}"
+    publish_manifest_key = f"{prefix}/publish-manifests/{agent_id}/{session_id}.json"
+
+    objects = [
+        file_metadata(event_path, object_store_root, event_key, "event-log"),
+        file_metadata(closeout_manifest, object_store_root, manifest_key, "closeout-manifest"),
+    ]
+
+    for item in objects:
+        copy_object(Path(item["source_file"]), Path(item["object_file"]), args.overwrite)
+
+    publish_manifest_file = object_store_root / publish_manifest_key
+    if publish_manifest_file.exists() and not args.overwrite:
+        raise SpoolError(f"object already exists: {publish_manifest_file}")
+
+    published_at = utc_now()
+    publish_manifest = {
+        "schema": PUBLISH_SCHEMA,
+        "published_at_utc": published_at,
+        "backend": "filesystem",
+        "object_store_root": str(object_store_root),
+        "prefix": prefix,
+        "session_id": session_id,
+        "agent_id": agent_id,
+        "host": socket.gethostname(),
+        "object_count": len(objects),
+        "objects": objects,
+        "publish_manifest_key": publish_manifest_key,
+        "publish_manifest_file": str(publish_manifest_file),
+    }
+    reject_secret_keys(publish_manifest)
+    publish_manifest_file.parent.mkdir(parents=True, exist_ok=True)
+    publish_manifest_file.write_text(
+        json.dumps(publish_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return publish_manifest
+
+
 def list_sessions(args: argparse.Namespace) -> dict[str, Any]:
     spool_root = Path(args.spool_root)
     agent_id = require_safe_id(args.agent_id, "agent-id")
@@ -406,6 +493,18 @@ def build_parser() -> argparse.ArgumentParser:
     close.add_argument("--agent-id", default="forge")
     close.add_argument("--summary", required=True)
     close.set_defaults(func=closeout)
+
+    publish = subparsers.add_parser(
+        "publish-session",
+        help="publish a closed session to a filesystem-backed object-store layout",
+    )
+    publish.add_argument("--spool-root", required=True)
+    publish.add_argument("--object-store-root", required=True)
+    publish.add_argument("--session-id", required=True)
+    publish.add_argument("--agent-id", default="forge")
+    publish.add_argument("--prefix", default="forge-memory/v1")
+    publish.add_argument("--overwrite", action="store_true")
+    publish.set_defaults(func=publish_session)
 
     list_parser = subparsers.add_parser("list-sessions", help="summarize local continuity sessions")
     list_parser.add_argument("--spool-root", required=True)

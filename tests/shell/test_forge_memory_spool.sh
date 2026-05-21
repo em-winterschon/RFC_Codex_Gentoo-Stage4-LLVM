@@ -102,6 +102,72 @@ assert data["closed_at_utc"].endswith("Z")
 assert closeout["event_count"] == 1
 PY
 
+object_store_root="${tmpdir}/object-store"
+"${SPOOLER}" publish-session \
+  --spool-root "${tmpdir}" \
+  --object-store-root "${object_store_root}" \
+  --agent-id "forge" \
+  --session-id "session-night-001" \
+  --prefix "forge-memory/v1" \
+  > "${tmpdir}/publish.json"
+
+python3 - "${tmpdir}/publish.json" "${event_file}" "${tmpdir}/closeout.json" "${object_store_root}" << 'PY'
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+publish = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+event_file = Path(sys.argv[2])
+closeout = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+object_store_root = Path(sys.argv[4])
+closeout_manifest = Path(closeout["manifest_file"])
+publish_manifest = Path(publish["publish_manifest_file"])
+
+assert publish["schema"] == "rfc-codex.forge-object-store-publish.v1"
+assert publish["session_id"] == "session-night-001"
+assert publish["agent_id"] == "forge"
+assert publish["backend"] == "filesystem"
+assert publish["object_store_root"] == str(object_store_root)
+assert publish["prefix"] == "forge-memory/v1"
+assert publish["object_count"] == 2
+assert publish_manifest.exists()
+assert publish_manifest.read_text(encoding="utf-8").endswith("\n")
+
+objects_by_kind = {item["kind"]: item for item in publish["objects"]}
+event_object = objects_by_kind["event-log"]
+manifest_object = objects_by_kind["closeout-manifest"]
+
+assert event_object["source_file"] == str(event_file)
+assert event_object["object_key"] == "forge-memory/v1/agents/forge/sessions/session-night-001/events.jsonl"
+assert Path(event_object["object_file"]).read_bytes() == event_file.read_bytes()
+assert event_object["sha256"] == hashlib.sha256(event_file.read_bytes()).hexdigest()
+assert event_object["size_bytes"] == event_file.stat().st_size
+
+assert manifest_object["source_file"] == str(closeout_manifest)
+assert manifest_object["object_key"].startswith("forge-memory/v1/manifests/")
+assert manifest_object["object_key"].endswith("/session-night-001.json")
+assert Path(manifest_object["object_file"]).read_bytes() == closeout_manifest.read_bytes()
+assert manifest_object["sha256"] == hashlib.sha256(closeout_manifest.read_bytes()).hexdigest()
+assert manifest_object["size_bytes"] == closeout_manifest.stat().st_size
+
+stored_publish = json.loads(publish_manifest.read_text(encoding="utf-8"))
+assert stored_publish == publish
+assert "api_token" not in json.dumps(publish).lower()
+PY
+
+if "${SPOOLER}" publish-session \
+  --spool-root "${tmpdir}" \
+  --object-store-root "${object_store_root}" \
+  --agent-id "forge" \
+  --session-id "session-night-001" \
+  --prefix "forge-memory/v1" \
+  > "${tmpdir}/publish-again.stdout" 2> "${tmpdir}/publish-again.stderr"; then
+  fail "duplicate publish without overwrite was accepted"
+fi
+grep -qi 'already exists' "${tmpdir}/publish-again.stderr" ||
+  fail "duplicate publish rejection did not explain the cause"
+
 "${SPOOLER}" list-sessions \
   --spool-root "${tmpdir}" \
   --agent-id "forge" \

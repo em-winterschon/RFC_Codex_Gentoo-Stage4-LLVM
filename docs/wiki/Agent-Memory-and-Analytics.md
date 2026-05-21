@@ -129,6 +129,9 @@ Implemented operations:
   repo branch/commit/dirty state, latest EOD/SITREP/closeout documents, recent
   local memory sessions, optional issue state, optional blocker state, and
   operator-provided memory notes
+- `publish-session`: publishes a closed session into a filesystem-backed
+  object-store layout, copying the event log and closeout manifest and writing
+  a checksummed publish manifest
 
 The CLI records session, agent, repo, branch, commit, host, timestamp, intent,
 actions, artifact references, and notes. It rejects secret-looking JSON keys
@@ -180,10 +183,28 @@ to find recent session streams and closeout manifests, reconcile those artifact
 references against GitHub issues and committed docs, and append a durable
 session-start event before taking action.
 
+Object-store publish example:
+
+```bash
+scripts/forge_memory_spool.py publish-session \
+  --spool-root /var/lib/forge-memory/spool \
+  --object-store-root /srv/forge-memory-object-store \
+  --session-id 20260521T220000Z-forge \
+  --agent-id forge \
+  --prefix forge-memory/v1
+```
+
+The initial publisher deliberately targets a local or mounted filesystem path
+using the same object-key layout intended for a future S3-compatible backend.
+This makes the upload contract testable before selecting MinIO, Garage, Ceph
+RGW, or another service. It rejects existing destination objects unless
+`--overwrite` is explicitly supplied.
+
 Current limitations:
 
 - closeout manifests are unsigned until the signing backend is selected
-- object-store upload is not implemented yet
+- direct S3/Garage/MinIO transport is not implemented yet; use a mounted
+  filesystem target or relay until the service role is selected
 - MCP methods still need to wrap the CLI and enforce operator policy
 
 ## MCP Integration Direction
