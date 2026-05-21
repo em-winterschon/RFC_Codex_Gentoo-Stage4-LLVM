@@ -9,6 +9,9 @@
       {{ hasslehoff_backup_scheduler_repo_root }}/{{ hasslehoff_backup_scheduler_policy_path }}
     hasslehoff_backup_scheduler_script_abs: >-
       {{ hasslehoff_backup_scheduler_repo_root }}/{{ hasslehoff_backup_scheduler_script_path }}
+
+- name: Resolve Hasslehoff backup scheduler command
+  ansible.builtin.set_fact:
     hasslehoff_backup_scheduler_command: >-
       cd {{ hasslehoff_backup_scheduler_runtime_root }} &&
       {{ hasslehoff_backup_scheduler_environment | join(' ') }}
@@ -128,11 +131,14 @@
   when:
     - hasslehoff_backup_scheduler_enabled | bool
     - hasslehoff_backup_scheduler_validate_policy | bool
+    - not ansible_check_mode | bool
 
 - name: Validate Hasslehoff backup scheduled wrapper syntax
   ansible.builtin.command: "bash -n {{ hasslehoff_backup_scheduler_runtime_script_abs }}"
   changed_when: false
-  when: hasslehoff_backup_scheduler_enabled | bool
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - not ansible_check_mode | bool
 
 - name: Run Hasslehoff backup scheduler preflight
   ansible.builtin.shell: >-

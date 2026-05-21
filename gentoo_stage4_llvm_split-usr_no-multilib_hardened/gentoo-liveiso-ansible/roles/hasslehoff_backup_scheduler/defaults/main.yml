@@ -6,7 +6,7 @@ hasslehoff_backup_scheduler_cron_file: /etc/cron.d/hasslehoff-backup
 hasslehoff_backup_scheduler_cron_minute: "17"
 hasslehoff_backup_scheduler_cron_hour: "9"
 hasslehoff_backup_scheduler_cron_user: root
-hasslehoff_backup_scheduler_repo_root: /root/RFC_Codex_Gentoo-Stage4-LLVM
+hasslehoff_backup_scheduler_repo_root: "{{ playbook_dir }}/../../.."
 hasslehoff_backup_scheduler_runtime_root: /opt/rfc1918/hasslehoff-backup
 hasslehoff_backup_scheduler_install_runtime_bundle: true
 hasslehoff_backup_scheduler_policy_path: docs/backup-policies/hasslehoff-backup-policy.yml
