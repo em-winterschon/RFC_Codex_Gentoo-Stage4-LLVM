@@ -120,8 +120,9 @@ Implemented operations:
 
 - `append-event`: writes one JSONL event under
   `agents/<agent-id>/sessions/<session-id>/events.jsonl`
-- `closeout`: writes an unsigned closeout manifest under
-  `manifests/<yyyy>/<mm>/<dd>/<session-id>.json`
+- `closeout`: writes a closeout manifest under
+  `manifests/<yyyy>/<mm>/<dd>/<session-id>.json`; manifests are unsigned by
+  default and may be signed with a local HMAC-SHA256 key file
 - `list-sessions`: summarizes local continuity sessions for bootstrap,
   including event count, event hash, last event type, last intent, and whether
   a closeout manifest exists
@@ -200,11 +201,27 @@ This makes the upload contract testable before selecting MinIO, Garage, Ceph
 RGW, or another service. It rejects existing destination objects unless
 `--overwrite` is explicitly supplied.
 
+Signed closeout example:
+
+```bash
+scripts/forge_memory_spool.py closeout \
+  --spool-root /var/lib/forge-memory/spool \
+  --session-id 20260521T220000Z-forge \
+  --agent-id forge \
+  --summary "End-of-session continuity checkpoint" \
+  --signing-key-file /run/forge-memory/signing.hmac.key \
+  --signing-key-id forge-local-hmac
+```
+
+The local signing backend records only the key id, canonical payload hash, and
+HMAC-SHA256 signature value. Key material must be provisioned through vault or a
+runtime secret path and is never written to the manifest.
+
 Current limitations:
 
-- closeout manifests are unsigned until the signing backend is selected
 - direct S3/Garage/MinIO transport is not implemented yet; use a mounted
   filesystem target or relay until the service role is selected
+- Vault/SSH/internal-CA signing backends remain future hardening options
 - MCP methods still need to wrap the CLI and enforce operator policy
 
 ## MCP Integration Direction

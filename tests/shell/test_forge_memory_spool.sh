@@ -102,6 +102,45 @@ assert data["closed_at_utc"].endswith("Z")
 assert closeout["event_count"] == 1
 PY
 
+printf 'manifest-signing-test-key' > "${tmpdir}/signing.key"
+"${SPOOLER}" closeout \
+  --spool-root "${tmpdir}" \
+  --session-id "session-signed-001" \
+  --agent-id "forge" \
+  --summary "Signed continuity checkpoint" \
+  --signing-key-file "${tmpdir}/signing.key" \
+  --signing-key-id "test-hmac-key" \
+  > "${tmpdir}/signed-closeout.json"
+
+python3 - "${tmpdir}/signed-closeout.json" << 'PY'
+import hashlib
+import hmac
+import json
+import sys
+from pathlib import Path
+
+closeout = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+manifest = Path(closeout["manifest_file"])
+data = json.loads(manifest.read_text(encoding="utf-8"))
+signature_payload = data["signature_payload"]
+expected_signature = hmac.new(
+    b"manifest-signing-test-key",
+    signature_payload.encode("utf-8"),
+    hashlib.sha256,
+).hexdigest()
+
+assert data["schema"] == "rfc-codex.forge-memory-manifest.v1"
+assert data["session_id"] == "session-signed-001"
+assert data["signature_state"] == "signed"
+assert data["signature"]["algorithm"] == "hmac-sha256"
+assert data["signature"]["key_id"] == "test-hmac-key"
+assert data["signature"]["value"] == expected_signature
+assert data["signature_payload_sha256"] == hashlib.sha256(
+    signature_payload.encode("utf-8")
+).hexdigest()
+assert "manifest-signing-test-key" not in json.dumps(data)
+PY
+
 object_store_root="${tmpdir}/object-store"
 "${SPOOLER}" publish-session \
   --spool-root "${tmpdir}" \
