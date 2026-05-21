@@ -246,6 +246,12 @@ The repo-tracked workflow is:
 docs/workflows/fmt2-sec-rdma-positive-control.json
 ```
 
+The Arista/R630 fabric policy gates are captured in:
+
+```text
+docs/fabric-policies/fmt2-r630-arista7060-fabric-policy.yml
+```
+
 The current E2ET manifest is intentionally blocked until vendor-driver and
 pairwise RDMA evidence is added:
 
