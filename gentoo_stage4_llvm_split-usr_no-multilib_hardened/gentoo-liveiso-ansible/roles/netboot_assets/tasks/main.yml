@@ -10,6 +10,84 @@
     fail_msg: >-
       netboot_default_role={{ netboot_default_role }} is not defined in netboot_roles.
 
+- name: Validate Path B netboot DNS policy inputs
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ netboot_dns_validator_script }}"
+      - --policy
+      - "{{ netboot_dns_policy_path }}"
+      - --path
+      - "{{ netboot_dns_policy_input_path }}"
+  loop: "{{ netboot_dns_validation_paths }}"
+  loop_control:
+    loop_var: netboot_dns_policy_input_path
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  when:
+    - netboot_dns_validation_enabled | bool
+    - not (netboot_dns_validation_live | bool)
+
+- name: Live-validate Path B netboot DNS policy inputs
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ netboot_dns_validator_script }}"
+      - --policy
+      - "{{ netboot_dns_policy_path }}"
+      - --live
+      - --path
+      - "{{ netboot_dns_policy_input_path }}"
+  loop: "{{ netboot_dns_validation_paths }}"
+  loop_control:
+    loop_var: netboot_dns_policy_input_path
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  when:
+    - netboot_dns_validation_enabled | bool
+    - netboot_dns_validation_live | bool
+
+- name: Validate Path B role DNS resolver command lines
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ netboot_dns_validator_script }}"
+      - --policy
+      - "{{ netboot_dns_policy_path }}"
+      - --value
+      - "{{ netboot_role.value.extra_cmdline | default('') }}"
+  loop: "{{ netboot_effective_roles | dict2items }}"
+  loop_control:
+    loop_var: netboot_role
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  when:
+    - netboot_dns_validation_enabled | bool
+    - not (netboot_dns_validation_live | bool)
+
+- name: Live-validate Path B role DNS resolver command lines
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ netboot_dns_validator_script }}"
+      - --policy
+      - "{{ netboot_dns_policy_path }}"
+      - --live
+      - --value
+      - "{{ netboot_role.value.extra_cmdline | default('') }}"
+  loop: "{{ netboot_effective_roles | dict2items }}"
+  loop_control:
+    loop_var: netboot_role
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  when:
+    - netboot_dns_validation_enabled | bool
+    - netboot_dns_validation_live | bool
+
 - name: Initialize resolved Path B host map
   ansible.builtin.set_fact:
     netboot_resolved_host_map: []

@@ -17,7 +17,7 @@ network:
   static_address: 172.16.99.156
   gateway: 172.16.99.1
   netmask: 255.255.255.0
-  nameserver: 9.9.9.9
+  nameserver: 172.16.99.1
 artifacts:
   publish_root: /var/lib/netboot/path-b
   public_base_url: http://172.16.99.88:8080
@@ -68,6 +68,7 @@ cmdline:
   network:
     - ifname=eth0:84:47:09:5f:21:64
     - ip=172.16.99.156::172.16.99.1:255.255.255.0:gmktek-k10-stage5:eth0:none
+    - nameserver=172.16.99.1
     - nameserver=9.9.9.9
     - rd.neednet=1
     - rd.net.timeout.carrier=60

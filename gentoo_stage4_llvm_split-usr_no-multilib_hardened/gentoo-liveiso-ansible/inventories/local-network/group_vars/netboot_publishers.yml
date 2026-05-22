@@ -6,6 +6,7 @@ netboot_first_stage_binaries:
   - src: /opt/gentoo-netboot/path-b/k10-ipxe-172.16.99.88-snponly.efi
     dest: k10-ipxe.efi
 netboot_tftp_service_enabled: true
+netboot_dns_validation_live: true
 
 netboot_roles_extra:
   workstation-validation:
@@ -18,6 +19,7 @@ netboot_roles_extra:
       bootdev=eth0
       ifname=eth0:84:47:09:5f:21:64
       ip=172.16.99.156::172.16.99.1:255.255.255.0:gmktek-k10-stage5:eth0:none
+      nameserver=172.16.99.1
       nameserver=9.9.9.9
       rd.neednet=1
       rd.net.timeout.carrier=60

@@ -124,6 +124,11 @@ and Firecracker workloads.
      unless FreeIPA DNS is intentionally enabled and port 53 validates.
    - When boot artifacts are republished for microcode/IOMMU work, keep the
      kernel `nameserver=` argument aligned with this resolver policy.
+   - Path B netboot publishing now runs `scripts/validate_netboot_dns.py`
+     through the `netboot_assets` role before writing iPXE/PXE assets. Static
+     policy validation is always enabled; SUN99 local-network publishing also
+     enables live TCP/UDP resolver checks through
+     `netboot_dns_validation_live=true`.
 
 ## Build-Host Tuning
 
