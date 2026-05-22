@@ -8,6 +8,10 @@ Roadmap tracking:
 - Issue #117: `RDMA-002`, host RDMA storage client baseline.
 - Issue #111: `RDMA-003`, DOCA/OFED deployment consumes this baseline after
   fabric and client policy are ready.
+- The RDMA promotion readiness gate is
+  `docs/workflows/rdma-fabric-promotion-readiness.yml`; it marks this baseline
+  defined while keeping NFS-RDMA live use blocked until the shared RDMA/FMT2
+  production admission gates pass.
 
 NFSv3 over TCP remains the default for compatibility and rescue workflows.
 NFSv4 requires centralized AAA, SSSD, and consistent UID/GID mapping from the
