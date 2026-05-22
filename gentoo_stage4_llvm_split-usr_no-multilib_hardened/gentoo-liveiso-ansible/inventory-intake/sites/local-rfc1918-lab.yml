@@ -416,7 +416,7 @@ devices:
     model: Atom C3758 appliance
     status: active
     management_ip: 172.16.99.22
-    management_interface: netboot0
+    management_interface: bond-mgmt
     fqdn: sbsoc-accel-int64-m70n2.rfc1918.host
     dns_aliases:
       - m70n2.rfc1918.host
@@ -424,17 +424,18 @@ devices:
     interfaces:
       - name: netboot0
         type: 1000base-t
-        purpose: i211-management-ipxe-rescue
+        purpose: i211-management-ipxe-rescue bond-mgmt-primary
         mac_address: "00:07:32:58:73:34"
         connected_device: sw_mgmt_css326
         connected_interface: ge19
         pci_address: "0000:02:00.0"
-        netboot_type: dynamic
-        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
+        netboot_type: static
+        netboot_protocol_flow: pxe-to-ipxe
         status: active
       - name: enp3s0
         type: 1000base-t
         purpose: i211-post-boot-management-backup
+        mac_address: "00:07:32:58:73:35"
         connected_device: sw_mgmt_css326
         connected_interface: ge20
         pci_address: "0000:03:00.0"
@@ -442,27 +443,43 @@ devices:
       - name: eno1
         type: 1000base-t
         purpose: x553-ovs-workload-lacp-member
+        mac_address: "00:07:32:58:73:36"
         connected_device: sw_mgmt_css326
         connected_interface: ge21
         status: active
       - name: eno2
         type: 1000base-t
         purpose: x553-ovs-workload-lacp-member
+        mac_address: "00:07:32:58:73:37"
         connected_device: sw_mgmt_css326
         connected_interface: ge22
         status: active
       - name: eno3
         type: 1000base-t
         purpose: x553-ovs-workload-lacp-member
+        mac_address: "00:07:32:58:73:38"
         connected_device: sw_mgmt_css326
         connected_interface: ge23
         status: active
       - name: eno4
         type: 1000base-t
         purpose: x553-ovs-workload-lacp-member
+        mac_address: "00:07:32:58:73:39"
         connected_device: sw_mgmt_css326
         connected_interface: ge24
         status: active
+      - name: bond-mgmt
+        type: lag
+        purpose: i211-active-backup-management bond netboot0-primary enp3s0-backup
+        status: active
+      - name: br-ovs0
+        type: bridge
+        purpose: openvswitch-workload-bridge for VM container microVM traffic
+        status: planned
+      - name: ovs-workload0
+        type: lag
+        purpose: openvswitch-lacp-bond eno1-eno4 balance-tcp active-lacp
+        status: planned
     notes:
       - M70 ring-0 canary and blast-test node for Forge workloads.
       - CSS326 ge19-ge24 links are active by operator confirmation.
@@ -472,8 +489,11 @@ devices:
       - Existing DNS canonical name is sbsoc-accel-int64-m70n2.rfc1918.host; m70n2 is a CNAME alias.
       - Use i211 enp3s0 only as post-boot management backup.
       - Use X553 eno1-eno4 for future OVS 802.3ad workload trunk validation.
-      - MAC addresses for enp3s0 and eno1-eno4 are pending host boot discovery.
-      - RS232 is attached, but the exact spare FT2232H path is pending console output.
+      - FreeBSD ifconfig on 2026-05-22 discovered MACs 00:07:32:58:73:35 through 00:07:32:58:73:39 for enp3s0/eno1-eno4.
+      - FreeBSD ifconfig on 2026-05-22 showed ix0-ix3 no carrier even though cabling was operator-confirmed; validate X553 link again from the Gentoo installer before enabling workload VLANs.
+      - Persistent Gentoo install targets only the two KIOXIA NVMe devices, FreeBSD nda0 and nda1, expected as Linux /dev/disk/by-id/nvme-eui.8ce38e0403ef1a38 and /dev/disk/by-id/nvme-eui.8ce38e0403ef1adf.
+      - SATA-DOM ada0, SATADOM-SH 3ME3 serial 20180915AA9241033080, is excluded from the Gentoo install target set.
+      - RS232 console is /dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0 on admin-sun99-forge-099070 at 115200 baud.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging

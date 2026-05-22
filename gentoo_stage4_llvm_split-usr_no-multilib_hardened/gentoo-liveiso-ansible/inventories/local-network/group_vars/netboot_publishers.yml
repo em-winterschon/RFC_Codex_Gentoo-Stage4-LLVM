@@ -9,6 +9,22 @@ netboot_tftp_service_enabled: true
 netboot_dns_validation_live: true
 
 netboot_roles_extra:
+  m70-canary-install:
+    description: Boot the M70 canary Gentoo Stage4 installer with static management on netboot0.
+    kernel_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/vmlinuz"
+    initrd_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/{{ netboot_initramfs_short_name }}"
+    initrd_boot_name: "{{ netboot_initramfs_short_name }}"
+    rootfs_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img"
+    extra_cmdline: >-
+      bootdev=netboot0
+      ifname=netboot0:00:07:32:58:73:34
+      ip=172.16.99.22::172.16.99.1:255.255.255.0:sbsoc-accel-int64-m70n2:netboot0:none
+      nameserver=172.16.99.1
+      nameserver=9.9.9.9
+      rd.neednet=1
+      rd.net.timeout.carrier=60
+      rd.live.image
+      root=live:{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/rootfs.img
   workstation-validation:
     description: Boot the GMKtek K10 LOX Stage5 workstation validation environment.
     kernel_url: "{{ netboot_public_base_url }}/{{ netboot_installer_short_path }}/vmlinuz"

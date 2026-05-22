@@ -403,7 +403,11 @@ def ensure_device_interface(
     if existing:
         client.existing.append(label)
         if client.update_existing:
-            updated = client.request_json("PATCH", f"dcim/interfaces/{existing['id']}", payload)
+            patch_payload = dict(payload)
+            patch_payload.pop("mark_connected", None)
+            updated = client.request_json(
+                "PATCH", f"dcim/interfaces/{existing['id']}", patch_payload
+            )
             client.updated.append(label)
             if mac_address:
                 ensure_interface_mac_address(client, updated, str(mac_address))
@@ -504,6 +508,14 @@ def assign_management_ip(
         payload["assigned_object_type"] = "dcim.interface"
         payload["assigned_object_id"] = interface["id"]
 
+    existing_ip = None
+    if not client.dry_run and interface:
+        existing_ip = client.first("ipam/ip-addresses", "address", address)
+        if existing_ip is None:
+            existing_ip = client.first_ip_by_host(address)
+        if existing_ip and not ip_object_is_assigned_to_interface(existing_ip, interface):
+            clear_device_primary_ip_if_needed(client, device, existing_ip)
+
     ip_object = client.ensure(NetBoxObject("ipam/ip-addresses", "address", address, payload))
     if client.dry_run:
         return
@@ -513,6 +525,32 @@ def assign_management_ip(
     if primary_payload is None:
         return
     client.request_json("PATCH", f"dcim/devices/{device['id']}", primary_payload)
+
+
+def clear_device_primary_ip_if_needed(
+    client: NetBoxClient, device: dict[str, Any], ip_object: dict[str, Any]
+) -> None:
+    address = str(ip_object.get("address", ""))
+    primary_field = "primary_ip4" if "." in address else "primary_ip6"
+    current_primary = device.get(primary_field)
+    current_primary_id: int | None = None
+    if isinstance(current_primary, dict):
+        current_primary_id = current_primary.get("id")
+    elif isinstance(current_primary, int):
+        current_primary_id = current_primary
+
+    try:
+        primary_matches = int(current_primary_id) == int(ip_object["id"])
+    except (KeyError, TypeError, ValueError):
+        primary_matches = False
+
+    # Device list/read payloads may omit primary_ip4/primary_ip6 in some NetBox
+    # views, but NetBox still rejects assignment changes while the address is a
+    # primary IP. Clearing the relevant field is idempotent and the caller
+    # restores it to the intended interface immediately after reassignment.
+    if primary_matches or current_primary is None or current_primary_id is None:
+        client.request_json("PATCH", f"dcim/devices/{device['id']}", {primary_field: None})
+        device[primary_field] = None
 
 
 def primary_ip_update_payload(
@@ -880,6 +918,39 @@ def apply_inventory(client: NetBoxClient, payloads: list[tuple[Path, dict[str, A
         apply_service_vips(client, payload.get("service_vips", []) or [], networks)
 
 
+def filter_payloads_by_device(
+    payloads: list[tuple[Path, dict[str, Any]]], device_names: set[str]
+) -> list[tuple[Path, dict[str, Any]]]:
+    if not device_names:
+        return payloads
+
+    filtered_payloads: list[tuple[Path, dict[str, Any]]] = []
+    for path, payload in payloads:
+        filtered = dict(payload)
+        selected_devices: list[dict[str, Any]] = []
+        for device in payload.get("devices", []) or []:
+            if not isinstance(device, dict):
+                continue
+            if str(device.get("name", "")) in device_names:
+                selected_devices.append(device)
+                continue
+            filtered_outlets = [
+                outlet
+                for outlet in device.get("power_outlets", []) or []
+                if isinstance(outlet, dict)
+                and str(outlet.get("target_device", "")) in device_names
+            ]
+            if filtered_outlets:
+                filtered_device = dict(device)
+                filtered_device["power_outlets"] = filtered_outlets
+                selected_devices.append(filtered_device)
+        filtered["devices"] = selected_devices
+        filtered["clusters"] = []
+        filtered["service_vips"] = []
+        filtered_payloads.append((path, filtered))
+    return filtered_payloads
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("paths", nargs="+", help="YAML intake file or directory paths")
@@ -894,6 +965,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--update-existing", action="store_true")
     parser.add_argument("--format", choices=("text", "json"), default="text")
+    parser.add_argument(
+        "--device",
+        action="append",
+        default=[],
+        help="Only apply selected device names. May be repeated.",
+    )
     return parser.parse_args()
 
 
@@ -913,6 +990,8 @@ def main() -> int:
         print("NETBOX_TOKEN, --token, or --token-file is required with --apply", file=sys.stderr)
         return 2
 
+    payloads = filter_payloads_by_device(load_intake_files(paths), set(args.device))
+
     client = NetBoxClient(
         api_url=args.api_url,
         token=token,
@@ -920,7 +999,7 @@ def main() -> int:
         dry_run=not args.apply,
         update_existing=args.update_existing,
     )
-    apply_inventory(client, load_intake_files(paths))
+    apply_inventory(client, payloads)
     payload = {
         "dry_run": client.dry_run,
         "planned": client.planned,

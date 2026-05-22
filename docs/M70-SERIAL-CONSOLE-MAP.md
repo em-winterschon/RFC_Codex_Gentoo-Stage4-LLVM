@@ -14,6 +14,8 @@ USB serial adapter is attached.
 | `gw_rfc99_mkccr2004_16g` | CCR2004 gateway RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` | `115200` | Previously validated prompt `[admin@gw-rfc99-mkccr2004-16g] >`; adapter still present on M70. |
 | `sw_mgmt_mkcrs354` | CRS354 distribution switch RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` | `115200` | Previously validated prompt `[admin@sw-mgmt-mkcrs354] >`; adapter still present on M70. |
 | `sw_spine_crs309_rfc99` | CRS309 spine switch RouterOS console | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB2` | `115200` | Previously validated prompt `[admin@sw-spine-crs309-rfc99] >`; adapter still present on M70. |
+| `admin_sun99_forge_099070` | Primary M70 local serial console | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0` | `/dev/ttyUSB3` | `115200` | Validated 2026-05-22 by passive capture and newline; prompt `admin-sun99-forge-099070 login:`. |
+| `m70_canary` | Canary M70 RS232 console | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | `/dev/ttyUSB4` | `115200` | Validated 2026-05-22 by passive capture and newline; old HBSD/FreeBSD root prompt `root@pkg-cip-hbsd-int64-m70n2:~ #`. |
 
 The older Hasslehoff-era notes showed CRS309 at `/dev/ttyUSB2`. After the M70
 USB hub power swap on 2026-05-21T22:40Z, CRS309 is again enumerated as
@@ -21,10 +23,9 @@ USB hub power swap on 2026-05-21T22:40Z, CRS309 is again enumerated as
 
 ## Unassigned Live Ports
 
-| Adapter | Stable M70 path | Current tty | Notes |
-| --- | --- | --- | --- |
-| FTDI FT2232H `FT5W5FZH`, interface 0 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0` | `/dev/ttyUSB3` | Candidate M70 canary RS232 path after operator-reported cable install. Passive 115200 capture on 2026-05-21 produced no bytes. |
-| FTDI FT2232H `FT5W5FZH`, interface 1 | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | `/dev/ttyUSB4` | Candidate M70 canary RS232 path after operator-reported cable install. Passive 115200 capture on 2026-05-21 produced no bytes. |
+No unassigned FTDI RS232 ports are currently known on the M70 USB hub. The
+FT2232H interface pair is now identified as the primary M70 local serial console
+and the canary M70 RS232 console.
 
 Power devices in the SUN99/RFC99 rack use RJ12 serial ports. They are not
 modeled as attached to M70 serial paths yet because the RJ12 adapter cabling is
@@ -58,8 +59,8 @@ Target aliases:
 | `/dev/rfc99-serial/ccr2004-gateway` | `gw_rfc99_mkccr2004_16g` |
 | `/dev/rfc99-serial/crs354-distribution` | `sw_mgmt_mkcrs354` |
 | `/dev/rfc99-serial/crs309-spine` | `sw_spine_crs309_rfc99` |
-| `/dev/rfc99-serial/spare-ft2232h-a` | Unassigned FT2232H interface 0 |
-| `/dev/rfc99-serial/spare-ft2232h-b` | Unassigned FT2232H interface 1 |
+| `/dev/rfc99-serial/m70-primary-local` | `admin_sun99_forge_099070` |
+| `/dev/rfc99-serial/m70-canary` | `m70_canary` |
 
 ## NetBox State
 
@@ -101,6 +102,8 @@ Proposed `dcim.console-server-ports` on `admin_sun99_forge_099070`:
 | `rfc99-serial/ccr2004-gateway` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`; current tty `/dev/ttyUSB0`; 115200 baud. |
 | `rfc99-serial/crs354-distribution` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`; current tty `/dev/ttyUSB1`; 115200 baud. |
 | `rfc99-serial/crs309-spine` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`; current tty `/dev/ttyUSB2`; 115200 baud. |
+| `rfc99-serial/m70-primary-local` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if00-port0`; current tty `/dev/ttyUSB3`; 115200 baud. |
+| `rfc99-serial/m70-canary` | `rj-45` | M70 alias for `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0`; current tty `/dev/ttyUSB4`; 115200 baud. |
 
 Proposed target `dcim.console-ports`:
 
@@ -109,6 +112,8 @@ Proposed target `dcim.console-ports`:
 | `gw_rfc99_mkccr2004_16g` | `serial0` | `rj-45` |
 | `sw_mgmt_mkcrs354` | `serial0` | `rj-45` |
 | `sw_spine_crs309_rfc99` | `serial0` | `rj-45` |
+| `admin_sun99_forge_099070` | `serial0` | `rj-45` |
+| `m70_canary` | `serial0` | `rj-45` |
 
 Proposed `dcim.cables`:
 
@@ -117,9 +122,12 @@ Proposed `dcim.cables`:
 | `admin_sun99_forge_099070:rfc99-serial/ccr2004-gateway` | `gw_rfc99_mkccr2004_16g:serial0` | `connected` | `m70-console-ccr2004-gateway` |
 | `admin_sun99_forge_099070:rfc99-serial/crs354-distribution` | `sw_mgmt_mkcrs354:serial0` | `connected` | `m70-console-crs354-distribution` |
 | `admin_sun99_forge_099070:rfc99-serial/crs309-spine` | `sw_spine_crs309_rfc99:serial0` | `connected` | `m70-console-crs309-spine` |
+| `admin_sun99_forge_099070:rfc99-serial/m70-primary-local` | `admin_sun99_forge_099070:serial0` | `connected` | `m70-console-primary-local` |
+| `admin_sun99_forge_099070:rfc99-serial/m70-canary` | `m70_canary:serial0` | `connected` | `m70-console-canary` |
 
-Do not add ATS/PDU/UPS or M70 canary console cables until the RJ12 adapters or
-canary RS232 path are positively identified from M70.
+Do not add ATS/PDU/UPS console cables until the RJ12 adapters are physically
+installed and identified from M70. The M70 canary RS232 path is identified and
+can now be modeled additively in NetBox.
 
 ## Serial Tooling Readiness
 

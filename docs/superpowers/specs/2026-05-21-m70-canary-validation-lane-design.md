@@ -39,6 +39,25 @@ The X553/OVS side is the intentional blast zone for Kata, Firecracker, QEMU,
 LXC, Podman, VLAN, tap, and namespace testing. The i211 management side remains
 the recovery path if OVS or workload networking breaks.
 
+## Persistent Install Design
+
+The canary target is a persistent local Gentoo Stage4 install, not a permanent
+netboot client. iPXE remains available for install and rescue only.
+
+Use `sbsoc-accel-int64-m70n2` as the installed hostname with management IP
+`172.16.99.22/24`. Use ZFSBootMenu from local EFI, with a ZFS mirror across the
+two KIOXIA NVMe devices discovered from the old HBSD/FreeBSD shell:
+
+- FreeBSD `nda0`, serial `82HPG1DLQEKK`, expected Linux path
+  `/dev/disk/by-id/nvme-eui.8ce38e0403ef1a38`
+- FreeBSD `nda1`, serial `82HPG1I8QEKK`, expected Linux path
+  `/dev/disk/by-id/nvme-eui.8ce38e0403ef1adf`
+
+The SATA-DOM, FreeBSD `ada0` / serial `20180915AA9241033080`, is excluded from
+the Gentoo install target set. Before destructive install execution, the Gentoo
+installer must re-confirm the two NVMe `/dev/disk/by-id` paths and verify the
+SATA-DOM is not present in `storage_devices`.
+
 ## NetBox Source Of Truth
 
 Before workload network changes, NetBox should contain:
@@ -64,11 +83,12 @@ and verified by CSS326 SwOS snapshot `20260521T232928Z`:
 
 - canary `netboot0`, PCI `0000:02:00.0`, MAC `00:07:32:58:73:34` to CSS326
   `ge19`
-- canary `enp3s0`, PCI `0000:03:00.0` to CSS326 `ge20`
-- canary `eno1` to CSS326 `ge21`
-- canary `eno2` to CSS326 `ge22`
-- canary `eno3` to CSS326 `ge23`
-- canary `eno4` to CSS326 `ge24`
+- canary `enp3s0`, PCI `0000:03:00.0`, MAC `00:07:32:58:73:35` to CSS326
+  `ge20`
+- canary `eno1`, MAC `00:07:32:58:73:36` to CSS326 `ge21`
+- canary `eno2`, MAC `00:07:32:58:73:37` to CSS326 `ge22`
+- canary `eno3`, MAC `00:07:32:58:73:38` to CSS326 `ge23`
+- canary `eno4`, MAC `00:07:32:58:73:39` to CSS326 `ge24`
 
 CRS354 `ether49` management must move from CSS326 `ge24` to CSS326 `ge15` to
 free `ge24` for the canary workload LACP set. That move was physically
@@ -79,8 +99,9 @@ CSS326 `ge15` connection as historical.
 NetBox device `m70_canary` now has six physical Ethernet interfaces. NetBox
 cables `5` through `10` record the CSS326 `ge19` through `ge24` links, and
 cable `11` records AP7901 outlet 7 to the canary power input. The canary RS232
-console should use the remaining spare M70 USB-hub RS232 path, with serial
-console available for BIOS and iPXE repair after the exact path is identified.
+console is `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` on
+the primary M70 at 115200 baud; it reached the old HBSD/FreeBSD root prompt on
+2026-05-22.
 
 ## Validation Gates
 

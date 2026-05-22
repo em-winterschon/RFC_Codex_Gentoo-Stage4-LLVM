@@ -4,11 +4,46 @@ type={{ item.type | default('ethernet') }}
 {% if item.interface_name | default('') | length > 0 %}
 interface-name={{ item.interface_name }}
 {% endif %}
+{% if item.master | default('') | length > 0 %}
+master={{ item.master }}
+{% endif %}
+{% if item.slave_type | default('') | length > 0 %}
+slave-type={{ item.slave_type }}
+{% endif %}
 autoconnect={{ (item.autoconnect | default(true) | bool) | ternary('true', 'false') }}
+{% for option in (item.connection_options | default({})) | dict2items %}
+{{ option.key }}={{ option.value }}
+{% endfor %}
 
-[{{ item.type | default('ethernet') }}]
+{% set connection_type = item.type | default('ethernet') %}
+{% if connection_type == 'bond' %}
+[bond]
+{% for option in (item.bond_options | default({})) | dict2items %}
+{{ option.key }}={{ option.value }}
+{% endfor %}
+{% elif connection_type == 'ovs-bridge' %}
+[ovs-bridge]
+{% for option in (item.ovs_bridge_options | default({})) | dict2items %}
+{{ option.key }}={{ option.value }}
+{% endfor %}
+{% elif connection_type == 'ovs-port' %}
+[ovs-port]
+{% for option in (item.ovs_port_options | default({})) | dict2items %}
+{{ option.key }}={{ option.value }}
+{% endfor %}
+{% elif connection_type == 'ovs-interface' %}
+[ovs-interface]
+{% for option in (item.ovs_interface_options | default({})) | dict2items %}
+{{ option.key }}={{ option.value }}
+{% endfor %}
+{% else %}
+[{{ connection_type }}]
 {% if item.mac_address | default('') | length > 0 %}
 mac-address={{ item.mac_address }}
+{% endif %}
+{% for option in (item.type_options | default({})) | dict2items %}
+{{ option.key }}={{ option.value }}
+{% endfor %}
 {% endif %}
 
 [ipv4]
@@ -23,3 +58,10 @@ may-fail={{ (item.ipv4_may_fail | default(false) | bool) | ternary('true', 'fals
 
 [ipv6]
 method={{ item.ipv6_method | default('ignore') }}
+{% for option in (item.extra_sections | default({})) | dict2items %}
+
+[{{ option.key }}]
+{% for section_option in option.value | dict2items %}
+{{ section_option.key }}={{ section_option.value }}
+{% endfor %}
+{% endfor %}

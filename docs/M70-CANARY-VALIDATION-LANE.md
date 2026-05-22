@@ -86,14 +86,15 @@ report and SwOS snapshot `20260521T232928Z`:
 | `eno2` | CSS326 `ge22` | OVS workload LACP member |
 | `eno3` | CSS326 `ge23` | OVS workload LACP member |
 | `eno4` | CSS326 `ge24` | OVS workload LACP member |
-| RS232 console | remaining spare M70 USB-hub RS232 path | BIOS/iPXE console work |
+| RS232 console | `/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0` | BIOS/iPXE console work |
 | Power inlet | AP7901 PDU outlet 7 | canary power |
 
 Known canary NIC facts:
 
 - `netboot0`: PCI `0000:02:00.0`, driver `igb`, MAC `00:07:32:58:73:34`.
-- `enp3s0`: PCI `0000:03:00.0`, driver `igb`, MAC pending host discovery.
-- `eno1` through `eno4`: X553 `ixgbe`, MAC addresses pending host discovery.
+- `enp3s0`: PCI `0000:03:00.0`, driver `igb`, MAC `00:07:32:58:73:35`.
+- `eno1` through `eno4`: X553 `ixgbe`, MACs `00:07:32:58:73:36`
+  through `00:07:32:58:73:39`.
 
 Required CSS326 prep:
 
@@ -107,9 +108,46 @@ Required CSS326 prep:
 - The structured inventory records Chonkers' former CSS326 `ge15` connection as
   historical.
 
-Once the canary boots, discover the remaining five NIC MAC addresses from the
-host and reconcile NetBox. Do not add IP addresses or services until the canary
-actually owns them.
+Once the canary boots, reconcile host-observed state back to NetBox. The
+remaining five NIC MAC addresses were discovered from the old HBSD/FreeBSD
+shell on 2026-05-22 and have been staged into inventory intake. Do not add
+service ownership until the canary actually runs those services.
+
+## Persistent Gentoo Install Target
+
+The canary must not depend on iPXE after installation. iPXE remains only the
+installer and rescue path.
+
+Persistent target state:
+
+- hostname: `sbsoc-accel-int64-m70n2`
+- FQDN: `sbsoc-accel-int64-m70n2.rfc1918.host`
+- aliases: `m70n2.rfc1918.host`, `m70-canary.rfc1918.host`
+- management IP: `172.16.99.22/24`
+- boot strategy: ZFSBootMenu local EFI boot
+- storage layout: ZFS mirror across the two KIOXIA NVMe devices
+- management network: `bond-mgmt` active-backup over `netboot0` and `enp3s0`
+- workload network: Open vSwitch `br-ovs0` with `ovs-workload0` active LACP
+  over `eno1` through `eno4`
+
+Discovered storage on 2026-05-22 from the canary RS232 console:
+
+| OS view | Model | Serial / EUI | Install use |
+| --- | --- | --- | --- |
+| FreeBSD `ada0` | SATADOM-SH 3ME3 | `20180915AA9241033080` | excluded |
+| FreeBSD `nda0` | KBG50ZNS256G NVMe KIOXIA 256GB | `82HPG1DLQEKK`, EUI `8ce38e0403ef1a38` | Gentoo ZFS mirror |
+| FreeBSD `nda1` | KBG50ZNS256G NVMe KIOXIA 256GB | `82HPG1I8QEKK`, EUI `8ce38e0403ef1adf` | Gentoo ZFS mirror |
+
+Expected Linux target paths:
+
+```text
+/dev/disk/by-id/nvme-eui.8ce38e0403ef1a38
+/dev/disk/by-id/nvme-eui.8ce38e0403ef1adf
+```
+
+Before destructive install execution, confirm both paths exist in the Gentoo
+installer environment and confirm the SATA-DOM path is not present in
+`storage_devices`.
 
 ## Serial-Hub Handling
 
@@ -127,6 +165,19 @@ udevadm info --query=property --name=/dev/ttyUSB0
 Repeat for each present `/dev/ttyUSB*` device as needed. Update
 [`M70-SERIAL-CONSOLE-MAP.md`](M70-SERIAL-CONSOLE-MAP.md) and NetBox only after
 stable by-id paths are confirmed.
+
+Current canary serial path:
+
+```text
+/dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0
+```
+
+Passive capture and newline validation on 2026-05-22 reached the old
+HBSD/FreeBSD root shell prompt:
+
+```text
+root@pkg-cip-hbsd-int64-m70n2:~ #
+```
 
 ## Validation Gates
 
