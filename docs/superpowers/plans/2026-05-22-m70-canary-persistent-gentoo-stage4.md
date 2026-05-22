@@ -39,11 +39,18 @@ and carries the approved i211 management plus X553 OVS/LACP workload design.
    - Publish Path B host script `m70-canary.ipxe`.
    - Confirm `hosts/by-mac.ipxe` dispatches MAC `00:07:32:58:73:34` to the
      M70 canary install role.
+   - Current live blocker: 2026-05-22 RS232 firmware work set Network first,
+     enabled CSM, enabled Launch PXE ROM, and kept UEFI mode, but a reset still
+     returned to Aptio Setup and `tcpdump` saw no DHCP/PXE packets from
+     `00:07:32:58:73:34`.
 
 4. Boot canary into Gentoo installer:
    - Reboot only `m70_canary`.
    - Watch RS232 for iPXE/Gentoo installer state.
    - Confirm SSH to `root@172.16.99.22` from the installer environment.
+   - Do not continue to destructive install until the firmware exposes a real
+     UEFI network boot target for the i211 `netboot0` path or another approved
+     installer boot method is attached.
 
 5. Destructive install preflight:
    - Confirm `/dev/disk/by-id/nvme-eui.8ce38e0403ef1a38` exists.

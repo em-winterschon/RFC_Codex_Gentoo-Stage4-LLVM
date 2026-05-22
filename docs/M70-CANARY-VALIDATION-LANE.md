@@ -149,6 +149,23 @@ Before destructive install execution, confirm both paths exist in the Gentoo
 installer environment and confirm the SATA-DOM path is not present in
 `storage_devices`.
 
+## Firmware Boot State
+
+Live RS232 firmware work on 2026-05-22 changed the canary boot settings from
+the inherited disk-first profile toward netboot:
+
+- Boot Option #1: `Network`
+- CSM Support: `Enabled`
+- Launch PXE ROM: `Enabled`
+- Boot mode select: `UEFI`
+
+The node still returned to Aptio Setup after reset. A concurrent `tcpdump` on
+the primary M70 `netboot0` interface captured zero DHCP/TFTP/PXE packets from
+canary MAC `00:07:32:58:73:34`, so the current blocker is firmware/device PXE
+launch rather than the Path B host script itself. Before another install
+attempt, find the concrete UEFI network boot target or per-NIC PXE enablement
+for the i211 `netboot0` controller.
+
 ## Serial-Hub Handling
 
 During USB hub power changes, all attached serial paths are considered
