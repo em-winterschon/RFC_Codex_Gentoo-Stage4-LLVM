@@ -30,6 +30,8 @@ assert_file_contains "${DOC}" 'MLNX_OFED diagnostic-only source-build path'
 assert_file_contains "${DOC}" '6.3.8-1.el8.elrepo.x86_64'
 assert_file_contains "${DOC}" '4.18.0-513.5.1.el8_9'
 assert_file_contains "${DOC}" 'diagnostic-only'
-assert_file_contains "${RDMA_DOC}" 'MLNX_OFED source builder is diagnostic-only'
+assert_file_contains "${RDMA_DOC}" 'The DOCA/OFED build path now splits into two isolated lanes'
+assert_file_contains "${RDMA_DOC}" 'DOCA 2.9.4 LTS for ConnectX-4'
+assert_file_contains "${RDMA_DOC}" 'DOCA Host 3.3.0 for BlueField-2 and ConnectX-5'
 
 printf 'PASS: %s\n' "$(basename "$0")"

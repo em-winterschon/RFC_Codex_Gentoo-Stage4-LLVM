@@ -3,6 +3,7 @@ set -euo pipefail
 
 ACTION="${1:-preflight}"
 
+DOCA_HOST_VERSION="${DOCA_HOST_VERSION:-3.3.0}"
 OFED_VERSION="${OFED_VERSION:-24.10-4.1.4.0}"
 OFED_SRC_NAME="MLNX_OFED_SRC-${OFED_VERSION}"
 OFED_SRC_TGZ="${OFED_SRC_TGZ:-/var/tmp/${OFED_SRC_NAME}.tgz}"
@@ -16,6 +17,8 @@ OFED_DISTRO="${OFED_DISTRO:-rhel8.9}"
 
 BUILDROOT="${BUILDROOT:-/srv/stage/mlnx-ofed-buildroot}"
 OUTPUT_DIR="${OUTPUT_DIR:-/srv/stage/mlnx-ofed-builds/${OFED_VERSION}/${KERNEL_VERSION}}"
+DOCA_HOST_ARTIFACT_ROOT="${DOCA_HOST_ARTIFACT_ROOT:-/srv/stage/doca-host}"
+PUBLISH_DIR="${PUBLISH_DIR:-${DOCA_HOST_ARTIFACT_ROOT}/${DOCA_HOST_VERSION}/${OFED_VERSION}/${KERNEL_VERSION}}"
 
 BUILDROOT_PACKAGES=(
   rpm-build
@@ -99,6 +102,9 @@ preflight() {
   printf 'kernel_sources=%s\n' "${KERNEL_SOURCES}"
   printf 'buildroot=%s\n' "${BUILDROOT}"
   printf 'output_dir=%s\n' "${OUTPUT_DIR}"
+  printf 'doca_host_version=%s\n' "${DOCA_HOST_VERSION}"
+  printf 'doca_host_artifact_root=%s\n' "${DOCA_HOST_ARTIFACT_ROOT}"
+  printf 'publish_dir=%s\n' "${PUBLISH_DIR}"
   printf 'ofed_extra_args=%s\n' "${OFED_EXTRA_ARGS:-<none>}"
 }
 
@@ -154,17 +160,34 @@ build_kernel_rpms() {
   find "${OUTPUT_DIR}/rpms" -maxdepth 1 -type f -name '*.rpm' -print | sort
 }
 
+publish_artifacts() {
+  test -d "${OUTPUT_DIR}" || die "missing build output directory: ${OUTPUT_DIR}"
+  if [[ "${APPLY_PUBLISH:-0}" != "1" ]]; then
+    die "refusing to publish artifacts without APPLY_PUBLISH=1"
+  fi
+
+  mkdir -p "${PUBLISH_DIR}/rpms" "${PUBLISH_DIR}/logs"
+  find "${OUTPUT_DIR}/rpms" -maxdepth 1 -type f -name '*.rpm' -print -exec cp -a '{}' "${PUBLISH_DIR}/rpms/" ';'
+  if [[ -d "${OUTPUT_DIR}/logs" ]]; then
+    find "${OUTPUT_DIR}/logs" -maxdepth 1 -type f -print -exec cp -a '{}' "${PUBLISH_DIR}/logs/" ';'
+  fi
+  find "${PUBLISH_DIR}" -type f -print0 | sort -z | xargs -0 sha256sum > "${PUBLISH_DIR}/SHA256SUMS"
+  printf 'published=%s\n' "${PUBLISH_DIR}"
+}
+
 case "${ACTION}" in
 preflight) preflight ;;
 create-buildroot) create_buildroot ;;
 build-kernel-rpms) build_kernel_rpms ;;
+publish-artifacts) publish_artifacts ;;
 *)
   cat >&2 << USAGE
-Usage: $0 [preflight|create-buildroot|build-kernel-rpms]
+Usage: $0 [preflight|create-buildroot|build-kernel-rpms|publish-artifacts]
 
 Safety gates:
   APPLY_CREATE_BUILDROOT=1  allow isolated buildroot creation
   APPLY_BUILD=1             allow kernel RPM build inside systemd-nspawn
+  APPLY_PUBLISH=1           allow copying outputs into PUBLISH_DIR
 USAGE
   exit 64
   ;;

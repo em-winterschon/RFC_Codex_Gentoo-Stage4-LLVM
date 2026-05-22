@@ -89,8 +89,19 @@ observability contract for FMT2. The old Rocky 8.9 `ter` MLNX_OFED source
 builder is diagnostic-only after the iSER API mismatch on kernel
 `6.3.8-1.el8.elrepo.x86_64`; do not make it the production driver path unless
 a separate maintenance gate keeps a RHEL-like OS on one of the R630s.
-MLNX_OFED source builder is diagnostic-only for the current FMT2 R630 rebuild
-path.
+The DOCA/OFED build path now splits into two isolated lanes:
+
+- DOCA 2.9.4 LTS for ConnectX-4 on Rocky Linux 9.6 kernel
+  `5.14.0-570.12.1.el9_6.x86_64`.
+- DOCA Host 3.3.0 for BlueField-2 and ConnectX-5 on Rocky Linux 10 kernel
+  `6.12.0-124.8.1.el10_1.x86_64`.
+
+Use `kvm-sfo200-ter-9924` as the high-performance build host, but run the
+kernel and DOCA builds inside a container, systemd-nspawn root, or VM so build
+dependencies do not contaminate the `ter` host OS. Publish finished RPMs,
+kernel packages, firmware evidence, DKMS logs, `ofed_info -s`, and SHA256SUMS
+into separate NASA-hosted repositories under
+`/opt/storage/nfs/nasa/nasa-yum-repo-doca-host/`.
 
 Arista DCS-7060CX-32S changes require a pre-change config snapshot, live port
 mapping, jumbo MTU, storage-class PFC only, ECN/WRED where available, and
