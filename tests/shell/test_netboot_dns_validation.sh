@@ -25,7 +25,7 @@ good_manifest="${tmpdir}/good-netboot.yml"
 denied_manifest="${tmpdir}/denied-netboot.yml"
 unapproved_manifest="${tmpdir}/unapproved-netboot.yml"
 
-cat > "${good_manifest}" <<'YAML'
+cat > "${good_manifest}" << 'YAML'
 ---
 kind: NetbootImageManifest
 network:
@@ -36,7 +36,7 @@ cmdline:
     - nameserver=9.9.9.9
 YAML
 
-cat > "${denied_manifest}" <<'YAML'
+cat > "${denied_manifest}" << 'YAML'
 ---
 kind: NetbootImageManifest
 network:
@@ -46,7 +46,7 @@ cmdline:
     - nameserver=172.16.99.63
 YAML
 
-cat > "${unapproved_manifest}" <<'YAML'
+cat > "${unapproved_manifest}" << 'YAML'
 ---
 kind: NetbootImageManifest
 network:
@@ -62,15 +62,15 @@ assert_file_contains "${ANSIBLE_ROOT}/playbooks/netboot-path-b.yml" "netboot_pub
 assert_file_contains "${POLICY}" "172.16.99.1"
 assert_file_contains "${POLICY}" "172.16.99.63"
 
-python3 "${VALIDATOR}" --policy "${POLICY}" --path "${good_manifest}" >/dev/null
-python3 "${VALIDATOR}" --policy "${POLICY}" --path "${ANSIBLE_ROOT}/netboot-image-manifests" >/dev/null
-python3 "${VALIDATOR}" --policy "${POLICY}" --value 'nameserver=172.16.99.1 nameserver=9.9.9.9' >/dev/null
+python3 "${VALIDATOR}" --policy "${POLICY}" --path "${good_manifest}" > /dev/null
+python3 "${VALIDATOR}" --policy "${POLICY}" --path "${ANSIBLE_ROOT}/netboot-image-manifests" > /dev/null
+python3 "${VALIDATOR}" --policy "${POLICY}" --value 'nameserver=172.16.99.1 nameserver=9.9.9.9' > /dev/null
 
-if python3 "${VALIDATOR}" --policy "${POLICY}" --path "${denied_manifest}" >/dev/null 2>&1; then
+if python3 "${VALIDATOR}" --policy "${POLICY}" --path "${denied_manifest}" > /dev/null 2>&1; then
   fail "expected denied FreeIPA DNS address to fail validation"
 fi
 
-if python3 "${VALIDATOR}" --policy "${POLICY}" --path "${unapproved_manifest}" >/dev/null 2>&1; then
+if python3 "${VALIDATOR}" --policy "${POLICY}" --path "${unapproved_manifest}" > /dev/null 2>&1; then
   fail "expected unapproved DNS address to fail validation"
 fi
 
