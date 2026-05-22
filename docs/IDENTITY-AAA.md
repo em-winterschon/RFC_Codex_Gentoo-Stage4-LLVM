@@ -120,7 +120,9 @@ Current apply scope:
 As of 2026-05-22, `svc-netbox-stage4` is not yet using FreeIPA-backed NetBox
 group or superuser mapping. The live NetBox API shows only the local `admin`
 account and no NetBox groups or object permissions, so adding a FreeIPA user
-does not by itself grant NetBox login or admin rights.
+does not by itself grant NetBox login or admin rights. The local NetBox `admin`
+password and API token are stored in the encrypted local-network vault as
+`vault_netbox_admin_password` and `vault_netbox_api_token`.
 
 Current process:
 
