@@ -123,6 +123,12 @@ requirements, rollback command expectations, and the explicit rule that all
 switch or host network mutations remain blocked until the acceptance evidence
 is captured.
 
+The cross-issue RDMA production promotion gate is tracked at
+`docs/workflows/rdma-fabric-promotion-readiness.yml`. It ties the host storage
+client baseline, vendor OFED/DOCA path, Arista fabric policy, pairwise RDMA
+smoke, storage protocol pilots, one-path-failure tests, and reboot conformance
+into one blocked-by-default readiness workflow.
+
 `pri` has an additional 2026-05-20 admission blocker: its disposable
 firmware-maintenance OS and iDRAC hardware inventory do not enumerate any
 Mellanox/ConnectX device, even though the Arista reports `Et6/1` and `Et6/3`
