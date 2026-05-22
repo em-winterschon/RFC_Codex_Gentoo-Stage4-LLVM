@@ -1,0 +1,118 @@
+---
+kind: DocaHostSourceOfTruth
+schema_version: 1
+workflow_id: doca-host-source-gate
+issue: 111
+checked_on: 2026-05-22
+doca_host_version: 3.3.0
+legacy_doca_version: 2.9.4
+source_documents:
+  - title: NVIDIA DOCA Host Installation and DKMS Management Guide
+    url: https://docs.nvidia.com/doca/sdk/DOCA-Host-Installation-and-DKMS-Management-Guide/index.html
+  - title: NVIDIA DOCA General Support
+    url: https://docs.nvidia.com/doca/sdk/General-Support/index.html
+  - title: NVIDIA DOCA 2.9.4 General Support Archive
+    url: https://docs.nvidia.com/doca/archive/2-9-4/general-support/index.html
+summary: >-
+  Build two separate lanes: DOCA 2.9.4 LTS for ConnectX-4, and DOCA Host 3.3.0
+  for BlueField-2 and ConnectX-5. Kernel.org 6.18 is tracked only as a
+  doca-ofed-only lane, not as the first production RoCE/storage lane.
+
+build_lanes:
+  - id: doca-2.9.4-cx4-rocky9.6
+    doca_version: 2.9.4
+    target_devices:
+      - ConnectX-4
+    operating_system: Rocky Linux 9.6
+    kernel: 5.14.0-570.12.1.el9_6.x86_64
+    repository_package_type: rpm
+    package_manager: dnf
+    support_class: legacy-doca-2.9-lts-build-lane
+    nasa_yum_repo: /opt/storage/nfs/nasa/nasa-yum-repo-doca-host/doca-2.9.4/el9/x86_64
+    required_before_apply:
+      - latest ConnectX-4 firmware installed and recorded
+      - matching kernel-core, kernel-devel, and kernel-headers packages
+      - NVIDIA DOCA 2.9.4 RPM repository package mirrored or staged
+      - ConnectX-4 endpoint visible via lspci -Dnn
+      - ofed_info -s absent before apply and present after apply
+  - id: doca-3.3.0-bf2-cx5-rocky10.1
+    doca_version: 3.3.0
+    target_devices:
+      - BlueField-2
+      - ConnectX-5
+    operating_system: Rocky Linux 10
+    kernel: 6.12.0-124.8.1.el10_1.x86_64
+    repository_package_type: rpm
+    package_manager: dnf
+    support_class: current-doca-host
+    nasa_yum_repo: /opt/storage/nfs/nasa/nasa-yum-repo-doca-host/doca-3.3.0/el10/x86_64
+    install_profiles:
+      - doca-all
+      - doca-ofed
+      - doca-roce
+    required_before_apply:
+      - matching kernel-core, kernel-devel, and kernel-headers packages
+      - DKMS build path writable on local disk
+      - NVIDIA DOCA Host RPM repository package mirrored or staged
+      - BlueField-2 or ConnectX-5 endpoint visible via lspci -Dnn
+      - ofed_info -s absent before apply and present after apply
+
+secondary_lanes:
+  - id: rocky9-doca-3.3.0
+    operating_system: Rocky Linux 9
+    kernel: 5.14.0-611.5.1.el9_7.x86_64
+    repository_package_type: rpm
+    package_manager: dnf
+    support_class: current-doca-host
+    install_profiles:
+      - doca-all
+      - doca-ofed
+      - doca-roce
+  - id: kernel.org-6.18-doca-ofed-only
+    operating_system: kernel.org
+    kernel: 6.18
+    repository_package_type: rpm
+    package_manager: dnf
+    support_class: doca-ofed-only
+    install_profiles:
+      - doca-ofed
+    limitations:
+      - Do not use as first production RoCEv2 storage lane.
+      - Keep NFS-RDMA, NVMe-RDMA, and iSER promotion blocked until doca-roce support is proven or an approved exception is recorded.
+
+device_policy:
+  accepted_current_doca_candidates:
+    - BlueField-2
+    - ConnectX-5
+  legacy_doca_candidates:
+    - ConnectX-4
+  connectx4_policy: legacy-doca-2.9-lts-build-lane
+  rationale: >-
+    FMT2 R630 ConnectX-4 links need a pinned DOCA 2.9.x LTS lane because newer
+    DOCA Host branches removed ConnectX-4 adapter-family support. Do not mix
+    this lane with the DOCA 3.x BlueField-2/ConnectX-5 repository.
+
+artifact_policy:
+  nfs_artifact_roots:
+    - /opt/storage/nfs/nasa/nasa-yum-repo-doca-host/doca-2.9.4/el9/x86_64
+    - /opt/storage/nfs/nasa/nasa-yum-repo-doca-host/doca-3.3.0/el10/x86_64
+  local_build_rule: Do not build directly into NFS; build locally, then publish.
+  required_artifacts:
+    - DOCA Host repository RPM or recorded external source URL and checksum
+    - kernel package NEVRAs
+    - DKMS build logs
+    - generated kernel module package list, if any
+    - ofed_info -s output
+    - ibv_devinfo output
+    - rdma link show output
+    - SHA256SUMS
+
+closeout_gates:
+  - Select DOCA 2.9.4 and 3.3.0 RPM repository packages and checksums.
+  - Update all ConnectX-4 NIC firmware before DOCA 2.9.4 evaluation.
+  - Build or select Rocky 9.6 kernel 5.14.0-570.12.1.el9_6.x86_64 for ConnectX-4 unless a newer supported DOCA 2.x kernel is verified.
+  - Build or select Rocky 10 kernel 6.12.0-124.8.1.el10_1.x86_64 for BlueField-2/ConnectX-5 unless a newer supported DOCA 3.x kernel is verified.
+  - Run nvidia_doca_ofed apply=false preflight on sec and ter.
+  - Run the first apply on non-production or disposable R630 OS state.
+  - Capture ofed_info -s and perftest userspace evidence.
+  - Publish all kernel, DOCA, OFED, DKMS, and metadata artifacts into the matching NASA repo.
