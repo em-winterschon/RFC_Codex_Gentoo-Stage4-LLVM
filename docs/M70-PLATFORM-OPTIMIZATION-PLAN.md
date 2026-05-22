@@ -22,6 +22,7 @@ and Firecracker workloads.
 | Network | `netboot0` 1G management, `bond0` 2x1G LACP with no IPv4 address |
 | Toolchain | LLVM profile, GCC 15, clang/lld/LLVM 21, Rust bin 1.93 |
 | Distcc | Client configured for `172.16.99.108/48,lzo` plus `localhost/2` |
+| DNS | `172.16.99.1` primary, `9.9.9.9` fallback; do not use FreeIPA `.63` for DNS |
 
 ## High-Priority Fixes
 
@@ -103,6 +104,26 @@ and Firecracker workloads.
      has the intended prefixes/VLANs/cables.
    - Decide whether the remaining X553 ports become additional LACP members,
      isolated storage fabric, or future tenant/workload networks.
+
+5. Keep resolver configuration aligned with live DNS listeners.
+
+   Evidence:
+
+   - `172.16.99.63` is the FreeIPA identity controller, but TCP/UDP 53 is
+     closed there as of 2026-05-22.
+   - RouterOS DNS at `172.16.99.1` resolves internal `rfc1918.host` records and
+     forwards external names.
+   - The primary M70 had stale local resolver entries for `172.16.99.63` in
+     `/etc/conf.d/net`, `/etc/kernel/cmdline`, and `/etc/resolv.conf`.
+
+   Corrective path:
+
+   - Use `172.16.99.1` as the first M70 resolver and `9.9.9.9` as fallback
+     while FreeIPA DNS remains disabled.
+   - Do not advertise `172.16.99.63` through netboot or static M70 profiles
+     unless FreeIPA DNS is intentionally enabled and port 53 validates.
+   - When boot artifacts are republished for microcode/IOMMU work, keep the
+     kernel `nameserver=` argument aligned with this resolver policy.
 
 ## Build-Host Tuning
 
