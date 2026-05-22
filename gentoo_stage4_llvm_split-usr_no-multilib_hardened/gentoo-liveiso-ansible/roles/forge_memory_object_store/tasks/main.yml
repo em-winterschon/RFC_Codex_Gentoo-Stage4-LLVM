@@ -1,0 +1,125 @@
+---
+- name: Resolve Forge memory object-store settings
+  ansible.builtin.set_fact:
+    forge_memory_object_store_enabled: "{{ resolved_profile_forge_memory_object_store.enabled | default(forge_memory_object_store_default_enabled) | bool }}"
+    resolved_forge_memory_object_store:
+      provider: "{{ resolved_profile_forge_memory_object_store.provider | default(forge_memory_object_store_default_provider) }}"
+      endpoint_url: "{{ resolved_profile_forge_memory_object_store.endpoint_url | default(forge_memory_object_store_default_endpoint_url) }}"
+      region: "{{ resolved_profile_forge_memory_object_store.region | default(forge_memory_object_store_default_region) }}"
+      bucket: "{{ resolved_profile_forge_memory_object_store.bucket | default(forge_memory_object_store_default_bucket) }}"
+      prefix: "{{ resolved_profile_forge_memory_object_store.prefix | default(forge_memory_object_store_default_prefix) }}"
+      spool_root: "{{ resolved_profile_forge_memory_object_store.spool_root | default(forge_memory_object_store_default_spool_root) }}"
+      data_root: "{{ resolved_profile_forge_memory_object_store.data_root | default(forge_memory_object_store_default_data_root) }}"
+      config_dir: "{{ resolved_profile_forge_memory_object_store.config_dir | default(forge_memory_object_store_default_config_dir) }}"
+      log_root: "{{ resolved_profile_forge_memory_object_store.log_root | default(forge_memory_object_store_default_log_root) }}"
+      audit_log_prefix: "{{ resolved_profile_forge_memory_object_store.audit_log_prefix | default(forge_memory_object_store_default_audit_log_prefix) }}"
+      service_user: "{{ resolved_profile_forge_memory_object_store.service_user | default(forge_memory_object_store_default_service_user) }}"
+      service_group: "{{ resolved_profile_forge_memory_object_store.service_group | default(forge_memory_object_store_default_service_group) }}"
+      runlevel: "{{ resolved_profile_forge_memory_object_store.runlevel | default(forge_memory_object_store_default_runlevel) }}"
+      object_lock_enabled: "{{ resolved_profile_forge_memory_object_store.object_lock_enabled | default(forge_memory_object_store_default_object_lock_enabled) | bool }}"
+      versioning_enabled: "{{ resolved_profile_forge_memory_object_store.versioning_enabled | default(forge_memory_object_store_default_versioning_enabled) | bool }}"
+      sse_algorithm: "{{ resolved_profile_forge_memory_object_store.sse_algorithm | default(forge_memory_object_store_default_sse_algorithm) }}"
+      lifecycle_retention_days: "{{ resolved_profile_forge_memory_object_store.lifecycle_retention_days | default(forge_memory_object_store_default_lifecycle_retention_days) | int }}"
+      noncurrent_retention_days: "{{ resolved_profile_forge_memory_object_store.noncurrent_retention_days | default(forge_memory_object_store_default_noncurrent_retention_days) | int }}"
+      agent_namespace_template: "{{ resolved_profile_forge_memory_object_store.agent_namespace_template | default(forge_memory_object_store_default_agent_namespace_template) }}"
+      allowed_write_operations: "{{ resolved_profile_forge_memory_object_store.allowed_write_operations | default(forge_memory_object_store_default_allowed_write_operations) }}"
+      allowed_read_operations: "{{ resolved_profile_forge_memory_object_store.allowed_read_operations | default(forge_memory_object_store_default_allowed_read_operations) }}"
+
+- name: Assert Forge memory object-store contract is explicit
+  ansible.builtin.assert:
+    that:
+      - resolved_forge_memory_object_store.provider in ['external-s3-compatible', 'minio', 'garage', 'ceph-rgw']
+      - resolved_forge_memory_object_store.endpoint_url | length > 0
+      - resolved_forge_memory_object_store.bucket | length > 0
+      - resolved_forge_memory_object_store.prefix | length > 0
+      - resolved_forge_memory_object_store.sse_algorithm in ['AES256', 'aws:kms']
+      - resolved_forge_memory_object_store.lifecycle_retention_days | int >= 30
+    fail_msg: >-
+      Forge memory object-store requires explicit S3-compatible endpoint,
+      bucket, prefix, encryption, and retention settings.
+  when: forge_memory_object_store_enabled
+
+- name: Ensure Forge memory service group exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('getent group ' ~ resolved_forge_memory_object_store.service_group ~ ' >/dev/null || groupadd --system ' ~ resolved_forge_memory_object_store.service_group) | quote }}
+  changed_when: true
+  when: forge_memory_object_store_enabled
+
+- name: Ensure Forge memory service user exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('id -u ' ~ resolved_forge_memory_object_store.service_user ~ ' >/dev/null 2>&1 || useradd --system --home-dir ' ~ resolved_forge_memory_object_store.data_root ~ ' --shell /sbin/nologin --gid ' ~ resolved_forge_memory_object_store.service_group ~ ' ' ~ resolved_forge_memory_object_store.service_user) | quote }}
+  changed_when: true
+  when: forge_memory_object_store_enabled
+
+- name: Ensure Forge memory object-store runtime directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ forge_memory_object_store_dir }}"
+    state: directory
+    mode: '0750'
+  loop:
+    - "{{ resolved_forge_memory_object_store.data_root }}"
+    - "{{ resolved_forge_memory_object_store.spool_root }}"
+    - "{{ resolved_forge_memory_object_store.log_root }}"
+    - "{{ resolved_forge_memory_object_store.config_dir }}"
+  loop_control:
+    loop_var: forge_memory_object_store_dir
+  when: forge_memory_object_store_enabled
+
+- name: Ensure Forge memory object-store system directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ forge_memory_object_store_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/init.d
+    - /etc/conf.d
+  loop_control:
+    loop_var: forge_memory_object_store_dir
+  when: forge_memory_object_store_enabled
+
+- name: Assign Forge memory runtime ownership in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('chown -R ' ~ resolved_forge_memory_object_store.service_user ~ ':' ~ resolved_forge_memory_object_store.service_group ~ ' ' ~ resolved_forge_memory_object_store.data_root ~ ' ' ~ resolved_forge_memory_object_store.spool_root ~ ' ' ~ resolved_forge_memory_object_store.log_root) | quote }}
+  changed_when: true
+  when: forge_memory_object_store_enabled
+
+- name: Render Forge memory object-store runtime environment
+  ansible.builtin.template:
+    src: forge-memory-object-store.env.j2
+    dest: "{{ install_target_root }}{{ resolved_forge_memory_object_store.config_dir }}/object-store.env"
+    owner: root
+    group: "{{ resolved_forge_memory_object_store.service_group }}"
+    mode: '0640'
+  when: forge_memory_object_store_enabled
+
+- name: Render Forge memory object-store policy intent
+  ansible.builtin.template:
+    src: forge-memory-object-store-policy.yml.j2
+    dest: "{{ install_target_root }}{{ resolved_forge_memory_object_store.config_dir }}/object-store-policy.yml"
+    owner: root
+    group: "{{ resolved_forge_memory_object_store.service_group }}"
+    mode: '0640'
+  when: forge_memory_object_store_enabled
+
+- name: Render Forge memory object-store OpenRC readiness service
+  ansible.builtin.template:
+    src: forge-memory-object-store.openrc.j2
+    dest: "{{ install_target_root }}/etc/init.d/forge-memory-object-store"
+    owner: root
+    group: root
+    mode: '0755'
+  when: forge_memory_object_store_enabled
+
+- name: Enable Forge memory object-store readiness service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + ['forge-memory-object-store']
+        ) | unique
+      }}
+  when: forge_memory_object_store_enabled

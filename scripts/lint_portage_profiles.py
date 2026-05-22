@@ -69,6 +69,7 @@ ALLOWED_PROFILE_KEYS = {
     "telemetry",
     "binpkg_repo",
     "nexus_repo",
+    "forge_memory_object_store",
     "netboot_publisher",
     "nfs_storage_client",
     "nscde_workstation",
