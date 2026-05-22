@@ -69,8 +69,8 @@ sync_to_nasa_repo() {
   test -d "${LOCAL_STAGE}" || die "missing local stage: ${LOCAL_STAGE}"
   mkdir -p "${PUBLISH_REPO}/RPMS" "${PUBLISH_REPO}/SRPMS" "${PUBLISH_REPO}/logs" "${PUBLISH_REPO}/firmware" "${PUBLISH_REPO}/evidence"
   find "${LOCAL_STAGE}" -type f -name '*.rpm' -print -exec cp -a '{}' "${PUBLISH_REPO}/RPMS/" ';'
-  find "${LOCAL_STAGE}/dkms-logs" "${LOCAL_STAGE}/evidence" -type f -print -exec cp -a '{}' "${PUBLISH_REPO}/logs/" ';' 2>/dev/null || true
-  find "${LOCAL_STAGE}/firmware" -type f -print -exec cp -a '{}' "${PUBLISH_REPO}/firmware/" ';' 2>/dev/null || true
+  find "${LOCAL_STAGE}/dkms-logs" "${LOCAL_STAGE}/evidence" -type f -print -exec cp -a '{}' "${PUBLISH_REPO}/logs/" ';' 2> /dev/null || true
+  find "${LOCAL_STAGE}/firmware" -type f -print -exec cp -a '{}' "${PUBLISH_REPO}/firmware/" ';' 2> /dev/null || true
   plan > "${PUBLISH_REPO}/lane.env"
   find "${PUBLISH_REPO}" -type f -print0 | sort -z | xargs -0 sha256sum > "${PUBLISH_REPO}/SHA256SUMS"
 }
@@ -79,7 +79,7 @@ refresh_repo() {
   if [[ "${APPLY_REPO_REFRESH:-0}" != "1" ]]; then
     die "refusing to refresh NASA repo without APPLY_REPO_REFRESH=1"
   fi
-  command -v createrepo_c >/dev/null 2>&1 || die "createrepo_c is required"
+  command -v createrepo_c > /dev/null 2>&1 || die "createrepo_c is required"
   test -d "${PUBLISH_REPO}" || die "missing publish repo: ${PUBLISH_REPO}"
   createrepo_c --update "${PUBLISH_REPO}"
 }
