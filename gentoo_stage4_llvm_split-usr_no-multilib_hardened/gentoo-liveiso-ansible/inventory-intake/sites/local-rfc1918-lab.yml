@@ -87,10 +87,15 @@ devices:
     model: CSS326-24G-2S+
     status: active
     management_ip: 172.16.99.6
+    management_interface: mgmt
+    fqdn: sw-mgmt-css326.rfc1918.host
     management_protocol: swos-http
     serial_number: HHD0AERY8JN
     software_target: SwOS 2.18.1751448030
     interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
       - name: ge4
         purpose: ccr2004-management
       - name: ge5
@@ -145,6 +150,7 @@ devices:
     status: active
     management_ip: 172.16.99.7
     management_interface: ether49
+    fqdn: sw-mgmt-mkcrs354.rfc1918.host
     serial_number: HJV0AWTYBCD
     software_target: RouterOS 7.22.2
     serial_console: /dev/ttyUSB1
@@ -201,6 +207,7 @@ devices:
     status: active
     management_ip: 172.16.99.8
     management_interface: br-spine
+    fqdn: sw-spine-crs309-rfc99.rfc1918.host
     software_target: RouterOS 7.22.2
     serial_console: /dev/ttyUSB0
     interfaces:
@@ -278,6 +285,12 @@ devices:
     model: CCR2004-1G-2XS-PCIe
     status: planned
     management_ip: 172.16.99.120
+    management_interface: mgmt
+    fqdn: rtr-mgmt-ccr2004.rfc1918.host
+    interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
   - name: svc_netbox_stage4
     site: local-rfc1918-lab
     role: ipam-dcim

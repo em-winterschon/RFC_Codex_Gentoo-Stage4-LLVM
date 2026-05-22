@@ -470,7 +470,7 @@ def reconcile(args: argparse.Namespace) -> dict[str, Any]:
                 "bridge",
                 "Management bridge 172.16.99.13/24 via eth0",
                 "172.16.99.13/24",
-                "nanoprime.rfc1918.host",
+                "cls0-rfc99-nanoprime-099013.rfc1918.host",
             ),
             (
                 "ceph-net0",

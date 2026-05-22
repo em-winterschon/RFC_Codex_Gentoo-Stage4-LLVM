@@ -63,6 +63,12 @@ devices:
     model: 2530-24G
     status: planned
     management_ip: 172.18.20.5
+    management_interface: mgmt
+    fqdn: sw-border-sfo200-ein-2005.rfc1918.host
+    interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
     notes:
       - Imported from legacy SFO-200 switch access reference.
   - name: sw-ipmi-sfo200-ein-2004
@@ -72,6 +78,12 @@ devices:
     model: 2530-24G
     status: planned
     management_ip: 172.18.20.4
+    management_interface: mgmt
+    fqdn: sw-ipmi-sfo200-ein-2004.rfc1918.host
+    interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
     notes:
       - Imported from legacy SFO-200 switch access reference.
   - name: sw-sfo200-7060cx32s-2010
@@ -81,6 +93,12 @@ devices:
     model: DCS-7060CX-32S
     status: planned
     management_ip: 172.16.40.10
+    management_interface: mgmt
+    fqdn: sw-sfo200-7060cx32s-2010.rfc1918.host
+    interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
     notes:
       - Legacy record uses 172.16.40.10; prefix validation should warn until FMT2 management routing is confirmed.
   - name: gw-sfo200-pri
@@ -90,8 +108,13 @@ devices:
     model: PowerEdge R630
     status: planned
     management_ip: 10.200.99.2
+    management_interface: mgmt
+    fqdn: gw-sfo200-pri.rfc1918.host
     serial: 86WS282
     interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
       - name: wan-igb0
         mac: e4:43:4b:5e:67:30
       - name: idrac
@@ -105,8 +128,13 @@ devices:
     model: PowerEdge R630
     status: planned
     management_ip: 10.200.99.3
+    management_interface: mgmt
+    fqdn: gw-sfo200-sec.rfc1918.host
     serial: 86XL282
     interfaces:
+      - name: mgmt
+        type: 1000base-t
+        purpose: management
       - name: wan-igb0
         mac: e4:43:4b:56:2b:90
       - name: idrac
@@ -120,6 +148,7 @@ devices:
     model: PowerEdge R630
     status: planned
     management_ip: 10.200.99.22
+    fqdn: kvm-sfo200-pri-9922.rfc1918.host
     serial: 162DDH2
     interfaces:
       - name: mgmt
@@ -133,6 +162,7 @@ devices:
     model: PowerEdge R630
     status: planned
     management_ip: 10.200.99.23
+    fqdn: kvm-sfo200-sec-9923.rfc1918.host
     serial: 7Q25CH2
     interfaces:
       - name: mgmt
@@ -146,6 +176,7 @@ devices:
     model: PowerEdge R630
     status: planned
     management_ip: 10.200.99.24
+    fqdn: kvm-sfo200-ter-9924.rfc1918.host
     serial: JK9SDB2
     interfaces:
       - name: mgmt
@@ -159,6 +190,7 @@ devices:
     model: PowerEdge R730xd
     status: planned
     management_ip: 10.200.99.18
+    fqdn: kvm-sfo200-nasa-9918.rfc1918.host
     serial: H6XBRD2
     interfaces:
       - name: mgmt

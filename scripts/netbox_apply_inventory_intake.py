@@ -61,6 +61,13 @@ def ip_hosts_match(left: str, right: str) -> bool:
     return ip_host(left) == ip_host(right)
 
 
+def inventory_fqdn(source: dict[str, Any]) -> str:
+    fqdn = str(source.get("fqdn", "") or "").strip()
+    if fqdn:
+        return fqdn
+    return f"{slugify(str(source['name']))}.rfc1918.host"
+
+
 def load_intake_files(paths: list[Path]) -> list[tuple[Path, dict[str, Any]]]:
     yaml = require_yaml()
     payloads: list[tuple[Path, dict[str, Any]]] = []
@@ -377,7 +384,7 @@ def ensure_device_interface(
     mac_address = interface.get("mac_address") or interface.get("mac")
     if mac_address:
         payload["mac_address"] = str(mac_address).lower()
-    if interface.get("purpose") == "management":
+    if "management" in str(interface.get("purpose", "")):
         payload["mgmt_only"] = True
 
     if client.dry_run:
@@ -449,8 +456,7 @@ def assign_management_ip(
             for interface in source.get("interfaces", []) or []
             if isinstance(interface, dict)
             and (
-                interface.get("purpose") == "management"
-                or interface.get("purpose") == "pdu-management"
+                "management" in str(interface.get("purpose", ""))
                 or interface.get("name") in {"mgmt", "eth0"}
             )
         ),
@@ -463,7 +469,7 @@ def assign_management_ip(
     payload: dict[str, Any] = {
         "address": address,
         "status": "active",
-        "dns_name": str(source.get("fqdn", "")),
+        "dns_name": inventory_fqdn(source),
         "description": f"Management IP for {source['name']}",
     }
     if interface:
@@ -727,6 +733,14 @@ def apply_prefixes(
         client.ensure(NetBoxObject("ipam/prefixes", "prefix", prefix["prefix"], payload))
 
 
+def ip_object_is_assigned(ip_object: dict[str, Any]) -> bool:
+    assigned_type = str(ip_object.get("assigned_object_type", "") or "")
+    if assigned_type:
+        return True
+    assigned_object = ip_object.get("assigned_object")
+    return isinstance(assigned_object, dict) and bool(assigned_object)
+
+
 def apply_devices(
     client: NetBoxClient,
     devices: list[dict[str, Any]],
@@ -799,6 +813,10 @@ def apply_service_vips(
         listener_text = ", ".join(
             f"{item['protocol']}/{item['port']}" for item in listeners if isinstance(item, dict)
         )
+        existing_ip = None if client.dry_run else client.first_ip_by_host(address)
+        if existing_ip and ip_object_is_assigned(existing_ip):
+            client.existing.append(f"ipam/ip-addresses:{address}")
+            continue
         client.ensure(
             NetBoxObject(
                 "ipam/ip-addresses",
@@ -808,7 +826,7 @@ def apply_service_vips(
                     "address": address,
                     "status": "active",
                     "role": "vip",
-                    "dns_name": f"{slugify(vip['name'])}.rfc1918.host",
+                    "dns_name": inventory_fqdn(vip),
                     "description": f"{vip['name']} listeners: {listener_text}",
                 },
             )
