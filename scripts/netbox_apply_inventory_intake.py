@@ -382,13 +382,11 @@ def ensure_device_interface(
         "mark_connected": bool(interface.get("connected_device")),
     }
     mac_address = interface.get("mac_address") or interface.get("mac")
-    if mac_address:
-        payload["mac_address"] = str(mac_address).lower()
     if "management" in str(interface.get("purpose", "")):
         payload["mgmt_only"] = True
 
     if client.dry_run:
-        return client.ensure(
+        netbox_interface = client.ensure(
             NetBoxObject(
                 "dcim/interfaces",
                 "name",
@@ -396,6 +394,9 @@ def ensure_device_interface(
                 {"_device_name": device["name"], **payload},
             )
         )
+        if mac_address:
+            ensure_interface_mac_address(client, netbox_interface, str(mac_address))
+        return netbox_interface
 
     existing = interface_by_device_and_name(client, device, name)
     label = f"dcim/interfaces:{device['name']}:{name}"
@@ -404,11 +405,38 @@ def ensure_device_interface(
         if client.update_existing:
             updated = client.request_json("PATCH", f"dcim/interfaces/{existing['id']}", payload)
             client.updated.append(label)
+            if mac_address:
+                ensure_interface_mac_address(client, updated, str(mac_address))
             return updated
+        if mac_address:
+            ensure_interface_mac_address(client, existing, str(mac_address))
         return existing
     created = client.request_json("POST", "dcim/interfaces", payload)
     client.created.append(label)
+    if mac_address:
+        ensure_interface_mac_address(client, created, str(mac_address))
     return created
+
+
+def ensure_interface_mac_address(
+    client: NetBoxClient,
+    interface: dict[str, Any],
+    mac_address: str,
+) -> dict[str, Any]:
+    normalized_mac = mac_address.lower()
+    return client.ensure(
+        NetBoxObject(
+            "dcim/mac-addresses",
+            "mac_address",
+            normalized_mac,
+            {
+                "mac_address": normalized_mac,
+                "assigned_object_type": "dcim.interface",
+                "assigned_object_id": interface["id"],
+                "description": f"{interface['name']} MAC address from inventory intake.",
+            },
+        )
+    )
 
 
 def normalize_interface_type(interface: dict[str, Any]) -> str:

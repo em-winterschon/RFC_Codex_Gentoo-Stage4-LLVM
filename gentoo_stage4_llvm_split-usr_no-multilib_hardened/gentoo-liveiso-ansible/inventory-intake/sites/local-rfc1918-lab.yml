@@ -415,6 +415,12 @@ devices:
     manufacturer: M70
     model: Atom C3758 appliance
     status: active
+    management_ip: 172.16.99.22
+    management_interface: netboot0
+    fqdn: sbsoc-accel-int64-m70n2.rfc1918.host
+    dns_aliases:
+      - m70n2.rfc1918.host
+      - m70-canary.rfc1918.host
     interfaces:
       - name: netboot0
         type: 1000base-t
@@ -462,6 +468,8 @@ devices:
       - CSS326 ge19-ge24 links are active by operator confirmation.
       - SwOS snapshot 20260521T232928Z independently confirms those links.
       - Use i211 netboot0 for iPXE, rescue, and primary management.
+      - netboot0 observed on 172.16.99.22 via ARP for 00:07:32:58:73:34 on 2026-05-22.
+      - Existing DNS canonical name is sbsoc-accel-int64-m70n2.rfc1918.host; m70n2 is a CNAME alias.
       - Use i211 enp3s0 only as post-boot management backup.
       - Use X553 eno1-eno4 for future OVS 802.3ad workload trunk validation.
       - MAC addresses for enp3s0 and eno1-eno4 are pending host boot discovery.
