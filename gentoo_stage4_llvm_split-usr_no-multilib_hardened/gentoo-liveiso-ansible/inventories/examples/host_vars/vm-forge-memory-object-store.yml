@@ -1,0 +1,10 @@
+---
+profile_definition_files:
+  - profile-definitions/vm-forge-memory-object-store.yml
+install_sequence: target-integration
+storage_confirm_destroy: false
+profile_forge_memory_object_store:
+  enabled: true
+  endpoint_url: https://s3.rfc1918.host
+  bucket: forge-memory
+  prefix: forge-memory/v1

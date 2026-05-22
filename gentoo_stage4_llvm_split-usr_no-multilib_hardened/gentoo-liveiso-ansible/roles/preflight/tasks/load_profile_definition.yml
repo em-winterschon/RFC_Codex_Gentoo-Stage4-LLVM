@@ -283,6 +283,14 @@
             recursive=True
           )
       }}
+    resolved_profile_forge_memory_object_store: >-
+      {{
+        resolved_profile_forge_memory_object_store
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.forge_memory_object_store | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_nscde_workstation: >-
       {{
         resolved_profile_nscde_workstation

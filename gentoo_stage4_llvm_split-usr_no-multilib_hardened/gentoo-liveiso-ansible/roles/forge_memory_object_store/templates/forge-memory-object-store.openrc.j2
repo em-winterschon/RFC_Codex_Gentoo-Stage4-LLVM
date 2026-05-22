@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+
+description="Forge memory object-store readiness marker"
+command="/bin/true"
+command_background="false"
+
+depend() {
+  need localmount
+  after networking
+}
+
+start_pre() {
+  checkpath -d -m 0750 -o {{ resolved_forge_memory_object_store.service_user }}:{{ resolved_forge_memory_object_store.service_group }} {{ resolved_forge_memory_object_store.data_root }}
+  checkpath -d -m 0750 -o {{ resolved_forge_memory_object_store.service_user }}:{{ resolved_forge_memory_object_store.service_group }} {{ resolved_forge_memory_object_store.spool_root }}
+  checkpath -d -m 0750 -o {{ resolved_forge_memory_object_store.service_user }}:{{ resolved_forge_memory_object_store.service_group }} {{ resolved_forge_memory_object_store.log_root }}
+  checkpath -f -m 0640 -o root:{{ resolved_forge_memory_object_store.service_group }} {{ resolved_forge_memory_object_store.config_dir }}/object-store.env
+  checkpath -f -m 0640 -o root:{{ resolved_forge_memory_object_store.service_group }} {{ resolved_forge_memory_object_store.config_dir }}/object-store-policy.yml
+}

@@ -1,0 +1,4 @@
+app-admin/rsyslog
+app-misc/jq
+net-misc/curl
+net-misc/rclone

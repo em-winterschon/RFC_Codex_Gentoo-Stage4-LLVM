@@ -33,6 +33,7 @@
       - telemetry_grafana
       - binpkg_repo
       - nexus_repo
+      - forge_memory_object_store
       - freeipa_controller
       - ipa_client
       - rfc1918_ca_trust
