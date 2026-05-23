@@ -31,6 +31,7 @@
 - [Workstation Package Capture](Workstation-Package-Capture)
 - [Workstation NsCDE](Workstation-NsCDE)
 - [GMKtek K10 Stage5 Validation](GMKtek-K10-Stage5-Validation)
+- [Thor AGX Stabilization](Thor-AGX-Stabilization)
 - [X12AGAIN Bare Metal Reimage Prep](X12AGAIN-Bare-Metal-Reimage-Prep)
 - [Container-Services Validation](Container-Services-Validation)
 - [Container Building](Container-Building)

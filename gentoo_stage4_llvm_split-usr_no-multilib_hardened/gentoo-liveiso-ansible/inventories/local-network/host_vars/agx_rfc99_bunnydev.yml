@@ -1,0 +1,89 @@
+---
+ansible_host: 172.16.99.34
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+local_network_role: edge-ai-gpu-host
+fqdn: agx-rfc99-bunnydev.rfc1918.host
+observed_service_ip: 172.16.99.34
+
+gpu_compute_enabled: true
+gpu_host_platform: nvidia-jetson-agx-thor
+gpu_host_os_family: Ubuntu
+gpu_host_os_version: "24.04.4 LTS"
+gpu_host_kernel: 6.8.12-tegra
+gpu_host_l4t_version: 38.4.0
+gpu_host_nvidia_driver: "580.00"
+gpu_host_cuda_version_observed: "13.0"
+gpu_host_container_runtime_current: docker
+gpu_host_container_runtime_target: podman
+gpu_host_inference_services_present:
+  - openshell-cluster-nemoclaw
+gpu_host_inference_services_missing:
+  - ollama
+  - openwebui
+  - vllm
+  - mlc_llm
+
+thor_agx_management:
+  interface: enP2p1s0
+  address: 172.16.99.34/24
+  gateway: 172.16.99.1
+  dns_servers:
+    - 172.16.99.70
+    - 172.16.99.1
+  switch: sw_mgmt_css326
+  switch_port: ge7
+
+thor_agx_data_plane:
+  status: planned
+  switch: sw_mgmt_mkcrs354
+  switch_port: qsfpplus2
+  link_policy: four-lane-10g-initial
+  intended_host_interfaces:
+    - mgbe0_0
+    - mgbe1_0
+    - mgbe2_0
+    - mgbe3_0
+  notes:
+    - Physical QSFP28 cable and lane behavior require validation before applying bridge or OVS state.
+    - Live capture saw the mgbe interfaces up with link-local addressing only.
+
+thor_agx_package_policy:
+  ubuntu_proposed_enabled: false
+  nvidia_l4t_pinned: true
+  nvidia_l4t_pin_file: /etc/apt/preferences.d/99-forge-nvidia-l4t-pin
+  held_packages_include:
+    - nvidia-l4t-core
+    - nvidia-l4t-kernel
+    - nvidia-container-toolkit
+  deferred_upgrade_packages:
+    - NetworkManager
+    - snapd
+    - linux-firmware
+
+thor_agx_identity:
+  freeipa_enrolled: false
+  sssd_installed: true
+  sssd_configured: false
+  local_users_observed:
+    bunnydev: 1000
+    eva: 1001
+  target_validate_user: codex-admin
+
+thor_agx_live_stabilization:
+  captured_at: "2026-05-23T13:06:17Z"
+  default_target: multi-user.target
+  disabled_services:
+    - gdm.service
+    - gnome-remote-desktop.service
+    - dnsmasq.service
+    - isc-dhcp-server.service
+    - isc-dhcp-server6.service
+  validated_services:
+    ssh.socket: active
+    docker.service: active
+    containerd.service: active
+  validation_notes:
+    - dpkg audit was clean after the OpenSSH post-install repair.
+    - No failed systemd units remained after disabling stale local DHCP/DNS services.
+    - No reboot has been performed since stabilization.

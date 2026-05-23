@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-23 - Thor AGX Stabilization
+
+- Added the Thor AGX stabilization runbook with live access path, Ubuntu L4T
+  package guardrails, DNS state, OpenSSH repair notes, inference-service gaps,
+  and post-change validation gates.
+- Added `agx_rfc99_bunnydev` host vars and registered Thor as a
+  `gpu_compute` host in the local-network inventory while keeping FreeIPA/SSSD,
+  QSFP/OVS, and inference-service installs explicitly deferred.
+
 ## 2026-05-12 - FastMCP And Scheduler Planning
 
 - Added the FastMCP infrastructure control-plane promotion plan for NetBox,
