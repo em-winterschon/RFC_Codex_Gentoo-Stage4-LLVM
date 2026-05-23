@@ -24,6 +24,14 @@ prefixes:
     vlan:
       id: 1
       name: management-compat
+  - prefix: 172.16.20.0/24
+    site: local-rfc1918-lab
+    status: active
+    role: home-automation
+    gateway: 172.16.20.1
+    vlan:
+      id: 20
+      name: home-automation
   - prefix: 172.16.98.0/24
     site: local-rfc1918-lab
     status: active
@@ -494,6 +502,23 @@ devices:
       - Persistent Gentoo install targets only the two KIOXIA NVMe devices, FreeBSD nda0 and nda1, expected as Linux /dev/disk/by-id/nvme-eui.8ce38e0403ef1a38 and /dev/disk/by-id/nvme-eui.8ce38e0403ef1adf.
       - SATA-DOM ada0, SATADOM-SH 3ME3 serial 20180915AA9241033080, is excluded from the Gentoo install target set.
       - RS232 console is /dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0 on admin-sun99-forge-099070 at 115200 baud.
+  - name: atmos_sun99_controller_020227
+    site: local-rfc1918-lab
+    role: home-automation-device
+    manufacturer: Hubitat
+    model: C8
+    status: active
+    management_ip: 172.16.20.227
+    management_interface: mgmt
+    fqdn: atmos-sun99-controller-020227.rfc1918.host
+    interfaces:
+      - name: mgmt
+        type: 100base-tx
+        purpose: home automation management
+        status: active
+    notes:
+      - Hubitat C8 home automation controller.
+      - Authentication and application service port are intentionally not tracked here.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging
