@@ -69,6 +69,16 @@
     - resolved_distcc_farm.client_enabled | bool
     - resolved_distcc_farm.hosts | length > 0
 
+- name: Ensure distcc client state directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/var/cache/distcc/state"
+    state: directory
+    mode: '0777'
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.client_enabled | bool
+    - resolved_distcc_farm.hosts | length > 0
+
 - name: Render distcc farm manifest
   ansible.builtin.template:
     src: distcc-farm.json.j2

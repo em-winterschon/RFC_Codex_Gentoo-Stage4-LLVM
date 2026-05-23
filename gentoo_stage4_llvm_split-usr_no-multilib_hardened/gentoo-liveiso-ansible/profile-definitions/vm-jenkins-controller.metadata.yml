@@ -20,7 +20,6 @@ gentoo_system_profile_metadata:
     tracked_atoms:
       - dev-util/jenkins-bin
       - sys-devel/distcc
-      - dev-util/ccache
     app_runtime_packages:
       - dev-vcs/git
       - net-misc/rsync

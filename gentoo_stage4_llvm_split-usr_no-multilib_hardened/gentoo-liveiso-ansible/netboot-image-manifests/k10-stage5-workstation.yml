@@ -49,6 +49,7 @@ builder:
     - app-crypt/age
     - net-misc/curl
     - app-misc/jq
+    - sys-apps/gptfdisk
   dracut_modules:
     add:
       - network

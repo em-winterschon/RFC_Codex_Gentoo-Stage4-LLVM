@@ -1,0 +1,23 @@
+#!/sbin/openrc-run
+
+description="Configure Open vSwitch fabric"
+
+depend() {
+{% for interface in openrc_netifrc.interfaces | default([]) %}
+  need net.{{ interface.name }}
+{% endfor %}
+  need openvswitch
+  after openvswitch
+}
+
+start() {
+  ebegin "Applying OVS fabric"
+  /usr/local/libexec/{{ openrc_ovs_fabric.service_name | default('ovs-fabric') }} apply
+  eend $?
+}
+
+stop() {
+  ebegin "Removing OVS fabric"
+  /usr/local/libexec/{{ openrc_ovs_fabric.service_name | default('ovs-fabric') }} teardown
+  eend $?
+}

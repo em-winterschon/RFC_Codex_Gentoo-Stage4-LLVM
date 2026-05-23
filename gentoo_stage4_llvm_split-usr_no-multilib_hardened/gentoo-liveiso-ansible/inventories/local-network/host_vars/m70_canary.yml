@@ -41,6 +41,7 @@ liveiso_work_dir: /root/gentoo-liveiso-work
 install_target_root: /mnt/gentoo
 install_arch: amd64
 install_boot_mode: uefi
+preflight_require_runtime_uefi: false
 
 # Target identity
 install_hostname: sbsoc-accel-int64-m70n2
@@ -54,8 +55,8 @@ install_root_password_hash: ""
 # intentionally excluded from the install target set.
 storage_layout: zfs-mirror
 storage_devices:
-  - /dev/disk/by-id/nvme-eui.8ce38e0403ef1a38
-  - /dev/disk/by-id/nvme-eui.8ce38e0403ef1adf
+  - /dev/disk/by-id/nvme-eui.00000000000000008ce38e0403ef1a38
+  - /dev/disk/by-id/nvme-eui.00000000000000008ce38e0403ef1adf
 m70_canary_excluded_storage_devices:
   - freebsd_name: ada0
     linux_expected_by_id: /dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080
@@ -64,12 +65,12 @@ m70_canary_excluded_storage_devices:
     reason: Existing SATA-DOM boot media must not be used for the persistent Gentoo install.
 m70_canary_discovered_nvme_devices:
   - freebsd_name: nda0
-    linux_expected_by_id: /dev/disk/by-id/nvme-eui.8ce38e0403ef1a38
+    linux_expected_by_id: /dev/disk/by-id/nvme-eui.00000000000000008ce38e0403ef1a38
     model: KBG50ZNS256G NVMe KIOXIA 256GB
     serial: 82HPG1DLQEKK
     size_gib: 238
   - freebsd_name: nda1
-    linux_expected_by_id: /dev/disk/by-id/nvme-eui.8ce38e0403ef1adf
+    linux_expected_by_id: /dev/disk/by-id/nvme-eui.00000000000000008ce38e0403ef1adf
     model: KBG50ZNS256G NVMe KIOXIA 256GB
     serial: 82HPG1I8QEKK
     size_gib: 238
@@ -100,12 +101,72 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
 profile_package_atoms:
   - sys-firmware/intel-microcode
-  - sys-firmware/amd-ucode
+  - sys-kernel/linux-firmware
+  - net-dns/openresolv
+  - net-misc/netifrc
 
 # Toolchain and tuning
 portage_cpu_profile: intel_atom_c3758_goldmont
 gpu_stack: none
 cpu_flags_x86_override: []
+portage_accept_license: "*"
+portage_features:
+  - parallel-install
+  - merge-sync
+portage_buildpkg_enabled: true
+portage_usepkg_enabled: true
+portage_getbinpkg_enabled: true
+portage_pkgdir: /var/cache/binpkgs/m70-canary
+portage_binpkg_format: tar
+portage_binpkg_compress: zstd
+portage_binpkg_compress_flags: "-2"
+portage_binhost: http://172.16.99.70:8080/binpkgs
+portage_binrepos:
+  - name: m70_forge_stage_build_cache
+    priority: 10
+    sync_uri: http://172.16.99.70:8080/binpkgs
+portage_emerge_default_opts_extra: []
+portage_global_use:
+  - bindist
+  - bzip2
+  - cli
+  - dist-kernel
+  - ipv6
+  - lld
+  - zstd
+portage_extra_use: []
+portage_makeopts_jobs: 8
+portage_emerge_jobs: 2
+portage_load_average: 8
+portage_gpg_key_refresh: false
+portage_package_use_files:
+  distcc-client-bootstrap: |
+    sys-devel/distcc -hardened
+  gentoo-kernel: |
+    =sys-kernel/gentoo-kernel-6.18.32_p2 hardened
+  zfs: |
+    =sys-fs/zfs-2.3.6 dist-kernel
+portage_package_mask_files:
+  no-networkmanager: |
+    net-misc/networkmanager
+portage_package_accept_keywords_files:
+  gentoo-kernel: |
+    =sys-kernel/gentoo-kernel-6.18.32_p2 ~amd64
+    =virtual/dist-kernel-6.18.32_p2 ~amd64
+profile_distcc_farm:
+  enabled: true
+  client_enabled: true
+  worker_enabled: false
+  port: 3632
+  makeopts_jobs: 48
+  compression: true
+  cpp_mode: true
+  builder_fabric_name: rfc99-management
+  builder_fabric_cidr: 172.16.99.0/24
+  hosts:
+    - name: x12again
+      address: 172.16.99.108
+      slots: 48
 
 # Package strategy
 kernel_strategy: gentoo-kernel
@@ -113,12 +174,13 @@ kernel_package_map:
   gentoo-kernel-bin: sys-kernel/gentoo-kernel-bin
   gentoo-kernel: sys-kernel/gentoo-kernel
   gentoo-sources: sys-kernel/gentoo-sources
-kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.18.18
+kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.18.32_p2
 zfs_package_atom: =sys-fs/zfs-2.3.6
 zfs_kmod_package_atom: =sys-fs/zfs-kmod-2.3.6
 
 # Boot loader values: zfsbootmenu or efistub
 boot_strategy: zfsbootmenu
+boot_create_efi_nvram_entry: false
 zfsbootmenu_efi_url: https://get.zfsbootmenu.org/efi
 zfsbootmenu_boot_label: ZFSBootMenu
 zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
@@ -130,7 +192,7 @@ install_kernel_cmdline: >-
 
 # Installed services and finalization
 install_openssh: true
-install_networkmanager: true
+install_networkmanager: false
 root_authorized_keys:
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@livecd
 finalize_unmount_target: false
@@ -160,94 +222,74 @@ freeipa_client_package_atoms:
 # M70 network target state:
 # - i211 pair is management only and stays outside OVS.
 # - X553 ports are the OVS/LACP workload blast zone.
-networkmanager_connections:
-  - name: bond-mgmt
-    type: bond
-    interface_name: bond-mgmt
-    autoconnect: true
-    bond_options:
-      mode: active-backup
+# - NetworkManager is explicitly masked; networking is OpenRC/netifrc plus OVS.
+profile_modules_load_files:
+  m70-canary-network.conf: |
+    bonding
+openrc_netifrc:
+  enabled: true
+  interfaces:
+    - name: bond_mgmt
+      type: bond
+      addresses:
+        - 172.16.99.22/24
+      routes:
+        - default via 172.16.99.1
+      dns_servers:
+        - 172.16.99.1
+        - 9.9.9.9
+      dns_domain: rfc1918.host
+      slaves:
+        - netboot0
+        - enp3s0
+      mode: balance-alb
       miimon: 100
       primary: netboot0
-    ipv4_method: manual
+openrc_ovs_fabric:
+  enabled: true
+  service_name: m70-ovs-fabric
+  bridges:
+    - name: br_ovs0
+      bonds:
+        - name: ovs_workload0
+          interfaces:
+            - eno1
+            - eno2
+            - eno3
+            - eno4
+          lacp: active
+          bond_mode: balance-tcp
+          other_config:
+            lacp-time: fast
+m70_canary_network_ports:
+  management_bond:
+    name: bond_mgmt
+    members:
+      - interface: netboot0
+        mac_address: "00:07:32:58:73:34"
+      - interface: enp3s0
+        mac_address: "00:07:32:58:73:35"
+    mode: balance-alb
     addresses:
       - 172.16.99.22/24
-    gateway4: 172.16.99.1
-    dns4:
+    gateway: 172.16.99.1
+    dns:
       - 172.16.99.1
       - 9.9.9.9
-    ipv6_method: ignore
-  - name: bond-mgmt-netboot0
-    type: ethernet
-    interface_name: netboot0
-    mac_address: "00:07:32:58:73:34"
-    master: bond-mgmt
-    slave_type: bond
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: bond-mgmt-enp3s0
-    type: ethernet
-    interface_name: enp3s0
-    mac_address: "00:07:32:58:73:35"
-    master: bond-mgmt
-    slave_type: bond
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: br-ovs0
-    type: ovs-bridge
-    interface_name: br-ovs0
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: ovs-workload0
-    type: ovs-port
-    interface_name: ovs-workload0
-    master: br-ovs0
-    slave_type: ovs-bridge
-    autoconnect: true
-    ovs_port_options:
-      lacp: active
-      bond-mode: balance-tcp
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: ovs-workload0-eno1
-    type: ethernet
-    interface_name: eno1
-    mac_address: "00:07:32:58:73:36"
-    master: ovs-workload0
-    slave_type: ovs-port
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: ovs-workload0-eno2
-    type: ethernet
-    interface_name: eno2
-    mac_address: "00:07:32:58:73:37"
-    master: ovs-workload0
-    slave_type: ovs-port
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: ovs-workload0-eno3
-    type: ethernet
-    interface_name: eno3
-    mac_address: "00:07:32:58:73:38"
-    master: ovs-workload0
-    slave_type: ovs-port
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
-  - name: ovs-workload0-eno4
-    type: ethernet
-    interface_name: eno4
-    mac_address: "00:07:32:58:73:39"
-    master: ovs-workload0
-    slave_type: ovs-port
-    autoconnect: true
-    ipv4_method: disabled
-    ipv6_method: ignore
+  ovs_workload:
+    bridge: br_ovs0
+    bond: ovs_workload0
+    lacp: active
+    bond_mode: balance-tcp
+    members:
+      - interface: eno1
+        mac_address: "00:07:32:58:73:36"
+      - interface: eno2
+        mac_address: "00:07:32:58:73:37"
+      - interface: eno3
+        mac_address: "00:07:32:58:73:38"
+      - interface: eno4
+        mac_address: "00:07:32:58:73:39"
 
 slurm_cluster_role: canary-worker
 slurm_node_name: sbsoc-accel-int64-m70n2

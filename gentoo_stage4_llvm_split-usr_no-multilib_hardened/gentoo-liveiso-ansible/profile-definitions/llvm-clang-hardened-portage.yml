@@ -13,23 +13,19 @@ gentoo_profile_definition:
     - xira
     - without-systemd
   make_conf_append: |
-    COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+    COMMON_FLAGS="${COMMON_FLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
     CFLAGS="${COMMON_FLAGS} -flto=thin"
     CXXFLAGS="${COMMON_FLAGS} -flto=thin"
     FCFLAGS="${COMMON_FLAGS}"
     FFLAGS="${COMMON_FLAGS}"
     LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld"
     USE="${USE} -systemd"
-    FEATURES="${FEATURES} ccache distcc fail-clean parallel-install merge-sync"
+    FEATURES="${FEATURES} distcc fail-clean parallel-install merge-sync"
     QA_STRICT_EXECSTACK="set"
     QA_STRICT_TEXTRELS="set"
     QA_STRICT_FLAGS_IGNORED="set"
     PORTAGE_TMPDIR="/var/tmp/portage-tmpfs"
     PORTAGE_LOGDIR="/var/log/portage"
-    CCACHE_DIR="/var/cache/ccache"
-    CCACHE_SIZE="20G"
-    CCACHE_TEMPDIR="/var/tmp/portage-tmpfs/ccache-tmp"
-    CCACHE_PREFIX="distcc"
     LLVM_TARGETS="AMDGPU X86"
     PYTHON_SINGLE_TARGET="python3_13"
     PYTHON_TARGETS="python3_13"
@@ -39,11 +35,9 @@ gentoo_profile_definition:
       llvm-core/lld-toolchain-symlinks native-symlinks
       llvm-core/clang-linker-config default-lld
       llvm-runtimes/clang-runtime compiler-rt default-compiler-rt default-lld sanitize
-      dev-util/ccache static-c++
       sys-libs/glibc -clang
     10-no-systemd: |
       sys-auth/pambase elogind
-      net-misc/networkmanager elogind
       sys-apps/accountsservice elogind
       x11-base/xorg-server elogind
       media-video/pipewire elogind

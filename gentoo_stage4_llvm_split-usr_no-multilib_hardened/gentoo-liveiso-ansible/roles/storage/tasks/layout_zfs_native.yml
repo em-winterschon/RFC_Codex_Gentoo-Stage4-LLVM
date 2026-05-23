@@ -127,6 +127,12 @@
   ansible.builtin.command: "zfs mount -a"
   changed_when: false
 
+- name: Ensure target /etc exists for root-on-ZFS hostid
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc"
+    state: directory
+    mode: '0755'
+
 - name: Preserve provisioning hostid for target root-on-ZFS imports
   ansible.builtin.copy:
     src: /etc/hostid
