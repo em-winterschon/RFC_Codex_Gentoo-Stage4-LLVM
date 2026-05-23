@@ -937,8 +937,7 @@ def filter_payloads_by_device(
             filtered_outlets = [
                 outlet
                 for outlet in device.get("power_outlets", []) or []
-                if isinstance(outlet, dict)
-                and str(outlet.get("target_device", "")) in device_names
+                if isinstance(outlet, dict) and str(outlet.get("target_device", "")) in device_names
             ]
             if filtered_outlets:
                 filtered_device = dict(device)
