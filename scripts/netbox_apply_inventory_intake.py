@@ -360,6 +360,17 @@ def cable_between_terminations(
     return None
 
 
+def termination_cable(termination: dict[str, Any]) -> dict[str, Any] | None:
+    cable = termination.get("cable")
+    return cable if isinstance(cable, dict) and cable.get("id") else None
+
+
+def interface_mark_connected(interface: dict[str, Any]) -> bool:
+    # NetBox's mark_connected flag is for un-cabled/manual links. Physical
+    # cable endpoints must leave it false or NetBox rejects cable creation.
+    return bool(interface.get("connected_device") and not interface.get("connected_interface"))
+
+
 def ensure_device_interface(
     client: NetBoxClient,
     device: dict[str, Any],
@@ -372,7 +383,7 @@ def ensure_device_interface(
         "type": normalize_interface_type(interface),
         "enabled": interface.get("status", "active") != "disabled",
         "description": str(interface.get("purpose", "")),
-        "mark_connected": bool(interface.get("connected_device")),
+        "mark_connected": interface_mark_connected(interface),
     }
     mac_address = interface.get("mac_address") or interface.get("mac")
     if mac_address:
@@ -470,6 +481,14 @@ def assign_management_ip(
         payload["assigned_object_type"] = "dcim.interface"
         payload["assigned_object_id"] = interface["id"]
 
+    if not client.dry_run and interface:
+        existing_ip = client.first("ipam/ip-addresses", "address", address)
+        if existing_ip is None:
+            existing_ip = client.first_ip_by_host(address)
+        if existing_ip and not ip_assignment_matches_interface(existing_ip, interface):
+            client.existing.append(f"ipam/ip-addresses:{address}")
+            return
+
     ip_object = client.ensure(NetBoxObject("ipam/ip-addresses", "address", address, payload))
     if client.dry_run:
         return
@@ -487,6 +506,17 @@ def primary_ip_update_payload(
     if not interface_bound:
         return None
     return {"primary_ip4": ip_id} if "." in address else {"primary_ip6": ip_id}
+
+
+def ip_assignment_matches_interface(
+    ip_object: dict[str, Any], interface: dict[str, Any]
+) -> bool:
+    assigned_type = ip_object.get("assigned_object_type")
+    if assigned_type in {None, ""}:
+        return True
+    if assigned_type != "dcim.interface":
+        return False
+    return ip_object_is_assigned_to_interface(ip_object, interface)
 
 
 def ip_object_is_assigned_to_interface(
@@ -644,9 +674,126 @@ def ensure_power_cable(
             return updated
         return existing
 
+    occupied_cable = termination_cable(source_outlet) or termination_cable(target_power_port)
+    if occupied_cable:
+        client.existing.append(label)
+        return occupied_cable
+
     created = client.request_json("POST", "dcim/cables", payload)
     client.created.append(label)
     return created
+
+
+def interface_cable_key(
+    left_device: str, left_interface: str, right_device: str, right_interface: str
+) -> tuple[tuple[str, str], tuple[str, str]]:
+    left = (left_device, left_interface)
+    right = (right_device, right_interface)
+    return tuple(sorted((left, right)))  # type: ignore[return-value]
+
+
+def ensure_interface_cable(
+    client: NetBoxClient,
+    left_device: dict[str, Any],
+    left_interface: dict[str, Any],
+    right_device: dict[str, Any],
+    right_interface: dict[str, Any],
+    purpose: str,
+) -> dict[str, Any]:
+    left_name = str(left_interface["name"])
+    right_name = str(right_interface["name"])
+    lookup_value = (
+        f"{left_device['name']}:{left_name}->{right_device['name']}:{right_name}"
+    )
+    payload = {
+        "a_terminations": [
+            {
+                "object_type": "dcim.interface",
+                "object_id": left_interface["id"],
+            }
+        ],
+        "b_terminations": [
+            {
+                "object_type": "dcim.interface",
+                "object_id": right_interface["id"],
+            }
+        ],
+        "status": "connected",
+        "label": lookup_value,
+        "description": purpose or "Data cable tracked from inventory intake.",
+    }
+
+    if client.dry_run:
+        return client.ensure(NetBoxObject("dcim/cables", "label", lookup_value, payload))
+
+    existing = cable_between_terminations(
+        client,
+        "dcim.interface",
+        int(left_interface["id"]),
+        "dcim.interface",
+        int(right_interface["id"]),
+    )
+    label = f"dcim/cables:{lookup_value}"
+    if existing:
+        client.existing.append(label)
+        if client.update_existing:
+            updated = client.request_json("PATCH", f"dcim/cables/{existing['id']}", payload)
+            client.updated.append(label)
+            return updated
+        return existing
+
+    occupied_cable = termination_cable(left_interface) or termination_cable(right_interface)
+    if occupied_cable:
+        client.existing.append(label)
+        return occupied_cable
+
+    created = client.request_json("POST", "dcim/cables", payload)
+    client.created.append(label)
+    return created
+
+
+def apply_interface_cables(
+    client: NetBoxClient,
+    source_device: dict[str, Any],
+    netbox_device: dict[str, Any],
+    seen: set[tuple[tuple[str, str], tuple[str, str]]],
+) -> None:
+    for interface in source_device.get("interfaces", []) or []:
+        if not isinstance(interface, dict) or not interface.get("name"):
+            continue
+        target_device_name = interface.get("connected_device")
+        target_interface_name = interface.get("connected_interface")
+        if not target_device_name or not target_interface_name:
+            continue
+
+        source_name = str(interface["name"])
+        target_device_name = str(target_device_name)
+        target_interface_name = str(target_interface_name)
+        key = interface_cable_key(
+            str(source_device["name"]), source_name, target_device_name, target_interface_name
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+
+        source_interface = interface_by_device_and_name(client, netbox_device, source_name)
+        target_device = device_by_name(client, target_device_name)
+        if not source_interface or not target_device:
+            continue
+        target_interface = interface_by_device_and_name(
+            client, target_device, target_interface_name
+        )
+        if not target_interface:
+            continue
+
+        ensure_interface_cable(
+            client,
+            netbox_device,
+            source_interface,
+            target_device,
+            target_interface,
+            str(interface.get("purpose", "")),
+        )
 
 
 def apply_power_outlets(
@@ -759,6 +906,12 @@ def apply_devices(
         netbox_device = device_by_name(client, device["name"])
         if netbox_device:
             apply_power_outlets(client, netbox_device, device)
+
+    seen_interface_cables: set[tuple[tuple[str, str], tuple[str, str]]] = set()
+    for device in devices:
+        netbox_device = device_by_name(client, device["name"])
+        if netbox_device:
+            apply_interface_cables(client, device, netbox_device, seen_interface_cables)
 
 
 def apply_clusters(

@@ -56,7 +56,11 @@ assert_file_contains "${apply_script}" "ipam/ip-addresses"
 assert_file_contains "${apply_script}" "first_query"
 assert_file_contains "${apply_script}" "manufacturer_id"
 assert_file_contains "${apply_script}" "apply_device_interfaces"
+assert_file_contains "${apply_script}" "apply_interface_cables"
 assert_file_contains "${apply_script}" "apply_power_outlets"
+assert_file_contains "${apply_script}" "dcim.interface"
+assert_file_contains "${apply_script}" "ip_assignment_matches_interface"
+assert_file_contains "${apply_script}" "termination_cable"
 assert_file_contains "${apply_script}" "normalize_interface_type"
 
 assert_file_contains "${example}" "inventory_intake_version: 1"
@@ -72,10 +76,13 @@ assert_file_contains "${example}" "obs_sun99_vmetrics_099065"
 assert_file_contains "${example}" "obs_sun99_grafana_099066"
 assert_file_contains "${example}" "sched_sun99_slurmctl_099071"
 assert_file_contains "${example}" "slurm_worker_node01"
+assert_file_contains "${example}" "agx_rfc99_bunnydev"
 assert_file_contains "${example}" "log-sun99-rsyslog-099093"
 assert_file_contains "${example}" "sched-sun99-slurmctl-099071.rfc1918.host"
 assert_file_contains "${example}" "sched-sun99-slurmwkr-099072.rfc1918.host"
+assert_file_contains "${example}" "agx-rfc99-bunnydev.rfc1918.host"
 assert_file_contains "${example}" "172.16.99.93"
+assert_file_contains "${example}" "172.16.99.34"
 assert_file_contains "${example}" "172.16.99.71"
 assert_file_contains "${example}" "172.16.99.72"
 assert_file_contains "${example}" "log-sun99-rsyslog.rfc1918.host"
@@ -86,6 +93,8 @@ assert_file_contains "${example}" "172.16.99.65"
 assert_file_contains "${example}" "172.16.99.66"
 assert_file_contains "${example}" "172.16.99.241"
 assert_file_contains "${example}" "84:5C:31:A5:CF:51"
+assert_file_contains "${example}" "enP2p1s0"
+assert_file_contains "${example}" "ge7"
 assert_file_contains "${example}" "ipxe-httpv4-with-pxe-fallback"
 assert_file_not_contains "${example}" "172.16.99.108"
 assert_file_contains "${example}" "outlet_index: 4"
@@ -119,7 +128,7 @@ python3 -m py_compile "${validator}"
 python3 -m py_compile "${apply_script}"
 python3 "${validator}" "${example}" --format json > /dev/null
 python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json > /tmp/netbox-intake-all-sites-validation.json
-grep -Fq '"devices": 33' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
+grep -Fq '"devices": 34' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
 python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json > /tmp/netbox-intake-apply-plan.json
 grep -Fq '"dry_run": true' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not default to dry-run"
 grep -Fq 'dcim/sites:local-rfc1918-lab' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include site"
@@ -132,7 +141,9 @@ grep -Fq 'dcim/devices:obs_sun99_vmetrics_099065' /tmp/netbox-intake-apply-plan.
 grep -Fq 'dcim/devices:obs_sun99_grafana_099066' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Grafana VM"
 grep -Fq 'dcim/devices:sched_sun99_slurmctl_099071' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include SLURM controller VM"
 grep -Fq 'dcim/devices:slurm_worker_node01' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include SLURM first worker VM"
+grep -Fq 'dcim/devices:agx_rfc99_bunnydev' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Thor AGX device"
 grep -Fq 'dcim/devices:pdu_rfc99_corectrl_ap7901' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU device"
+grep -Fq 'ipam/ip-addresses:172.16.99.34/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Thor AGX management IP"
 grep -Fq 'ipam/ip-addresses:172.16.99.156/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 management IP"
 grep -Fq 'ipam/ip-addresses:172.16.99.157/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers management IP"
 grep -Fq 'ipam/ip-addresses:172.16.99.64/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Prometheus management IP"
@@ -143,6 +154,8 @@ grep -Fq 'ipam/ip-addresses:172.16.99.72/24' /tmp/netbox-intake-apply-plan.json 
 grep -Fq 'ipam/ip-addresses:172.16.99.241/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU management IP"
 grep -Fq 'dcim/interfaces:gmktek_nucbox_k10_stage5_candidate:eth0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 interface"
 grep -Fq 'dcim/interfaces:lap_sun99_chonkers:LOM' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers LOM interface"
+grep -Fq 'dcim/interfaces:sw_mgmt_css326:ge7' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include CSS326 ge7 interface"
+grep -Fq 'dcim/interfaces:agx_rfc99_bunnydev:enP2p1s0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Thor AGX management interface"
 grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 management interface"
 grep -Fq 'dcim/power-ports:lap_sun99_chonkers:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers power port"
 grep -Fq 'dcim/power-ports:gmktek_nucbox_k10_stage5_candidate:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 power port"
@@ -150,6 +163,7 @@ grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet4' /tmp/netbox-inta
 grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 6"
 grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet4->lap_sun99_chonkers:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Chonkers PDU cable"
 grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet6->gmktek_nucbox_k10_stage5_candidate:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 PDU cable"
+grep -Fq 'dcim/cables:agx_rfc99_bunnydev:enP2p1s0->sw_mgmt_css326:ge7' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Thor AGX data cable"
 
 python3 - "${apply_script}" << 'PY'
 import importlib.util
@@ -172,6 +186,32 @@ assert module.normalize_interface_type({"name": "ge16"}) == "1000base-t"
 assert module.primary_ip_update_payload("172.16.99.6/24", 10, interface_bound=False) is None
 assert module.primary_ip_update_payload("172.16.99.156/24", 11, interface_bound=True) == {"primary_ip4": 11}
 assert module.primary_ip_update_payload("2001:db8::1/64", 12, interface_bound=True) == {"primary_ip6": 12}
+assert module.termination_cable({"cable": {"id": 3, "label": "existing"}}) == {
+    "id": 3,
+    "label": "existing",
+}
+assert module.termination_cable({"cable": None}) is None
+assert module.termination_cable({}) is None
+assert module.interface_mark_connected({"connected_device": "sw_mgmt_css326"}) is True
+assert module.interface_mark_connected(
+    {"connected_device": "sw_mgmt_css326", "connected_interface": "ge7"}
+) is False
+assert module.ip_assignment_matches_interface(
+    {"assigned_object_type": None},
+    {"id": 74},
+)
+assert module.ip_assignment_matches_interface(
+    {"assigned_object_type": "dcim.interface", "assigned_object_id": 74},
+    {"id": 74},
+)
+assert not module.ip_assignment_matches_interface(
+    {"assigned_object_type": "dcim.interface", "assigned_object_id": 11},
+    {"id": 74},
+)
+assert not module.ip_assignment_matches_interface(
+    {"assigned_object_type": "virtualization.vminterface", "assigned_object_id": 5},
+    {"id": 74},
+)
 assert module.ip_object_is_assigned_to_interface(
     {"assigned_object_type": "dcim.interface", "assigned_object_id": 74},
     {"id": 74},

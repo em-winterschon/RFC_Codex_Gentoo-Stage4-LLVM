@@ -99,6 +99,9 @@ devices:
       - name: ge6
         lag: hasslehoff-bond0
         status: active
+      - name: ge7
+        purpose: thor-agx-rj45-management
+        status: active
       - name: ge15
         purpose: lap-sun99-chonkers-lom
         status: active
@@ -394,6 +397,28 @@ devices:
     notes:
       - Temporary Hasslehoff staging VM for safe container-services migration.
       - Do not assign the production Path B service IP until cutover validation passes.
+  - name: agx_rfc99_bunnydev
+    site: local-rfc1918-lab
+    role: edge-ai-gpu-host
+    manufacturer: NVIDIA
+    model: Jetson AGX Thor
+    status: active
+    management_ip: 172.16.99.34
+    management_interface: enP2p1s0
+    fqdn: agx-rfc99-bunnydev.rfc1918.host
+    interfaces:
+      - name: enP2p1s0
+        type: 5gbase-t
+        purpose: management
+        connected_device: sw_mgmt_css326
+        connected_interface: ge7
+        status: active
+    notes:
+      - NVIDIA Thor AGX development host.
+      - RJ45 Realtek r8126 management link is connected to CSS326 ge7 and statically addressed as 172.16.99.34/24.
+      - CSS326 copper ports are 1GbE, so the RJ45 management path is expected to negotiate no faster than 1Gbps despite the Thor NIC capability.
+      - QSFP28 interface will be cabled separately to CRS354 qsfpplus2 as a four-lane 10G breakout for VM/OVS data-plane work.
+      - Keep GUI and vendor bloat reduction gated until SSH access confirms CUDA, MIG/vGPU, and required L4T services.
   - name: gmktek_nucbox_k10_stage5_candidate
     site: local-rfc1918-lab
     role: baremetal-workstation-validation
