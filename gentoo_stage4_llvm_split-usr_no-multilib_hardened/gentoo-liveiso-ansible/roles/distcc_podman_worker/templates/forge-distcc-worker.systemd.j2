@@ -1,0 +1,14 @@
+[Unit]
+Description=Forge Gentoo distcc worker container
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={{ distcc_podman_worker_start_script }}
+ExecStop=/usr/bin/podman stop -t 10 {{ distcc_podman_worker_container_name }}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

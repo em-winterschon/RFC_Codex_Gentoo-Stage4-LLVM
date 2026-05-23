@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec {{ coredns_resolver_binary_path | quote }} \
+  -conf {{ coredns_resolver_config_dir | quote }}/Corefile
