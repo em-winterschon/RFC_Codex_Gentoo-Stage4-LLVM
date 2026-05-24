@@ -82,6 +82,7 @@ resolve_vm_defaults() {
 }
 
 require_command() {
+  [[ "${PRINT_ONLY}" == '1' ]] && return 0
   command -v "$1" > /dev/null 2>&1 || fail "Required command is missing: $1"
 }
 
