@@ -105,7 +105,12 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" 'tr 
 assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" '95-universal-netboot-microcode.conf'
 assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" 'hostonly="no"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" 'early_microcode="yes"'
+assert_file_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "reject('match', '^root=')"
 assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'dracut --force --no-hostonly --early-microcode'
+assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective }}'
+assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'Mirror ZFSBootMenu EFI files to additional ESPs'
+assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'esp_partitions[1:]'
+assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'rsync -a --delete'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'Write OpenRC hostname fallback'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'dest: "{{ install_target_root }}/etc/conf.d/hostname"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'hostname="{{ install_hostname }}"'

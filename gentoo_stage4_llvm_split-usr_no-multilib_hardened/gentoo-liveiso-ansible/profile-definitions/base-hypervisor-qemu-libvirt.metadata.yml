@@ -26,4 +26,5 @@ gentoo_system_profile_metadata:
       - sys-fs/zfs
   openrc_services:
     - libvirtd
-    - openvswitch
+    - ovsdb-server
+    - ovs-vswitchd

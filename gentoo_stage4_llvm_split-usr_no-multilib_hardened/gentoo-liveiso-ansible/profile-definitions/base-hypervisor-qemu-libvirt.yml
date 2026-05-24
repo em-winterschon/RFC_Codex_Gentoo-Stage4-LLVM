@@ -46,6 +46,7 @@ gentoo_profile_definition:
   openrc_services_enable:
     - chronyd
     - libvirtd
-    - openvswitch
+    - ovsdb-server
+    - ovs-vswitchd
     - rsyslog
     - sshd

@@ -6,8 +6,8 @@ depend() {
 {% for interface in openrc_netifrc.interfaces | default([]) %}
   need net.{{ interface.name }}
 {% endfor %}
-  need openvswitch
-  after openvswitch
+  need ovsdb-server ovs-vswitchd
+  after ovs-vswitchd
 }
 
 start() {

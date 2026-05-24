@@ -75,6 +75,42 @@
     mode: '0755'
   when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
 
+- name: Check OpenRC OVS daemon services
+  ansible.builtin.stat:
+    path: "{{ install_target_root }}/etc/init.d/{{ openrc_ovs_daemon_service }}"
+  loop:
+    - ovsdb-server
+    - ovs-vswitchd
+  loop_control:
+    loop_var: openrc_ovs_daemon_service
+  register: openrc_ovs_daemon_service_stats
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Assert OpenRC OVS daemon services exist
+  ansible.builtin.assert:
+    that:
+      - openrc_ovs_daemon_service_stat.stat.exists
+    fail_msg: >-
+      OpenRC OVS fabric is enabled but
+      {{ install_target_root }}/etc/init.d/{{ openrc_ovs_daemon_service_stat.openrc_ovs_daemon_service }}
+      is missing. Install net-misc/openvswitch before enabling the OVS fabric.
+  loop: "{{ openrc_ovs_daemon_service_stats.results | default([]) }}"
+  loop_control:
+    loop_var: openrc_ovs_daemon_service_stat
+    label: "{{ openrc_ovs_daemon_service_stat.openrc_ovs_daemon_service }}"
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Enable OpenRC OVS daemon services
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('rc-update add ' + openrc_ovs_daemon_service + ' default') | quote }}
+  loop:
+    - ovsdb-server
+    - ovs-vswitchd
+  loop_control:
+    loop_var: openrc_ovs_daemon_service
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
 - name: Enable OpenRC OVS fabric service
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh

@@ -239,13 +239,21 @@
     - storage_layout == 'zfs-boot-root-mirror'
 
 - name: Set inherited ZFSBootMenu kernel command line on the root dataset tree
-  ansible.builtin.command: >-
-    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective | quote }} {{ zpool_name }}/ROOT
+  ansible.builtin.command:
+    argv:
+      - zfs
+      - set
+      - "org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective }}"
+      - "{{ zpool_name }}/ROOT"
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Set ZFSBootMenu kernel command line on the selected root dataset
-  ansible.builtin.command: >-
-    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective | quote }} {{ zpool_name }}/ROOT/gentoo
+  ansible.builtin.command:
+    argv:
+      - zfs
+      - set
+      - "org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective }}"
+      - "{{ zpool_name }}/ROOT/gentoo"
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Ensure the ZFSBootMenu EFI directory exists
@@ -320,6 +328,31 @@
     remote_src: true
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
+
+- name: Mirror ZFSBootMenu EFI files to additional ESPs
+  ansible.builtin.shell: |
+    set -euo pipefail
+    source_dir="{{ install_target_root }}/efi/"
+    target_dir="$(mktemp -d "{{ liveiso_work_dir }}/esp-mirror.XXXXXX")"
+    cleanup() {
+      if mountpoint -q "${target_dir}"; then
+        umount "${target_dir}"
+      fi
+      rmdir "${target_dir}" || true
+    }
+    trap cleanup EXIT
+
+    mount "{{ additional_esp_partition }}" "${target_dir}"
+    rsync -a --delete "${source_dir}" "${target_dir}/"
+    sync
+  args:
+    executable: /bin/bash
+  loop: "{{ esp_partitions[1:] }}"
+  loop_control:
+    loop_var: additional_esp_partition
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - esp_partitions | length > 1
 
 - name: Create ZFSBootMenu boot entry
   ansible.builtin.command: >-

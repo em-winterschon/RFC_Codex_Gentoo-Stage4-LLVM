@@ -24,7 +24,8 @@ gentoo_system_profile_metadata:
       - sys-cluster/rdma-core
       - sys-fs/zfs
   openrc_services:
-    - openvswitch
+    - ovsdb-server
+    - ovs-vswitchd
     - xenconsoled
     - xendomains
     - xenstored

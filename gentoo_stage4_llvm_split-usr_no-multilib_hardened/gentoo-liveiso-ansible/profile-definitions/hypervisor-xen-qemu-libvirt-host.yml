@@ -47,4 +47,5 @@ gentoo_profile_definition:
       zfs
   openrc_services_enable:
     - libvirtd
-    - openvswitch
+    - ovsdb-server
+    - ovs-vswitchd
