@@ -72,7 +72,7 @@ for atom in \
 done
 
 for atom in \
-  '^=app-emulation/qemu-10\.2\.0-r1$' \
+  '^=app-emulation/qemu-10\.2\.2$' \
   '^=app-emulation/libvirt-12\.0\.0$' \
   '^=app-emulation/guestfs-tools-1\.52\.3-r1$'; do
   require_grep "${atom}" "${PACKAGE_LIST_DIR}/stage5-base-hypervisor-qemu-libvirt.packages"
