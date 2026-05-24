@@ -15,7 +15,9 @@ mkdir -p "${state_dir}" "${log_dir}"
 {% set service_accelerator_profile = inference_service_accelerator_profiles[service_accelerator_name] %}
 exec {{ inference_service_container_engine }} run \
   --name "${container_name}" \
+{% if inference_service_container_engine == 'podman' %}
   --replace \
+{% endif %}
   --rm \
   --pull {{ inference_service.pull_policy | default(inference_service_pull_policy) | quote }} \
   --detach=false \

@@ -4,28 +4,34 @@
     resolved_inference_service_manager: >-
       {{ ansible_service_mgr if inference_service_manager == 'auto' else inference_service_manager }}
     resolved_inference_service_packages: >-
-      {{
+      {{ [] if inference_service_container_engine == 'docker' else
         inference_service_package_map.get(
           ansible_os_family,
           inference_service_package_map.get(ansible_distribution, [])
-        )
-      }}
+        ) }}
     resolved_inference_service_architecture: "{{ ansible_architecture | default('unknown') }}"
     resolved_inference_service_accelerator: "{{ inference_service_accelerator }}"
     resolved_inference_service_accelerator_profile: >-
-      {{ inference_service_accelerator_profiles[inference_service_accelerator] }}
-    resolved_inference_services: "{{ inference_service_definitions }}"
+      {{ inference_service_accelerator_profiles.get(inference_service_accelerator, {}) }}
+    resolved_inference_services: >-
+      {{ inference_service_definitions
+        | selectattr('name', 'equalto', inference_service_backend)
+        | list
+        if (inference_service_backend | default('') | length > 0)
+        else inference_service_definitions }}
 
 - name: Assert inference service inputs are supported
   ansible.builtin.assert:
     that:
-      - inference_service_container_engine == 'podman'
+      - inference_service_container_engine == 'podman' or
+        (inference_service_container_engine == 'docker' and inference_service_allow_docker_exception | bool)
       - resolved_inference_service_manager in ['systemd', 'openrc']
       - resolved_inference_service_accelerator in inference_service_accelerator_profiles
       - resolved_inference_services | length > 0
     fail_msg: >-
-      inference_service requires podman, systemd/openrc, a known accelerator
-      profile, and at least one service definition.
+      inference_service requires podman unless an explicit Docker exception is
+      allowed, systemd/openrc, a known accelerator profile, and at least one
+      selected service definition.
   when: inference_service_enabled | bool
 
 - name: Install inference service container prerequisites

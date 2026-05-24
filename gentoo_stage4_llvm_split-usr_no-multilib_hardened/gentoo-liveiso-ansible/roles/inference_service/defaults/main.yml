@@ -4,6 +4,9 @@ inference_service_state: started
 inference_service_enable_on_boot: true
 inference_service_manager: auto
 inference_service_container_engine: podman
+inference_service_allow_docker_exception: false
+inference_service_backend: ""
+inference_service_name: ""
 inference_service_config_dir: /etc/inference-services
 inference_service_libexec_dir: /usr/local/libexec/inference-services
 inference_service_state_root: /var/lib/inference
