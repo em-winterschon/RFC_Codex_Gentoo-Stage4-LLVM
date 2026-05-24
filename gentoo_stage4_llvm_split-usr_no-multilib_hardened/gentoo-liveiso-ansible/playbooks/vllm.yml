@@ -1,0 +1,12 @@
+---
+- name: Deploy vLLM inference service
+  hosts: vllm_servers
+  gather_facts: true
+  become: true
+
+  vars:
+    inference_service_backend: vllm
+    inference_service_name: vllm
+
+  roles:
+    - role: inference_service
