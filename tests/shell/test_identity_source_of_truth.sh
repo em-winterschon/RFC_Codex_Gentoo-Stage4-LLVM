@@ -24,11 +24,12 @@ playbook="${ANSIBLE_ROOT}/playbooks/identity-source-validate.yml"
 docs="${REPO_ROOT}/docs/IDENTITY-AAA.md"
 wiki_docs="${REPO_ROOT}/docs/wiki/Identity-AAA.md"
 run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-validation_output="${tmpdir}/identity-source-validation.json"
-sync_plan_output="${tmpdir}/identity-sync-plan.json"
-invalid_output="${tmpdir}/identity-source-invalid.out"
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+validation_json="${temp_dir}/identity-source-validation.json"
+sync_plan_json="${temp_dir}/identity-sync-plan.json"
+invalid_output="${temp_dir}/identity-source-invalid.out"
+invalid_fixture="${temp_dir}/invalid-identity-source.yml"
 
 assert_file_contains "${source_file}" "identity_source_definition:"
 assert_file_contains "${source_file}" "realm: RFC1918.HOST"
@@ -52,22 +53,21 @@ assert_file_contains "${wiki_docs}" "Identity Source Of Truth"
 assert_file_contains "${run_tests}" "test_identity_source_of_truth.sh"
 
 python3 -m py_compile "${validator}" "${renderer}"
-python3 "${validator}" "${source_file}" --format json > "${validation_output}"
-grep -Fq '"ok": true' "${validation_output}" || fail "identity source validation did not pass"
-grep -Fq '"users": 2' "${validation_output}" || fail "identity source user count mismatch"
-grep -Fq '"radius_clients": 1' "${validation_output}" || fail "identity source RADIUS client count mismatch"
-grep -Fq '"host_enrollments": 2' "${validation_output}" || fail "identity source host enrollment count mismatch"
+python3 "${validator}" "${source_file}" --format json > "${validation_json}"
+grep -Fq '"ok": true' "${validation_json}" || fail "identity source validation did not pass"
+grep -Fq '"users": 2' "${validation_json}" || fail "identity source user count mismatch"
+grep -Fq '"radius_clients": 1' "${validation_json}" || fail "identity source RADIUS client count mismatch"
+grep -Fq '"host_enrollments": 2' "${validation_json}" || fail "identity source host enrollment count mismatch"
 
-python3 "${renderer}" "${source_file}" --format json > "${sync_plan_output}"
-grep -Fq '"freeipa_groups"' "${sync_plan_output}" || fail "sync plan missing FreeIPA groups"
-grep -Fq '"freeipa_local_idrange"' "${sync_plan_output}" || fail "sync plan missing FreeIPA local ID range"
-grep -Fq '"freeipa_users"' "${sync_plan_output}" || fail "sync plan missing FreeIPA users"
-grep -Fq '"freeradius_clients"' "${sync_plan_output}" || fail "sync plan missing FreeRADIUS clients"
-grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' "${sync_plan_output}" || fail "sync plan missing PDU secret var reference"
-grep -Fq '"gmktek_nucbox_k10_stage5_candidate"' "${sync_plan_output}" || fail "sync plan missing K10 host enrollment"
-grep -Fq '"admin_sun99_forge_099070"' "${sync_plan_output}" || fail "sync plan missing M70 host enrollment"
+python3 "${renderer}" "${source_file}" --format json > "${sync_plan_json}"
+grep -Fq '"freeipa_groups"' "${sync_plan_json}" || fail "sync plan missing FreeIPA groups"
+grep -Fq '"freeipa_local_idrange"' "${sync_plan_json}" || fail "sync plan missing FreeIPA local ID range"
+grep -Fq '"freeipa_users"' "${sync_plan_json}" || fail "sync plan missing FreeIPA users"
+grep -Fq '"freeradius_clients"' "${sync_plan_json}" || fail "sync plan missing FreeRADIUS clients"
+grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' "${sync_plan_json}" || fail "sync plan missing PDU secret var reference"
+grep -Fq '"gmktek_nucbox_k10_stage5_candidate"' "${sync_plan_json}" || fail "sync plan missing K10 host enrollment"
+grep -Fq '"admin_sun99_forge_099070"' "${sync_plan_json}" || fail "sync plan missing M70 host enrollment"
 
-invalid_fixture="${tmpdir}/invalid-identity-source.yml"
 cat > "${invalid_fixture}" << 'EOF'
 ---
 identity_source_definition:
@@ -97,7 +97,7 @@ grep -Fq "unknown primary_group" "${invalid_output}" || fail "invalid fixture di
 grep -Fq "must use shared_secret_var" "${invalid_output}" || fail "invalid fixture did not reject plaintext secret"
 
 if command -v ansible-playbook > /dev/null 2>&1; then
-  tmp_inventory="${tmpdir}/hosts.yml"
+  tmp_inventory="${temp_dir}/hosts.yml"
   cat > "${tmp_inventory}" << 'EOF'
 ---
 all:

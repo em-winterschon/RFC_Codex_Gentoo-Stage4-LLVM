@@ -28,11 +28,6 @@ apply_script="${REPO_ROOT}/scripts/apply_identity_sync_plan.py"
 playbook="${ANSIBLE_ROOT}/playbooks/identity-source-apply.yml"
 docs="${REPO_ROOT}/docs/IDENTITY-AAA.md"
 run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-no_global_output="${tmpdir}/identity-apply-no-global.out"
-no_provider_output="${tmpdir}/identity-apply-no-provider.out"
-radius_no_provider_output="${tmpdir}/identity-radius-no-provider.conf"
 
 assert_file_contains "${apply_script}" "apply_identity_sync_plan"
 assert_file_contains "${apply_script}" "IDENTITY_SYNC_APPLY=1"
@@ -45,6 +40,12 @@ assert_file_contains "${docs}" "Gated Apply"
 assert_file_contains "${run_tests}" "test_identity_apply_plan.sh"
 
 python3 -m py_compile "${apply_script}"
+
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+no_global_output="${tmpdir}/identity-apply-no-global.out"
+no_provider_output="${tmpdir}/identity-apply-no-provider.out"
+no_provider_radius_output="${tmpdir}/identity-radius-no-provider.conf"
 
 leak_secret='super-secret-value-must-not-print'
 dry_run="$(
@@ -67,7 +68,7 @@ grep -Fq 'IDENTITY_SYNC_APPLY=1 is required' "${no_global_output}" ||
 
 if IDENTITY_SYNC_APPLY=1 \
   python3 "${apply_script}" "${source_file}" --apply --provider freeradius \
-  --freeradius-output "${radius_no_provider_output}" \
+  --freeradius-output "${no_provider_radius_output}" \
   > "${no_provider_output}" 2>&1; then
   fail "FreeRADIUS apply without provider gate unexpectedly passed"
 fi

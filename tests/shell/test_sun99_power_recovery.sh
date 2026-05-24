@@ -5,9 +5,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="${REPO_ROOT}/scripts/validate-sun99-power-recovery.sh"
 DOC="${REPO_ROOT}/docs/SUN99-POWER-RECOVERY.md"
 WIKI="${REPO_ROOT}/docs/wiki/Sun99-Power-Recovery.md"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-validation_output="${tmpdir}/sun99-power-recovery-test.out"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -23,6 +20,10 @@ require_grep() {
   local file=$2
   grep -q -- "${pattern}" "${file}" || fail "missing pattern '${pattern}' in ${file}"
 }
+
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+power_output="${temp_dir}/sun99-power-recovery-test.out"
 
 require_file "${SCRIPT}"
 bash -n "${SCRIPT}"
@@ -53,9 +54,9 @@ require_grep 'APC SRT1500RMXLA' "${WIKI}"
 require_grep 'ATS' "${WIKI}"
 require_grep 'Blackbox' "${WIKI}"
 
-SUN99_POWER_SKIP_LIVE=1 bash "${SCRIPT}" > "${validation_output}"
-grep -q 'summary: failures=0' "${validation_output}" || {
-  cat "${validation_output}" >&2
+SUN99_POWER_SKIP_LIVE=1 bash "${SCRIPT}" > "${power_output}"
+grep -q 'summary: failures=0' "${power_output}" || {
+  cat "${power_output}" >&2
   fail "repo-only power recovery validator did not pass"
 }
 

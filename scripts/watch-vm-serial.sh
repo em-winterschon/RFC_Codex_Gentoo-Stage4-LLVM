@@ -85,19 +85,23 @@ require_command() {
   command -v "$1" > /dev/null 2>&1 || fail "Required command is missing: $1"
 }
 
+require_command_for_execution() {
+  [[ "${PRINT_ONLY}" == '1' ]] || require_command "$1"
+}
+
 build_command() {
   case "${MODE}" in
   telnet)
-    require_command telnet
+    require_command_for_execution telnet
     printf '%s\0%s\0%s\0' telnet "${HOST}" "${PORT}"
     ;;
   socat)
-    require_command socat
+    require_command_for_execution socat
     printf '%s\0%s\0' socat "-,rawer,echo=0"
     printf '%s\0' "tcp:${HOST}:${PORT}"
     ;;
   nc)
-    require_command nc
+    require_command_for_execution nc
     printf '%s\0%s\0%s\0' nc "${HOST}" "${PORT}"
     ;;
   *)

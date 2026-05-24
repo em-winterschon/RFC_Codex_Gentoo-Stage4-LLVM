@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-pathb-vm.sh"
+TEST_TMP_ROOT="$(mktemp -d)"
+trap 'rm -rf "${TEST_TMP_ROOT}"' EXIT
 
 QEMU_PATHB_SOURCE_ONLY=1
 # shellcheck disable=SC1091
@@ -22,18 +24,18 @@ assert_contains() {
 
 reset_pathb_globals() {
   INSTANCE_NAME='pathb-ipxe-client'
-  QEMU_VM_DIR='/tmp/pathb-ipxe-client'
+  QEMU_VM_DIR="${TEST_TMP_ROOT}/pathb-ipxe-client"
   QEMU_ROOTDISK="${QEMU_VM_DIR}/root.qcow2"
   QEMU_IPXE_EFI_DIR="${QEMU_VM_DIR}/ipxe-efi"
   QEMU_PATHB_BOOT_MODE='ipxe'
-  QEMU_DIRECT_KERNEL='/tmp/pathb-vmlinuz'
-  QEMU_DIRECT_INITRD='/tmp/pathb-initramfs.img'
+  QEMU_DIRECT_KERNEL="${TEST_TMP_ROOT}/pathb-vmlinuz"
+  QEMU_DIRECT_INITRD="${TEST_TMP_ROOT}/pathb-initramfs.img"
   QEMU_DIRECT_ROOTFS_URL='http://10.9.8.108:8080/g/rootfs.img'
   QEMU_DIRECT_APPEND="console=tty0 console=ttyS0,115200 ip=dhcp rd.neednet=1 rd.live.image root=live:${QEMU_DIRECT_ROOTFS_URL}"
   QEMU_BIN='/usr/bin/qemu-system-x86_64'
-  EFI_FIRM='/tmp/OVMF_CODE.fd'
-  EFI_VARS_TEMPLATE='/tmp/OVMF_VARS.fd'
-  EFI_VARS_FILE='/tmp/pathb-ipxe-client.OVMF_VARS.fd'
+  EFI_FIRM="${TEST_TMP_ROOT}/OVMF_CODE.fd"
+  EFI_VARS_TEMPLATE="${TEST_TMP_ROOT}/OVMF_VARS.fd"
+  EFI_VARS_FILE="${TEST_TMP_ROOT}/pathb-ipxe-client.OVMF_VARS.fd"
   QEMU_MACHINE='q35,accel=kvm'
   QEMU_CPU='host'
   QEMU_SMP='16'
@@ -46,7 +48,7 @@ reset_pathb_globals() {
   QEMU_SERIAL_MODE='telnet'
   QEMU_SERIAL_HOST='127.0.0.1'
   QEMU_SERIAL_PORT='5003'
-  QEMU_SERIAL_FILE='/tmp/pathb-ipxe-client.serial.log'
+  QEMU_SERIAL_FILE="${TEST_TMP_ROOT}/pathb-ipxe-client.serial.log"
   QEMU_MEMORY_DRIVES_FILE=''
   QEMU_RESET_EFI_VARS='0'
   QEMU_DAEMONIZE='1'
@@ -54,7 +56,7 @@ reset_pathb_globals() {
   IP_BIN='/usr/sbin/ip'
   HOST_DISK_CACHE='writeback'
   LAUNCHER_LOG_ENABLE='0'
-  LAUNCHER_LOG_DIR='/tmp'
+  LAUNCHER_LOG_DIR="${TEST_TMP_ROOT}"
   LAUNCHER_LOG_FILE=''
   LAUNCHER_LOG_INITIALIZED=0
   QEMU_CMD=()

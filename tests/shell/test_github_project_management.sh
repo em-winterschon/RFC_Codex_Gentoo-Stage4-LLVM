@@ -23,6 +23,10 @@ assert_file_contains() {
   grep -Fq "${pattern}" "${file}" || fail "expected ${file} to contain ${pattern}"
 }
 
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+create_project_output="${tmpdir}/github-project-seed-project.out"
+
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/roadmap_task.yml" "name: Roadmap task"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/change_control.yml" "name: Change control"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/service_role.yml" "name: Service role"
@@ -76,10 +80,6 @@ grep -Fq 'relationship edges:' <<< "${dry_run}" ||
   fail 'dry run did not summarize relationship edges'
 grep -Fq 'https://github.com/example/example/issues/new?template=roadmap_task.yml' <<< "${dry_run}" ||
   fail 'dry run did not include issue query URL'
-
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-create_project_output="${tmpdir}/github-project-seed-project.out"
 
 if "${SEED}" --repo example/example --create-project > "${create_project_output}" 2>&1; then
   fail 'create-project succeeded without --apply'

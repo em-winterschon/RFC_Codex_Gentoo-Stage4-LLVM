@@ -5,11 +5,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="${REPO_ROOT}/scripts/backup-hasslehoff-scheduled.sh"
 DOC="${REPO_ROOT}/docs/HASSLEHOFF-BACKUP.md"
 WIKI="${REPO_ROOT}/docs/wiki/Hasslehoff-Backup.md"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-dry_run_output="${tmpdir}/hasslehoff-scheduled-backup-test.out"
-x12again_output="${tmpdir}/hasslehoff-scheduled-backup-x12again.out"
-preflight_output="${tmpdir}/hasslehoff-scheduled-backup-preflight.out"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -25,6 +20,14 @@ require_grep() {
   local file=$2
   grep -q -- "${pattern}" "${file}" || fail "missing pattern '${pattern}' in ${file}"
 }
+
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+dry_run_output="${temp_dir}/hasslehoff-scheduled-backup-test.out"
+x12again_output="${temp_dir}/hasslehoff-scheduled-backup-x12again.out"
+preflight_output="${temp_dir}/hasslehoff-scheduled-backup-preflight.out"
+preflight_dir="${temp_dir}/preflight"
+mkdir -p "${preflight_dir}"
 
 require_file "${SCRIPT}"
 bash -n "${SCRIPT}"
@@ -113,7 +116,6 @@ if HASSLEHOFF_BACKUP_DRY_RUN=1 \
 fi
 grep -qi 'x12again' "${x12again_output}" || fail "x12again rejection did not mention target"
 
-preflight_dir="$(mktemp -d)"
 HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1 \
   HASSLEHOFF_BACKUP_MIRROR_TARGET="${preflight_dir}" \
   bash "${SCRIPT}" > "${preflight_output}"
