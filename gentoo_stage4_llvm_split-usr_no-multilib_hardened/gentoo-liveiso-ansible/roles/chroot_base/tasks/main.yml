@@ -136,6 +136,13 @@
     content: "{{ install_hostname }}\n"
     mode: '0644'
 
+- name: Write OpenRC hostname fallback
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/conf.d/hostname"
+    content: |
+      hostname="{{ install_hostname }}"
+    mode: '0644'
+
 - name: Write keymap
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/etc/conf.d/keymaps"
