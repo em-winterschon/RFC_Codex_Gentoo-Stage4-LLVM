@@ -124,6 +124,9 @@ Validation evidence from 2026-05-24:
 - IPv6 is disabled on `eno1..eno4` via `/etc/sysctl.d/91-m70-reserved-x553.conf`
   so the host stack does not assign link-local addresses to reserved DPDK ports.
 
+Do not move the current `active-backup` bond to `802.3ad` until CSS326
+`ge14 + ge17` LACP membership has a tested mutation and validation path.
+
 Backout for the current live state is intentionally simple: restore the saved
 `/root/m70-net-pre-bond0-cutover.conf.<timestamp>` to `/etc/conf.d/net`, stop
 `net.bond0`, start `net.netboot0`, and validate SSH to `172.16.99.70`. CSS326
