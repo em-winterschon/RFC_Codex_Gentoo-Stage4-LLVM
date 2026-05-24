@@ -281,6 +281,21 @@ network_fabric_devices:
       - Kibana web interface for full-text infrastructure log search.
       - Initial target is the live CCR2004 SUN99 Elasticsearch VIP until the multi-node Elasticsearch service VIP is promoted.
 
+  inf_rfc99_noctosultris_099165:
+    role: inference-gpu-host
+    manufacturer: Supermicro
+    model: X12SPA-TF
+    status: planned
+    management_ip: 172.16.99.165
+    management_interface: pending-live-validate
+    fqdn: inf-rfc99-noctosultris-099165.rfc1918.host
+    bmc_ip: 172.16.199.111
+    notes:
+      - 64-thread Xeon inference host with 4x NVIDIA A4000 and Optane-backed memory configuration.
+      - Management IP moved from legacy 172.16.99.65 notation to 172.16.99.165 to avoid conflict with obs-sun99-vmetrics-099065.
+      - BMC endpoint is reachable on 172.16.199.111 (Supermicro IPMI 2.0, firmware 1.05).
+      - Switch port and cable mapping should be confirmed in NetBox before link-level policy automation is applied.
+
 network_fabric_links:
   - endpoint_a:
       device: sw_mgmt_css326
