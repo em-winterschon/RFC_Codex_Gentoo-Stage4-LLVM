@@ -1,0 +1,19 @@
+# Managed by Ansible role ssh_bastion_host.
+AllowTcpForwarding {{ 'yes' if ssh_bastion_host_allow_tcp_forwarding | bool else 'no' }}
+GatewayPorts {{ ssh_bastion_host_gateway_ports }}
+X11Forwarding {{ 'yes' if ssh_bastion_host_x11_forwarding | bool else 'no' }}
+AllowAgentForwarding {{ 'yes' if ssh_bastion_host_agent_forwarding | bool else 'no' }}
+PasswordAuthentication {{ 'yes' if ssh_bastion_host_password_authentication | bool else 'no' }}
+KbdInteractiveAuthentication {{ 'yes' if ssh_bastion_host_kbd_interactive_authentication | bool else 'no' }}
+PubkeyAuthentication {{ 'yes' if ssh_bastion_host_pubkey_authentication | bool else 'no' }}
+UsePAM {{ 'yes' if ssh_bastion_host_use_pam | bool else 'no' }}
+PermitTunnel {{ 'yes' if ssh_bastion_host_permit_tunnel | bool else 'no' }}
+ClientAliveInterval {{ ssh_bastion_host_client_alive_interval }}
+ClientAliveCountMax {{ ssh_bastion_host_client_alive_count_max }}
+{% if ssh_bastion_host_authorized_keys_command | length > 0 %}
+AuthorizedKeysCommand {{ ssh_bastion_host_authorized_keys_command }}
+AuthorizedKeysCommandUser {{ ssh_bastion_host_authorized_keys_command_user }}
+{% endif %}
+{% if ssh_bastion_host_allow_groups | length > 0 %}
+AllowGroups {{ ssh_bastion_host_allow_groups | join(' ') }}
+{% endif %}

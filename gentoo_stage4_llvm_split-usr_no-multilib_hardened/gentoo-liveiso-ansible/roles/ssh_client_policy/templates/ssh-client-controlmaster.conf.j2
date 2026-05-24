@@ -1,0 +1,8 @@
+# Managed by Ansible role ssh_client_policy.
+# Shared YukonSYS SSH client multiplexing policy.
+Host *
+  ControlMaster {{ ssh_client_policy_control_master }}
+  ControlPersist {{ ssh_client_policy_control_persist }}
+  ControlPath {{ ssh_client_policy_control_path }}
+  ServerAliveInterval {{ ssh_client_policy_server_alive_interval }}
+  ServerAliveCountMax {{ ssh_client_policy_server_alive_count_max }}

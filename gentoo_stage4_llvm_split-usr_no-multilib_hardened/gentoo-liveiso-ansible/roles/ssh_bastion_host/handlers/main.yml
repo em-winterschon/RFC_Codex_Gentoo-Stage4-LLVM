@@ -1,0 +1,8 @@
+---
+- name: Restart SSH bastion host sshd service
+  ansible.builtin.service:
+    name: "{{ ssh_bastion_host_sshd_service_name }}"
+    state: restarted
+  when:
+    - ssh_bastion_host_restart_sshd | bool
+    - ssh_bastion_host_live_root | default(false) | bool
