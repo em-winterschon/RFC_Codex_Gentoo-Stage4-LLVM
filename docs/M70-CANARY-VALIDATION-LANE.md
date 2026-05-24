@@ -236,6 +236,11 @@ launch rather than the Path B host script itself. Before another install
 attempt, find the concrete UEFI network boot target or per-NIC PXE enablement
 for the i211 `netboot0` controller.
 
+After the persistent ZFSBootMenu install is staged, the managed canary netboot
+role is `localdisk`. If firmware still attempts PXE first, the Path B
+dispatcher should match canary MAC `00:07:32:58:73:34` and chain the existing
+`localdisk` iPXE role instead of falling through to the installer menu.
+
 ## Serial-Hub Handling
 
 During USB hub power changes, all attached serial paths are considered

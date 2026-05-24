@@ -29,8 +29,8 @@ netboot_machine_type: metal
 netboot_arch: amd64
 netboot_platform: uefi
 netboot_firmware_policy: uefi-pxe-efi-only
-netboot_role: m70-canary-install
-netboot_status: persistent-install-pending
+netboot_role: localdisk
+netboot_status: local-zfsbootmenu-validation
 
 # Safety rails
 storage_confirm_destroy: true
