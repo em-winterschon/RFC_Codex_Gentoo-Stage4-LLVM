@@ -33,7 +33,8 @@ assert_first_before() {
 
 for role_dir in \
   jenkins_controller \
-  distcc_farm; do
+  distcc_farm \
+  kernel_config; do
   test -d "${ANSIBLE_ROOT}/roles/${role_dir}"
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
@@ -63,6 +64,10 @@ assert_file_contains "${ANSIBLE_ROOT}/playbooks/install.yml" 'jenkins_controller
 assert_file_contains "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'distcc_farm'
 assert_first_before "${ANSIBLE_ROOT}/playbooks/install.yml" 'distcc_farm' 'system_packages'
 assert_first_before "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'distcc_farm' 'system_packages'
+assert_first_before "${ANSIBLE_ROOT}/playbooks/install.yml" 'kernel_config' 'system_packages'
+assert_first_before "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'kernel_config' 'system_packages'
+assert_file_contains "${ANSIBLE_ROOT}/roles/kernel_config/tasks/main.yml" '/etc/kernel/config.d'
+assert_file_contains "${ANSIBLE_ROOT}/roles/kernel_config/tasks/main.yml" 'resolved_kernel_config_fragment_files'
 assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" 'Verify distcc client policy before system package build'
 assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" 'system_packages_distcc_farm.makeopts_jobs'
 test -f "${ANSIBLE_ROOT}/roles/distcc_farm/templates/distcc-client-wrapper.sh.j2"
@@ -104,6 +109,11 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'dracut --force
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'Write OpenRC hostname fallback'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'dest: "{{ install_target_root }}/etc/conf.d/hostname"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'hostname="{{ install_hostname }}"'
+assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'Write hosts file'
+assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" '127.0.1.1'
+assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'fqdn | default'
+assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'Ensure installkernel command line directory exists'
+assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'dest: "{{ install_target_root }}/etc/kernel/cmdline"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" 'Check profile OpenRC service init scripts'
 assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" '/etc/init.d/{{ openrc_service_name }}'
 assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" 'selectattr('"'"'stat.exists'"'"')'

@@ -44,7 +44,7 @@ test_portage_override_paths_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" "/etc/portage/env"
   assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" "/etc/portage/package.env"
   assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" "/etc/portage/package.accept_keywords"
-  assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" "/etc/kernel/config.d"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/kernel_config/tasks/main.yml" "/etc/kernel/config.d"
   assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" "zfs_package_atom"
   assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" "zfs_kmod_package_atom"
 }

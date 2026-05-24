@@ -30,6 +30,7 @@ install_role_sequences:
         summary: Install the target package stack, boot flow, network, and managed services.
         roles:
           - distcc_farm
+          - kernel_config
           - system_packages
           - boot
           - network
@@ -102,6 +103,7 @@ install_role_sequences:
       - id: target-integration
         summary: Install the kernel, configure the bootloader, and apply final network and service state.
         roles:
+          - kernel_config
           - kernel
           - bootloader
           - rsyslog_base
@@ -174,6 +176,7 @@ install_role_sequences:
         summary: Install the target package stack, boot flow, network, and managed services.
         roles:
           - distcc_farm
+          - kernel_config
           - system_packages
           - boot
           - network

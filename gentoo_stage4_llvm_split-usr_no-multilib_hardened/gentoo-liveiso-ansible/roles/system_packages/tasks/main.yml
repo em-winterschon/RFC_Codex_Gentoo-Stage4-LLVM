@@ -10,22 +10,6 @@
         )
       }}
 
-- name: Ensure kernel config fragment directory exists
-  ansible.builtin.file:
-    path: "{{ install_target_root }}/etc/kernel/config.d"
-    state: directory
-    mode: '0755'
-  when: (resolved_kernel_config_fragment_files | default({})) | length > 0
-
-- name: Install kernel config fragments
-  ansible.builtin.copy:
-    dest: "{{ install_target_root }}/etc/kernel/config.d/{{ kernel_config_fragment_file.key }}"
-    mode: '0644'
-    content: "{{ kernel_config_fragment_file.value | trim }}\n"
-  loop: "{{ (resolved_kernel_config_fragment_files | default({})) | dict2items }}"
-  loop_control:
-    loop_var: kernel_config_fragment_file
-
 - name: Resolve system package atom set
   ansible.builtin.set_fact:
     resolved_system_package_atoms: >-

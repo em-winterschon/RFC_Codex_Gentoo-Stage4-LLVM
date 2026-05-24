@@ -17,6 +17,7 @@
       - portage
       - chroot_base
       - distcc_farm
+      - kernel_config
       - system_packages
       - boot
       - network
