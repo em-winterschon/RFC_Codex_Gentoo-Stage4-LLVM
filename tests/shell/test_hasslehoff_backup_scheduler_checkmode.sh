@@ -18,6 +18,7 @@ grep -Fq "test_hasslehoff_backup_scheduler_checkmode.sh" "${RUN_TESTS}" ||
 if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   tmp_runtime="$(mktemp -d)"
+  checkmode_output="${tmp_runtime}/hasslehoff-backup-scheduler-checkmode.out"
   trap 'rm -f "${tmp_inventory}"; rm -rf "${tmp_runtime}"' EXIT
   cat > "${tmp_inventory}" << 'EOF'
 ---
@@ -39,8 +40,8 @@ EOF
     -e hasslehoff_backup_scheduler_apply=true \
     -e hasslehoff_backup_scheduler_run_preflight=false \
     -e hasslehoff_backup_scheduler_runtime_root="${tmp_runtime}" \
-    > /tmp/hasslehoff-backup-scheduler-checkmode.out
-  grep -Fq "PLAY RECAP" /tmp/hasslehoff-backup-scheduler-checkmode.out ||
+    > "${checkmode_output}"
+  grep -Fq "PLAY RECAP" "${checkmode_output}" ||
     fail "check-mode run did not reach recap"
 fi
 

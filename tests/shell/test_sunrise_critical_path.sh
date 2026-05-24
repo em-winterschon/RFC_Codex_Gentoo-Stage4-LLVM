@@ -21,6 +21,10 @@ require_grep() {
   grep -q -- "${pattern}" "${file}" || fail "missing pattern '${pattern}' in ${file}"
 }
 
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+sunrise_output="${temp_dir}/sunrise-critical-path-test.out"
+
 require_file "${SCRIPT}"
 bash -n "${SCRIPT}"
 require_grep 'SUNRISE_SKIP_LIVE' "${SCRIPT}"
@@ -47,9 +51,9 @@ require_grep 'FMT2 transport' "${WIKI}"
 require_grep 'SLURM pilot' "${WIKI}"
 require_grep 'X12AGAIN reimage' "${WIKI}"
 
-SUNRISE_SKIP_LIVE=1 bash "${SCRIPT}" > /tmp/sunrise-critical-path-test.out
-grep -q 'summary: failures=0' /tmp/sunrise-critical-path-test.out || {
-  cat /tmp/sunrise-critical-path-test.out >&2
+SUNRISE_SKIP_LIVE=1 bash "${SCRIPT}" > "${sunrise_output}"
+grep -q 'summary: failures=0' "${sunrise_output}" || {
+  cat "${sunrise_output}" >&2
   fail "repo-only sunrise validator did not pass"
 }
 

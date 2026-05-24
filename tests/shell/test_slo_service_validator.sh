@@ -31,6 +31,7 @@ python3 -m py_compile "${VALIDATOR}"
 
 temp_dir="$(mktemp -d)"
 trap 'kill "${http_pid:-}" >/dev/null 2>&1 || true; rm -rf "${temp_dir}"' EXIT
+closed_output="${temp_dir}/slo-validator-closed.out"
 
 mkdir -p "${temp_dir}/www"
 printf 'ok\n' > "${temp_dir}/www/healthz"
@@ -95,9 +96,9 @@ cat > "${temp_dir}/failed-slo.json" << 'EOF'
 }
 EOF
 
-if "${VALIDATOR}" --manifest "${temp_dir}/failed-slo.json" --json > /tmp/slo-validator-closed.out 2>&1; then
+if "${VALIDATOR}" --manifest "${temp_dir}/failed-slo.json" --json > "${closed_output}" 2>&1; then
   fail 'closed TCP port unexpectedly passed SLO validation'
 fi
-assert_contains "$(cat /tmp/slo-validator-closed.out)" '"slo_met": false'
+assert_contains "$(cat "${closed_output}")" '"slo_met": false'
 
 printf 'PASS: %s\n' "$(basename "$0")"
