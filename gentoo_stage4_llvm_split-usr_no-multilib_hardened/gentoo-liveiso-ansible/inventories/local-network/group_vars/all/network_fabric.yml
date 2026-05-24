@@ -182,6 +182,20 @@ network_fabric_devices:
       - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
       - Factory default config has 192.168.88.1/24 on ether15 and broad management services enabled; do not expose it to production L2 before hardening.
       - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10, then to the M70 Forge USB hub on 2026-05-17.
+  admin_sun99_forge_099070:
+    role: automation-admin
+    management_ip: 172.16.99.70
+    management_interface_target: bond0
+    initramfs_netboot_interface: netboot0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    model: Atom C3758 appliance
+    manufacturer: M70
+    status: active
+    notes:
+      - Persistent management target is bond0 over Intel i211 ports netboot0 and enp3s0.
+      - Initramfs and iPXE bootstrapping still use netboot0 with MAC 00:07:32:78:65:C6.
+      - Intel X553 ports eno1 through eno4 are reserved for OVS-DPDK, VPP, SR-IOV, and the lightweight Slurm VM path.
+      - The former eno2 host address 10.64.64.70/24 was removed on 2026-05-24 and must not be reintroduced as persistent host addressing.
   ctbsd_rfc99_jailerprime_099099:
     role: retired-freebsd-jail-host
     hypervisor: hasslehoff
@@ -326,9 +340,10 @@ network_fabric_links:
     endpoint_b:
       device: admin_sun99_forge_099070
       interface: netboot0
-    purpose: forge-management
+    purpose: m70-forge-management-lacp-member-and-initramfs-netboot
+    lag: m70-forge-bond0
     media: 1GBASE-T
-    status: active
+    status: approved-pending-cutover
     validation:
       method: css326-snmp-bridge-fdb
       observed_mac: "00:07:32:78:65:C6"
@@ -339,10 +354,10 @@ network_fabric_links:
     endpoint_b:
       device: admin_sun99_forge_099070
       interface: enp3s0
-    purpose: forge-transfer-lag-member
-    lag: forge-transfer-bond0
+    purpose: m70-forge-management-lacp-member
+    lag: m70-forge-bond0
     media: 1GBASE-T
-    status: active
+    status: approved-pending-cutover
     validation:
       method: css326-snmp-bridge-fdb-and-link-bounce
       observed_mac: "00:07:32:78:65:C7"
@@ -354,10 +369,10 @@ network_fabric_links:
     endpoint_b:
       device: admin_sun99_forge_099070
       interface: eno1
-    purpose: forge-transfer-lag-member
+    purpose: former-m70-forge-transfer-lag-member-release-to-ccr2004-ge3
     lag: forge-transfer-bond0
     media: 1GBASE-T
-    status: active
+    status: current-precutover-to-be-removed
     validation:
       method: css326-snmp-bridge-fdb
       observed_mac: "00:07:32:78:65:C8"
@@ -388,6 +403,38 @@ network_fabric_links:
       interface: sfp-sfpplus2
     purpose: crs354-uplink
     status: superseded-by-crs309-spine-plan
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge3
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno1
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: planned-after-bond0-cutover
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge4
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno2
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: active-unaddressed-host-port
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge5
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno3
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: planned
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge6
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno4
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: planned
   - endpoint_a:
       device: gw_rfc99_mkccr2004_16g
       interface: sfp-sfpplus2
@@ -503,6 +550,28 @@ network_fabric_lags:
       - eno1
       - eno2
     validated: true
+  m70-forge-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge14
+      - ge17
+    host: admin_sun99_forge_099070
+    host_ports:
+      - netboot0
+      - enp3s0
+    status: approved-pending-cutover
+    host_interface: bond0
+    linux_recommendation:
+      lacp_rate: fast
+      miimon: 100
+      xmit_hash_policy: layer3+4
+      management_address: 172.16.99.70/24
+      default_gateway: 172.16.99.1
+    notes:
+      - Approved target moves persistent M70 management from netboot0 to bond0.
+      - Initramfs netboot remains on netboot0 before the persistent OpenRC root starts bond0.
+      - Do not release eno1 for CCR2004/OVS-DPDK until SSH through bond0 is validated.
   forge-transfer-bond0:
     mode: 802.3ad
     switch: sw_mgmt_css326
@@ -513,7 +582,7 @@ network_fabric_lags:
     host_ports:
       - enp3s0
       - eno1
-    status: active
+    status: current-precutover-superseded-by-m70-forge-bond0
     host_interface: bond0
     address_family: unnumbered
     validation:
@@ -523,8 +592,8 @@ network_fabric_lags:
       css326_partner_mac: "8a:87:45:85:5d:5a"
       observed_at: 2026-05-15
     notes:
-      - bond0 is live and intentionally unnumbered on the M70.
-      - Do not place bond0 into a bridge or assign IPs until a staging VLAN or VM bridge change is explicitly approved.
+      - This is the pre-2026-05-24 live bond shape and should be removed during the m70-forge-bond0 cutover.
+      - The approved target is bond0 over netboot0 and enp3s0, with eno1 released for CCR2004/OVS-DPDK.
   crs309-crs354-lag:
     mode: 802.3ad
     switch_a: sw_spine_crs309_rfc99

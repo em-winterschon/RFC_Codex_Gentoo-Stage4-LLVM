@@ -135,6 +135,92 @@ local_inventory_observed:
     - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
     - bond0 is intentionally left unnumbered until a dedicated staging VLAN or VM bridge is explicitly assigned.
     - M70 is the temporary FMT2/SFO200 OpenVPN compatibility transport as of 2026-05-15; remove after a cleaner BigNetwork or router replacement path is validated.
+
+m70_network_target:
+  approved_at: "2026-05-24T16:24:11Z"
+  coordinator: LTC Forge
+  status: approved-pending-gated-cutover
+  service_address: 172.16.99.70/24
+  gateway: 172.16.99.1
+  initramfs_netboot_interface: netboot0
+  persistent_management_interface: bond0
+  persistent_management_service: net.bond0
+  openrc_network_config: /etc/conf.d/net
+  bond0:
+    mode: 802.3ad
+    lacp_rate: fast
+    miimon: 100
+    xmit_hash_policy: layer3+4
+    members:
+      - name: netboot0
+        pci_address: "0000:02:00.0"
+        driver: igb
+        chipset: Intel i211
+        mac_address: "00:07:32:78:65:C6"
+        switch: sw_mgmt_css326
+        switch_port: ge14
+      - name: enp3s0
+        pci_address: "0000:03:00.0"
+        driver: igb
+        chipset: Intel i211
+        mac_address: "00:07:32:78:65:C7"
+        switch: sw_mgmt_css326
+        switch_port: ge17
+    notes:
+      - The initramfs still names and uses netboot0 for iPXE/ZFS-root bootstrapping.
+      - The persistent root should move 172.16.99.70/24 and the default route from netboot0 to bond0 during the gated cutover.
+      - CSS326 LACP group 2 must move from ge17/ge18 to ge14/ge17 before restarting M70 networking.
+    openrc_fragment:
+      - config_bond0="172.16.99.70/24"
+      - routes_bond0="default via 172.16.99.1"
+      - slaves_bond0="netboot0 enp3s0"
+      - mode_bond0="802.3ad"
+      - lacp_rate_bond0="fast"
+      - miimon_bond0="100"
+      - xmit_hash_policy_bond0="layer3+4"
+  current_live_delta_as_of_2026_05_24:
+    netboot0: owns 172.16.99.70/24 and the default route.
+    bond0: currently contains enp3s0 plus eno1 and is unnumbered.
+    eno2: 10.64.64.70/24 was removed live; do not persist host addressing on eno2.
+  reserved_ovs_dpdk_sriov_ports:
+    - name: eno1
+      pci_address: "0000:06:00.0"
+      driver_before_binding: ixgbe
+      chipset: Intel X553
+      mac_address: "00:07:32:78:65:C8"
+      target_driver: vfio-pci
+      target_switch: gw_rfc99_mkccr2004_16g
+      target_switch_port: ge3
+      cutover_note: Move cable from CSS326 ge18 to CCR2004 ge3 after bond0 no longer uses eno1.
+    - name: eno2
+      pci_address: "0000:06:00.1"
+      driver_before_binding: ixgbe
+      chipset: Intel X553
+      mac_address: "00:07:32:78:65:C9"
+      target_driver: vfio-pci
+      target_switch: gw_rfc99_mkccr2004_16g
+      target_switch_port: ge4
+      cutover_note: 10.64.64.70/24 was removed; keep unnumbered for OVS-DPDK/VPP.
+    - name: eno3
+      pci_address: "0000:07:00.0"
+      driver_before_binding: ixgbe
+      chipset: Intel X553
+      mac_address: "00:07:32:78:65:CA"
+      target_driver: vfio-pci
+      target_switch: gw_rfc99_mkccr2004_16g
+      target_switch_port: ge5
+    - name: eno4
+      pci_address: "0000:07:00.1"
+      driver_before_binding: ixgbe
+      chipset: Intel X553
+      mac_address: "00:07:32:78:65:CB"
+      target_driver: vfio-pci
+      target_switch: gw_rfc99_mkccr2004_16g
+      target_switch_port: ge6
+  backout:
+    - Restore CSS326 LACP group 2 to ge17/ge18.
+    - Restore /etc/conf.d/net with config_netboot0 and routes_netboot0 for 172.16.99.70/24.
+    - Restart net.netboot0, then validate SSH to 172.16.99.70 before stopping net.bond0.
   usb_serial_console_gateway:
     captured_at: "2026-05-17T18:59:00Z"
     status: active
