@@ -14,10 +14,41 @@
   loop_control:
     loop_var: profile_modules_load_file
 
+- name: Check profile OpenRC service init scripts
+  ansible.builtin.stat:
+    path: "{{ install_target_root }}/etc/init.d/{{ openrc_service_name }}"
+  loop: "{{ resolved_profile_openrc_services_enable | default([]) }}"
+  loop_control:
+    loop_var: openrc_service_name
+  register: profile_openrc_service_init_scripts
+
+- name: Deferring profile OpenRC service enable when init script is absent
+  ansible.builtin.debug:
+    msg: >-
+      Deferring profile OpenRC service enable for
+      {{ profile_openrc_service_init_script.openrc_service_name }} because
+      {{ install_target_root }}/etc/init.d/{{ profile_openrc_service_init_script.openrc_service_name }}
+      is not present yet.
+  loop: >-
+    {{
+      profile_openrc_service_init_scripts.results | default([])
+      | rejectattr('stat.exists')
+      | list
+    }}
+  loop_control:
+    loop_var: profile_openrc_service_init_script
+    label: "{{ profile_openrc_service_init_script.openrc_service_name }}"
+
 - name: Enable profile OpenRC services
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
     {{ ('rc-update add ' + openrc_service_name + ' default') | quote }}
-  loop: "{{ resolved_profile_openrc_services_enable | default([]) }}"
+  loop: >-
+    {{
+      profile_openrc_service_init_scripts.results | default([])
+      | selectattr('stat.exists')
+      | map(attribute='openrc_service_name')
+      | list
+    }}
   loop_control:
     loop_var: openrc_service_name

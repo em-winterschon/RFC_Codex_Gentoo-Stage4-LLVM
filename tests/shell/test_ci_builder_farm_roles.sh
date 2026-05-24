@@ -40,7 +40,8 @@ done
 
 for profile in \
   vm-jenkins-controller.yml \
-  metal-builder-farm-node.yml; do
+  metal-builder-farm-node.yml \
+  hardware-intel-qat-c3000.yml; do
   test -f "${ANSIBLE_ROOT}/profile-definitions/${profile}"
   assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/${profile}" '^gentoo_profile_definition:'
 done
@@ -103,6 +104,15 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/boot/tasks/main.yml" 'dracut --force
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'Write OpenRC hostname fallback'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'dest: "{{ install_target_root }}/etc/conf.d/hostname"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" 'hostname="{{ install_hostname }}"'
+assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" 'Check profile OpenRC service init scripts'
+assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" '/etc/init.d/{{ openrc_service_name }}'
+assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" 'selectattr('"'"'stat.exists'"'"')'
+assert_file_contains "${ANSIBLE_ROOT}/roles/platform_profile/tasks/main.yml" 'Deferring profile OpenRC service enable'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/hardware-intel-qat-c3000.yml" 'qat_c3xxx'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/hardware-intel-qat-c3000.yml" 'CONFIG_CRYPTO_DEV_QAT_C3XXX=m'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/hardware-intel-qat-c3000.yml" 'dev-libs/openssl asm'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/m70_canary.yml" 'profile-definitions/hardware-intel-qat-c3000.yml'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/m70_canary.yml" 'qat-accelerated-crypto'
 assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-base-minimal-nox.packages" '^net-misc/dhcp$'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/base-minimal-nox.yml" 'net-misc/dhcp client -server'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/llvm-clang-hardened-portage.yml" 'net-misc/dhcp client -server'

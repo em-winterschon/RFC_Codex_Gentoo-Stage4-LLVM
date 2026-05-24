@@ -153,6 +153,33 @@ A visible test compile was preprocessed on M70 and compiled remotely on
 `172.16.99.108`. Keep this host as a scheduler/package-graph coordinator and
 use X12 for heavy compile slots.
 
+## QAT Acceleration Policy
+
+M70-class C3758 hosts expose Intel C3000 QuickAssist Technology. The canary has
+the QAT root port and accelerator device visible on PCI, and the live kernel has
+`qat_c3xxx` plus `intel_qat` loaded. Treat this as a machine-type capability for
+all C3758/M70 nodes, not a one-off canary detail.
+
+Provisioning policy:
+
+- Include the `hardware-intel-qat-c3000` profile for M70/C3758 hosts.
+- Include the `intel-qat-c3000` kernel fragment in C3758 kernel policy.
+- Autoload `qat_c3xxx` on the persistent OS.
+- Keep `linux-firmware` present; QAT firmware comes through the normal firmware
+  package path.
+
+Userspace policy:
+
+- Keep `dev-libs/openssl asm` enabled.
+- Do not claim stock Gentoo OpenSSL/OpenZFS QAT acceleration until the provider
+  path is validated.
+- Current canary repo checks did not find `qatlib`, `qatengine`, an OpenSSL QAT
+  provider, or QAT USE flags in `dev-libs/openssl`, `sys-fs/zfs`, or
+  `sys-fs/zfs-kmod`.
+- Next step is an explicit overlay/source package path for the Intel QAT
+  provider or engine and any OpenZFS QAT integration, followed by a benchmark
+  gate before enabling it broadly.
+
 Recommended refinements:
 
 - Keep generic `COMMON_FLAGS="-O2 -pipe"` for shared binpkgs.

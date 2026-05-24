@@ -1,0 +1,30 @@
+---
+gentoo_profile_definition:
+  metadata:
+    profile_id: hardware-intel-qat-c3000
+    description: >-
+      Intel Atom C3000/C3758 QuickAssist Technology hardware overlay for
+      M70-class hosts. Enables kernel QAT module policy and keeps userspace
+      crypto packages build-ready while QAT provider packaging is validated.
+  modules_load_files:
+    intel-qat-c3000.conf: |
+      qat_c3xxx
+  package_use_files:
+    20-intel-qat-c3000-crypto-readiness: |
+      # Keep OpenSSL optimized assembly enabled for C3758 hosts. Stock Gentoo
+      # OpenSSL and OpenZFS ebuilds currently expose no QAT USE flag; QAT
+      # provider/engine and OpenZFS QAT acceleration need an explicit overlay
+      # package or source-build path before they become default package policy.
+      dev-libs/openssl asm
+  kernel_config_fragment_files:
+    90-intel-qat-c3000.config: |
+      # Intel Atom C3000 / Denverton QuickAssist Technology support.
+      CONFIG_PCI_IOV=y
+      CONFIG_UIO=m
+      CONFIG_UIO_PCI_GENERIC=m
+      CONFIG_CRYPTO_DEV_QAT=m
+      CONFIG_CRYPTO_DEV_QAT_C3XXX=m
+      CONFIG_CRYPTO_DEV_QAT_C3XXXVF=m
+      CONFIG_VFIO_PCI_CORE=m
+      CONFIG_VFIO_PCI=m
+      CONFIG_QAT_VFIO_PCI=m

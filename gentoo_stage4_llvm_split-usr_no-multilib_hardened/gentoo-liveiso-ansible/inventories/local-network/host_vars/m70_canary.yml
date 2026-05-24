@@ -99,6 +99,7 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/base-hypervisor-qemu-libvirt.yml"
   - "{{ playbook_dir }}/../profile-definitions/slurm-worker-node.yml"
   - "{{ playbook_dir }}/../profile-definitions/metal-builder-farm-node.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardware-intel-qat-c3000.yml"
 profile_package_atoms:
   - sys-firmware/intel-microcode
   - sys-kernel/linux-firmware
@@ -302,6 +303,7 @@ slurm_node_real_memory_mb: 32000
 slurm_node_features:
   - m70
   - atom-c3758
+  - qat-accelerated-crypto
   - canary
   - build
   - validation

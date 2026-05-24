@@ -66,6 +66,24 @@ hardware_subprofiles:
     notes:
       - Keep Optane/NVDIMM support out of the default workstation profile.
       - Prefer this overlay for storage and coherence nodes participating in data-tiering operations.
+  intel-qat-c3000:
+    fragments:
+      - fragments/hardware/intel-qat-c3000.config
+    allowed_roles:
+      - m70
+      - builder-farm
+      - hypervisor-qemu-libvirt
+      - storage-node
+    host_overrides:
+      - hostname_aliases:
+          - m70_canary
+          - m70n2
+          - sbsoc-accel-int64-m70n2
+        reason: M70 canary uses Intel Atom C3758 with Intel C3000 QuickAssist Technology.
+    notes:
+      - Use on Intel Atom C3000/C3758 hosts with QAT PCI device 8086:19e2.
+      - Loads `qat_c3xxx` for kernel crypto acceleration readiness.
+      - Userspace OpenSSL/OpenZFS QAT acceleration still requires a validated QAT provider, engine, qatlib, or source overlay path.
   gpu-universal-xorg:
     fragments:
       - fragments/hardware/gpu-universal-xorg.config
