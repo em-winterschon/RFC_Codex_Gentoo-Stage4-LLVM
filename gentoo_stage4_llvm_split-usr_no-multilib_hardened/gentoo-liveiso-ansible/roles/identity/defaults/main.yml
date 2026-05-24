@@ -1,0 +1,3 @@
+---
+install_root_authorized_keys_seed_enabled: true
+install_root_authorized_keys_source_file: /root/.ssh/authorized_keys

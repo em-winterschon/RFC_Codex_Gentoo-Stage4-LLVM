@@ -152,6 +152,13 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/base-hypervisor-qemu-l
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/slurm-worker-node.yml" 'sys-cluster/rdma-core -python'
 assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-base-hypervisor-common.packages" '^sys-firmware/intel-microcode$'
 assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-base-hypervisor-common.packages" '^sys-kernel/linux-firmware$'
+test -f "${ANSIBLE_ROOT}/roles/identity/defaults/main.yml"
+assert_file_contains "${ANSIBLE_ROOT}/roles/identity/defaults/main.yml" '^install_root_authorized_keys_seed_enabled: true$'
+assert_file_contains "${ANSIBLE_ROOT}/roles/identity/defaults/main.yml" '^install_root_authorized_keys_source_file: /root/.ssh/authorized_keys$'
+assert_file_contains "${ANSIBLE_ROOT}/roles/identity/tasks/main.yml" 'Validate controller root authorized_keys source'
+assert_file_contains "${ANSIBLE_ROOT}/roles/identity/tasks/main.yml" 'Seed target root authorized_keys from controller source'
+assert_file_contains "${ANSIBLE_ROOT}/roles/identity/tasks/main.yml" 'dest: "{{ install_target_root }}/root/.ssh/authorized_keys"'
+assert_file_contains "${ANSIBLE_ROOT}/roles/identity/tasks/main.yml" "mode: '0600'"
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" 'ci_controllers:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" 'builder_farm_nodes:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/host_vars/vm-jenkins-controller.yml" '^profile_definition_files:'
