@@ -1,0 +1,146 @@
+---
+- name: Resolve CoreDNS service manager
+  ansible.builtin.set_fact:
+    coredns_resolver_resolved_service_manager: >-
+      {{
+        ansible_service_mgr
+        if coredns_resolver_service_manager == 'auto'
+        else coredns_resolver_service_manager
+      }}
+  when: coredns_resolver_enabled | bool
+
+- name: Validate CoreDNS service policy
+  ansible.builtin.assert:
+    that:
+      - coredns_resolver_runtime in ['native', 'podman']
+      - coredns_resolver_resolved_service_manager in ['openrc', 'systemd']
+      - >-
+        coredns_resolver_resolved_service_manager != 'systemd'
+        or coredns_resolver_allow_systemd_on_native_hosts | bool
+    fail_msg: >-
+      coredns_resolver supports OpenRC and native systemd only. systemd is
+      permitted only on distributions where it is the native service substrate.
+  when:
+    - coredns_resolver_enabled | bool
+    - coredns_resolver_manage_service | bool
+
+- name: Install CoreDNS resolver host packages
+  ansible.builtin.package:
+    name: >-
+      {{
+        coredns_resolver_native_packages
+        if coredns_resolver_runtime == 'native'
+        else coredns_resolver_container_packages
+      }}
+    state: present
+  when:
+    - coredns_resolver_enabled | bool
+    - coredns_resolver_install_packages | bool
+
+- name: Ensure CoreDNS resolver directories exist
+  ansible.builtin.file:
+    path: "{{ coredns_resolver_dir.path }}"
+    state: directory
+    owner: "{{ coredns_resolver_dir.owner | default('root') }}"
+    group: "{{ coredns_resolver_dir.group | default('root') }}"
+    mode: "{{ coredns_resolver_dir.mode }}"
+  loop:
+    - path: "{{ coredns_resolver_config_dir }}"
+      mode: "0755"
+    - path: "{{ coredns_resolver_zone_dir }}"
+      mode: "0755"
+    - path: "{{ coredns_resolver_log_dir }}"
+      mode: "0755"
+  loop_control:
+    loop_var: coredns_resolver_dir
+  when: coredns_resolver_enabled | bool
+
+- name: Render CoreDNS Corefile
+  ansible.builtin.template:
+    src: Corefile.j2
+    dest: "{{ coredns_resolver_config_dir }}/Corefile"
+    owner: root
+    group: root
+    mode: "0644"
+  when: coredns_resolver_enabled | bool
+
+- name: Render CoreDNS zone files
+  ansible.builtin.template:
+    src: zone.db.j2
+    dest: "{{ coredns_resolver_zone_dir }}/db.{{ coredns_zone.name }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ coredns_resolver_zones }}"
+  loop_control:
+    loop_var: coredns_zone
+  when: coredns_resolver_enabled | bool
+
+- name: Render CoreDNS resolver launcher
+  ansible.builtin.template:
+    src: >-
+      {{
+        'coredns-resolver-native-start.sh.j2'
+        if coredns_resolver_runtime == 'native'
+        else 'coredns-resolver-podman-start.sh.j2'
+      }}
+    dest: "{{ coredns_resolver_start_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: coredns_resolver_enabled | bool
+
+- name: Render CoreDNS OpenRC service
+  ansible.builtin.template:
+    src: coredns-resolver.openrc.j2
+    dest: /etc/init.d/{{ coredns_resolver_service_name }}
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - coredns_resolver_enabled | bool
+    - coredns_resolver_manage_service | bool
+    - coredns_resolver_resolved_service_manager == 'openrc'
+
+- name: Render CoreDNS systemd service
+  ansible.builtin.template:
+    src: coredns-resolver.systemd.j2
+    dest: /etc/systemd/system/{{ coredns_resolver_service_name }}.service
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - coredns_resolver_enabled | bool
+    - coredns_resolver_manage_service | bool
+    - coredns_resolver_resolved_service_manager == 'systemd'
+
+- name: Enable and start CoreDNS with OpenRC
+  block:
+    - name: Ensure CoreDNS OpenRC runlevel entry exists
+      ansible.builtin.command: >-
+        rc-update add {{ coredns_resolver_service_name }}
+        {{ coredns_resolver_openrc_runlevel }}
+      register: coredns_resolver_rc_update
+      changed_when: "'already installed' not in coredns_resolver_rc_update.stdout"
+
+    - name: Restart CoreDNS OpenRC service
+      ansible.builtin.command: rc-service {{ coredns_resolver_service_name }} restart
+      register: coredns_resolver_openrc_restart
+      changed_when: coredns_resolver_openrc_restart.rc == 0
+  when:
+    - coredns_resolver_enabled | bool
+    - coredns_resolver_manage_service | bool
+    - coredns_resolver_start_service | bool
+    - coredns_resolver_resolved_service_manager == 'openrc'
+
+- name: Enable and start CoreDNS with native systemd
+  ansible.builtin.systemd:
+    name: "{{ coredns_resolver_service_name }}.service"
+    enabled: true
+    state: restarted
+    daemon_reload: true
+  when:
+    - coredns_resolver_enabled | bool
+    - coredns_resolver_manage_service | bool
+    - coredns_resolver_start_service | bool
+    - coredns_resolver_resolved_service_manager == 'systemd'

@@ -440,6 +440,21 @@ devices:
       - LAN-only MCP control-plane VM for Nginx-UI and future FastMCP wrappers.
       - Required before live deployment: Nginx-UI vault secrets, RFC1918 TLS material, DNS records, and HAProxy config with MCP query-string logging disabled.
       - Docker socket access must remain disabled unless a separate mutation proposal is approved.
+  - name: inf_rfc99_noctosultris_099165
+    site: local-rfc1918-lab
+    role: inference-gpu-host
+    manufacturer: Supermicro
+    model: X12SPA-TF
+    status: planned
+    management_ip: 172.16.99.165
+    management_interface: pending-live-validate
+    fqdn: inf-rfc99-noctosultris-099165.rfc1918.host
+    bmc_ip: 172.16.199.111
+    notes:
+      - Inference GPU host with Xeon 8370C class CPU and 4x NVIDIA A4000.
+      - Management IP uses 172.16.99.165/24 to avoid conflict with existing VictoriaMetrics VM at 172.16.99.65.
+      - BMC endpoint is active at 172.16.199.111 and should be used for OOB power/control tasks.
+      - Switch interface/cable mapping should be captured in NetBox before enabling port policy automation.
   - name: gmktek_nucbox_k10_stage5_candidate
     site: local-rfc1918-lab
     role: baremetal-workstation-validation

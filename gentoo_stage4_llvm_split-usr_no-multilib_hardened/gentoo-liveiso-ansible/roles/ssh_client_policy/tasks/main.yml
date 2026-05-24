@@ -1,0 +1,148 @@
+---
+- name: Resolve SSH client policy runtime paths
+  ansible.builtin.set_fact:
+    ssh_client_policy_live_root: "{{ ssh_client_policy_install_root in ['', '/'] }}"
+    ssh_client_policy_root_prefix: "{{ '' if ssh_client_policy_install_root in ['', '/'] else ssh_client_policy_install_root }}"
+
+- name: Report SSH client policy dry-run state
+  ansible.builtin.debug:
+    msg:
+      enabled: "{{ ssh_client_policy_enabled | bool }}"
+      apply: "{{ ssh_client_policy_apply | bool }}"
+      manage_controlmaster: "{{ ssh_client_policy_manage_controlmaster | bool }}"
+      manage_bastion_routing: "{{ ssh_client_policy_manage_bastion_routing | bool }}"
+      bastion_host: "{{ ssh_client_policy_bastion_host }}"
+      validation_target: "{{ ssh_client_policy_validation_target }}"
+  when: not ssh_client_policy_enabled | bool
+
+- name: Refuse SSH client policy mutation without explicit apply gate
+  ansible.builtin.assert:
+    that:
+      - ssh_client_policy_apply | bool
+    fail_msg: >-
+      SSH client policy requires ssh_client_policy_enabled=true and
+      ssh_client_policy_apply=true before mutating /etc/ssh.
+  when: ssh_client_policy_enabled | bool
+
+- name: Require bastion host when bastion routing is enabled
+  ansible.builtin.assert:
+    that:
+      - ssh_client_policy_bastion_host | length > 0
+      - ssh_client_policy_bastion_patterns | length > 0
+    fail_msg: >-
+      Bastion routing requires ssh_client_policy_bastion_host and at least one
+      ssh_client_policy_bastion_patterns entry.
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_manage_bastion_routing | bool
+
+- name: Ensure SSH client policy directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ ssh_client_policy_root_prefix }}/etc/ssh/ssh_config.d"
+    - "{{ ssh_client_policy_root_prefix }}{{ ssh_client_policy_backup_dir }}"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+
+- name: Inspect base ssh_config for backup
+  ansible.builtin.stat:
+    path: "{{ ssh_client_policy_root_prefix }}/etc/ssh/ssh_config"
+  register: ssh_client_policy_base_config
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+
+- name: Back up base ssh_config before SSH client policy mutation
+  ansible.builtin.copy:
+    src: "{{ ssh_client_policy_root_prefix }}/etc/ssh/ssh_config"
+    dest: "{{ ssh_client_policy_root_prefix }}{{ ssh_client_policy_backup_dir }}/ssh_config.pre-yukon"
+    remote_src: true
+    force: false
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_base_config.stat.exists | default(false)
+
+- name: Render YukonSYS SSH ControlMaster policy
+  ansible.builtin.template:
+    src: ssh-client-controlmaster.conf.j2
+    dest: "{{ ssh_client_policy_root_prefix }}/etc/ssh/ssh_config.d/20-yukon-controlmaster.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "ssh -F %s -G {{ ssh_client_policy_validation_target }}"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_manage_controlmaster | bool
+
+- name: Render YukonSYS SSH bastion routing policy
+  ansible.builtin.template:
+    src: ssh-client-bastion-routing.conf.j2
+    dest: "{{ ssh_client_policy_root_prefix }}/etc/ssh/ssh_config.d/30-yukon-bastion-routing.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "ssh -F %s -G {{ ssh_client_policy_validation_target }}"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_manage_bastion_routing | bool
+
+- name: Render YukonSYS SSH host aliases
+  ansible.builtin.template:
+    src: ssh-client-host-aliases.conf.j2
+    dest: "{{ ssh_client_policy_root_prefix }}/etc/ssh/ssh_config.d/40-yukon-host-aliases.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "ssh -F %s -G {{ ssh_client_policy_validation_target }}"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_manage_host_aliases | bool
+
+- name: Ensure per-user ControlMaster directories exist
+  ansible.builtin.file:
+    path: "{{ ssh_client_policy_root_prefix }}{{ item.home }}/.ssh/controlmasters"
+    state: directory
+    owner: "{{ item.user }}"
+    group: "{{ item.group | default(item.user) }}"
+    mode: "0700"
+  loop: "{{ ssh_client_policy_user_homes }}"
+  loop_control:
+    label: "{{ item.user }}"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_manage_controlmaster | bool
+    - ssh_client_policy_user_homes | length > 0
+
+- name: Read effective SSH client policy after apply
+  ansible.builtin.command: "ssh -G {{ ssh_client_policy_validation_target }}"
+  register: ssh_client_policy_effective
+  changed_when: false
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_live_root | bool
+    - ssh_client_policy_validation_target | length > 0
+
+- name: Report effective SSH client policy after apply
+  ansible.builtin.debug:
+    msg: "{{ ssh_client_policy_effective.stdout_lines | select('match', '^(proxyjump|controlmaster|controlpersist|controlpath) ') | list }}"
+  when:
+    - ssh_client_policy_enabled | bool
+    - ssh_client_policy_apply | bool
+    - ssh_client_policy_live_root | bool
+    - ssh_client_policy_effective is defined

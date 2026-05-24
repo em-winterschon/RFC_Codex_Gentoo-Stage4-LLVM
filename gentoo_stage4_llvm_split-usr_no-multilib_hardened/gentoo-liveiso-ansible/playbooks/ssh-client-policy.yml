@@ -1,0 +1,7 @@
+---
+- name: Apply or validate centralized SSH client policy
+  hosts: "{{ ssh_client_policy_hosts | default('ssh_client_policy_targets') }}"
+  gather_facts: true
+  become: true
+  roles:
+    - role: ssh_client_policy

@@ -20,6 +20,7 @@
         state: file
         suffix: .json
       register: hetzner_dns_token_group_file
+      check_mode: false
 
     - name: Generate Hetzner DNS inventory report with temporary token material
       block:
@@ -29,6 +30,7 @@
             mode: "0600"
             content: "{{ hetzner_dns_token_groups | to_nice_json }}"
           no_log: true
+          check_mode: false
 
         - name: Generate read-only Hetzner DNS inventory report
           ansible.builtin.command:
@@ -44,6 +46,7 @@
               - --output
               - "{{ hetzner_dns_inventory_output }}"
           changed_when: false
+          check_mode: false
 
         - name: Read Hetzner DNS inventory report
           ansible.builtin.slurp:
@@ -65,3 +68,4 @@
             path: "{{ hetzner_dns_token_group_file.path }}"
             state: absent
           when: hetzner_dns_token_group_file.path is defined
+          check_mode: false
