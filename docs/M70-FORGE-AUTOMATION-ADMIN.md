@@ -121,6 +121,8 @@ Validation evidence from 2026-05-24:
   `C9` on `ge4`, `CA` on `ge5`, and `CB` on `ge6` after L2 ARP probes.
 - `eno2` has no `10.64.64.70/24`; `eno1..eno4` remain unnumbered and reserved
   for OVS-DPDK/VPP/SR-IOV ownership.
+- IPv6 is disabled on `eno1..eno4` via `/etc/sysctl.d/91-m70-reserved-x553.conf`
+  so the host stack does not assign link-local addresses to reserved DPDK ports.
 
 Backout for the current live state is intentionally simple: restore the saved
 `/root/m70-net-pre-bond0-cutover.conf.<timestamp>` to `/etc/conf.d/net`, stop

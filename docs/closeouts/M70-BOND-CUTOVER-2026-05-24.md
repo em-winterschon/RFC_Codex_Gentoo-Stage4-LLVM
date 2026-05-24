@@ -20,6 +20,8 @@ slave.
 - `net.netboot0` was removed from the default runlevel after cutover; it was not
   stopped live because `netboot0` is the active bond slave.
 - `eno2` has no `10.64.64.70/24` address.
+- IPv6 link-local addressing is disabled on `eno1..eno4` through
+  `/etc/sysctl.d/91-m70-reserved-x553.conf`.
 
 ## X553 To CCR2004 Mapping
 

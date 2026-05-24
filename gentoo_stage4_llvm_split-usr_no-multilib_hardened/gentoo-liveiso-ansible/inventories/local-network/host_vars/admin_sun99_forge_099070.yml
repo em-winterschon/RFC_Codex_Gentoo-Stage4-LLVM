@@ -199,6 +199,15 @@ m70_network_target:
     openvpn_fmt2: restarted after network bounce; FMT2 routes restored through tun-fmt2.
     net_netboot0_runlevel: removed from default runlevel after cutover; service was not stopped live.
     eno2: 10.64.64.70/24 was removed live; do not persist host addressing on eno2.
+  reserved_port_host_stack_policy:
+    ipv4_addresses: none
+    ipv6_link_local: disabled
+    sysctl_file: /etc/sysctl.d/91-m70-reserved-x553.conf
+    sysctl_keys:
+      - net.ipv6.conf.eno1.disable_ipv6=1
+      - net.ipv6.conf.eno2.disable_ipv6=1
+      - net.ipv6.conf.eno3.disable_ipv6=1
+      - net.ipv6.conf.eno4.disable_ipv6=1
   reserved_ovs_dpdk_sriov_ports:
     - name: eno1
       pci_address: "0000:06:00.0"
