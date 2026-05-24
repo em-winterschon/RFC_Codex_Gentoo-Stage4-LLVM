@@ -66,6 +66,7 @@
   when:
     - ssh_bastion_host_enabled | bool
     - ssh_bastion_host_apply | bool
+    - not ansible_check_mode
     - ssh_bastion_host_base_config.stat.exists | default(false)
 
 - name: Ensure sshd includes drop-in directory

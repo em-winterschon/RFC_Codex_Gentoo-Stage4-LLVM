@@ -71,6 +71,7 @@
   when:
     - ssh_client_policy_enabled | bool
     - ssh_client_policy_apply | bool
+    - not ansible_check_mode
     - ssh_client_policy_base_config.stat.exists | default(false)
 
 - name: Render YukonSYS SSH ControlMaster policy
