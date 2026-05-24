@@ -121,7 +121,7 @@ python3 -m py_compile "${validator}"
 python3 -m py_compile "${apply_script}"
 python3 "${validator}" "${example}" --format json > /dev/null
 python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json > /tmp/netbox-intake-all-sites-validation.json
-grep -Fq '"devices": 34' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
+grep -Fq '"devices": 35' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
 python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json > /tmp/netbox-intake-apply-plan.json
 grep -Fq '"dry_run": true' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not default to dry-run"
 grep -Fq 'dcim/sites:local-rfc1918-lab' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include site"
