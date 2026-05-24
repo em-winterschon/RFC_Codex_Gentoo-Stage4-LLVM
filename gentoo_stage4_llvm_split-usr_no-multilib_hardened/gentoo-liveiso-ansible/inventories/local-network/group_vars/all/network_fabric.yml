@@ -35,7 +35,9 @@ network_fabric_devices:
   admin_sun99_forge_099070:
     role: automation-admin
     management_ip: 172.16.99.70
-    management_interface: eth0
+    management_interface: bond0
+    management_interface_target: bond0
+    initramfs_netboot_interface: netboot0
     fqdn: admin-sun99-forge-099070.rfc1918.host
     dns_aliases:
       - admin-sun99-forge.rfc1918.host
@@ -44,6 +46,14 @@ network_fabric_devices:
     primary_mac: 00:07:32:78:65:C6
     connected_switch: sw_mgmt_css326
     connected_switch_port: ge14
+    management_bond_members:
+      - netboot0
+      - enp3s0
+    ovs_dpdk_reserved_interfaces:
+      - eno1
+      - eno2
+      - eno3
+      - eno4
     pdu_name: pdu-rfc99-corectrl-099241
     pdu_outlet: "4"
     pdu_outlet_label: admin-sun99-forge
@@ -66,6 +76,9 @@ network_fabric_devices:
       - 2026-05-14 provisioning created zroot as a mirrored ZFS root on both KIOXIA NVMe devices and repeat-reboot validated persistent root at 172.16.99.70.
       - 2026-05-15 CSS326 SNMP bridge FDB validated netboot0 on ge14, enp3s0 on ge17, and eno1 on ge18.
       - 2026-05-15 bond0 LACP over CSS326 ge17/ge18 was activated for unnumbered Forge transfer and VM staging use.
+      - 2026-05-24 approved target moves persistent management to bond0 over netboot0/enp3s0 on CSS326 ge14/ge17.
+      - 2026-05-24 approved target reserves Intel X553 eno1..eno4 for OVS-DPDK, VPP, SR-IOV, and the lightweight Slurm VM path.
+      - 2026-05-24 removed 10.64.64.70/24 from eno2; do not reintroduce persistent host addressing on X553 ports.
       - Observed memory is 32 GiB despite planned 64 GiB; validate DIMMs before scheduling memory-heavy workloads.
       - Must validate X12AGAIN SoL through /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin before Prinzessin reimage.
   sw_mgmt_css326:
@@ -182,20 +195,6 @@ network_fabric_devices:
       - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
       - Factory default config has 192.168.88.1/24 on ether15 and broad management services enabled; do not expose it to production L2 before hardening.
       - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10, then to the M70 Forge USB hub on 2026-05-17.
-  admin_sun99_forge_099070:
-    role: automation-admin
-    management_ip: 172.16.99.70
-    management_interface_target: bond0
-    initramfs_netboot_interface: netboot0
-    fqdn: admin-sun99-forge-099070.rfc1918.host
-    model: Atom C3758 appliance
-    manufacturer: M70
-    status: active
-    notes:
-      - Persistent management target is bond0 over Intel i211 ports netboot0 and enp3s0.
-      - Initramfs and iPXE bootstrapping still use netboot0 with MAC 00:07:32:78:65:C6.
-      - Intel X553 ports eno1 through eno4 are reserved for OVS-DPDK, VPP, SR-IOV, and the lightweight Slurm VM path.
-      - The former eno2 host address 10.64.64.70/24 was removed on 2026-05-24 and must not be reintroduced as persistent host addressing.
   ctbsd_rfc99_jailerprime_099099:
     role: retired-freebsd-jail-host
     hypervisor: hasslehoff
