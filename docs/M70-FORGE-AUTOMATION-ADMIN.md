@@ -17,9 +17,10 @@ environment.
 | Alias | `admin-sun99-forge.rfc1918.host` |
 | Address | `172.16.99.70/24` |
 | Gateway | `172.16.99.1` |
-| Primary NIC | `eth0` |
+| Persistent management interface | `bond0` |
+| Initramfs/netboot interface | `netboot0` |
 | Primary MAC | `00:07:32:78:65:C6` |
-| Switch port | `sw_mgmt_css326 ge14` |
+| Management bond switch ports | `sw_mgmt_css326 ge14` and `ge17` |
 | PDU outlet | `pdu-rfc99-corectrl-099241 outlet 4` |
 | PDU outlet label | `admin-sun99-forge` |
 | Serial console | Currently unavailable after USB serial hub move; attach separate external OOB before relying on M70 serial recovery |
@@ -45,8 +46,9 @@ M70-specific iPXE binary. That path successfully DHCPs, chains
 
 The follow-up reboot validation also passed with the corrected dracut interface
 name: `bootdev=netboot0`, `ifname=netboot0:00:07:32:78:65:c6`, and static
-`ip=...:netboot0:none`. The persistent OS now exposes the primary management
-interface as `netboot0`.
+`ip=...:netboot0:none`. The initramfs boot path still uses `netboot0`; the
+approved persistent target is to move `172.16.99.70/24` onto `bond0` after the
+root filesystem is online.
 
 On 2026-05-13 a later reachability check found `172.16.99.70` not answering
 ARP from X12AGAIN or Hasslehoff while CSS326 `ge14` still reported link up and
@@ -68,6 +70,42 @@ install was later re-applied with the same playbook after the admin tool
 baseline finished; `/etc/krb5.keytab`, `/etc/sssd/sssd.conf`, NSS/PAM, SSSD
 SSH authorized-key lookup, and `codex-admin` non-root SSH now validate on the
 persistent root.
+
+## Network Target State
+
+On 2026-05-24 the approved M70 networking target was revised:
+
+| Interface | PCI | Driver | MAC | Target Role | Switch Port |
+| --- | --- | --- | --- | --- | --- |
+| `netboot0` | `0000:02:00.0` | `igb` | `00:07:32:78:65:C6` | `bond0` member and initramfs netboot | CSS326 `ge14` |
+| `enp3s0` | `0000:03:00.0` | `igb` | `00:07:32:78:65:C7` | `bond0` member | CSS326 `ge17` |
+| `eno1` | `0000:06:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:C8` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge3` |
+| `eno2` | `0000:06:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:C9` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge4` |
+| `eno3` | `0000:07:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:CA` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge5` |
+| `eno4` | `0000:07:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:CB` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge6` |
+
+Target `bond0` settings:
+
+```text
+config_bond0="172.16.99.70/24"
+routes_bond0="default via 172.16.99.1"
+slaves_bond0="netboot0 enp3s0"
+mode_bond0="802.3ad"
+lacp_rate_bond0="fast"
+miimon_bond0="100"
+xmit_hash_policy_bond0="layer3+4"
+```
+
+The live 2026-05-24 delta before cutover is: `netboot0` still owns the service
+address and default route, `bond0` is unnumbered and contains `enp3s0 + eno1`,
+and `eno2` no longer has `10.64.64.70/24`. CSS326 LACP group 2 must move from
+`ge17/ge18` to `ge14/ge17` before restarting M70 networking. Do not move the
+`eno1` cable from CSS326 to CCR2004 until SSH to `172.16.99.70` is validated
+through the new `bond0`.
+
+Backout is intentionally simple: restore CSS326 LACP group 2 to `ge17/ge18`,
+restore `/etc/conf.d/net` so `netboot0` owns `172.16.99.70/24` and the default
+route, restart `net.netboot0`, and validate SSH before stopping `net.bond0`.
 
 On 2026-05-14 the persistent install completed its first boot path. `/dev/sda`
 was rebuilt as a clean GPT disk with a single 1 GiB FAT32 ESP labeled

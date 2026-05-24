@@ -485,31 +485,75 @@ devices:
     role: automation-admin
     manufacturer: M70
     model: Atom C3758 appliance
-    status: planned
+    status: active
     management_ip: 172.16.99.70
-    management_interface: eth0
+    management_interface: bond0
     fqdn: admin-sun99-forge-099070.rfc1918.host
     dns_aliases:
       - admin-sun99-forge.rfc1918.host
       - forge.rfc1918.host
       - forge-sun99.rfc1918.host
     interfaces:
-      - name: eth0
+      - name: bond0
+        type: lag
+        purpose: automation-admin-management
+        status: approved-pending-cutover
+      - name: netboot0
         type: 1000base-t
-        purpose: uefi-pxe-ipxe-netboot
+        purpose: bond0-member-and-uefi-pxe-ipxe-netboot
         mac_address: "00:07:32:78:65:C6"
+        lag: bond0
         connected_device: sw_mgmt_css326
         connected_interface: ge14
         netboot_type: static
         netboot_protocol_flow: pxe-to-ipxe
         status: active
+      - name: enp3s0
+        type: 1000base-t
+        purpose: bond0-member
+        mac_address: "00:07:32:78:65:C7"
+        lag: bond0
+        connected_device: sw_mgmt_css326
+        connected_interface: ge17
+        status: active
+      - name: eno1
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:C8"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge3
+        status: planned
+      - name: eno2
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:C9"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge4
+        status: active
+      - name: eno3
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:CA"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge5
+        status: planned
+      - name: eno4
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:CB"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge6
+        status: planned
     notes:
       - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
       - CPU Intel Atom C3758; planned 64 GiB ECC RAM, but 2026-05-13 live serial validation observed 32 GiB available.
       - Six 1GbE NICs; 32GB SATADOM iPXE boot anchor; two 238.5GB KIOXIA NVMe devices mirrored as zroot.
       - Desired state remains UEFI PXE/TFTP to m70-forge-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
       - Operational 2026-05-14 state is local SATADOM ESP chainload to the M70-specific iPXE EFI binary, then HTTP kernel/initramfs boot of local ZFS root zroot/ROOT/gentoo.
-      - Primary NIC eth0 MAC 00:07:32:78:65:C6 is connected to CSS326 ge14.
+      - Persistent management target is bond0 over netboot0 and enp3s0, with CSS326 LACP on ge14/ge17.
+      - Initramfs netboot remains netboot0 MAC 00:07:32:78:65:C6 on CSS326 ge14.
+      - X553 ports eno1..eno4 are reserved for OVS-DPDK/VPP/SR-IOV and the lightweight Slurm VM path; keep them unnumbered on the host.
+      - 10.64.64.70/24 was removed from eno2 on 2026-05-24 and must not be reintroduced as persistent host addressing.
       - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab
