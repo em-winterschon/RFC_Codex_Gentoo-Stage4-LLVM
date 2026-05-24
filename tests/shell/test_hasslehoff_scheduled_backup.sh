@@ -5,6 +5,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="${REPO_ROOT}/scripts/backup-hasslehoff-scheduled.sh"
 DOC="${REPO_ROOT}/docs/HASSLEHOFF-BACKUP.md"
 WIKI="${REPO_ROOT}/docs/wiki/Hasslehoff-Backup.md"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+dry_run_output="${tmpdir}/hasslehoff-scheduled-backup-test.out"
+x12again_output="${tmpdir}/hasslehoff-scheduled-backup-x12again.out"
+preflight_output="${tmpdir}/hasslehoff-scheduled-backup-preflight.out"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -92,26 +97,26 @@ require_grep '--no-owner --no-group' "${WIKI}"
 HASSLEHOFF_BACKUP_DRY_RUN=1 \
   HASSLEHOFF_BACKUP_STAMP=20260515T000000Z \
   HASSLEHOFF_BACKUP_MIRROR_TARGET=backup.example:/srv/hasslehoff \
-  bash "${SCRIPT}" > /tmp/hasslehoff-scheduled-backup-test.out
+  bash "${SCRIPT}" > "${dry_run_output}"
 
-grep -q 'source=root@hasslehoff' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing source"
-grep -q 'dest=.*/20260515T000000Z' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing destination"
-grep -q 'mirror_target=backup.example:/srv/hasslehoff' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing mirror target"
-grep -q 'mirror_rsync_opts=--no-owner --no-group' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing mirror rsync opts"
-grep -q 'restore_verify=0' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing restore verify"
-grep -q 'retention_days=0' /tmp/hasslehoff-scheduled-backup-test.out || fail "dry-run missing retention days"
+grep -q 'source=root@hasslehoff' "${dry_run_output}" || fail "dry-run missing source"
+grep -q 'dest=.*/20260515T000000Z' "${dry_run_output}" || fail "dry-run missing destination"
+grep -q 'mirror_target=backup.example:/srv/hasslehoff' "${dry_run_output}" || fail "dry-run missing mirror target"
+grep -q 'mirror_rsync_opts=--no-owner --no-group' "${dry_run_output}" || fail "dry-run missing mirror rsync opts"
+grep -q 'restore_verify=0' "${dry_run_output}" || fail "dry-run missing restore verify"
+grep -q 'retention_days=0' "${dry_run_output}" || fail "dry-run missing retention days"
 
 if HASSLEHOFF_BACKUP_DRY_RUN=1 \
   HASSLEHOFF_BACKUP_MIRROR_TARGET=root@x12again:/srv/backups \
-  bash "${SCRIPT}" > /tmp/hasslehoff-scheduled-backup-x12again.out 2>&1; then
+  bash "${SCRIPT}" > "${x12again_output}" 2>&1; then
   fail "x12again mirror target was not rejected"
 fi
-grep -qi 'x12again' /tmp/hasslehoff-scheduled-backup-x12again.out || fail "x12again rejection did not mention target"
+grep -qi 'x12again' "${x12again_output}" || fail "x12again rejection did not mention target"
 
 preflight_dir="$(mktemp -d)"
 HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1 \
   HASSLEHOFF_BACKUP_MIRROR_TARGET="${preflight_dir}" \
-  bash "${SCRIPT}" > /tmp/hasslehoff-scheduled-backup-preflight.out
-grep -q 'preflight_status=ok' /tmp/hasslehoff-scheduled-backup-preflight.out || fail "preflight did not pass local writable target"
+  bash "${SCRIPT}" > "${preflight_output}"
+grep -q 'preflight_status=ok' "${preflight_output}" || fail "preflight did not pass local writable target"
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

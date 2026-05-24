@@ -41,6 +41,11 @@ apply_playbook="${ANSIBLE_ROOT}/playbooks/netbox-inventory-intake-apply.yml"
 docs="${REPO_ROOT}/docs/INFRASTRUCTURE-INVENTORY-INTAKE.md"
 wiki_docs="${REPO_ROOT}/docs/wiki/Infrastructure-Inventory-Intake.md"
 run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+all_sites_output="${tmpdir}/netbox-intake-all-sites-validation.json"
+apply_plan_output="${tmpdir}/netbox-intake-apply-plan.json"
+invalid_output="${tmpdir}/netbox-intake-invalid.out"
 
 assert_file_contains "${validator}" "class IntakeValidationError"
 assert_file_contains "${validator}" "validate_sites"
@@ -120,40 +125,40 @@ assert_file_contains "${run_tests}" "test_netbox_inventory_intake.sh"
 python3 -m py_compile "${validator}"
 python3 -m py_compile "${apply_script}"
 python3 "${validator}" "${example}" --format json > /dev/null
-python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json > /tmp/netbox-intake-all-sites-validation.json
-grep -Fq '"devices": 34' /tmp/netbox-intake-all-sites-validation.json || fail "all-sites validation did not include expected device count"
-python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json > /tmp/netbox-intake-apply-plan.json
-grep -Fq '"dry_run": true' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not default to dry-run"
-grep -Fq 'dcim/sites:local-rfc1918-lab' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include site"
-grep -Fq 'virtualization/clusters:hasslehoff-proxmox' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include cluster"
-grep -Fq 'ipam/ip-addresses:172.16.99.93/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include rsyslog VIP"
-grep -Fq 'dcim/devices:gmktek_nucbox_k10_stage5_candidate' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 device"
-grep -Fq 'dcim/devices:admin_sun99_forge_099070' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include M70 Forge automation-admin device"
-grep -Fq 'dcim/devices:obs_sun99_prometheus_099064' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Prometheus VM"
-grep -Fq 'dcim/devices:obs_sun99_vmetrics_099065' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include VictoriaMetrics VM"
-grep -Fq 'dcim/devices:obs_sun99_grafana_099066' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Grafana VM"
-grep -Fq 'dcim/devices:vm_mcp_control_plane' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include MCP control-plane VM"
-grep -Fq 'dcim/devices:sched_sun99_slurmctl_099071' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include SLURM controller VM"
-grep -Fq 'dcim/devices:slurm_worker_node01' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include SLURM first worker VM"
-grep -Fq 'dcim/devices:pdu_rfc99_corectrl_ap7901' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU device"
-grep -Fq 'ipam/ip-addresses:172.16.99.156/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.70/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include M70 Forge automation-admin management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.64/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Prometheus management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.65/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include VictoriaMetrics management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.66/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include Grafana management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.68/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include MCP control-plane management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.71/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include SLURM controller management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.72/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include SLURM first worker management IP"
-grep -Fq 'ipam/ip-addresses:172.16.99.241/24' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 PDU management IP"
-grep -Fq 'dcim/interfaces:gmktek_nucbox_k10_stage5_candidate:eth0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 interface"
-grep -Fq 'dcim/interfaces:admin_sun99_forge_099070:eth0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include M70 Forge automation-admin interface"
-grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 management interface"
-grep -Fq 'dcim/power-ports:admin_sun99_forge_099070:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include M70 Forge automation-admin power port"
-grep -Fq 'dcim/power-ports:gmktek_nucbox_k10_stage5_candidate:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 power port"
-grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet4' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 4"
-grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include AP7901 outlet 6"
-grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet4->admin_sun99_forge_099070:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include M70 Forge automation-admin PDU cable"
-grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet6->gmktek_nucbox_k10_stage5_candidate:power0' /tmp/netbox-intake-apply-plan.json || fail "apply plan did not include K10 PDU cable"
+python3 "${validator}" "${ANSIBLE_ROOT}/inventory-intake/sites" --format json > "${all_sites_output}"
+grep -Fq '"devices": 34' "${all_sites_output}" || fail "all-sites validation did not include expected device count"
+python3 "${apply_script}" "${example}" --api-url http://127.0.0.1 --token fake-token --format json > "${apply_plan_output}"
+grep -Fq '"dry_run": true' "${apply_plan_output}" || fail "apply plan did not default to dry-run"
+grep -Fq 'dcim/sites:local-rfc1918-lab' "${apply_plan_output}" || fail "apply plan did not include site"
+grep -Fq 'virtualization/clusters:hasslehoff-proxmox' "${apply_plan_output}" || fail "apply plan did not include cluster"
+grep -Fq 'ipam/ip-addresses:172.16.99.93/24' "${apply_plan_output}" || fail "apply plan did not include rsyslog VIP"
+grep -Fq 'dcim/devices:gmktek_nucbox_k10_stage5_candidate' "${apply_plan_output}" || fail "apply plan did not include K10 device"
+grep -Fq 'dcim/devices:admin_sun99_forge_099070' "${apply_plan_output}" || fail "apply plan did not include M70 Forge automation-admin device"
+grep -Fq 'dcim/devices:obs_sun99_prometheus_099064' "${apply_plan_output}" || fail "apply plan did not include Prometheus VM"
+grep -Fq 'dcim/devices:obs_sun99_vmetrics_099065' "${apply_plan_output}" || fail "apply plan did not include VictoriaMetrics VM"
+grep -Fq 'dcim/devices:obs_sun99_grafana_099066' "${apply_plan_output}" || fail "apply plan did not include Grafana VM"
+grep -Fq 'dcim/devices:vm_mcp_control_plane' "${apply_plan_output}" || fail "apply plan did not include MCP control-plane VM"
+grep -Fq 'dcim/devices:sched_sun99_slurmctl_099071' "${apply_plan_output}" || fail "apply plan did not include SLURM controller VM"
+grep -Fq 'dcim/devices:slurm_worker_node01' "${apply_plan_output}" || fail "apply plan did not include SLURM first worker VM"
+grep -Fq 'dcim/devices:pdu_rfc99_corectrl_ap7901' "${apply_plan_output}" || fail "apply plan did not include AP7901 PDU device"
+grep -Fq 'ipam/ip-addresses:172.16.99.156/24' "${apply_plan_output}" || fail "apply plan did not include K10 management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.70/24' "${apply_plan_output}" || fail "apply plan did not include M70 Forge automation-admin management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.64/24' "${apply_plan_output}" || fail "apply plan did not include Prometheus management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.65/24' "${apply_plan_output}" || fail "apply plan did not include VictoriaMetrics management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.66/24' "${apply_plan_output}" || fail "apply plan did not include Grafana management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.68/24' "${apply_plan_output}" || fail "apply plan did not include MCP control-plane management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.71/24' "${apply_plan_output}" || fail "apply plan did not include SLURM controller management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.72/24' "${apply_plan_output}" || fail "apply plan did not include SLURM first worker management IP"
+grep -Fq 'ipam/ip-addresses:172.16.99.241/24' "${apply_plan_output}" || fail "apply plan did not include AP7901 PDU management IP"
+grep -Fq 'dcim/interfaces:gmktek_nucbox_k10_stage5_candidate:eth0' "${apply_plan_output}" || fail "apply plan did not include K10 interface"
+grep -Fq 'dcim/interfaces:admin_sun99_forge_099070:eth0' "${apply_plan_output}" || fail "apply plan did not include M70 Forge automation-admin interface"
+grep -Fq 'dcim/interfaces:pdu_rfc99_corectrl_ap7901:mgmt' "${apply_plan_output}" || fail "apply plan did not include AP7901 management interface"
+grep -Fq 'dcim/power-ports:admin_sun99_forge_099070:power0' "${apply_plan_output}" || fail "apply plan did not include M70 Forge automation-admin power port"
+grep -Fq 'dcim/power-ports:gmktek_nucbox_k10_stage5_candidate:power0' "${apply_plan_output}" || fail "apply plan did not include K10 power port"
+grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet4' "${apply_plan_output}" || fail "apply plan did not include AP7901 outlet 4"
+grep -Fq 'dcim/power-outlets:pdu_rfc99_corectrl_ap7901:outlet6' "${apply_plan_output}" || fail "apply plan did not include AP7901 outlet 6"
+grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet4->admin_sun99_forge_099070:power0' "${apply_plan_output}" || fail "apply plan did not include M70 Forge automation-admin PDU cable"
+grep -Fq 'dcim/cables:pdu_rfc99_corectrl_ap7901:outlet6->gmktek_nucbox_k10_stage5_candidate:power0' "${apply_plan_output}" || fail "apply plan did not include K10 PDU cable"
 
 python3 - "${apply_script}" << 'PY'
 import importlib.util
@@ -211,8 +216,7 @@ assert not module.managed_power_intake_cable(
 )
 PY
 
-invalid_fixture="$(mktemp --suffix=.yml)"
-trap 'rm -f "${invalid_fixture}"' EXIT
+invalid_fixture="${tmpdir}/invalid-netbox-intake.yml"
 cat > "${invalid_fixture}" << 'EOF'
 ---
 inventory_intake_version: 1
@@ -232,15 +236,14 @@ prefixes:
     site: broken-site
 EOF
 
-if python3 "${validator}" "${invalid_fixture}" > /tmp/netbox-intake-invalid.out 2>&1; then
+if python3 "${validator}" "${invalid_fixture}" > "${invalid_output}" 2>&1; then
   fail "invalid intake fixture unexpectedly passed"
 fi
-grep -Fq "missing-site" /tmp/netbox-intake-invalid.out || fail "invalid fixture did not report missing site"
-grep -Fq "not-a-prefix" /tmp/netbox-intake-invalid.out || fail "invalid fixture did not report invalid prefix"
+grep -Fq "missing-site" "${invalid_output}" || fail "invalid fixture did not report missing site"
+grep -Fq "not-a-prefix" "${invalid_output}" || fail "invalid fixture did not report invalid prefix"
 
 if command -v ansible-playbook > /dev/null 2>&1; then
-  tmp_inventory="$(mktemp --suffix=.yml)"
-  trap 'rm -f "${invalid_fixture}" "${tmp_inventory}"' EXIT
+  tmp_inventory="${tmpdir}/hosts.yml"
   cat > "${tmp_inventory}" << 'EOF'
 ---
 all:

@@ -60,11 +60,20 @@ reset_pathb_globals() {
   QEMU_CMD=()
 }
 
+set_temp_ovmf_paths() {
+  local temp_dir="$1"
+
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  EFI_VARS_TEMPLATE="${temp_dir}/OVMF_VARS_TEMPLATE.fd"
+  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
+}
+
 test_build_qemu_cmd_uses_uefi_tap_and_telnet() {
   local temp_dir rendered
 
   temp_dir="$(mktemp -d)"
   reset_pathb_globals
+  set_temp_ovmf_paths "${temp_dir}"
   mkdir -p "${temp_dir}/ipxe-efi"
   : > "${temp_dir}/root.qcow2"
   : > "${EFI_FIRM}"
@@ -73,11 +82,10 @@ test_build_qemu_cmd_uses_uefi_tap_and_telnet() {
   QEMU_VM_DIR="${temp_dir}"
   QEMU_ROOTDISK="${temp_dir}/root.qcow2"
   QEMU_IPXE_EFI_DIR="${temp_dir}/ipxe-efi"
-  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
 
-  assert_contains "${rendered}" 'if=pflash,format=raw,readonly=on,unit=0,file=/tmp/OVMF_CODE.fd'
+  assert_contains "${rendered}" "if=pflash,format=raw,readonly=on,unit=0,file=${EFI_FIRM}"
   assert_contains "${rendered}" "if=pflash,format=raw,unit=1,file=${temp_dir}/OVMF_VARS.fd"
   assert_contains "${rendered}" "file=fat:rw:${temp_dir}/ipxe-efi,format=raw,media=disk"
   assert_contains "${rendered}" 'tap,id=net0,ifname=tap-pathb-client,script=no,downscript=no'
@@ -86,7 +94,6 @@ test_build_qemu_cmd_uses_uefi_tap_and_telnet() {
   assert_contains "${rendered}" '-daemonize'
 
   rm -rf "${temp_dir}"
-  rm -f /tmp/OVMF_CODE.fd /tmp/OVMF_VARS.fd
 }
 
 test_build_qemu_cmd_supports_memory_drives_manifest() {
@@ -94,6 +101,7 @@ test_build_qemu_cmd_supports_memory_drives_manifest() {
 
   temp_dir="$(mktemp -d)"
   reset_pathb_globals
+  set_temp_ovmf_paths "${temp_dir}"
   mkdir -p "${temp_dir}/ipxe-efi"
   : > "${temp_dir}/root.qcow2"
   : > "${temp_dir}/extra.qcow2"
@@ -106,7 +114,6 @@ EOF
   QEMU_VM_DIR="${temp_dir}"
   QEMU_ROOTDISK="${temp_dir}/root.qcow2"
   QEMU_IPXE_EFI_DIR="${temp_dir}/ipxe-efi"
-  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
   QEMU_MEMORY_DRIVES_FILE="${temp_dir}/memory.json"
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -115,7 +122,6 @@ EOF
   assert_contains "${rendered}" 'virtio-blk-pci,drive=memdrv0,serial=mem-extra'
 
   rm -rf "${temp_dir}"
-  rm -f /tmp/OVMF_CODE.fd /tmp/OVMF_VARS.fd
 }
 
 test_build_qemu_cmd_supports_stdio_without_daemonize() {
@@ -123,6 +129,7 @@ test_build_qemu_cmd_supports_stdio_without_daemonize() {
 
   temp_dir="$(mktemp -d)"
   reset_pathb_globals
+  set_temp_ovmf_paths "${temp_dir}"
   mkdir -p "${temp_dir}/ipxe-efi"
   : > "${temp_dir}/root.qcow2"
   : > "${EFI_FIRM}"
@@ -131,7 +138,6 @@ test_build_qemu_cmd_supports_stdio_without_daemonize() {
   QEMU_VM_DIR="${temp_dir}"
   QEMU_ROOTDISK="${temp_dir}/root.qcow2"
   QEMU_IPXE_EFI_DIR="${temp_dir}/ipxe-efi"
-  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
   QEMU_SERIAL_MODE='stdio'
   QEMU_DAEMONIZE='0'
   build_qemu_cmd
@@ -140,7 +146,6 @@ test_build_qemu_cmd_supports_stdio_without_daemonize() {
   assert_contains "${rendered}" '-serial mon:stdio'
 
   rm -rf "${temp_dir}"
-  rm -f /tmp/OVMF_CODE.fd /tmp/OVMF_VARS.fd
 }
 
 test_build_qemu_cmd_supports_direct_kernel_mode() {
@@ -169,19 +174,19 @@ test_build_qemu_cmd_supports_uefi_disk_mode() {
   local temp_dir rendered
 
   temp_dir="$(mktemp -d)"
+  reset_pathb_globals
+  set_temp_ovmf_paths "${temp_dir}"
   : > "${temp_dir}/root.qcow2"
   : > "${EFI_FIRM}"
   : > "${EFI_VARS_TEMPLATE}"
 
-  reset_pathb_globals
   QEMU_VM_DIR="${temp_dir}"
   QEMU_ROOTDISK="${temp_dir}/root.qcow2"
   QEMU_PATHB_BOOT_MODE='uefi-disk'
-  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
 
-  assert_contains "${rendered}" 'if=pflash,format=raw,readonly=on,unit=0,file=/tmp/OVMF_CODE.fd'
+  assert_contains "${rendered}" "if=pflash,format=raw,readonly=on,unit=0,file=${EFI_FIRM}"
   assert_contains "${rendered}" "if=pflash,format=raw,unit=1,file=${temp_dir}/OVMF_VARS.fd"
   assert_contains "${rendered}" "file=${temp_dir}/root.qcow2,format=qcow2,cache=writeback"
   assert_contains "${rendered}" 'ide-hd,drive=rootdisk,bus=ahci.1,bootindex=1,serial=stage4-root'

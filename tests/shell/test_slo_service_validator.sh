@@ -95,9 +95,10 @@ cat > "${temp_dir}/failed-slo.json" << 'EOF'
 }
 EOF
 
-if "${VALIDATOR}" --manifest "${temp_dir}/failed-slo.json" --json > /tmp/slo-validator-closed.out 2>&1; then
+closed_output="${temp_dir}/slo-validator-closed.out"
+if "${VALIDATOR}" --manifest "${temp_dir}/failed-slo.json" --json > "${closed_output}" 2>&1; then
   fail 'closed TCP port unexpectedly passed SLO validation'
 fi
-assert_contains "$(cat /tmp/slo-validator-closed.out)" '"slo_met": false'
+assert_contains "$(cat "${closed_output}")" '"slo_met": false'
 
 printf 'PASS: %s\n' "$(basename "$0")"

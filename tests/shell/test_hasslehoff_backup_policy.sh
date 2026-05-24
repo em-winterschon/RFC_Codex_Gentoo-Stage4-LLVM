@@ -7,6 +7,9 @@ VALIDATOR="${REPO_ROOT}/scripts/validate-hasslehoff-backup-policy.py"
 DOC="${REPO_ROOT}/docs/HASSLEHOFF-BACKUP.md"
 WIKI="${REPO_ROOT}/docs/wiki/Hasslehoff-Backup.md"
 RUN_TESTS="${REPO_ROOT}/tests/shell/run-tests.sh"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+validation_output="${tmpdir}/hasslehoff-backup-policy-validation.json"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -51,11 +54,11 @@ require_grep 'x12again_allowed' "${VALIDATOR}"
 require_grep 'required_service_classes' "${VALIDATOR}"
 require_grep 'restore_validation' "${VALIDATOR}"
 
-python3 "${VALIDATOR}" "${POLICY}" --format json > /tmp/hasslehoff-backup-policy-validation.json
-grep -q '"ok": true' /tmp/hasslehoff-backup-policy-validation.json || fail "policy validation did not pass"
-grep -q '"vm_lxc_services": 7' /tmp/hasslehoff-backup-policy-validation.json ||
+python3 "${VALIDATOR}" "${POLICY}" --format json > "${validation_output}"
+grep -q '"ok": true' "${validation_output}" || fail "policy validation did not pass"
+grep -q '"vm_lxc_services": 7' "${validation_output}" ||
   fail "unexpected VM/LXC service coverage count"
-grep -q '"external_target_id": "nasa-m70-nfs-relay"' /tmp/hasslehoff-backup-policy-validation.json ||
+grep -q '"external_target_id": "nasa-m70-nfs-relay"' "${validation_output}" ||
   fail "validation summary missing NASA relay target"
 
 require_file "${DOC}"

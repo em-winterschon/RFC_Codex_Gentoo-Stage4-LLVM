@@ -5,6 +5,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="${REPO_ROOT}/scripts/validate-sunrise-critical-path.sh"
 DOC="${REPO_ROOT}/docs/SUNRISE-CRITICAL-PATH.md"
 WIKI="${REPO_ROOT}/docs/wiki/Sunrise-Critical-Path.md"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+validation_output="${tmpdir}/sunrise-critical-path-test.out"
 
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
@@ -47,9 +50,9 @@ require_grep 'FMT2 transport' "${WIKI}"
 require_grep 'SLURM pilot' "${WIKI}"
 require_grep 'X12AGAIN reimage' "${WIKI}"
 
-SUNRISE_SKIP_LIVE=1 bash "${SCRIPT}" > /tmp/sunrise-critical-path-test.out
-grep -q 'summary: failures=0' /tmp/sunrise-critical-path-test.out || {
-  cat /tmp/sunrise-critical-path-test.out >&2
+SUNRISE_SKIP_LIVE=1 bash "${SCRIPT}" > "${validation_output}"
+grep -q 'summary: failures=0' "${validation_output}" || {
+  cat "${validation_output}" >&2
   fail "repo-only sunrise validator did not pass"
 }
 

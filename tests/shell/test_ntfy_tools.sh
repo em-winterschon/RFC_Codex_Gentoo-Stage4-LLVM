@@ -221,9 +221,9 @@ test_codex_reply_listener_wrapper_sources_env_file() {
   local temp_dir env_file output
   temp_dir="$(mktemp -d)"
   env_file="${temp_dir}/ntfy.env"
-  cat > "${env_file}" << 'EOF'
+  cat > "${env_file}" << EOF
 export CODEX_NTFY_REPLY_TOPIC='codex-replies-wrapper'
-export CODEX_NTFY_REPLY_QUEUE_DIR='/tmp/codex-replies-wrapper'
+export CODEX_NTFY_REPLY_QUEUE_DIR='${temp_dir}/codex-replies-wrapper'
 EOF
 
   output="$(

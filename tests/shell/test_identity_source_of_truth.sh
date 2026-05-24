@@ -24,6 +24,11 @@ playbook="${ANSIBLE_ROOT}/playbooks/identity-source-validate.yml"
 docs="${REPO_ROOT}/docs/IDENTITY-AAA.md"
 wiki_docs="${REPO_ROOT}/docs/wiki/Identity-AAA.md"
 run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+validation_output="${tmpdir}/identity-source-validation.json"
+sync_plan_output="${tmpdir}/identity-sync-plan.json"
+invalid_output="${tmpdir}/identity-source-invalid.out"
 
 assert_file_contains "${source_file}" "identity_source_definition:"
 assert_file_contains "${source_file}" "realm: RFC1918.HOST"
@@ -47,23 +52,22 @@ assert_file_contains "${wiki_docs}" "Identity Source Of Truth"
 assert_file_contains "${run_tests}" "test_identity_source_of_truth.sh"
 
 python3 -m py_compile "${validator}" "${renderer}"
-python3 "${validator}" "${source_file}" --format json > /tmp/identity-source-validation.json
-grep -Fq '"ok": true' /tmp/identity-source-validation.json || fail "identity source validation did not pass"
-grep -Fq '"users": 2' /tmp/identity-source-validation.json || fail "identity source user count mismatch"
-grep -Fq '"radius_clients": 1' /tmp/identity-source-validation.json || fail "identity source RADIUS client count mismatch"
-grep -Fq '"host_enrollments": 2' /tmp/identity-source-validation.json || fail "identity source host enrollment count mismatch"
+python3 "${validator}" "${source_file}" --format json > "${validation_output}"
+grep -Fq '"ok": true' "${validation_output}" || fail "identity source validation did not pass"
+grep -Fq '"users": 2' "${validation_output}" || fail "identity source user count mismatch"
+grep -Fq '"radius_clients": 1' "${validation_output}" || fail "identity source RADIUS client count mismatch"
+grep -Fq '"host_enrollments": 2' "${validation_output}" || fail "identity source host enrollment count mismatch"
 
-python3 "${renderer}" "${source_file}" --format json > /tmp/identity-sync-plan.json
-grep -Fq '"freeipa_groups"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeIPA groups"
-grep -Fq '"freeipa_local_idrange"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeIPA local ID range"
-grep -Fq '"freeipa_users"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeIPA users"
-grep -Fq '"freeradius_clients"' /tmp/identity-sync-plan.json || fail "sync plan missing FreeRADIUS clients"
-grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' /tmp/identity-sync-plan.json || fail "sync plan missing PDU secret var reference"
-grep -Fq '"gmktek_nucbox_k10_stage5_candidate"' /tmp/identity-sync-plan.json || fail "sync plan missing K10 host enrollment"
-grep -Fq '"admin_sun99_forge_099070"' /tmp/identity-sync-plan.json || fail "sync plan missing M70 host enrollment"
+python3 "${renderer}" "${source_file}" --format json > "${sync_plan_output}"
+grep -Fq '"freeipa_groups"' "${sync_plan_output}" || fail "sync plan missing FreeIPA groups"
+grep -Fq '"freeipa_local_idrange"' "${sync_plan_output}" || fail "sync plan missing FreeIPA local ID range"
+grep -Fq '"freeipa_users"' "${sync_plan_output}" || fail "sync plan missing FreeIPA users"
+grep -Fq '"freeradius_clients"' "${sync_plan_output}" || fail "sync plan missing FreeRADIUS clients"
+grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' "${sync_plan_output}" || fail "sync plan missing PDU secret var reference"
+grep -Fq '"gmktek_nucbox_k10_stage5_candidate"' "${sync_plan_output}" || fail "sync plan missing K10 host enrollment"
+grep -Fq '"admin_sun99_forge_099070"' "${sync_plan_output}" || fail "sync plan missing M70 host enrollment"
 
-invalid_fixture="$(mktemp --suffix=.yml)"
-trap 'rm -f "${invalid_fixture}"' EXIT
+invalid_fixture="${tmpdir}/invalid-identity-source.yml"
 cat > "${invalid_fixture}" << 'EOF'
 ---
 identity_source_definition:
@@ -85,16 +89,15 @@ identity_source_definition:
       shared_secret: plaintext-secret
 EOF
 
-if python3 "${validator}" "${invalid_fixture}" > /tmp/identity-source-invalid.out 2>&1; then
+if python3 "${validator}" "${invalid_fixture}" > "${invalid_output}" 2>&1; then
   fail "invalid identity source unexpectedly passed"
 fi
-grep -Fq "duplicate gid" /tmp/identity-source-invalid.out || fail "invalid fixture did not report duplicate gid"
-grep -Fq "unknown primary_group" /tmp/identity-source-invalid.out || fail "invalid fixture did not report missing group"
-grep -Fq "must use shared_secret_var" /tmp/identity-source-invalid.out || fail "invalid fixture did not reject plaintext secret"
+grep -Fq "duplicate gid" "${invalid_output}" || fail "invalid fixture did not report duplicate gid"
+grep -Fq "unknown primary_group" "${invalid_output}" || fail "invalid fixture did not report missing group"
+grep -Fq "must use shared_secret_var" "${invalid_output}" || fail "invalid fixture did not reject plaintext secret"
 
 if command -v ansible-playbook > /dev/null 2>&1; then
-  tmp_inventory="$(mktemp --suffix=.yml)"
-  trap 'rm -f "${invalid_fixture}" "${tmp_inventory}"' EXIT
+  tmp_inventory="${tmpdir}/hosts.yml"
   cat > "${tmp_inventory}" << 'EOF'
 ---
 all:

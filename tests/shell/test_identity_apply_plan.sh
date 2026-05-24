@@ -28,6 +28,11 @@ apply_script="${REPO_ROOT}/scripts/apply_identity_sync_plan.py"
 playbook="${ANSIBLE_ROOT}/playbooks/identity-source-apply.yml"
 docs="${REPO_ROOT}/docs/IDENTITY-AAA.md"
 run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+no_global_output="${tmpdir}/identity-apply-no-global.out"
+no_provider_output="${tmpdir}/identity-apply-no-provider.out"
+radius_no_provider_output="${tmpdir}/identity-radius-no-provider.conf"
 
 assert_file_contains "${apply_script}" "apply_identity_sync_plan"
 assert_file_contains "${apply_script}" "IDENTITY_SYNC_APPLY=1"
@@ -54,23 +59,21 @@ grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' <<< "${dry_run
   fail "dry run missing RADIUS secret variable reference"
 assert_not_contains "${dry_run}" "${leak_secret}"
 
-if python3 "${apply_script}" "${source_file}" --apply --provider freeipa > /tmp/identity-apply-no-global.out 2>&1; then
+if python3 "${apply_script}" "${source_file}" --apply --provider freeipa > "${no_global_output}" 2>&1; then
   fail "apply without global mutation gate unexpectedly passed"
 fi
-grep -Fq 'IDENTITY_SYNC_APPLY=1 is required' /tmp/identity-apply-no-global.out ||
+grep -Fq 'IDENTITY_SYNC_APPLY=1 is required' "${no_global_output}" ||
   fail "missing global apply gate error"
 
 if IDENTITY_SYNC_APPLY=1 \
   python3 "${apply_script}" "${source_file}" --apply --provider freeradius \
-  --freeradius-output /tmp/identity-radius-no-provider.conf \
-  > /tmp/identity-apply-no-provider.out 2>&1; then
+  --freeradius-output "${radius_no_provider_output}" \
+  > "${no_provider_output}" 2>&1; then
   fail "FreeRADIUS apply without provider gate unexpectedly passed"
 fi
-grep -Fq 'IDENTITY_SYNC_APPLY_FREERADIUS=1 is required' /tmp/identity-apply-no-provider.out ||
+grep -Fq 'IDENTITY_SYNC_APPLY_FREERADIUS=1 is required' "${no_provider_output}" ||
   fail "missing FreeRADIUS provider gate error"
 
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
 radius_secret='radius-secret-file-only'
 radius_output="${tmpdir}/clients.conf"
 audit_log="${tmpdir}/identity-sync-audit.jsonl"

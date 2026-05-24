@@ -77,10 +77,14 @@ grep -Fq 'relationship edges:' <<< "${dry_run}" ||
 grep -Fq 'https://github.com/example/example/issues/new?template=roadmap_task.yml' <<< "${dry_run}" ||
   fail 'dry run did not include issue query URL'
 
-if "${SEED}" --repo example/example --create-project > /tmp/github-project-seed-project.out 2>&1; then
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+create_project_output="${tmpdir}/github-project-seed-project.out"
+
+if "${SEED}" --repo example/example --create-project > "${create_project_output}" 2>&1; then
   fail 'create-project succeeded without --apply'
 fi
-grep -Fq -- '--create-project requires --apply' /tmp/github-project-seed-project.out ||
+grep -Fq -- '--create-project requires --apply' "${create_project_output}" ||
   fail 'create-project refusal message missing'
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"
