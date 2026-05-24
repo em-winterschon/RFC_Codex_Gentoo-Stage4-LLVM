@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+# Managed by Ansible: roles/inference_service/templates/inference-service.openrc.j2
+
+description="Inference service {{ inference_service.name }}"
+command="{{ inference_service_libexec_dir }}/run-{{ inference_service.name }}.sh"
+command_user="{{ inference_service_service_user }}:{{ inference_service_service_group }}"
+pidfile="/run/inference-{{ inference_service.name }}.pid"
+output_log="{{ inference_service_log_root }}/{{ inference_service.name }}.log"
+error_log="{{ inference_service_log_root }}/{{ inference_service.name }}.err.log"
+start_stop_daemon_args="--background --make-pidfile"
+
+depend() {
+  need net
+  use dns logger
+}
+
+start_pre() {
+  checkpath -d -o "${command_user}" -m 0755 "{{ inference_service_state_root }}/{{ inference_service.name }}"
+  checkpath -d -o "${command_user}" -m 0755 "{{ inference_service_log_root }}/{{ inference_service.name }}"
+  checkpath -f -o root:{{ inference_service_service_group }} -m 0640 "{{ inference_service_config_dir }}/{{ inference_service.name }}.env"
+}

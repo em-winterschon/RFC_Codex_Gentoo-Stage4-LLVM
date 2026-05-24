@@ -1,0 +1,130 @@
+---
+- name: Resolve inference service manager and package map
+  ansible.builtin.set_fact:
+    resolved_inference_service_manager: >-
+      {{ ansible_service_mgr if inference_service_manager == 'auto' else inference_service_manager }}
+    resolved_inference_service_packages: >-
+      {{
+        inference_service_package_map.get(
+          ansible_os_family,
+          inference_service_package_map.get(ansible_distribution, [])
+        )
+      }}
+    resolved_inference_service_architecture: "{{ ansible_architecture | default('unknown') }}"
+    resolved_inference_service_accelerator: "{{ inference_service_accelerator }}"
+    resolved_inference_service_accelerator_profile: >-
+      {{ inference_service_accelerator_profiles[inference_service_accelerator] }}
+    resolved_inference_services: "{{ inference_service_definitions }}"
+
+- name: Assert inference service inputs are supported
+  ansible.builtin.assert:
+    that:
+      - inference_service_container_engine == 'podman'
+      - resolved_inference_service_manager in ['systemd', 'openrc']
+      - resolved_inference_service_accelerator in inference_service_accelerator_profiles
+      - resolved_inference_services | length > 0
+    fail_msg: >-
+      inference_service requires podman, systemd/openrc, a known accelerator
+      profile, and at least one service definition.
+  when: inference_service_enabled | bool
+
+- name: Install inference service container prerequisites
+  ansible.builtin.package:
+    name: "{{ resolved_inference_service_packages }}"
+    state: present
+  when:
+    - inference_service_enabled | bool
+    - resolved_inference_service_packages | length > 0
+
+- name: Ensure inference service directories exist
+  ansible.builtin.file:
+    path: "{{ inference_service_directory }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ inference_service_config_dir }}"
+    - "{{ inference_service_libexec_dir }}"
+    - "{{ inference_service_state_root }}"
+    - "{{ inference_service_log_root }}"
+  loop_control:
+    loop_var: inference_service_directory
+  when: inference_service_enabled | bool
+
+- name: Render inference service environment files
+  ansible.builtin.template:
+    src: inference-service.env.j2
+    dest: "{{ inference_service_config_dir }}/{{ inference_service.name }}.env"
+    owner: root
+    group: "{{ inference_service_service_group }}"
+    mode: "0640"
+  loop: "{{ resolved_inference_services }}"
+  loop_control:
+    loop_var: inference_service
+  when: inference_service_enabled | bool
+
+- name: Render inference service Podman wrappers
+  ansible.builtin.template:
+    src: inference-service-run.sh.j2
+    dest: "{{ inference_service_libexec_dir }}/run-{{ inference_service.name }}.sh"
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ resolved_inference_services }}"
+  loop_control:
+    loop_var: inference_service
+  when: inference_service_enabled | bool
+
+- name: Render inference service systemd units
+  ansible.builtin.template:
+    src: inference-service.systemd.j2
+    dest: "/etc/systemd/system/inference-{{ inference_service.name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ resolved_inference_services }}"
+  loop_control:
+    loop_var: inference_service
+  when:
+    - inference_service_enabled | bool
+    - resolved_inference_service_manager == 'systemd'
+
+- name: Render inference service OpenRC init scripts
+  ansible.builtin.template:
+    src: inference-service.openrc.j2
+    dest: "/etc/init.d/inference-{{ inference_service.name }}"
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ resolved_inference_services }}"
+  loop_control:
+    loop_var: inference_service
+  when:
+    - inference_service_enabled | bool
+    - resolved_inference_service_manager == 'openrc'
+
+- name: Enable inference service systemd units
+  ansible.builtin.systemd:
+    name: "inference-{{ inference_service.name }}.service"
+    enabled: "{{ inference_service_enable_on_boot | bool }}"
+    state: "{{ inference_service_state }}"
+    daemon_reload: true
+  loop: "{{ resolved_inference_services }}"
+  loop_control:
+    loop_var: inference_service
+  when:
+    - inference_service_enabled | bool
+    - resolved_inference_service_manager == 'systemd'
+
+- name: Enable inference service OpenRC services
+  ansible.builtin.service:
+    name: "inference-{{ inference_service.name }}"
+    enabled: "{{ inference_service_enable_on_boot | bool }}"
+    state: "{{ inference_service_state }}"
+  loop: "{{ resolved_inference_services }}"
+  loop_control:
+    loop_var: inference_service
+  when:
+    - inference_service_enabled | bool
+    - resolved_inference_service_manager == 'openrc'
