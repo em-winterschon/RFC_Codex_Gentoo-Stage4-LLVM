@@ -34,6 +34,10 @@ Current mirrored pages:
 - `RouterOS-RFC99-Gateway.md`
 - `Configurations-and-Examples.md`
 - `CI-Builder-Farm.md`
+- `M70-Platform-Optimization-Plan.md`
+- `M70-Canary-Validation-Lane.md`
+- `M70-Serial-Console-Map.md`
+- `M70-Canary-Gap-Analysis-2026-05-24.md`
 - `Binpkg-Repository.md`
 - `Nexus-Repository.md`
 - `Package-Version-Pinning.md`
@@ -47,6 +51,7 @@ Current mirrored pages:
 - `ITIL-Change-Control-Container-Services-Safe-Move.md`
 - `Changelog.md`
 - `SITREP-Status-2026-05-03.md`
+- `EOD-Status-2026-05-24.md`
 - `EOD-Status-2026-05-03.md`
 - `EOD-Status-2026-05-02.md`
 - `EOD-Status-2026-04-30.md`
