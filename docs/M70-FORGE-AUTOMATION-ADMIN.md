@@ -84,28 +84,49 @@ On 2026-05-24 the approved M70 networking target was revised:
 | `eno3` | `0000:07:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:CA` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge5` |
 | `eno4` | `0000:07:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:CB` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge6` |
 
-Target `bond0` settings:
+Live `bond0` settings after the 2026-05-24 cutover:
 
 ```text
 config_bond0="172.16.99.70/24"
 routes_bond0="default via 172.16.99.1"
+dns_servers_bond0="172.16.99.1 9.9.9.9"
 slaves_bond0="netboot0 enp3s0"
-mode_bond0="802.3ad"
-lacp_rate_bond0="fast"
+mode_bond0="active-backup"
 miimon_bond0="100"
-xmit_hash_policy_bond0="layer3+4"
+primary_bond0="netboot0"
+config_netboot0="null"
+config_enp3s0="null"
+config_eno1="null"
+config_eno2="null"
+config_eno3="null"
+config_eno4="null"
 ```
 
-The live 2026-05-24 delta before cutover is: `netboot0` still owns the service
-address and default route, `bond0` is unnumbered and contains `enp3s0 + eno1`,
-and `eno2` no longer has `10.64.64.70/24`. CSS326 LACP group 2 must move from
-`ge17/ge18` to `ge14/ge17` before restarting M70 networking. Do not move the
-`eno1` cable from CSS326 to CCR2004 until SSH to `172.16.99.70` is validated
-through the new `bond0`.
+The live cutover intentionally used `active-backup` instead of `802.3ad` because
+CSS326 SwOS LACP mutation is not yet a tested automation path. This preserves
+management reachability through `netboot0` while still moving `172.16.99.70/24`
+and the default route onto `bond0`. The 802.3ad target remains deferred until
+CSS326 LACP group membership can be updated and validated for `ge14 + ge17`.
 
-Backout is intentionally simple: restore CSS326 LACP group 2 to `ge17/ge18`,
-restore `/etc/conf.d/net` so `netboot0` owns `172.16.99.70/24` and the default
-route, restart `net.netboot0`, and validate SSH before stopping `net.bond0`.
+Validation evidence from 2026-05-24:
+
+- SSH to `172.16.99.70` returned after the cutover and the rollback sentinel was
+  written before the 180-second rollback watchdog fired.
+- `bond0` owns `172.16.99.70/24`; default route is `172.16.99.1 dev bond0`.
+- `bond0` mode is `active-backup`; active slave is `netboot0`; backup slave is
+  `enp3s0`; both links are 1G/full.
+- `openvpn.fmt2` was restarted after the OpenRC network bounce; FMT2 routes via
+  `tun-fmt2` validate again.
+- CCR2004 bridge FDB learned `eno1..eno4` as `00:07:32:78:65:C8` on `ge3`,
+  `C9` on `ge4`, `CA` on `ge5`, and `CB` on `ge6` after L2 ARP probes.
+- `eno2` has no `10.64.64.70/24`; `eno1..eno4` remain unnumbered and reserved
+  for OVS-DPDK/VPP/SR-IOV ownership.
+
+Backout for the current live state is intentionally simple: restore the saved
+`/root/m70-net-pre-bond0-cutover.conf.<timestamp>` to `/etc/conf.d/net`, stop
+`net.bond0`, start `net.netboot0`, and validate SSH to `172.16.99.70`. CSS326
+LACP backout is only required after a future 802.3ad cutover changes switch-side
+LACP membership.
 
 On 2026-05-14 the persistent install completed its first boot path. `/dev/sda`
 was rebuilt as a clean GPT disk with a single 1 GiB FAT32 ESP labeled

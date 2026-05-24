@@ -130,3 +130,14 @@ Expected: SSH to `172.16.99.70` returns through `bond0`.
 After SSH validation, remove `eno1` from CSS326 and move it to CCR2004 `ge3`. Keep `eno2..eno4` unnumbered and ready for vfio-pci/OVS-DPDK/VPP ownership.
 
 Expected: `eno1..eno4` have no host management addresses and are safe for Forge-Root's Slurm/OVS work.
+
+
+## Live Execution Note 2026-05-24
+
+The live cutover used a safer intermediate state than the original 802.3ad
+runbook because CSS326 SwOS LACP write automation is not yet validated.
+`172.16.99.70/24` and the default route moved to `bond0`, but `bond0` is
+`active-backup` with `netboot0` primary and `enp3s0` backup. `eno1..eno4` are
+cabled to CCR2004 `ge3..ge6`, link at 1G/full, and have no host management IPs.
+Future work may switch `bond0` to 802.3ad only after CSS326 `ge14 + ge17` LACP
+membership can be mutated and verified without risking the M70 management path.
