@@ -9,8 +9,8 @@ fail() {
 }
 
 bad_redirects="$(
-  grep -RInE '(^|[[:space:]])(>|2>)[[:space:]]*/tmp/' "${SCRIPT_DIR}"/test_*.sh \
-    | grep -v '/test_shell_tmp_isolation.sh:' || true
+  grep -RInE '(^|[[:space:]])(>|2>)[[:space:]]*/tmp/' "${SCRIPT_DIR}"/test_*.sh |
+    grep -v '/test_shell_tmp_isolation.sh:' || true
 )"
 
 if [[ -n "${bad_redirects}" ]]; then
@@ -19,8 +19,8 @@ if [[ -n "${bad_redirects}" ]]; then
 fi
 
 bad_reply_queue="$(
-  grep -RInF "CODEX_NTFY_REPLY_QUEUE_DIR='/tmp/codex-replies-wrapper'" "${SCRIPT_DIR}"/test_*.sh \
-    | grep -v '/test_shell_tmp_isolation.sh:' || true
+  grep -RInF "CODEX_NTFY_REPLY_QUEUE_DIR='/tmp/codex-replies-wrapper'" "${SCRIPT_DIR}"/test_*.sh |
+    grep -v '/test_shell_tmp_isolation.sh:' || true
 )"
 
 if [[ -n "${bad_reply_queue}" ]]; then

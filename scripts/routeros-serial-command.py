@@ -10,7 +10,6 @@ import sys
 import time
 from collections.abc import Iterable
 
-
 TERMINAL_QUERY = b"\x1bZ"
 TERMINAL_ANSWERBACK = b"\x1b[?1;0c"
 PROMPT_MARKER = b"] >"

@@ -33,7 +33,7 @@ declare -A backend_hosts=(
   [ollama]=ollama_servers
   [vllm]=vllm_servers
   [sglang]=sglang_servers
-  [open-webui]=open_webui_servers
+  ["open-webui"]=open_webui_servers
 )
 
 for backend in "${!backend_hosts[@]}"; do
