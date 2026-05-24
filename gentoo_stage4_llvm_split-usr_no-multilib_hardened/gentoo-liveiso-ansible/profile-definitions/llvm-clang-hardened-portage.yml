@@ -18,9 +18,10 @@ gentoo_profile_definition:
     CXXFLAGS="${COMMON_FLAGS} -flto=thin"
     FCFLAGS="${COMMON_FLAGS}"
     FFLAGS="${COMMON_FLAGS}"
+    CPP="clang -E"
     LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld"
     USE="${USE} -systemd"
-    FEATURES="${FEATURES} distcc fail-clean parallel-install merge-sync"
+    FEATURES="${FEATURES} -distcc -network-sandbox fail-clean parallel-install merge-sync"
     QA_STRICT_EXECSTACK="set"
     QA_STRICT_TEXTRELS="set"
     QA_STRICT_FLAGS_IGNORED="set"
@@ -44,6 +45,8 @@ gentoo_profile_definition:
       media-video/wireplumber elogind
       sys-fs/udisks elogind
       sys-process/procps elogind
+    15-dracut-network-legacy: |
+      net-misc/dhcp client -server
   package_mask_files:
     00-no-systemd: |
       sys-apps/systemd
@@ -67,7 +70,118 @@ gentoo_profile_definition:
       FCFLAGS="${COMMON_FLAGS}"
       FFLAGS="${COMMON_FLAGS}"
       LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
+    distcc-cgo-probe-fallback.conf: |
+      # Go cgo emits intentionally failing compiler probes and needs native diagnostics.
+      DISTCC_FALLBACK="1"
+    go-toolchain-native-cc.conf: |
+      # Go module phases invoke compiler probes outside normal distcc-safe compile phases.
+      FEATURES="${FEATURES} -distcc"
+      PATH="/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/bin:/usr/lib/llvm/21/bin"
+    configure-native-cc.conf: |
+      # Configure-time feature probes must see native compiler diagnostics.
+      FEATURES="${FEATURES} -distcc"
+      PATH="/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/bin:/usr/lib/llvm/21/bin"
+    bind-clang21-warnings.conf: |
+      # BIND 9.18 promotes -Wparentheses to errors; clang 21 splits out
+      # -Wparentheses-equality for ISC list macros that are still valid C.
+      CFLAGS="${CFLAGS} -Wno-error=parentheses-equality"
+    mailutils-clang-format-security.conf: |
+      # mailutils 3.18 passes trusted delimiter strings through formatter
+      # helpers; keep global hardening but avoid failing this package on
+      # Clang's -Wformat-security diagnostic.
+      CFLAGS="${CFLAGS} -Wno-error=format-security"
+    ndctl-lld-undefined-version.conf: |
+      # ndctl 77's libcxl version script references cxl_mapping_get_region,
+      # but the released source does not define it. GNU ld permits this;
+      # lld needs the compatibility flag to keep the package on the LLVM path.
+      LDFLAGS="${LDFLAGS} -Wl,--undefined-version"
+    slurm-bfd-no-thinlto.conf: |
+      # Slurm's Gentoo ebuild forces GNU BFD; ThinLTO then requires LLVMgold.so.
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+    gentoo-kernel-clang21-hosttools.conf: |
+      # Kernel helper builds promote several Clang 21 diagnostics to errors.
+      # Keep ThinLTO out of helper binaries while preserving the rest of the
+      # hardened warning set.
+      CFLAGS="${COMMON_FLAGS} -Wno-error=misleading-indentation -Wno-error=unused-value -Wno-error=parentheses-equality"
+      CXXFLAGS="${COMMON_FLAGS} -Wno-error=misleading-indentation -Wno-error=unused-value -Wno-error=parentheses-equality"
+      BUILD_CFLAGS="${CFLAGS}"
+      BUILD_CXXFLAGS="${CXXFLAGS}"
+      KCFLAGS="${KCFLAGS} -Wno-error=unused-command-line-argument"
+      KCPPFLAGS="${KCPPFLAGS} -Wno-error=unused-command-line-argument"
+      # Keep global distcc strict, but allow the high-volume kernel build to
+      # survive rare response drops from the remote worker by retrying locally.
+      DISTCC_FALLBACK="1"
+    zfs-kmod-distcc-kbuild.conf: |
+      # linux-mod-r1 normally resolves absolute compiler paths and enables
+      # full Kbuild verbosity. Keep external module builds on the distcc
+      # wrapper path while avoiding multi-GB command logs.
+      KERNEL_CC="x86_64-pc-linux-gnu-clang-21"
+      KERNEL_CXX="x86_64-pc-linux-gnu-clang++-21"
+      MODULES_EXTRA_EMAKE="${MODULES_EXTRA_EMAKE} V=0 KBUILD_VERBOSE=0"
+    perl-cbuilder-clang-ld.conf: |
+      # Retained to overwrite older target renders; libguestfs is patched
+      # instead so libtool can keep using ld.lld for shared-library detection.
   package_env_files:
     00-gcc-compat: |
       sys-devel/gcc gcc-compat.conf
       sys-libs/glibc gcc-compat.conf
+    10-go-cgo-distcc-fallback: |
+      dev-lang/go distcc-cgo-probe-fallback.conf
+    11-go-toolchain-native-cc: |
+      app-crypt/age go-toolchain-native-cc.conf
+    12-configure-native-cc: |
+      dev-build/cmake configure-native-cc.conf
+    13-bind-clang21-warnings: |
+      net-dns/bind bind-clang21-warnings.conf
+    14-mailutils-clang-format-security: |
+      net-mail/mailutils mailutils-clang-format-security.conf
+    15-ndctl-lld-undefined-version: |
+      sys-block/ndctl ndctl-lld-undefined-version.conf
+    16-slurm-bfd-no-thinlto: |
+      sys-cluster/slurm slurm-bfd-no-thinlto.conf
+    17-gentoo-kernel-clang21-hosttools: |
+      sys-kernel/gentoo-kernel gentoo-kernel-clang21-hosttools.conf
+    18-zfs-kmod-distcc-kbuild: |
+      sys-fs/zfs-kmod zfs-kmod-distcc-kbuild.conf
+    16-perl-cbuilder-clang-ld: |
+      # libguestfs Build.PL LD handling is applied as a user patch below.
+  patch_files:
+    sys-kernel/gentoo-kernel/gentoo-kernel-6.18-clang21-subcmd-astrcatf.patch: |
+      --- a/tools/lib/subcmd/subcmd-util.h
+      +++ b/tools/lib/subcmd/subcmd-util.h
+      @@ -60,2 +60,4 @@
+      -	if (asprintf((out), "%s" fmt, tmp ?: "", ## __VA_ARGS__) == -1)	\
+      -		die("asprintf failed");					\
+      +	if (asprintf((out), "%s" fmt, tmp ?: "", ## __VA_ARGS__) == -1) {	\
+      +		die("asprintf failed");					\
+      +	}								\
+    sys-kernel/gentoo-kernel/gentoo-kernel-6.18-clang21-special-build-flags.patch: |
+      --- a/arch/x86/realmode/rm/Makefile
+      +++ b/arch/x86/realmode/rm/Makefile
+      @@ -69,1 +69,4 @@
+       KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
+      +# Clang 21 reports the global -fmacro-prefix-map as unused here.
+      +KBUILD_CFLAGS	+= -Wno-error=unused-command-line-argument
+      +
+      --- a/drivers/firmware/efi/libstub/Makefile
+      +++ b/drivers/firmware/efi/libstub/Makefile
+      @@ -58,2 +58,5 @@
+       # disable LTO
+       KBUILD_CFLAGS := $(filter-out $(CC_FLAGS_LTO), $(KBUILD_CFLAGS))
+      +# Clang 21 reports the global -fmacro-prefix-map as unused here.
+      +KBUILD_CFLAGS += -Wno-error=unused-command-line-argument
+      +
+       # `-fdata-sections` flag from KBUILD_CFLAGS_KERNEL
+    app-emulation/libguestfs/libguestfs-1.56.2-perl-module-build-ld-driver.patch: |
+      --- a/perl/Makefile.am
+      +++ b/perl/Makefile.am
+      @@ -56 +56 @@ all-local: Build
+      -	./Build
+      +	LD=clang ./Build
+      @@ -59 +59 @@ clean-local: Build
+      -	./Build clean
+      +	LD=clang ./Build clean
+      @@ -62 +62 @@ Build: Build.PL
+      -	$(PERL) Build.PL --prefix "@prefix@"
+      +	LD=clang $(PERL) Build.PL --config ld=clang --prefix "@prefix@"

@@ -29,6 +29,7 @@ install_role_sequences:
       - id: target-integration
         summary: Install the target package stack, boot flow, network, and managed services.
         roles:
+          - distcc_farm
           - system_packages
           - boot
           - network
@@ -60,7 +61,6 @@ install_role_sequences:
           - memory_storage
           - slurm_cluster
           - jenkins_controller
-          - distcc_farm
           - container_host
           - container_app_rsyslog_collector
           - container_app_elastic_apm
@@ -173,6 +173,7 @@ install_role_sequences:
       - id: target-integration
         summary: Install the target package stack, boot flow, network, and managed services.
         roles:
+          - distcc_farm
           - system_packages
           - boot
           - network
@@ -202,7 +203,6 @@ install_role_sequences:
           - memory_storage
           - slurm_cluster
           - jenkins_controller
-          - distcc_farm
           - container_host
           - container_app_rsyslog_collector
           - container_app_elastic_apm

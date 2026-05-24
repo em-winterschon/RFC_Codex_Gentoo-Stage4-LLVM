@@ -131,6 +131,22 @@
     content: |
       sys-kernel/installkernel dracut -systemd
 
+- name: Ensure dracut configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/dracut.conf.d"
+    state: directory
+    mode: '0755'
+
+- name: Force universal dracut initramfs with dual-vendor early microcode
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/dracut.conf.d/95-universal-netboot-microcode.conf"
+    mode: '0644'
+    content: |
+      # Netboot initramfs artifacts are published by role, not by requestor CPU.
+      # Keep the image generic and let dracut include both Intel and AMD ucode.
+      hostonly="no"
+      early_microcode="yes"
+
 - name: Remove unsupported NetworkManager package.use fragment
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/package.use/networkmanager"

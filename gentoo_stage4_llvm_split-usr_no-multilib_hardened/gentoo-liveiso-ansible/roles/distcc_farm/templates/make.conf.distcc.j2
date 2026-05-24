@@ -1,6 +1,7 @@
 DISTCC_DIR="/var/cache/distcc"
 DISTCC_HOSTS="{% for host in resolved_distcc_farm.hosts %}{{ host.address | default(host.hostname | default(host.name)) }}{% if host.slots is defined and host.slots | int > 0 %}/{{ host.slots }}{% endif %}{% set options = [] %}{% if resolved_distcc_farm.compression | bool %}{% set _ = options.append('lzo') %}{% endif %}{% if resolved_distcc_farm.cpp_mode | bool %}{% set _ = options.append('cpp') %}{% endif %}{% for extra_option in host.options | default([]) %}{% set _ = options.append(extra_option) %}{% endfor %}{% if options | length > 0 %},{{ options | unique | join(',') }}{% endif %}{% if not loop.last %} {% endif %}{% endfor %}"
 DISTCC_FALLBACK="0"
+PATH="/usr/local/libexec/distcc-farm/bin:${PATH}"
 {% if resolved_distcc_farm.makeopts_jobs | string | length > 0 %}
 MAKEOPTS="-j{{ resolved_distcc_farm.makeopts_jobs }}"
 {% endif %}

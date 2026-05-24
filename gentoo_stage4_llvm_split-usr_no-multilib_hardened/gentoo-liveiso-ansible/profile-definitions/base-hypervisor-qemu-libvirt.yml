@@ -12,11 +12,20 @@ gentoo_profile_definition:
     20-hypervisor-qemu-libvirt: |
       app-emulation/qemu aio curl gnutls iscsi ncurses numa pin-upstream-blobs ssh vhost-net virtfs
       app-emulation/libvirt libvirtd lvm numa parted qemu virt-network zfs
+      media-libs/netpbm png
+      net-dns/dnsmasq script
+      net-libs/gnutls pkcs11 tools
       net-misc/openvswitch modules ssl
+      sys-cluster/rdma-core -python
+      sys-block/parted device-mapper
+      sys-block/open-iscsi rdma
+      sys-apps/util-linux caps
+      sys-fs/lvm2 lvm
       sys-fs/zfs rootfs
   package_accept_keywords_files:
     20-hypervisor-qemu-libvirt-testing: |
-      =net-misc/openvswitch-3.3.8 ~amd64
+      =net-misc/openvswitch-3.3.8-r1 ~amd64
+      =dev-python/ovs-3.3.8 ~amd64
       =sys-fs/zfs-2.4.1 ~amd64
       =sys-fs/zfs-kmod-2.4.0_rc2-r1 ~amd64
   modules_load_files:

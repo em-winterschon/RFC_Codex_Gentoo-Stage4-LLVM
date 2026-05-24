@@ -50,10 +50,62 @@
         ) | unique
       }}
 
+- name: Resolve system package distcc guard settings
+  ansible.builtin.set_fact:
+    system_packages_distcc_farm: "{{ resolved_profile_distcc_farm | default(profile_distcc_farm | default({})) }}"
+
+- name: Verify distcc client policy before system package build
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{
+      (
+        'set -e; '
+        + 'test -n "$(portageq envvar DISTCC_HOSTS)"; '
+        + 'test "$(portageq envvar DISTCC_FALLBACK)" = "0"; '
+        + 'case ":$(portageq envvar PATH):" in '
+        + '*:/usr/local/libexec/distcc-farm/bin:*) exit 0 ;; '
+        + '*) exit 1 ;; '
+        + 'esac'
+      ) | quote
+    }}
+  when:
+    - system_packages_distcc_farm.enabled | default(false) | bool
+    - system_packages_distcc_farm.client_enabled | default(false) | bool
+    - system_packages_distcc_farm.hosts | default([]) | length > 0
+
+- name: Verify distcc MAKEOPTS before system package build
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{
+      (
+        'test "$(portageq envvar MAKEOPTS)" = "-j'
+        + (system_packages_distcc_farm.makeopts_jobs | string)
+        + '"'
+      ) | quote
+    }}
+  when:
+    - system_packages_distcc_farm.enabled | default(false) | bool
+    - system_packages_distcc_farm.client_enabled | default(false) | bool
+    - system_packages_distcc_farm.hosts | default([]) | length > 0
+    - system_packages_distcc_farm.makeopts_jobs | default('') | string | length > 0
+
 - name: Install core packages in target
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('emerge --verbose --oneshot ' + (resolved_system_package_atoms | join(' '))) | trim | quote }}
+    {{
+      (
+        'set -o pipefail; '
+        + 'log=/var/log/stage4-system-packages-emerge.log; '
+        + ': > "${log}"; '
+        + 'emerge --oneshot ' + (resolved_system_package_atoms | join(' '))
+        + ' > "${log}" 2>&1 || { '
+        + 'rc=$?; '
+        + 'printf "%s\n" "emerge failed; sanitized tail follows:"; '
+        + 'LC_ALL=C tail -240 "${log}" | LC_ALL=C tr -cd "\11\12\15\40-\176"; '
+        + 'exit "${rc}"; '
+        + '}'
+      ) | trim | quote
+    }}
 
 - name: Refresh environment cache in target
   ansible.builtin.command: >-

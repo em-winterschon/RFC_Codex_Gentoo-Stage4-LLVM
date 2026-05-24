@@ -18,12 +18,12 @@ gentoo_system_profile_metadata:
     service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
   package_pins:
     gentoo_tree_exact_atoms:
-      - =app-emulation/qemu-10.2.0-r1
+      - =app-emulation/qemu-10.2.2
       - =app-emulation/libvirt-12.0.0
       - =app-emulation/xen-4.19.3
       - =app-emulation/xen-tools-4.19.3
       - =app-emulation/guestfs-tools-1.52.3-r1
-      - =net-misc/openvswitch-3.3.8
+      - =net-misc/openvswitch-3.3.8-r1
       - =sys-apps/nvme-cli-2.16
       - =sys-block/ndctl-77-r2
     support_packages:

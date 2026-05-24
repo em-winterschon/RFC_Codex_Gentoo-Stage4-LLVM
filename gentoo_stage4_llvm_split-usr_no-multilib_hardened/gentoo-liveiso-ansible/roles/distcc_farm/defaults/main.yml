@@ -13,7 +13,7 @@ distcc_farm_default_service_user: distcc
 distcc_farm_default_service_group: distcc
 distcc_farm_default_runlevel: default
 distcc_farm_default_compression: true
-distcc_farm_default_cpp_mode: true
+distcc_farm_default_cpp_mode: false
 distcc_farm_default_builder_fabric_name: builder-fabric
 distcc_farm_default_builder_fabric_cidr: ""
 distcc_farm_default_worker_metadata: {}

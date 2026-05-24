@@ -10,17 +10,17 @@ gentoo_system_profile_metadata:
       - profile-package-lists/stage5-metal-host-hypervisor.packages
   package_pins:
     gentoo_tree_exact_atoms:
-      - =app-emulation/qemu-10.2.0-r1
+      - =app-emulation/qemu-10.2.2
       - =app-emulation/libvirt-12.0.0
       - =app-emulation/xen-4.19.3
       - =app-emulation/xen-tools-4.19.3
       - =app-emulation/guestfs-tools-1.52.3-r1
       - =media-libs/amdgpu-pro-vulkan-25.10.2203192
-      - =net-misc/openvswitch-3.3.8
+      - =net-misc/openvswitch-3.3.8-r1
       - =sys-apps/nvme-cli-2.16
       - =sys-block/ndctl-77-r2
     testing_atoms:
-      - =net-misc/openvswitch-3.3.8
+      - =net-misc/openvswitch-3.3.8-r1
       - =sys-fs/zfs-2.4.1
       - =sys-fs/zfs-kmod-2.4.0_rc2-r1
     unpinned_support_packages:

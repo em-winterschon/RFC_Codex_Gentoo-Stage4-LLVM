@@ -91,7 +91,7 @@ profile_overlay_name: local-install-profile
 profile_name: install-target
 profile_parents:
   - gentoo:default/linux/amd64/23.0/llvm
-  - gentoo:default/linux/amd64/23.0/split-usr/no-multilib/hardened
+  - gentoo:default/linux/amd64/23.0/no-multilib/hardened
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
   - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
@@ -137,11 +137,13 @@ portage_global_use:
 portage_extra_use: []
 portage_makeopts_jobs: 8
 portage_emerge_jobs: 2
-portage_load_average: 8
+portage_load_average: 16
 portage_gpg_key_refresh: false
 portage_package_use_files:
   distcc-client-bootstrap: |
     sys-devel/distcc -hardened
+  curl-tls-backend: |
+    net-misc/curl openssl -gnutls curl_ssl_openssl -curl_ssl_gnutls -http3 -quic
   gentoo-kernel: |
     =sys-kernel/gentoo-kernel-6.18.32_p2 hardened
   zfs: |
@@ -158,9 +160,11 @@ profile_distcc_farm:
   client_enabled: true
   worker_enabled: false
   port: 3632
-  makeopts_jobs: 48
+  # Two Portage package jobs at -j24 keep the aggregate remote compile envelope at 48 jobs.
+  # This matches X12again's current distccd --jobs cap without re-enabling cpp mode.
+  makeopts_jobs: 24
   compression: true
-  cpp_mode: true
+  cpp_mode: false
   builder_fabric_name: rfc99-management
   builder_fabric_cidr: 172.16.99.0/24
   hosts:

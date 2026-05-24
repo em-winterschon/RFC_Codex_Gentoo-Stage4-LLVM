@@ -12,14 +12,23 @@ gentoo_profile_definition:
       app-emulation/libvirt libvirtd lvm numa parted qemu virt-network xen zfs
       app-emulation/xen uefi
       app-emulation/xen-tools hvm ipxe ovmf qemu system-ipxe system-qemu
+      media-libs/netpbm png
+      net-dns/dnsmasq script
+      net-libs/gnutls pkcs11 tools
       net-misc/openvswitch modules ssl
+      sys-cluster/rdma-core -python
+      sys-block/parted device-mapper
+      sys-block/open-iscsi rdma
+      sys-apps/util-linux caps
+      sys-fs/lvm2 lvm
       media-libs/amdgpu-pro-vulkan video_cards_amdgpu
     30-storage-rdma: |
       sys-fs/zfs rootfs
       sys-apps/nvme-cli json
   package_accept_keywords_files:
     20-hypervisor-testing: |
-      =net-misc/openvswitch-3.3.8 ~amd64
+      =net-misc/openvswitch-3.3.8-r1 ~amd64
+      =dev-python/ovs-3.3.8 ~amd64
       =sys-fs/zfs-2.4.1 ~amd64
       =sys-fs/zfs-kmod-2.4.0_rc2-r1 ~amd64
   modules_load_files:

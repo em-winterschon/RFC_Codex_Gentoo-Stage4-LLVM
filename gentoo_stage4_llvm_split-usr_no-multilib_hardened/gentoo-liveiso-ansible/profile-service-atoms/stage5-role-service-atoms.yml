@@ -63,7 +63,7 @@ role_service_atoms:
     service_atoms:
       - id: openvswitch
         package_atoms:
-          - =net-misc/openvswitch-3.3.8
+          - =net-misc/openvswitch-3.3.8-r1
         openrc_services:
           - openvswitch
         kernel_modules:
@@ -113,7 +113,7 @@ role_service_atoms:
     service_atoms:
       - id: qemu-libvirt
         package_atoms:
-          - =app-emulation/qemu-10.2.0-r1
+          - =app-emulation/qemu-10.2.2
           - =app-emulation/libvirt-12.0.0
           - =app-emulation/guestfs-tools-1.52.3-r1
         openrc_services:

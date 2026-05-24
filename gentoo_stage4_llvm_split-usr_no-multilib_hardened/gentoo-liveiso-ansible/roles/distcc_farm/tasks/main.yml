@@ -55,6 +55,7 @@
   loop:
     - /etc/distcc
     - /usr/local/libexec/distcc-farm
+    - /usr/local/libexec/distcc-farm/bin
   loop_control:
     loop_var: distcc_farm_dir
   when: distcc_farm_enabled
@@ -78,6 +79,69 @@
     - distcc_farm_enabled
     - resolved_distcc_farm.client_enabled | bool
     - resolved_distcc_farm.hosts | length > 0
+
+- name: Render distcc client compiler wrappers
+  ansible.builtin.template:
+    src: distcc-client-wrapper.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/distcc-farm/bin/{{ distcc_client_wrapper }}"
+    mode: '0755'
+  loop:
+    - cc
+    - c++
+    - gcc
+    - g++
+    - clang
+    - clang++
+    - clang-21
+    - clang++-21
+    - x86_64-pc-linux-gnu-gcc
+    - x86_64-pc-linux-gnu-g++
+    - x86_64-pc-linux-gnu-clang
+    - x86_64-pc-linux-gnu-clang++
+    - x86_64-pc-linux-gnu-clang-21
+    - x86_64-pc-linux-gnu-clang++-21
+  loop_control:
+    loop_var: distcc_client_wrapper
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.client_enabled | bool
+    - resolved_distcc_farm.hosts | length > 0
+
+- name: Ensure distcc worker compiler whitelist directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/usr/lib/distcc"
+    state: directory
+    mode: '0755'
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.worker_enabled | bool
+
+- name: Render distcc worker compiler whitelist entries
+  ansible.builtin.file:
+    src: /usr/bin/distcc
+    dest: "{{ install_target_root }}/usr/lib/distcc/{{ distcc_worker_compiler }}"
+    state: link
+    force: true
+  loop:
+    - cc
+    - c++
+    - gcc
+    - g++
+    - clang
+    - clang++
+    - clang-21
+    - clang++-21
+    - x86_64-pc-linux-gnu-gcc
+    - x86_64-pc-linux-gnu-g++
+    - x86_64-pc-linux-gnu-clang
+    - x86_64-pc-linux-gnu-clang++
+    - x86_64-pc-linux-gnu-clang-21
+    - x86_64-pc-linux-gnu-clang++-21
+  loop_control:
+    loop_var: distcc_worker_compiler
+  when:
+    - distcc_farm_enabled
+    - resolved_distcc_farm.worker_enabled | bool
 
 - name: Render distcc farm manifest
   ansible.builtin.template:

@@ -4,6 +4,9 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-base-minimal-nox.packages
   make_conf_append: |
     USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    10-dracut-network-legacy: |
+      net-misc/dhcp client -server
   modules_load_files:
     base-minimal-nox.conf: |
       nvme
