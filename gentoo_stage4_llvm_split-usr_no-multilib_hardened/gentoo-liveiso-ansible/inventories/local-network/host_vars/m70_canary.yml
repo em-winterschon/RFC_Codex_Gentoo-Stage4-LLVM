@@ -138,7 +138,7 @@ portage_global_use:
 portage_extra_use: []
 portage_makeopts_jobs: 8
 portage_emerge_jobs: 2
-portage_load_average: 16
+portage_load_average: 12
 portage_gpg_key_refresh: false
 portage_package_use_files:
   distcc-client-bootstrap: |
@@ -161,17 +161,29 @@ profile_distcc_farm:
   client_enabled: true
   worker_enabled: false
   port: 3632
-  # Two Portage package jobs at -j24 keep the aggregate remote compile envelope at 48 jobs.
-  # This matches X12again's current distccd --jobs cap without re-enabling cpp mode.
-  makeopts_jobs: 24
-  compression: true
+  # LTC Forge approved this expanded worker set on 2026-05-25. Keep cpp mode
+  # disabled; sec is live but still needs durable Podman/OCI persistence before
+  # assuming reboot survival.
+  makeopts_jobs: 16
+  makeopts_load: 12
+  compression: false
   cpp_mode: false
   builder_fabric_name: rfc99-management
   builder_fabric_cidr: 172.16.99.0/24
   hosts:
+    - name: kvm-sfo200-sec-9923
+      address: 10.200.99.23
+      slots: 24
+      options:
+        - lzo
     - name: x12again
       address: 172.16.99.108
       slots: 48
+      options:
+        - lzo
+    - name: localhost
+      address: localhost
+      slots: 2
 
 # Package strategy
 kernel_strategy: gentoo-kernel

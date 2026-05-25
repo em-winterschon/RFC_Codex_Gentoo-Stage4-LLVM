@@ -68,6 +68,14 @@
       (
         'test "$(portageq envvar MAKEOPTS)" = "-j'
         + (system_packages_distcc_farm.makeopts_jobs | string)
+        + (
+          (
+            ' -l'
+            + (system_packages_distcc_farm.makeopts_load | string)
+          )
+          if (system_packages_distcc_farm.makeopts_load | default('') | string | length > 0)
+          else ''
+        )
         + '"'
       ) | quote
     }}

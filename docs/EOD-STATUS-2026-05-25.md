@@ -74,6 +74,14 @@
   `DISTCC_FALLBACK=0`.
 - Verified a fallback-disabled canary `gcc` probe compile completed remotely on
   X12again through the managed distcc wrapper path.
+- Recorded LTC Forge's distcc expansion reply. The next approved canary distcc
+  policy is `MAKEOPTS="-j16 -l12"` with
+  `DISTCC_HOSTS="10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2"`.
+  The `kvm-sfo200-sec-9923` worker is live and validated, but its Podman/OCI
+  distccd service still needs durable persistence before assuming reboot
+  survival.
+- Applied the approved distcc expansion to the persistent canary OS with only
+  selected roles `preflight` and `distcc_farm`, targeting `/`.
 - Fixed the FreeIPA live-apply playbook so its read-only root break-glass check
   runs during check mode, then dry-ran canary enrollment through the local
   config-render phase.
@@ -106,6 +114,22 @@
   - result: `MAKEOPTS=-j24`, `DISTCC_FALLBACK=0`, `FEATURES` includes
     `distcc`, PATH includes `/usr/local/libexec/distcc-farm/bin`
   - result: probe compile completed on X12again with fallback disabled
+- LTC Forge distcc expansion reply
+  - result: approved next `DISTCC_HOSTS` is
+    `10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2`
+  - result: approved next `MAKEOPTS` is `-j16 -l12`
+  - result: sec and X12AGAIN fallback-disabled smoke compiles were reported as
+    passing by LTC Forge
+- `m70_canary` approved distcc live apply
+  - result: selected-role dry-run changed only `/etc/distcc/hosts`,
+    `/etc/distcc/builder-farm.json`, and the managed distcc block in
+    `/etc/portage/make.conf`
+  - result: live apply completed with the same scoped changes
+  - result: `portageq envvar MAKEOPTS` returns `-j16 -l12`
+  - result: `portageq envvar DISTCC_HOSTS` returns
+    `10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2`
+  - result: fallback-disabled canary compile probes passed for sec, X12AGAIN,
+    and the combined host string
 - `ipa-client-live-apply.yml --check --diff -l m70_canary`
   - result: local canary config-render phase reached
   - result: held before live apply because delegated controller SSH failed

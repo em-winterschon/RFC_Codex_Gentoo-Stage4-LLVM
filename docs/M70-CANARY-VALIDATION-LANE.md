@@ -202,6 +202,28 @@ from the netbooted installer environment:
   - `PATH` includes `/usr/local/libexec/distcc-farm/bin`
 - A fallback-disabled probe compile with `gcc` completed remotely on X12again,
   proving the canary is using the approved distcc target for compile work.
+- LTC Forge provided a follow-up distcc expansion reply on 2026-05-25:
+  - approved next host string:
+    `10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2`
+  - approved next `MAKEOPTS`: `-j16 -l12`
+  - `kvm-sfo200-sec-9923.rfc1918.host` is validated at `10.200.99.23:3632`
+    with recommended M70 slots `24`
+  - X12AGAIN remains validated at `172.16.99.108:3632` with recommended M70
+    slots `48`
+  - caveat: the sec worker is live but still needs durable managed Podman/OCI
+    service persistence before assuming reboot survival.
+- The approved distcc expansion was applied live to the persistent canary OS on
+  2026-05-25 using only selected roles `preflight` and `distcc_farm` with
+  `install_target_root=/`.
+- Post-apply live Portage state:
+  - `MAKEOPTS=-j16 -l12`
+  - `DISTCC_HOSTS=10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2`
+  - `DISTCC_FALLBACK=0`
+  - `/etc/distcc/hosts` matches the approved host string.
+- Fallback-disabled compile probes passed from `m70_canary` to:
+  - `10.200.99.23/24,lzo`
+  - `172.16.99.108/48,lzo`
+  - combined host string
 
 Status captured on 2026-05-25 after SATADOM local boot validation:
 

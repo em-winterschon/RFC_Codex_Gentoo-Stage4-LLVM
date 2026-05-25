@@ -8,6 +8,7 @@ distcc_farm_default_nice: 5
 distcc_farm_default_listen_address: 0.0.0.0
 distcc_farm_default_allowed_client_cidrs: []
 distcc_farm_default_makeopts_jobs: ""
+distcc_farm_default_makeopts_load: ""
 distcc_farm_default_hosts: []
 distcc_farm_default_service_user: distcc
 distcc_farm_default_service_group: distcc

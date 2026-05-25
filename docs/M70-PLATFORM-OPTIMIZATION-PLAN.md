@@ -21,7 +21,7 @@ and Firecracker workloads.
 | Build cache | `/srv/build-cache` symlinked into `/srv/forge-stage/build-cache` |
 | Network | `netboot0` 1G management, `bond0` 2x1G LACP with no IPv4 address |
 | Toolchain | LLVM profile, GCC 15, clang/lld/LLVM 21, Rust bin 1.93 |
-| Distcc | Client configured for `172.16.99.108/48,lzo` plus `localhost/2` |
+| Distcc | Client approved for `10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2` |
 | DNS | `172.16.99.1` primary, `9.9.9.9` fallback; do not use FreeIPA `.63` for DNS |
 
 ## High-Priority Fixes
@@ -145,13 +145,16 @@ PKGDIR="/srv/build-cache/binpkgs"
 Distcc is active as a client:
 
 ```text
+10.200.99.23/24,lzo
 172.16.99.108/48,lzo
 localhost/2
 ```
 
-A visible test compile was preprocessed on M70 and compiled remotely on
-`172.16.99.108`. Keep this host as a scheduler/package-graph coordinator and
-use X12 for heavy compile slots.
+Visible fallback-disabled smoke compiles have passed from M70 to
+`10.200.99.23`, `172.16.99.108`, and the combined host string. Keep M70 as a
+scheduler/package-graph coordinator and use the remote workers for compile
+slots. The FMT2 sec worker is live, but its Podman/OCI distccd service still
+needs durable persistence before assuming reboot survival.
 
 ## QAT Acceleration Policy
 

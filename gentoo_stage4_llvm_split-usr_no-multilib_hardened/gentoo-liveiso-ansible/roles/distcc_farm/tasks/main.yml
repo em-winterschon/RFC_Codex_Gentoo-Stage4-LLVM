@@ -26,6 +26,8 @@
             | default(distcc_farm_default_allowed_client_cidrs),
           'makeopts_jobs': resolved_profile_distcc_farm.makeopts_jobs
             | default(distcc_farm_default_makeopts_jobs),
+          'makeopts_load': resolved_profile_distcc_farm.makeopts_load
+            | default(distcc_farm_default_makeopts_load),
           'hosts': resolved_profile_distcc_farm.hosts
             | default(distcc_farm_default_hosts),
           'service_user': resolved_profile_distcc_farm.service_user
