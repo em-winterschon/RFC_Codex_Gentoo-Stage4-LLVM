@@ -130,6 +130,8 @@ Persistent target state:
 - management network: `bond_mgmt` balance-alb over `netboot0` and `enp3s0`
 - workload network: Open vSwitch `br_ovs0` with `ovs_workload0` active LACP
   over `eno1` through `eno4`
+- SATADOM carrier runbook:
+  `docs/M70-CANARY-SATADOM-EFI-CARRIER.md`
 
 Discovered storage on 2026-05-22 from the canary RS232 console:
 

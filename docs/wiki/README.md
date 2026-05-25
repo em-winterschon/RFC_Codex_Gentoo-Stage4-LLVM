@@ -36,6 +36,7 @@ Current mirrored pages:
 - `CI-Builder-Farm.md`
 - `M70-Platform-Optimization-Plan.md`
 - `M70-Canary-Validation-Lane.md`
+- `M70-Canary-SATADOM-EFI-Carrier.md`
 - `M70-Serial-Console-Map.md`
 - `M70-Canary-Gap-Analysis-2026-05-24.md`
 - `Binpkg-Repository.md`
@@ -48,6 +49,8 @@ Current mirrored pages:
 - `Hetzner-DNS-Automation.md`
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
+- `SLURM-Pilot-Bringup.md`
+- `SLURM-Pilot-Gap-Analysis-2026-05-25.md`
 - `ITIL-Change-Control-Container-Services-Safe-Move.md`
 - `Changelog.md`
 - `SITREP-Status-2026-05-03.md`
