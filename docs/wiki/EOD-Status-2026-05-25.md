@@ -68,6 +68,12 @@
 - Verified the second SATADOM local boot brings up `bond_mgmt` with both
   `netboot0` and `enp3s0`, active slave `netboot0`, and no iPXE-only
   `ifname=netboot0` kernel argument.
+- Repaired the live canary distcc client path by applying only `preflight` and
+  `distcc_farm` to the installed root at `/`; this rendered compiler wrappers,
+  enabled `FEATURES=distcc`, set `MAKEOPTS=-j24`, and kept
+  `DISTCC_FALLBACK=0`.
+- Verified a fallback-disabled canary `gcc` probe compile completed remotely on
+  X12again through the managed distcc wrapper path.
 - Updated M70 canary docs and wiki mirror with the installed-root validation,
   OVS/LACP state, SSSD gating, and firmware/SATADOM boot-path findings.
 - Updated PR #144 with installed-root validation evidence.
@@ -90,6 +96,10 @@
   - result: pass
 - `bash tests/shell/test_live_ipa_client_enrollment.sh`
   - result: pass
+- `ssh m70_canary` Portage/distcc probe
+  - result: `MAKEOPTS=-j24`, `DISTCC_FALLBACK=0`, `FEATURES` includes
+    `distcc`, PATH includes `/usr/local/libexec/distcc-farm/bin`
+  - result: probe compile completed on X12again with fallback disabled
 - `bash tests/shell/run-tests.sh`
   - result: pass
 - `gh pr comment 144`
@@ -115,6 +125,8 @@
 - No serial reader remains active from Forge after the handoff.
 - The primary Forge M70 remains reachable.
 - X12again remains the approved distcc target at `172.16.99.108`.
+- The canary persistent OS is now a distcc client for compile work; it is not a
+  distccd worker.
 
 ## Open Gates
 

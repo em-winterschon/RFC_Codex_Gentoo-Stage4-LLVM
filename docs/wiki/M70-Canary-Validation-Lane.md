@@ -191,6 +191,17 @@ from the netbooted installer environment:
   `qatengine`, OpenSSL QAT provider, or OpenZFS QAT package path. Kernel and
   firmware enablement is complete; userspace QAT acceleration remains a
   separate package/overlay decision.
+- Live distcc remediation on 2026-05-25 applied only `preflight` and
+  `distcc_farm` to the installed root at `/`. The canary now has the managed
+  distcc wrapper directory and make.conf block rendered on the persistent OS.
+- Effective canary Portage state after that apply:
+  - `MAKEOPTS=-j24`
+  - `DISTCC_HOSTS=172.16.99.108/48,lzo`
+  - `DISTCC_FALLBACK=0`
+  - `FEATURES` includes `distcc`
+  - `PATH` includes `/usr/local/libexec/distcc-farm/bin`
+- A fallback-disabled probe compile with `gcc` completed remotely on X12again,
+  proving the canary is using the approved distcc target for compile work.
 
 Status captured on 2026-05-25 after SATADOM local boot validation:
 

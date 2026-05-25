@@ -75,6 +75,8 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/tasks/main.yml" 'Render 
 assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/tasks/main.yml" 'Render distcc worker compiler whitelist entries'
 assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/templates/make.conf.distcc.j2" 'DISTCC_FALLBACK="0"'
 assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/templates/make.conf.distcc.j2" 'PATH="/usr/local/libexec/distcc-farm/bin:${PATH}"'
+assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/templates/make.conf.distcc.j2" 'FEATURES="${FEATURES} distcc"'
+assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" 'portageq envvar FEATURES'
 assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/tasks/main.yml" 'x86_64-pc-linux-gnu-gcc'
 assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/tasks/main.yml" 'x86_64-pc-linux-gnu-clang-21'
 assert_file_contains "${ANSIBLE_ROOT}/roles/distcc_farm/templates/distcc-client-wrapper.sh.j2" 'DISTCC_CLIENT_RUNTIME_DIR'
