@@ -74,6 +74,12 @@
   `DISTCC_FALLBACK=0`.
 - Verified a fallback-disabled canary `gcc` probe compile completed remotely on
   X12again through the managed distcc wrapper path.
+- Fixed the FreeIPA live-apply playbook so its read-only root break-glass check
+  runs during check mode, then dry-ran canary enrollment through the local
+  config-render phase.
+- Held FreeIPA/SSSD live enrollment because the delegated
+  `svc_identity_ipa01` controller SSH path is not currently accepted for this
+  Forge shell; no canary auth mutation was applied from that dry-run.
 - Updated M70 canary docs and wiki mirror with the installed-root validation,
   OVS/LACP state, SSSD gating, and firmware/SATADOM boot-path findings.
 - Updated PR #144 with installed-root validation evidence.
@@ -100,6 +106,9 @@
   - result: `MAKEOPTS=-j24`, `DISTCC_FALLBACK=0`, `FEATURES` includes
     `distcc`, PATH includes `/usr/local/libexec/distcc-farm/bin`
   - result: probe compile completed on X12again with fallback disabled
+- `ipa-client-live-apply.yml --check --diff -l m70_canary`
+  - result: local canary config-render phase reached
+  - result: held before live apply because delegated controller SSH failed
 - `bash tests/shell/run-tests.sh`
   - result: pass
 - `gh pr comment 144`
@@ -134,7 +143,7 @@
 2. Do not flash BIOS unless a vendor-matched `FWS-2363` / AppNeta M70 image is
    obtained and staged with a rollback plan.
 3. FreeIPA/SSSD client enrollment remains pending; `sssd` should not be enabled
-   until `/etc/sssd/sssd.conf` exists.
+   until the delegated controller SSH path and keytab generation pass.
 4. Repeat the SATADOM carrier + udev naming profile path on the next M70 before
    promoting it to the fleet baseline.
 5. SLURM controller/worker work should remain coordinated with LTC Forge and

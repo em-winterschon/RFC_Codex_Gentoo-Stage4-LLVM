@@ -315,6 +315,17 @@ Two target-side fixes were made during this validation:
 FreeIPA client enrollment apply path renders `/etc/sssd/sssd.conf` and enables
 the service.
 
+FreeIPA live apply dry-run status from 2026-05-25:
+
+- `ipa-client-live-apply.yml --check --diff` now reaches the local canary
+  config-render phase after the root break-glass check is allowed to run in
+  check mode.
+- The dry-run shows expected local changes for `/etc/hosts`,
+  `/etc/ipa/default.conf`, `/etc/krb5.conf`, and `/etc/sssd/sssd.conf`.
+- No live FreeIPA/SSSD mutation was applied. The run remains blocked at the
+  delegated IPA controller step because `svc_identity_ipa01` SSH access is not
+  currently accepted for this Forge shell.
+
 ## Firmware Boot State
 
 Live RS232 firmware work on 2026-05-22 changed the canary boot settings from
