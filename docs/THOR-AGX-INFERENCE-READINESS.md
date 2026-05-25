@@ -81,6 +81,17 @@ Thor is ready for documentation and inventory modeling. It is not ready for an
 unconditional Podman-first inference apply because the live host has Docker but
 no Podman.
 
+Operational update `2026-05-25T03:00Z`: active operator approval is available
+for bounded Thor inference playbook work. Keep the rollout gated to preflight,
+Ollama first, and Open WebUI only after Ollama is healthy; continue deferring
+vLLM and SGLang until arm64/L4T/CUDA 13 images are validated.
+
+Operational update `2026-05-25T03:17:53Z`: root SSH preflight succeeded, but
+`docker.service` and `docker.socket` are masked and inactive. Existing Ollama
+inference files are present with `--gpus all`, but `inference-ollama.service` is
+disabled and inactive. Do not live-start the workload until Docker masking is
+explained or an operator explicitly approves unmasking Docker on Thor.
+
 Recommended inventory stance:
 
 ```yaml
@@ -94,6 +105,10 @@ inference_service_service_manager: systemd
 Use the Docker exception only to preserve the existing Jetson/L4T NVIDIA runtime
 state. The preferred end state remains Podman with NVIDIA CDI after a separate
 host-prep validation.
+
+For the temporary Docker path, the inference wrapper must use Docker's
+`--gpus all` flag for NVIDIA access. The Podman/CDI path continues to use
+`--device nvidia.com/gpu=all`.
 
 ## Backend Defaults
 
@@ -110,6 +125,9 @@ host-prep validation.
   stabilization handoff recorded zero failed units after cleanup.
 - Podman is missing.
 - Docker access is not available to the SSH user used for this audit.
+- `2026-05-25` preflight found `docker.service` and `docker.socket` masked,
+  which blocks the Docker exception runtime until an explicit unmask/start
+  decision is made.
 - `nvcc` is not in `PATH`; CUDA developer tooling is not confirmed.
 - FreeIPA/SSSD enrollment and central operator identity remain outside this
   audit.

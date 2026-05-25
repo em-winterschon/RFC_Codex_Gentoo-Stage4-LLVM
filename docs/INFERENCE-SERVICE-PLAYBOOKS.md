@@ -69,6 +69,12 @@ For Podman/CDI-capable hosts, expose GPUs with:
 --device nvidia.com/gpu=all
 ```
 
+For approved Docker exception hosts, expose GPUs with:
+
+```text
+--gpus all
+```
+
 Do not assume this is already valid on Jetson/L4T hosts. Thor AGX currently has
 Docker and NVIDIA Container Toolkit active, but Podman is absent. Treat
 Jetson/L4T as a host-prep exception until Podman plus NVIDIA CDI is validated or
@@ -130,6 +136,8 @@ inference_service_allow_docker_exception: true
 This is not a recommendation to standardize on Docker. It records current live
 state so automation can avoid breaking existing NVIDIA runtime assumptions.
 Prefer an approved Podman/CDI prep step before making Podman mandatory on Thor.
+With the exception enabled, the shared wrapper renders Docker NVIDIA access as
+`--gpus all` rather than the Podman CDI device selector.
 
 Start with Ollama and Open WebUI. Defer vLLM and SGLang on Thor until their
 arm64, Jetson/L4T, and CUDA 13 image path is validated.
