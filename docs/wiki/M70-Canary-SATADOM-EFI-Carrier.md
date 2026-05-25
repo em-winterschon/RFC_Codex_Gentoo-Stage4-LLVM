@@ -12,10 +12,10 @@ SATADOM removable EFI fallback -> ZFSBootMenu -> NVMe rpool/ROOT/gentoo
 The SATADOM is only the EFI carrier. The Gentoo root remains on the mirrored
 KIOXIA NVMe `rpool`.
 
-## Current Gate
+## Current Result
 
-Do not write to, repartition, format, or repurpose the SATADOM until the
-operator explicitly approves the SATADOM EFI carrier write gate.
+The operator approved the non-destructive SATADOM EFI carrier write gate on
+2026-05-25. Destructive conversion was not used.
 
 Current evidence:
 
@@ -26,6 +26,17 @@ Current evidence:
 - The existing boot role already renders ZFSBootMenu into the target EFI tree:
   - `/efi/EFI/ZBM/VMLINUZ.EFI`
   - `/efi/EFI/BOOT/BOOTX64.EFI`
+- The SATADOM already had a usable empty ESP:
+  `/dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080-part1`,
+  PARTLABEL `efiboot0`, FAT UUID `86DA-0813`.
+- The copied ZFSBootMenu EFI payloads both hashed to
+  `1e08335d697fed772af3ecbccf1724227cdbdfa02aec221ced8a332bd44670bf`
+  and were `64871424` bytes each.
+- Serial validation proved SATADOM -> ZFSBootMenu -> NVMe `rpool/ROOT/gentoo`
+  local boot twice.
+- Persistent MAC-based udev naming is required for local boot because the iPXE
+  `ifname=netboot0:...` kernel argument is absent after firmware hands off to
+  the SATADOM EFI loader.
 
 ## Device Identity
 
@@ -96,7 +107,7 @@ The operator must approve Approval 1 before this procedure runs.
 Set these variables in the remote shell after confirming the actual partition:
 
 ```bash
-satadom_esp=/dev/disk/by-partlabel/M70_CANARY_EFI
+satadom_esp=/dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080-part1
 backup_root=/root/m70-canary-satadom-backups/$(date -u +%Y%m%dT%H%M%SZ)
 ```
 
@@ -104,7 +115,7 @@ Copy procedure:
 
 ```bash
 ssh m70_canary 'set -euo pipefail
-satadom_esp=/dev/disk/by-partlabel/M70_CANARY_EFI
+satadom_esp=/dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080-part1
 backup_root=/root/m70-canary-satadom-backups/$(date -u +%Y%m%dT%H%M%SZ)
 mountpoint=/mnt/satadom-efi
 test -b "${satadom_esp}"
@@ -132,7 +143,7 @@ Approval 2. This wipes the selected SATADOM device.
 
 ```bash
 ssh m70_canary 'set -euo pipefail
-satadom_disk=/dev/disk/by-id/ata-SATADOM_SH_3ME3_20180915AA9241033080
+satadom_disk=/dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080
 test -b "${satadom_disk}"
 sgdisk --zap-all "${satadom_disk}"
 sgdisk -n 1:1MiB:+512MiB -t 1:EF00 -c 1:M70_CANARY_EFI "${satadom_disk}"
@@ -148,28 +159,33 @@ Before any reboot:
 
 ```bash
 ssh m70_canary 'findmnt /mnt/satadom-efi >/dev/null && exit 1 || true'
-ssh m70_canary 'blkid /dev/disk/by-partlabel/M70_CANARY_EFI'
+ssh m70_canary 'blkid /dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080-part1'
 ssh m70_canary 'zpool status rpool'
 ```
 
-Boot validation remains operator-gated. After the operator confirms the serial
-console is free and the boot test is approved:
+Boot validation was completed on 2026-05-25. The working firmware state is:
 
-1. Boot with CSM enabled.
-2. Leave the SATADOM as the first UEFI hard-disk target.
-3. Do not remove the temporary iPXE bridge until SATADOM boot succeeds twice.
-4. After boot, validate:
+1. `CSM Support`: `Enabled`
+2. `Launch PXE ROM`: `Enabled`
+3. `Boot mode select`: `UEFI`
+4. `Boot Option #1`: `Hard Disk:UEFI OS (P6: SATADOM-SH 3ME3)`
 
-   ```bash
-   ssh m70_canary 'hostname -f'
-   ssh m70_canary 'findmnt -no SOURCE,FSTYPE /'
-   ssh m70_canary 'zpool status rpool'
-   ssh m70_canary 'rc-status default'
-   ssh m70_canary 'ovs-appctl bond/show ovs_workload0'
-   ```
+After boot, validate:
+
+```bash
+ssh m70_canary 'hostname -f'
+ssh m70_canary 'findmnt -no SOURCE,FSTYPE /'
+ssh m70_canary 'cat /proc/cmdline'
+ssh m70_canary 'cat /proc/net/bonding/bond_mgmt'
+ssh m70_canary 'zpool status rpool'
+ssh m70_canary 'rc-status default'
+ssh m70_canary 'ovs-appctl bond/show ovs_workload0'
+```
 
 Acceptance requires `rpool/ROOT/gentoo`, `rpool ONLINE`, and
-`lacp_status: negotiated`.
+`lacp_status: negotiated`. The command line must not include the temporary
+iPXE role artifacts `initramfs-m70-canary-zfsroot.img`,
+`ifname=netboot0:...`, or the static iPXE `ip=...:netboot0:none` argument.
 
 ## Rollback
 
@@ -181,7 +197,7 @@ If SATADOM boot fails:
 
    ```bash
    ssh m70_canary 'set -euo pipefail
-   satadom_esp=/dev/disk/by-partlabel/M70_CANARY_EFI
+   satadom_esp=/dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080-part1
    backup_tar=$(find /root/m70-canary-satadom-backups -mindepth 2 -maxdepth 2 -name satadom-efi.before.tar | sort | tail -n1)
    mountpoint=/mnt/satadom-efi
    test -b "${satadom_esp}"

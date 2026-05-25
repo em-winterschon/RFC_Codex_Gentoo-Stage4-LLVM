@@ -82,6 +82,26 @@ Inventory intake already models service VIP/listener intent:
 MUNGE is intentionally not exposed as a network listener. MariaDB for the pilot
 is local to the controller unless a later design splits accounting storage.
 
+## Read-Only Runtime Follow-Up
+
+Follow-up checks stayed read-only and did not admit any host into the SLURM
+pilot:
+
+- `m70_canary` now has the SLURM package payload available
+  (`slurmd`/`slurmctld` binaries present), but no SLURM service is in the
+  default OpenRC runlevel and `/etc/slurm` only contains example configuration.
+- `x12again` remains useful as a build resource: the SSH alias is reachable,
+  `distccd` is installed, and the `distccd` OpenRC service is started.
+- `x12again` is not ready for scheduler admission from this pass: `hostname -f`
+  returned `Unknown host`, and no live SLURM service/config evidence was found.
+- The M70 canary durable boot gate has advanced: SATADOM local boot succeeded
+  twice and persistent udev naming for `netboot0`, `enp3s0`, and `eno1` through
+  `eno4` is now modeled in inventory.
+
+Live SLURM controller, worker, VPP, DPDK, and hypervisor mutation remains
+coordinated with LTC Forge. This branch only records the read-only state and the
+next gates.
+
 ## Open Gaps
 
 1. Live NetBox API read/apply has not been rerun in this pass.
@@ -94,8 +114,9 @@ is local to the controller unless a later design splits accounting storage.
    worker are online.
 5. Rsyslog and Elasticsearch scheduler log paths are documented but still need
    runtime log-flow validation.
-6. M70 canary must not be treated as a stable SLURM worker until its SATADOM
-   EFI carrier boot path is complete and accepted.
+6. M70 canary must not be admitted as a SLURM worker until the controller,
+   MUNGE, and config-management path are confirmed; its SATADOM boot gate is no
+   longer the blocker.
 7. PR `#144` cannot be blindly merged with the current
    `codex/slurm-pilot-control-plane` base; the integration gate is documented
    in `docs/OVERNIGHT-EXECUTION-2026-05-25.md`.

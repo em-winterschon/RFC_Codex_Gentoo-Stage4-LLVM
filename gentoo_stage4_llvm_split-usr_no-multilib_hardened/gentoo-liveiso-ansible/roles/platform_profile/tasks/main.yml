@@ -14,6 +14,21 @@
   loop_control:
     loop_var: profile_modules_load_file
 
+- name: Ensure udev rules directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/udev/rules.d"
+    state: directory
+    mode: '0755'
+
+- name: Install profile udev rule fragments
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/udev/rules.d/{{ profile_udev_rules_file.key }}"
+    mode: '0644'
+    content: "{{ profile_udev_rules_file.value | trim }}\n"
+  loop: "{{ (resolved_profile_udev_rules_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: profile_udev_rules_file
+
 - name: Check profile OpenRC service init scripts
   ansible.builtin.stat:
     path: "{{ install_target_root }}/etc/init.d/{{ openrc_service_name }}"

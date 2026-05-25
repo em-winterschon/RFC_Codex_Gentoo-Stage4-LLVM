@@ -784,6 +784,7 @@ If you want to carry house policy as data instead of editing the roles, set
 - `package_atoms`
 - `package_list_files`
 - `modules_load_files`
+- `udev_rules_files`
 - `openrc_services_enable`
 - `cloud_init`
 - `jenkins_controller`

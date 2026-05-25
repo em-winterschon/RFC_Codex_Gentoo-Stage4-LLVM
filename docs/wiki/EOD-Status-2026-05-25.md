@@ -49,6 +49,25 @@
   - use the SATADOM as the persistent EFI boot carrier
   - place the fallback EFI loader at `EFI/BOOT/BOOTX64.EFI`
   - boot ZFSBootMenu from SATADOM, then import and boot the NVMe ZFS root
+- Completed the approved non-destructive SATADOM EFI carrier implementation:
+  - SATADOM ESP:
+    `/dev/disk/by-id/ata-SATADOM-SH_3ME3_20180915AA9241033080-part1`
+  - ESP PARTLABEL: `efiboot0`
+  - FAT UUID: `86DA-0813`
+  - backup path:
+    `/root/m70-canary-satadom-backups/20260525T062728Z`
+  - copied `EFI/ZBM/VMLINUZ.EFI` and `EFI/BOOT/BOOTX64.EFI`
+  - both copied EFI files hashed to
+    `1e08335d697fed772af3ecbccf1724227cdbdfa02aec221ced8a332bd44670bf`
+- Booted the canary twice through the durable local path:
+  SATADOM -> ZFSBootMenu -> `/boot/vmlinuz-6.18.32-p2-gentoo-dist-hardened`
+  -> `rpool/ROOT/gentoo`.
+- Fixed the local-boot NIC naming gap by installing
+  `/etc/udev/rules.d/10-m70-canary-net-names.rules` on the canary and modeling
+  the same MAC-based rules in Ansible `profile_udev_rules_files`.
+- Verified the second SATADOM local boot brings up `bond_mgmt` with both
+  `netboot0` and `enp3s0`, active slave `netboot0`, and no iPXE-only
+  `ifname=netboot0` kernel argument.
 - Updated M70 canary docs and wiki mirror with the installed-root validation,
   OVS/LACP state, SSSD gating, and firmware/SATADOM boot-path findings.
 - Updated PR #144 with installed-root validation evidence.
@@ -57,6 +76,9 @@
 
 - `ssh m70_canary 'hostname -f; findmnt -no SOURCE,FSTYPE /; rc-status default'`
   - result: pass during installed-root validation
+- `ssh m70_canary 'cat /proc/cmdline; cat /proc/net/bonding/bond_mgmt'`
+  - result: local SATADOM boot command line has no iPXE role artifacts
+  - result: `bond_mgmt` has `netboot0` and `enp3s0`, active slave `netboot0`
 - `ovs-appctl bond/show ovs_workload0`
   - result: `lacp_status: negotiated`
   - result: `eno1` through `eno4` enabled
@@ -76,48 +98,45 @@
 ## Commits And PRs
 
 - Branch: `m70-canary-validation-lane`
-- Latest pushed commit before this EOD:
-  `a7d3479 Validate M70 canary installed root`
+- Latest pushed commit before this EOD update:
+  `3793b82 docs: plan canary SATADOM and SLURM overnight gates`
 - PR: `#144` - `Document M70 canary validation lane`
 - PR comment:
   `https://github.com/yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM/pull/144#issuecomment-4530636020`
 
 ## Current Runtime State
 
-- The temporary M70 canary shim still points MAC `00:07:32:58:73:34` at the
-  installed-root iPXE bridge role:
-  `/root/m70-canary-netboot-shim/roles/m70-canary-zfsroot.ipxe`.
-- The canary serial console was released back to the operator after the
-  CSM-disabled/CSM-restored BIOS checks.
-- The last passive serial observation showed the canary in Aptio Setup, not yet
-  booted back to the iPXE bridge.
+- The canary now boots normally from the SATADOM EFI carrier through
+  ZFSBootMenu into the NVMe ZFS root.
+- The temporary M70 canary shim still exists as a rescue bridge for MAC
+  `00:07:32:58:73:34`, but it is no longer the normal boot dependency.
+- The canary serial console was released after the successful SATADOM and udev
+  validation reboots.
 - No serial reader remains active from Forge after the handoff.
 - The primary Forge M70 remains reachable.
 - X12again remains the approved distcc target at `172.16.99.108`.
 
 ## Open Gates
 
-1. Persistent canary boot without the temporary iPXE bridge is still open.
-2. Direct NVMe boot is not supported by observed firmware behavior.
-3. The next durable boot implementation should stage a SATADOM EFI carrier for
-   ZFSBootMenu, not depend on firmware NVMe boot enumeration.
-4. Do not repurpose or wipe the SATADOM without explicit operator approval.
-5. Do not flash BIOS unless a vendor-matched `FWS-2363` / AppNeta M70 image is
+1. Direct NVMe boot is not supported by observed firmware behavior.
+2. Do not flash BIOS unless a vendor-matched `FWS-2363` / AppNeta M70 image is
    obtained and staged with a rollback plan.
-6. FreeIPA/SSSD client enrollment remains pending; `sssd` should not be enabled
+3. FreeIPA/SSSD client enrollment remains pending; `sssd` should not be enabled
    until `/etc/sssd/sssd.conf` exists.
-7. SLURM controller/worker work should remain repo-side, VM-side, or read-only
-   until the M70 canary is out of firmware setup and its boot path is stable.
+4. Repeat the SATADOM carrier + udev naming profile path on the next M70 before
+   promoting it to the fleet baseline.
+5. SLURM controller/worker work should remain coordinated with LTC Forge and
+   live-gated until controller VM placement and service ownership are final.
 
 ## Overnight Priority
 
 Primary overnight lane:
 
 1. Keep the M70 canary safe and recoverable.
-2. Convert the canary boot plan from "temporary iPXE bridge" to "SATADOM EFI
-   carrier" documentation and implementation scaffolding.
-3. Prepare the SATADOM EFI staging steps, validation checks, and rollback plan
-   without destructive writes until operator approval is explicit.
+2. Convert the live SATADOM and udev fix into repeatable profile-driven
+   application for the next M70.
+3. Reduce boot/kernel noise that is now visible after local boot, starting with
+   M70-specific module lists and PCI resource warnings.
 
 Secondary overnight lane:
 

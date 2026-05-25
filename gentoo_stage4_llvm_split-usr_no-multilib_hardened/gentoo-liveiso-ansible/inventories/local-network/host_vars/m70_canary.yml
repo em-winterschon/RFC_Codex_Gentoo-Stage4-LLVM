@@ -235,6 +235,16 @@ freeipa_client_package_atoms:
 # - i211 pair is management only and stays outside OVS.
 # - X553 ports are the OVS/LACP workload blast zone.
 # - NetworkManager is explicitly masked; networking is OpenRC/netifrc plus OVS.
+profile_udev_rules_files:
+  10-m70-canary-net-names.rules: |
+    # Persistent names are required for SATADOM/ZFSBootMenu local boots because
+    # the iPXE ifname= kernel argument is absent after firmware hands off to EFI.
+    SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:07:32:58:73:34", NAME="netboot0"
+    SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:07:32:58:73:35", NAME="enp3s0"
+    SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:07:32:58:73:36", NAME="eno1"
+    SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:07:32:58:73:37", NAME="eno2"
+    SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:07:32:58:73:38", NAME="eno3"
+    SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="00:07:32:58:73:39", NAME="eno4"
 profile_modules_load_files:
   m70-canary-network.conf: |
     bonding

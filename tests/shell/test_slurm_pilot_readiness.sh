@@ -58,7 +58,7 @@ assert_file_contains "${GAP_DOC}" 'getent ahostsv4 sched-sun99-slurmctl-099071.r
 assert_file_contains "${GAP_DOC}" 'dcim/devices:sched_sun99_slurmctl_099071'
 assert_file_contains "${GAP_DOC}" 'ipam/ip-addresses:172.16.99.72/24'
 assert_file_contains "${GAP_DOC}" 'slurm_pilot_live_apply_required=true'
-assert_file_contains "${GAP_DOC}" 'M70 canary must not be treated as a stable SLURM worker'
+assert_file_contains "${GAP_DOC}" 'M70 canary must not be admitted as a SLURM worker'
 assert_file_contains "${GAP_WIKI}" 'SLURM Pilot Gap Analysis 2026-05-25'
 assert_file_contains "${WIKI_HOME}" 'SLURM Pilot Gap Analysis 2026-05-25'
 assert_file_contains "${WIKI_SIDEBAR}" 'SLURM Pilot Gap Analysis 2026-05-25'
