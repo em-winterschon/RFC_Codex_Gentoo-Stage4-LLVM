@@ -42,7 +42,7 @@ assert_contains "${PATHB_EXTRA_PACKAGES}" 'net-fs/samba'
 assert_contains "${PATHB_EXTRA_PACKAGES}" 'app-crypt/mit-krb5'
 assert_contains "${PATHB_PACKAGE_USE_APPEND}" 'sys-auth/sssd samba'
 assert_contains "${PATHB_PACKAGE_USE_APPEND}" 'net-fs/samba winbind'
-assert_contains "${PATHB_OPENRC_SERVICES_EXTRA}" 'sssd'
+[[ "${PATHB_OPENRC_SERVICES_EXTRA}" != *sssd* ]] || fail "sssd must be enabled only after FreeIPA enrollment renders /etc/sssd/sssd.conf"
 
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_PROFILE_DEFINITION_FILES'
 assert_file_contains "${ANSIBLE_ROOT}/scripts/build-path-b-netboot-artifacts.sh" 'PATHB_ACCEPT_LICENSE'

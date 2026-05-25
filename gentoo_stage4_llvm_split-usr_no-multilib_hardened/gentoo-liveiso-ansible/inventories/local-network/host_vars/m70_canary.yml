@@ -199,7 +199,14 @@ install_kernel_cmdline: >-
 install_openssh: true
 install_networkmanager: false
 root_authorized_keys:
-  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@livecd
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@x12again
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICGaGcRcmW6vcZqb3lqUHxoHdc5kLf3PKV3RdtBeZdYn eva@null.ed25519
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFKe3sLI53uW5ZJy+zkGZfRUWdNsqmnmMavVqXwa/BU9 cdex-vault-ops@ctrl-rfc99-gowaybatin.rfc1918.ai
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILBdCx793g3Ij9Eo1mUCve41JM9W/eIf4JcJPaEoJMHJ cdex-root-localnet@x12again
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJij6W4GPoYov/jcFTBYYO4s5jk/dSJoKOU3OJs8zn5I cdex-root-global@X12AGAIN
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDtTcgnlWEGr0kdlkGFzr458sfgs5rIC6UCDKbDNneKp forge-m70-yukon-fcp-20260521
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDG6hd5/x6AI5aeQ1tVEdGwu1NlsherlS5SzX/7a5y2I Lieutenant-Colonel-Forge@RFC99
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6nVoltIxtd5SjEfmCIrSgi4M+Y35+GUq0gGbnYdjgZ root@admin-sun99-forge-099070
 finalize_unmount_target: false
 finalize_reboot_host: false
 

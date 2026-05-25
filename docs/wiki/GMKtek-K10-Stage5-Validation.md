@@ -102,10 +102,11 @@ Current physical discovery state:
   whitespace-separated shell list
   `PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml"`
   so `sys-auth/sssd`, `net-fs/samba`, the SSSD/Samba package USE policy,
-  `app-crypt/age`, `curl`, `jq`, the `sssd` OpenRC service, and the opt-in
-  secure first-boot enrollment scaffold are carried into the generated rootfs
-  instead of applied only as live mutations. Do not embed host keytabs in the
-  public netboot artifact set.
+  `app-crypt/age`, `curl`, `jq`, and the opt-in secure first-boot enrollment
+  scaffold are carried into the generated rootfs instead of applied only as
+  live mutations. The `sssd` OpenRC service is enabled by the FreeIPA
+  enrollment apply path only after `/etc/sssd/sssd.conf` exists. Do not embed
+  host keytabs in the public netboot artifact set.
 - Dracut DHCP note: in-initramfs DHCP repeatedly failed despite RouterOS
   working for firmware/iPXE. The active K10 installer role uses the reserved
   static initramfs address instead.

@@ -124,10 +124,11 @@ Persistent target state:
 - FQDN: `sbsoc-accel-int64-m70n2.rfc1918.host`
 - aliases: `m70n2.rfc1918.host`, `m70-canary.rfc1918.host`
 - management IP: `172.16.99.22/24`
-- boot strategy: ZFSBootMenu local EFI boot
+- boot strategy: temporary iPXE bridge into installed ZFS root; local EFI
+  ZFSBootMenu payload is staged but firmware handoff remains blocked
 - storage layout: ZFS mirror across the two KIOXIA NVMe devices
-- management network: `bond-mgmt` active-backup over `netboot0` and `enp3s0`
-- workload network: Open vSwitch `br-ovs0` with `ovs-workload0` active LACP
+- management network: `bond_mgmt` balance-alb over `netboot0` and `enp3s0`
+- workload network: Open vSwitch `br_ovs0` with `ovs_workload0` active LACP
   over `eno1` through `eno4`
 
 Discovered storage on 2026-05-22 from the canary RS232 console:
@@ -215,9 +216,50 @@ ZFSBootMenu and initramfs state after the 2026-05-24 repair:
   - Intel QAT firmware and `qat_c3xxx`, `qat_c3xxxvf`, `intel_qat` modules
   - `network-legacy`, `dhclient`, and `dhclient-script`
 
-No reboot or PDU power action was performed as part of this remediation. The
-next destructive or rebooting action is a planned canary-only local
-ZFSBootMenu boot validation.
+Installed-root validation on 2026-05-25 used a canary-only iPXE bridge role
+served from the primary M70 at `172.16.99.70:8080`:
+
+- iPXE role:
+  `/root/m70-canary-netboot-shim/roles/m70-canary-zfsroot.ipxe`
+- kernel:
+  `/root/m70-canary-netboot-shim/g/vmlinuz-m70-canary-zfsroot`
+- initramfs:
+  `/root/m70-canary-netboot-shim/g/initramfs-m70-canary-zfsroot.img`
+- kernel command line:
+
+  ```text
+  root=ZFS=rpool/ROOT/gentoo ro console=tty0 console=ttyS0,115200 intel_iommu=on iommu=pt spl_hostid=1709fd12 ifname=netboot0:00:07:32:58:73:34 ip=172.16.99.22::172.16.99.1:255.255.255.0:sbsoc-accel-int64-m70n2:netboot0:none nameserver=172.16.99.1 nameserver=9.9.9.9
+  ```
+
+Validation evidence:
+
+- `hostname -f`: `sbsoc-accel-int64-m70n2.rfc1918.host`
+- `/`: `rpool/ROOT/gentoo` mounted as `zfs`
+- `rpool`: `ONLINE`, read-write, mirrored across `nvme0n1p3` and `nvme1n1p3`
+- `efi=no` because this pass intentionally booted through legacy PXE/iPXE
+- early microcode updated during boot from revision `0x32` to `0x3e`
+- `qat_c3xxx`, `intel_qat`, `zfs`, `openvswitch`, `bonding`, and `kvm_intel`
+  are loaded
+- `bond_mgmt` is up at `172.16.99.22/24`
+- `ovsdb-server`, `ovs-vswitchd`, and `m70-ovs-fabric` are started
+- OVS has bridge `br_ovs0` and bond `ovs_workload0` over `eno1` through
+  `eno4`
+- `ovs-appctl bond/show ovs_workload0` reports `lacp_status: negotiated`
+- root SSH uses the primary M70 `/root/.ssh/authorized_keys` keyring for the
+  canary target
+
+Two target-side fixes were made during this validation:
+
+- `/var/lib/openvswitch/conf.db` was initialized and
+  `/etc/conf.d/ovsdb-server` was pinned to
+  `DATABASE="/var/lib/openvswitch/conf.db"`.
+- `/usr/local/libexec/m70-ovs-fabric` was installed from the repo-modeled
+  `openrc_ovs_fabric` intent so the OpenRC service can apply `br_ovs0` and
+  `ovs_workload0`.
+
+`sssd` is intentionally removed from the canary default runlevel until the
+FreeIPA client enrollment apply path renders `/etc/sssd/sssd.conf` and enables
+the service.
 
 ## Firmware Boot State
 
@@ -240,6 +282,21 @@ After the persistent ZFSBootMenu install is staged, the managed canary netboot
 role is `localdisk`. If firmware still attempts PXE first, the Path B
 dispatcher should match canary MAC `00:07:32:58:73:34` and chain the existing
 `localdisk` iPXE role instead of falling through to the installer menu.
+
+Follow-up boot-path validation on 2026-05-24 and 2026-05-25 found:
+
+- The firmware reaches legacy PXE on `00:07:32:58:73:34` and loads iPXE from
+  the local M70 shim before any local NVMe EFI payload.
+- iPXE nested `exit` returns to the parent script; it did not force the BIOS to
+  proceed to a local disk boot path.
+- `sanboot --drive 0x80` reaches the stale SATA-DOM FreeBSD/ZFS loader path and
+  fails to find `/boot/zfsloader`, `/boot/loader`, or `/boot/kernel/kernel`.
+- `sanboot --drive 0x81`, `0x82`, and `0x83` returned input/output errors.
+- Serial key-spam for `DEL`/`ESC` and iPXE `reboot --setup` did not enter
+  setup from automation.
+- The NVMe EFI payloads still exist on both ESPs, but firmware ordering/mode
+  must be corrected manually or the SATA-DOM must be explicitly repurposed
+  before the canary can boot persistently without the temporary iPXE bridge.
 
 ## Serial-Hub Handling
 
