@@ -40,6 +40,126 @@ discarded.
 The new contract should make the Gentoo data one platform mapping under a
 broader canonical atom system.
 
+## Monorepo Infrastructure Layout
+
+The monorepo should model infrastructure with the same separation of concerns
+used by FD.io CSIT: inventory, physical specifications, logical topologies,
+environment versioning, runtime settings, reports, and presentation are related
+but distinct layers. FD.io's CSIT docs split these concerns across inventory,
+testbed specifications, testbed configuration, testbed versioning, logical
+topologies, and startup settings. Our repo should follow that pattern while
+keeping NetBox authoritative for live entities.
+
+Recommended repo layout:
+
+```text
+infra/
+  netbox/
+    openapi/
+    custom-fields/
+    validators/
+    generated/
+  topology/
+    physical/
+    logical/
+    testbeds/
+  baseline-atoms/
+  host-contracts/
+  service-contracts/
+  rollout-plans/
+  audit-reports/
+```
+
+Repository-owned inputs:
+
+- OpenAPI scope definitions for NetBox API clients.
+- NetBox custom field and tag schema definitions.
+- Validators for required NetBox fields and relationship consistency.
+- Baseline atom definitions and platform package mappings.
+- Host, service, topology, and rollout contract schemas.
+- Plan/apply/audit scripts and Ansible playbooks.
+- Generated snapshots from NetBox for review, testing, and offline planning.
+
+NetBox-owned inputs:
+
+- Sites, racks, rack units, devices, VMs, clusters, roles, platforms, and
+  lifecycle status.
+- Interfaces, MAC addresses, cables, LAGs, VLANs, prefixes, IP addresses, and
+  DNS names.
+- Power feeds, PDUs, outlets, UPS/ATS relationships, and console/BMC endpoints
+  when modeled.
+- Device serial numbers, asset tags, model facts, management IPs, and BMC IPs.
+- Baseline targeting fields such as policy, cohort, wave, OS family, OS
+  version, package backend, init backend, and architecture.
+
+Generated repo artifacts must be treated as build outputs. They are useful for
+diff review and reproducible automation, but manual edits to generated NetBox
+snapshots are not authoritative. If generated data is wrong, the fix belongs in
+NetBox or in the exporter/validator logic.
+
+## Topology Grammar
+
+FD.io CSIT uses stable testbed naming and port naming to encode testbed number,
+role, PCIe slot, and port index. We should adopt the grammar concept, but
+generate identifiers from NetBox object IDs and normalized host/interface data
+instead of relying on hand-maintained text tables.
+
+Recommended entity types:
+
+- `site`: physical or administrative site, such as `sun99`, `rfc99`, `fmt2`.
+- `rack`: physical rack identifier.
+- `cluster`: logical compute/storage/testbed grouping.
+- `host`: physical server, appliance, SBC, or managed VM.
+- `role`: host function, such as `sut`, `tg`, `hypervisor`, `storage`,
+  `inference`, `builder`, `bastion`, `dns`, `ntp`, `router`, or `switch`.
+- `fabric`: network control/data-plane domain.
+- `link`: point-to-point, breakout lane, LAG, VLAN trunk, or routed adjacency.
+- `endpoint`: host interface, switch port, BMC, serial console, PDU outlet, or
+  service VIP.
+
+Recommended generated slug format:
+
+```text
+<site>.<cluster>.<role>.<host>.<endpoint>
+```
+
+Examples:
+
+- `sun99.m70.forge.m70-forge.bond0`
+- `sun99.m70.slurm.m70-canary.eno1`
+- `sun99.thor.inference.agx-rfc99-bunnydev.qsfp28-0-lane1`
+- `fmt2.nasa.storage.nasa.nfs-kernel-repo`
+
+The slug is for automation readability. NetBox IDs remain the durable object
+identity.
+
+## Environment Version Contract
+
+CSIT tracks test environment changes so benchmark anomalies can be separated
+from application changes. We need the same idea for fleet operations: host drift
+and performance changes must be explainable against a versioned environment
+contract.
+
+Each managed host should resolve to an environment version record containing:
+
+- Hardware model, CPU model, CPU topology, RAM topology, accelerator inventory,
+  NIC inventory, firmware versions, BIOS/BMC versions, and storage controller
+  versions.
+- OS family, OS version, kernel version, init backend, package backend, boot
+  mode, and root filesystem layout.
+- Baseline atom policy and resolved native package/service plan.
+- Network fabric membership, interface role, VLAN/LAG/breakout lane mapping,
+  routing domain, DNS identity, and management path.
+- Storage class, local disks, persistent mounts, NFS/iSCSI/iSER/Ceph/ZFS
+  relationships, and backup policy.
+- Runtime service contracts for major stacks such as inference, DNS, NTP,
+  FreeIPA, RADIUS, NetBox, observability, package repositories, and build
+  workers.
+- Operator-approved deviations, holds, exemptions, and maintenance windows.
+
+Environment version records should be generated from NetBox plus live audit
+facts. They should be stored as reports, not manually curated desired state.
+
 ## Canonical Atom Model
 
 Canonical atoms are stable internal capability names. They are not package
@@ -121,6 +241,11 @@ NetBox is authoritative for host targeting. Repo inventory is allowed as a
 bootstrap, export, dry-run, or break-glass input, but it is not the long-term
 authority for fleet membership.
 
+NetBox data may be slaved into the monorepo through exporter scripts, scoped API
+clients, and generated Ansible inventory. Those generated artifacts are
+downstream consumers of NetBox. Repo validators may reject inconsistent NetBox
+exports, but they do not make repo inventory authoritative over NetBox.
+
 Required NetBox data for managed hosts:
 
 - Device or VM name.
@@ -174,6 +299,9 @@ Validation has four layers.
    - Managed hosts have all required custom fields.
    - OS family, OS version, architecture, package backend, and init backend are
      internally consistent.
+   - Interface, cable, power, BMC, DNS, and management-path facts are complete
+     for hosts in automation cohorts.
+   - Generated repo snapshots match the current NetBox API export.
    - Hosts marked `baseline-exempt` are excluded and reported.
    - Hosts in `baseline-hold` are planned but not applied.
 
@@ -239,11 +367,13 @@ Every plan or apply run must produce:
 
 - Machine-readable JSON plan.
 - Human-readable Markdown report.
+- NetBox export hash and repo contract hash used by the run.
 - Host count by OS family, architecture, site, policy, cohort, and wave.
 - Skipped/exempt/held host list.
 - Failed validation list.
 - Planned package and service changes.
 - Unsafe changes requiring explicit approval.
+- Environment version deltas relevant to the run.
 
 Reports should be suitable for committing into repo closeout docs when the run
 is important enough to preserve.
