@@ -36,6 +36,11 @@ For NFS, prefer pNFS or NFSv4.1+ `nconnect` where supported. The overlay also
 installs `multipath-tools` because the same bare-metal and VM storage clients
 often need iSCSI, FC, or NVMe-oF block multipath.
 
+Proxmox/Debian clients should be validated before any claim of true multi-link
+NFS striping. OpenEuler examples using `localaddrs` and `remoteaddrs` require a
+kernel/client implementation that is not generally present on Proxmox kernels;
+use live throughput and failover tests as the admission gate.
+
 ## Gentoo Enablement
 
 Profile:

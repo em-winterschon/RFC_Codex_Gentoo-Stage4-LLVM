@@ -47,6 +47,12 @@ NFSv4.2 with multipath is the default for LACP-capable hosts. In practice this
 means NFSv4.2 with `nconnect` or pNFS where supported, not block-layer
 `multipath-tools` semantics for a filesystem mount.
 
+Do not assume Proxmox/Debian NFS clients provide OpenEuler-style NFS multipath.
+The Proxmox forum thread on NFSv4.2 multipathing showed `nconnect` alone still
+limited practical throughput to one 10G path in that test, and
+`localaddrs`/`remoteaddrs` options failed because they depend on a
+kernel/client implementation not present in that environment.
+
 NFSv4.1 is the default for non-LACP hosts. NFSv3 remains a rescue/bootstrap
 compatibility profile, not the normal fleet default.
 

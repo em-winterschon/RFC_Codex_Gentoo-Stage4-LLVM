@@ -36,3 +36,5 @@ Primary atoms:
 
 Use `nconnect` or pNFS for NFS-side multi-path behavior where supported. Keep
 `multipath-tools` for block storage paths such as iSCSI, FC, and NVMe-oF.
+Do not assume OpenEuler-style `localaddrs`/`remoteaddrs` NFS multipathing is
+available on Proxmox/Debian clients; validate throughput and failover live.
