@@ -1,0 +1,14 @@
+network:
+  version: 2
+  ethernets:
+    qemu_mgmt0:
+      match:
+        macaddress: "52:54:00:12:34:56"
+      dhcp4: true
+      dhcp6: false
+    ovs_vpp0:
+      match:
+        macaddress: "52:54:00:70:ca:01"
+      dhcp4: false
+      dhcp6: false
+      optional: true

@@ -258,6 +258,75 @@ Status captured on 2026-05-25 after SATADOM local boot validation:
   `ip=...:netboot0:none`.
 - Local boot exposed the prior netboot-only NIC naming dependency:
   `netboot0` became `enp2s0` without the iPXE `ifname=` argument.
+
+## VPP Canary VM
+
+Status captured on 2026-05-25:
+
+- The first VPP canary guest is running on `m70_canary`, not on the primary
+  Forge M70.
+- NetBox records:
+  - cluster: `m70-canary-qemu` (`virtualization.clusters` id `7`)
+  - VM: `vpp-canary` (`virtualization.virtual-machines` id `16`)
+  - VM interfaces: `qemu-mgmt0` id `17`, `ovs-vpp0` id `18`
+- Runtime launcher path on `m70_canary`:
+  `/opt/gentoo-virt-qemu/qemu-launch-vpp-canary-vm.sh`
+- Repo launcher path:
+  `gentoo-virt-qemu/qemu-launch-vpp-canary-vm.sh`
+- Guest OS: Ubuntu 24.04.4 LTS Noble cloud image.
+- Guest package source: FD.io `packagecloud.io/fdio/release`.
+- Installed guest packages:
+  - `vpp 26.02-release`
+  - `vpp-plugin-core 26.02-release`
+  - `vpp-plugin-dpdk 26.02-release`
+- VM resources:
+  - `4` vCPU
+  - `4096` MiB RAM
+  - `4` GiB cloud overlay disk
+- QEMU management NIC:
+  - guest interface: `enp0s4`
+  - MAC: `52:54:00:12:34:56`
+  - QEMU backend: user-mode NAT with SSH forwarded on canary localhost port
+    `2224`
+  - operator alias: `ssh vpp_canary`
+- OVS/VPP NIC:
+  - host tap: `tap-vppcan0`
+  - host bridge: `br_ovs0`
+  - guest interface: `enp0s5`
+  - MAC: `52:54:00:70:ca:01`
+  - production IP assignment: none
+  - VPP interface: `host-enp0s5` through AF_PACKET
+  - persistence: guest systemd oneshot `vpp-canary-afpacket.service`
+
+The OVS/VPP NIC briefly received `172.16.99.157/24` during the first boot
+because the generic cloud-init network config matched all `en*` interfaces.
+NetBox already assigns `172.16.99.157/24` to `lap_sun99_chonkers`, so this was
+immediately corrected. The live guest now uses a canary netplan file that keeps
+`enp0s5` L2-only, and the repo launcher now ships
+`vpp-canary-network-config.yaml` so future rebuilds only DHCP the QEMU
+management NIC.
+
+Validation evidence:
+
+- `cloud-init status --long`: `status: done`, `errors: []`.
+- `systemctl is-active vpp`: `active`.
+- `systemctl is-active vpp-canary-afpacket.service`: `active`.
+- `vppctl show plugins` shows `af_packet_plugin.so` and `tap_plugin.so`; the
+  DPDK plugin is disabled in `/etc/vpp/startup.conf` for this canary lane.
+- `vppctl show interface host-enp0s5` shows the AF_PACKET interface `up`.
+- Host-side OVS shows `tap-vppcan0` attached to `br_ovs0` with
+  `external_ids:owner=forge`, `external_ids:role=vpp-canary`, and
+  `external_ids:instance=vpp-canary`.
+- `ovs_workload0` LACP remains negotiated across `eno1` through `eno4`.
+
+Important guardrails:
+
+- Do not bind `eno1` through `eno4` to `vfio-pci`, `uio_pci_generic`,
+  OVS-DPDK, or VPP DPDK in this lane.
+- Do not assign a production IP to `ovs-vpp0` unless NetBox is updated first
+  and the address is reserved for this VM.
+- Treat `tap-vppcan0` as a canary-only validation artifact. It can be removed
+  by shutting down the VM and deleting the OVS port if the lane needs rollback.
 - The live host now has `/etc/udev/rules.d/10-m70-canary-net-names.rules`
   with MAC-based names for `netboot0`, `enp3s0`, and `eno1` through `eno4`.
   The same rule is modeled in Ansible via `profile_udev_rules_files`.

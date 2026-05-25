@@ -40,6 +40,7 @@ mark_cloud_launch_globals_used() {
     "${QEMU_BOOTDISK_ID-}" \
     "${QEMU_BOOTDISK_MODEL-}" \
     "${QEMU_BOOTDISK_BOOTINDEX-}" \
+    "${ATTACH_HOST_DISKS-}" \
     "${SEED_DIR-}" \
     "${QEMU_BIN-}" \
     "${QEMU_IMG_BIN-}" \
@@ -52,7 +53,12 @@ mark_cloud_launch_globals_used() {
     "${SSH_BANNER_TIMEOUT-}" \
     "${SSH_READY_HOST-}" \
     "${SSH_READY_PORT-}" \
-    "${QEMU_ENABLE_VSOCK-}"
+    "${QEMU_ENABLE_VSOCK-}" \
+    "${QEMU_NETDEV_MAC-}" \
+    "${QEMU_SECOND_NETDEV_ID-}" \
+    "${QEMU_SECOND_NETDEV_BACKEND-}" \
+    "${QEMU_SECOND_NETDEV_MODEL-}" \
+    "${QEMU_SECOND_NETDEV_MAC-}"
 }
 
 reset_launcher_state() {
@@ -69,6 +75,7 @@ reset_launcher_state() {
   QEMU_BOOTDISK_ID='bootdisk'
   QEMU_BOOTDISK_MODEL='virtio-blk-pci'
   QEMU_BOOTDISK_BOOTINDEX='1'
+  ATTACH_HOST_DISKS='1'
   QEMU_SERIAL_MODE='file'
   QEMU_DISPLAY_MODE='none'
   QEMU_DAEMONIZE='1'
@@ -78,6 +85,11 @@ reset_launcher_state() {
   SSH_BANNER_TIMEOUT='5'
   SSH_FORWARD_HOST='127.0.0.1'
   SSH_FORWARD_PORT='2222'
+  QEMU_NETDEV_MAC=''
+  QEMU_SECOND_NETDEV_ID='net1'
+  QEMU_SECOND_NETDEV_BACKEND=''
+  QEMU_SECOND_NETDEV_MODEL='virtio-net-pci'
+  QEMU_SECOND_NETDEV_MAC=''
 }
 
 test_resolve_cloud_image_url_parses_latest_info() {
@@ -143,6 +155,33 @@ test_build_qemu_cmd_uses_cloud_boot_disk_seed_and_host_disks() {
   assert_contains "${rendered}" "file=${RPOOL_DISK1},format=raw,cache=${HOST_DISK_CACHE},aio=${HOST_DISK_AIO}"
   assert_contains "${rendered}" "file:${QEMU_SERIAL_FILE}"
   assert_contains "${rendered}" '-daemonize'
+  rm -rf "${temp_dir}"
+}
+
+test_build_qemu_cmd_can_skip_host_disks_and_add_second_tap() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  OVERLAY_IMAGE="${temp_dir}/overlay.qcow2"
+  SEED_ISO="${temp_dir}/seed.iso"
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  ATTACH_HOST_DISKS='0'
+  QEMU_SECOND_NETDEV_BACKEND='tap,ifname=tap-vppcan0,script=no,downscript=no'
+  QEMU_SECOND_NETDEV_MAC='52:54:00:70:ca:01'
+  mark_cloud_launch_globals_used
+  : > "${OVERLAY_IMAGE}"
+  : > "${SEED_ISO}"
+  : > "${EFI_FIRM}"
+
+  build_qemu_cmd
+
+  rendered="${QEMU_CMD[*]}"
+  assert_contains "${rendered}" 'user,hostfwd=tcp:127.0.0.1:2222-:22,id=net0'
+  assert_contains "${rendered}" 'tap,ifname=tap-vppcan0,script=no,downscript=no,id=net1'
+  assert_contains "${rendered}" 'virtio-net-pci,netdev=net1,mac=52:54:00:70:ca:01'
+  [[ "${rendered}" != *'bpool0'* ]] || fail 'host disk bpool0 should not be attached when ATTACH_HOST_DISKS=0'
+  [[ "${rendered}" != *'rpool0'* ]] || fail 'host disk rpool0 should not be attached when ATTACH_HOST_DISKS=0'
   rm -rf "${temp_dir}"
 }
 
@@ -243,6 +282,7 @@ test_validate_vsock_backend_checks_device_help() {
 
 test_resolve_cloud_image_url_parses_latest_info
 test_build_qemu_cmd_uses_cloud_boot_disk_seed_and_host_disks
+test_build_qemu_cmd_can_skip_host_disks_and_add_second_tap
 test_main_dry_run_prints_overlay_and_qemu_commands
 test_wait_for_ssh_ready_requires_banner_not_just_open_port
 test_validate_vsock_backend_checks_device_help
