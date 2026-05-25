@@ -102,7 +102,45 @@ Blocked without operator approval:
 - MariaDB/slurmdbd secret creation outside the approved vault flow
 - assigning a new IP address not already modeled in NetBox
 
-## Lane D: Distcc And Build Policy
+## Lane D: PR 144 / SLURM Branch Integration Gate
+
+Goal: keep the M70 canary branch aligned with SLURM pilot work without
+silently regressing the canary boot/network lane.
+
+Current evidence after the EOD push:
+
+- PR `#144` targets `codex/slurm-pilot-control-plane`.
+- `origin/codex/slurm-pilot-control-plane` is currently at `9db97b69f1b0`.
+- `m70-canary-validation-lane` is currently at `ef8013bdceb1`.
+- The branch comparison is currently `28 6` from
+  `git rev-list --left-right --count HEAD...origin/codex/slurm-pilot-control-plane`.
+- GitHub reports PR `#144` merge state as `DIRTY`.
+- A direct base refresh would touch the M70 docs/wiki set and network role
+  paths. That must be reviewed as an integration task, not accepted as a
+  mechanical merge.
+
+Allowed overnight work:
+
+1. Review the six upstream SLURM-base commits one at a time.
+2. Preserve the M70 canary installed-root docs, EOD docs, wiki mirror, and
+   test coverage.
+3. Preserve the approved M70 network policy:
+   - no NetworkManager
+   - OpenRC/netifrc for management
+   - Open vSwitch for workload fabric
+4. If an integration branch is needed, create it explicitly and keep it
+   separate from live canary host mutation.
+5. Run the canary and SLURM shell tests before pushing any integration update.
+
+Blocked without a deliberate integration pass:
+
+- blind merge of `origin/codex/slurm-pilot-control-plane` into
+  `m70-canary-validation-lane`
+- retargeting PR `#144`
+- deleting M70 canary docs or wiki pages
+- restoring NetworkManager templates to the M70 lane
+
+## Lane E: Distcc And Build Policy
 
 Goal: keep canary and future M70 build policy aligned with X12again resources.
 
