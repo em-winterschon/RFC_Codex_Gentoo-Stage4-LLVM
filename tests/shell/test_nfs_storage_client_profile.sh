@@ -22,11 +22,16 @@ test -f "${PACKAGE_LIST_DIR}/stage5-storage-nfs-client.packages"
 
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" '^gentoo_profile_definition:'
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.metadata.yml" '^gentoo_system_profile_metadata:'
-assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfsv3_tcp_default'
+assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfsv4_2_tcp'
+assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfsv4_2_tcp_multipath'
+assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfsv4_1_tcp'
+assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfsv3_tcp_rescue'
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfsv4_tcp_rbac_uid_gid'
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfs_tcp'
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfs_rdma'
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nfs_multipath'
+assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'nofail'
+assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'soft'
 assert_file_contains "${PROFILE_DIR}/nfs-storage-client.yml" 'aaa-domain-client'
 
 for package_atom in \
@@ -54,10 +59,13 @@ test -f "${ROLE_DIR}/defaults/main.yml"
 test -f "${ROLE_DIR}/tasks/main.yml"
 test -f "${ROLE_DIR}/templates/idmapd.conf.j2"
 test -f "${ROLE_DIR}/templates/nfs.conf.j2"
-assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_protocol_default: nfsv3_tcp'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_protocol_default: nfsv4_2_tcp'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_non_lacp_protocol_default: nfsv4_1_tcp'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_lacp_protocol_default: nfsv4_2_tcp_multipath'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_enable_rdma: false'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_enable_multipath: false'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_nconnect: 4'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfs_storage_client_fstab_safety_options:'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'rpcbind'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'rpc.statd'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nfsclient'
@@ -69,12 +77,15 @@ assert_file_contains "${ROLE_DIR}/templates/idmapd.conf.j2" 'Domain ='
 
 test -f "${DOC_FILE}"
 test -f "${WIKI_FILE}"
-assert_file_contains "${DOC_FILE}" 'NFSv3 over TCP remains the default'
+assert_file_contains "${DOC_FILE}" 'NFSv4.2 over TCP with nconnect is the default'
+assert_file_contains "${DOC_FILE}" 'NFSv4.1 over TCP is the default for hosts without LACP'
+assert_file_contains "${DOC_FILE}" 'NFSv3 over TCP remains a rescue'
 assert_file_contains "${DOC_FILE}" 'NFSv4 requires centralized AAA'
 assert_file_contains "${DOC_FILE}" 'NFS-RDMA'
 assert_file_contains "${DOC_FILE}" 'Issue #117'
 assert_file_contains "${DOC_FILE}" 'Containers do not inherit this profile by default'
-assert_file_contains "${WIKI_FILE}" 'NFSv3 over TCP remains the default'
+assert_file_contains "${WIKI_FILE}" 'NFSv4.2 over TCP with nconnect is the default'
+assert_file_contains "${WIKI_FILE}" 'NFSv4.1 over TCP is the default for hosts without LACP'
 assert_file_contains "${WIKI_FILE}" 'Issue #117'
 
 printf 'PASS: %s\n' "$(basename "$0")"
