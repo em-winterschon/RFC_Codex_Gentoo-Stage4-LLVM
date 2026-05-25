@@ -298,6 +298,30 @@ Follow-up boot-path validation on 2026-05-24 and 2026-05-25 found:
   must be corrected manually or the SATA-DOM must be explicitly repurposed
   before the canary can boot persistently without the temporary iPXE bridge.
 
+Operator BIOS inspection on 2026-05-25 refined the boot-path decision:
+
+- BIOS main screen identifies the build as
+  `m70 R2.2 (V0472M22)(04/14/2021)`.
+- DMI identifies the platform as AppNeta `m70 r01` on AAEON `FWS-2363 V1.0`.
+- Public AAEON download trees expose nearby `FWS-2360` and `FWS-2365` BIOS
+  directories, but direct `FWS-2363` BIOS paths returned 404. No safe public
+  vendor-matched BIOS update was found.
+- Do not cross-flash `FWS-2360` or `FWS-2365` firmware onto this board.
+- With CSM disabled, no new NVMe boot options appeared.
+- UEFI BBS priorities list the SATADOM and `none`; direct NVMe boot is not an
+  accepted assumption for these nodes.
+- CSM-enabled mode remains the known recovery path for legacy PXE/iPXE.
+
+Accepted durable boot direction: SATADOM EFI carrier.
+
+1. Keep Gentoo root and data on the mirrored NVMe ZFS `rpool`.
+2. Use the SATADOM only as the persistent EFI boot carrier.
+3. Put the fallback EFI loader at `EFI/BOOT/BOOTX64.EFI` on the SATADOM ESP.
+4. Boot ZFSBootMenu from the SATADOM, then import and boot
+   `rpool/ROOT/gentoo` from the NVMe mirror.
+5. Do not write the SATADOM carrier until the operator explicitly approves the
+   SATADOM repurpose step.
+
 ## Serial-Hub Handling
 
 During USB hub power changes, all attached serial paths are considered

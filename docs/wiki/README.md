@@ -51,7 +51,9 @@ Current mirrored pages:
 - `ITIL-Change-Control-Container-Services-Safe-Move.md`
 - `Changelog.md`
 - `SITREP-Status-2026-05-03.md`
+- `EOD-Status-2026-05-25.md`
 - `EOD-Status-2026-05-24.md`
+- `Overnight-Execution-2026-05-25.md`
 - `EOD-Status-2026-05-03.md`
 - `EOD-Status-2026-05-02.md`
 - `EOD-Status-2026-04-30.md`
