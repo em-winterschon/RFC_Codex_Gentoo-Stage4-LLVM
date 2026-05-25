@@ -293,6 +293,12 @@ Optional:
 - Error handling should be present when failure is plausible.
 - Validate inputs where appropriate.
 
+### 9.2 Containers And OCI
+- NEVER USE DOCKER.
+- When working with Open Container Initiative (OCI) compatible container requirements or dependencies, NEVER USE DOCKER.
+- Reference OCI runtime specification v1.3 for container operations:
+  https://github.com/yukon-systems/SysOps_Containment_OCI__runtime-spec
+
 
 ## 10. Git, Repository, and Path Hygiene
 
