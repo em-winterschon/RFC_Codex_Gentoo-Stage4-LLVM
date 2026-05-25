@@ -69,10 +69,21 @@ For Podman/CDI-capable hosts, expose GPUs with:
 --device nvidia.com/gpu=all
 ```
 
-Do not assume this is already valid on Jetson/L4T hosts. Thor AGX currently has
-Docker and NVIDIA Container Toolkit active, but Podman is absent. Treat
-Jetson/L4T as a host-prep exception until Podman plus NVIDIA CDI is validated or
-a temporary Docker engine override is approved.
+Do not assume this is already valid on Jetson/L4T hosts. Treat Jetson/L4T as a
+host-prep exception until Podman plus NVIDIA CDI is validated or a temporary
+Docker engine override is approved.
+
+### `nvidia_docker`
+
+For Thor-class Docker exception hosts with NVIDIA Container Toolkit, expose GPUs
+with Docker's runtime flag:
+
+```text
+--gpus all
+```
+
+Use this only with `inference_service_container_engine: docker` and an explicit
+`inference_service_allow_docker_exception: true`.
 
 ### `amd_rocm`
 
@@ -122,7 +133,7 @@ Use Thor as an Ubuntu/L4T exception host:
 
 ```yaml
 inference_service_architecture: arm64
-inference_service_accelerator_profile: nvidia
+inference_service_accelerator: nvidia_docker
 inference_service_container_engine: docker  # temporary until Podman/CDI is validated
 inference_service_allow_docker_exception: true
 ```

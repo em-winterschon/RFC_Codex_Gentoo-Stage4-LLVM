@@ -70,7 +70,7 @@
     loop_var: inference_service
   when: inference_service_enabled | bool
 
-- name: Render inference service Podman wrappers
+- name: Render inference service container wrappers
   ansible.builtin.template:
     src: inference-service-run.sh.j2
     dest: "{{ inference_service_libexec_dir }}/run-{{ inference_service.name }}.sh"
@@ -122,6 +122,7 @@
   when:
     - inference_service_enabled | bool
     - resolved_inference_service_manager == 'systemd'
+    - not ansible_check_mode
 
 - name: Enable inference service OpenRC services
   ansible.builtin.service:
@@ -134,3 +135,4 @@
   when:
     - inference_service_enabled | bool
     - resolved_inference_service_manager == 'openrc'
+    - not ansible_check_mode

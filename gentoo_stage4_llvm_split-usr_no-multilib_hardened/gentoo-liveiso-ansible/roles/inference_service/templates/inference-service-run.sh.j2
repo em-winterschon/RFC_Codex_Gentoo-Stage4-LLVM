@@ -29,6 +29,9 @@ exec {{ inference_service_container_engine }} run \
 {% for security_opt in service_accelerator_profile.security_opts | default([]) %}
   --security-opt {{ security_opt | quote }} \
 {% endfor %}
+{% for extra_arg in service_accelerator_profile.extra_args | default([]) %}
+  {{ extra_arg }} \
+{% endfor %}
 {% for published_port in inference_service.ports | default(inference_service_default_ports) %}
   -p {{ published_port | quote }} \
 {% endfor %}
@@ -37,9 +40,6 @@ exec {{ inference_service_container_engine }} run \
 {% endif %}
 {% for volume_mount in inference_service.volumes | default(inference_service_default_volumes) %}
   -v {{ volume_mount | quote }} \
-{% endfor %}
-{% for extra_arg in service_accelerator_profile.extra_args | default([]) %}
-  {{ extra_arg }} \
 {% endfor %}
 {% for extra_arg in inference_service.extra_args | default(inference_service_default_extra_args) %}
   {{ extra_arg }} \

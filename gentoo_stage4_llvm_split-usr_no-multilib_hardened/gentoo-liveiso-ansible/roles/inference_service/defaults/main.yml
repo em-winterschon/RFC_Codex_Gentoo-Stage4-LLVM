@@ -49,6 +49,15 @@ inference_service_accelerator_profiles:
       INFERENCE_ACCELERATOR: nvidia
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  nvidia_docker:
+    devices: []
+    security_opts: []
+    extra_args:
+      - --gpus all
+    environment:
+      INFERENCE_ACCELERATOR: nvidia
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
   amd_rocm:
     devices:
       - /dev/kfd
