@@ -123,7 +123,8 @@ def sync(args: argparse.Namespace) -> int:
             if source_hash != expected_hash:
                 print(
                     f"FAIL: source hash {source_hash} != {expected_path} hash {expected_hash}; "
-                    "rerun with --update-expected-sha256 only after approving the new canonical source",
+                    "rerun with --update-expected-sha256 only after approving the "
+                    "new canonical source",
                     file=sys.stderr,
                 )
                 return 1
@@ -151,20 +152,28 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser = subparsers.add_parser("validate", help="validate target AGENTS.md")
     validate_parser.add_argument("--target", default="AGENTS.md")
     validate_parser.add_argument("--source", default=os.environ.get("AGENTS_STANDARD_PATH", ""))
-    validate_parser.add_argument("--expected-sha256", default=os.environ.get("AGENTS_STANDARD_SHA256", ""))
-    validate_parser.add_argument("--expected-sha256-file", default="policy/agentsys/AGENTS.md.sha256")
+    validate_parser.add_argument(
+        "--expected-sha256", default=os.environ.get("AGENTS_STANDARD_SHA256", "")
+    )
+    validate_parser.add_argument(
+        "--expected-sha256-file", default="policy/agentsys/AGENTS.md.sha256"
+    )
     validate_parser.set_defaults(func=validate)
 
     sync_parser = subparsers.add_parser("sync", help="synchronize target AGENTS.md from source")
     sync_parser.add_argument("--target", default="AGENTS.md")
-    sync_parser.add_argument("--source", default=os.environ.get("AGENTS_STANDARD_PATH", ""), required=False)
+    sync_parser.add_argument(
+        "--source", default=os.environ.get("AGENTS_STANDARD_PATH", ""), required=False
+    )
     sync_parser.add_argument("--expected-sha256-file", default="policy/agentsys/AGENTS.md.sha256")
     sync_parser.add_argument(
         "--update-expected-sha256",
         action="store_true",
         help="atomically update the pinned hash after approving a new canonical source",
     )
-    sync_parser.add_argument("--force", action="store_true", help="rewrite target even if content is identical")
+    sync_parser.add_argument(
+        "--force", action="store_true", help="rewrite target even if content is identical"
+    )
     sync_parser.set_defaults(func=sync)
     return parser
 

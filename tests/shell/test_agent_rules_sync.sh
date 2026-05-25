@@ -20,18 +20,18 @@ require_file "${REPO_ROOT}/AGENTS.md"
 
 python3 "${VALIDATOR}" validate \
   --target "${REPO_ROOT}/AGENTS.md" \
-  --expected-sha256-file "${HASH_FILE}" >/dev/null
+  --expected-sha256-file "${HASH_FILE}" > /dev/null
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
-cat > "${tmpdir}/canonical-AGENTS.md" <<'EOF'
+cat > "${tmpdir}/canonical-AGENTS.md" << 'EOF'
 # Agent Rules
 
 Canonical test payload.
 EOF
 
-cat > "${tmpdir}/stale-AGENTS.md" <<'EOF'
+cat > "${tmpdir}/stale-AGENTS.md" << 'EOF'
 # Agent Rules
 
 Stale test payload.
@@ -41,22 +41,22 @@ python3 "${VALIDATOR}" sync \
   --target "${tmpdir}/stale-AGENTS.md" \
   --source "${tmpdir}/canonical-AGENTS.md" \
   --expected-sha256-file "${tmpdir}/AGENTS.md.sha256" \
-  --update-expected-sha256 >/dev/null
+  --update-expected-sha256 > /dev/null
 
 cmp -s "${tmpdir}/canonical-AGENTS.md" "${tmpdir}/stale-AGENTS.md"
 
 python3 "${VALIDATOR}" validate \
   --target "${tmpdir}/stale-AGENTS.md" \
   --source "${tmpdir}/canonical-AGENTS.md" \
-  --expected-sha256-file "${tmpdir}/AGENTS.md.sha256" >/dev/null
+  --expected-sha256-file "${tmpdir}/AGENTS.md.sha256" > /dev/null
 
-cat > "${tmpdir}/bad-hash" <<'EOF'
+cat > "${tmpdir}/bad-hash" << 'EOF'
 0000000000000000000000000000000000000000000000000000000000000000  AGENTS.md
 EOF
 
 if python3 "${VALIDATOR}" validate \
   --target "${tmpdir}/stale-AGENTS.md" \
-  --expected-sha256-file "${tmpdir}/bad-hash" >/dev/null 2>&1; then
+  --expected-sha256-file "${tmpdir}/bad-hash" > /dev/null 2>&1; then
   printf 'FAIL: validator accepted mismatched hash\n' >&2
   exit 1
 fi
