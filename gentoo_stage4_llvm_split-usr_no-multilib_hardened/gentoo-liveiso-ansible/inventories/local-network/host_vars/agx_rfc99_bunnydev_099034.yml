@@ -1,0 +1,28 @@
+---
+# Thor AGX is an Ubuntu/L4T transition host. The default role path is Podman,
+# but the live audit found Docker plus NVIDIA Container Toolkit already active.
+inference_service_architecture: arm64
+inference_service_accelerator: nvidia
+inference_service_container_engine: docker
+inference_service_allow_docker_exception: true
+inference_service_manager: systemd
+
+inference_service_deferred_backends:
+  - vllm
+  - sglang
+
+inference_service_live_audit:
+  observed_at: "2026-05-24T03:15:49Z"
+  os: Ubuntu 24.04.4 LTS
+  kernel: 6.8.12-tegra
+  l4t: R38.4.0
+  nvidia_driver: "580.00"
+  cuda_runtime: "13.0"
+  docker_active: true
+  podman_present: false
+  nvidia_container_toolkit: "1.18.1"
+  failed_units:
+    - openipmi.service
+  notes:
+    - Start with Ollama and Open WebUI only.
+    - Keep vLLM and SGLang deferred until arm64/L4T/CUDA 13 images are validated.

@@ -24,6 +24,39 @@ The safest first workload sequence is:
 4. deploy Ollama and Open WebUI first;
 5. defer vLLM and SGLang until arm64/L4T/CUDA 13 images are validated.
 
+## 2026-05-25 Update
+
+Operator approval authorized Thor inference playbook testing and deployment
+work. Forge3 completed the repeatable non-runtime deployment lane:
+
+- inventory host `agx_rfc99_bunnydev_099034` now targets Thor at
+  `172.16.99.34`;
+- Thor is a member of `ollama_servers` and `open_webui_servers` only;
+- `vllm_servers` and `sglang_servers` intentionally do not include Thor;
+- Ansible ping succeeds through the M70 root automation SSH path;
+- Ollama and Open WebUI syntax checks and check-mode runs pass;
+- stopped/disabled artifacts were applied for both services.
+
+Live verification after apply:
+
+```text
+inference-ollama.service: disabled, inactive
+inference-open-webui.service: disabled, inactive
+docker.service: masked, inactive
+docker.socket: masked, inactive
+podman: missing
+```
+
+The rendered Docker wrappers use the NVIDIA Docker runtime flag:
+
+```text
+docker run --gpus all
+```
+
+No inference containers were started and no images were pulled. Runtime startup
+is blocked until Docker is deliberately unmasked/started for the temporary
+Jetson exception or Podman plus NVIDIA CDI is validated.
+
 ## Live Evidence
 
 | Check | Result |
@@ -43,6 +76,7 @@ The safest first workload sequence is:
 | container engine | Docker active, Podman missing |
 | Docker socket access as `eva` | denied |
 | passwordless sudo as `eva` | unavailable |
+| root automation SSH from M70 | reachable on 2026-05-25 |
 | system default target | `multi-user.target` |
 | display manager | `gdm3` inactive; `display-manager` not found |
 | failed units | `openipmi.service` failed |
@@ -117,6 +151,8 @@ host-prep validation.
 
 ## Non-Mutation Rule
 
-This audit performed read-only checks. Do not stop services, install packages,
-alter network interfaces, or modify Docker/NVIDIA state on Thor without explicit
-operator approval in the active session.
+The original audit performed read-only checks. On 2026-05-25, the operator
+approved inference playbook testing and deployment. The live apply was limited
+to stopped/disabled Ollama and Open WebUI artifacts. Do not unmask/start Docker,
+switch Thor to Podman/CDI, pull images, or start inference services without a
+separate host-prep decision.

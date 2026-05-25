@@ -23,9 +23,13 @@ exec {{ inference_service_container_engine }} run \
   --detach=false \
   --network {{ inference_service.network | default(inference_service_network) | quote }} \
   --env-file {{ (inference_service_config_dir ~ '/' ~ inference_service.name ~ '.env') | quote }} \
+{% if inference_service_container_engine == 'docker' and service_accelerator_name == 'nvidia' %}
+  --gpus all \
+{% else %}
 {% for device in service_accelerator_profile.devices | default([]) %}
   --device {{ device | quote }} \
 {% endfor %}
+{% endif %}
 {% for security_opt in service_accelerator_profile.security_opts | default([]) %}
   --security-opt {{ security_opt | quote }} \
 {% endfor %}

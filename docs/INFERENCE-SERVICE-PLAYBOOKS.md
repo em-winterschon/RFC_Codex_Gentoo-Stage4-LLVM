@@ -134,12 +134,29 @@ Prefer an approved Podman/CDI prep step before making Podman mandatory on Thor.
 Start with Ollama and Open WebUI. Defer vLLM and SGLang on Thor until their
 arm64, Jetson/L4T, and CUDA 13 image path is validated.
 
+2026-05-25 execution update:
+
+- Thor is modeled as `agx_rfc99_bunnydev_099034` in the local-network
+  inventory.
+- The active inventory uses `inference_service_accelerator: nvidia`,
+  `inference_service_container_engine: docker`,
+  `inference_service_allow_docker_exception: true`, and
+  `inference_service_manager: systemd`.
+- Docker/NVIDIA wrappers render `--gpus all` for the Docker exception path.
+- Check mode skips service enable/start because planned systemd unit files are
+  not present until a real apply.
+- Ollama and Open WebUI artifacts were deployed stopped and disabled on Thor.
+- Runtime start remains blocked by masked Docker service/socket and missing
+  Podman.
+
 ## Acceptance Gates
 
 Before merge:
 
 ```bash
 bash tests/shell/test_inference_service_playbooks.sh
+bash tests/shell/test_inference_service_role_core.sh
+bash tests/shell/test_thor_inference_inventory.sh
 git diff --check
 ```
 

@@ -122,6 +122,7 @@
   when:
     - inference_service_enabled | bool
     - resolved_inference_service_manager == 'systemd'
+    - not ansible_check_mode
 
 - name: Enable inference service OpenRC services
   ansible.builtin.service:
@@ -134,3 +135,4 @@
   when:
     - inference_service_enabled | bool
     - resolved_inference_service_manager == 'openrc'
+    - not ansible_check_mode
