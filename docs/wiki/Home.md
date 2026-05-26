@@ -60,6 +60,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [CSS326 SwOS Access Switch](CSS326-SwOS-Access-Switch)
 - [RouterOS Spine Distribution](RouterOS-Spine-Distribution)
 - [Configurations and Examples](Configurations-and-Examples)
+- [Documentation Diagram Rendering Standard](Documentation-Diagram-Rendering-Standard)
 - [CI Builder Farm](CI-Builder-Farm)
 - [M70 Platform Optimization Plan](M70-Platform-Optimization-Plan)
 - [M70 Canary Validation Lane](M70-Canary-Validation-Lane)

@@ -21,6 +21,7 @@
 - [RouterOS RFC99 Gateway](RouterOS-RFC99-Gateway)
 - [QLogic CRS309 LACP](QLogic-CRS309-LACP)
 - [Configurations and Examples](Configurations-and-Examples)
+- [Documentation Diagram Rendering Standard](Documentation-Diagram-Rendering-Standard)
 - [CI Builder Farm](CI-Builder-Farm)
 - [M70 Platform Optimization Plan](M70-Platform-Optimization-Plan)
 - [M70 Canary Validation Lane](M70-Canary-Validation-Lane)

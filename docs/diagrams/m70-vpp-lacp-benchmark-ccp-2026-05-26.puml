@@ -1,0 +1,55 @@
+@startuml
+title CCP - M70 VPP/LACP Benchmark Promotion Gates
+skinparam shadowing false
+skinparam backgroundColor #ffffff
+skinparam activity {
+  BackgroundColor #f7f7f7
+  BorderColor #444444
+  FontColor #111111
+}
+skinparam ArrowColor #333333
+
+|Requirement|
+start
+:Prove more than single-member line rate
+for the M70 OVS workload fabric;
+
+|Preflight|
+:Confirm NetBox device/interface/IP
+records for each traffic generator;
+:Confirm no production IP is assigned
+to vpp_canary ovs-vpp0 without NetBox;
+:Confirm CSS326/CCR2004 LACP state
+is not changed outside a CCP;
+
+|Traffic Generators|
+:Choose two or more workload-fabric
+endpoints, or one endpoint faster
+than 1 GbE;
+:Install iperf3 or VPP traffic tooling;
+
+|Canary|
+:Keep eno1-eno4 on kernel ixgbe
+and OVS balance-tcp LACP;
+:Do not bind to vfio-pci,
+uio_pci_generic, OVS-DPDK, or VPP DPDK
+until a separate DPDK CCP is approved;
+
+|Validation|
+:Run TCP single-stream baseline;
+:Run parallel TCP flows with
+distinct 5-tuples;
+:Run reverse and UDP tests;
+:Capture OVS member hash/load and
+VPP counters;
+
+if (Aggregate exceeds one-member line rate?) then (yes)
+  :Record aggregate LACP validation;
+  :Promote benchmark method;
+else (no)
+  :Record single-member limitation;
+  :Plan multi-endpoint or higher-rate
+generator follow-up;
+endif
+stop
+@enduml

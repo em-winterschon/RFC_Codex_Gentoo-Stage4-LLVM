@@ -33,6 +33,7 @@ Current mirrored pages:
 - `RouterOS-Spine-Distribution.md`
 - `RouterOS-RFC99-Gateway.md`
 - `Configurations-and-Examples.md`
+- `Documentation-Diagram-Rendering-Standard.md`
 - `CI-Builder-Farm.md`
 - `M70-Platform-Optimization-Plan.md`
 - `M70-Canary-Validation-Lane.md`

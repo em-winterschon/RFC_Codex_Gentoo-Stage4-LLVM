@@ -410,6 +410,68 @@ stop
 @enduml
 ```
 
+### CCP Benchmark Promotion Gate
+
+The 2026-05-26 `iperf3` run proves the VPP guest/tap/OVS path at one-member
+line rate. It does not prove aggregate LACP throughput or VPP L3 forwarding.
+Promotion beyond that claim requires the CCP gate below.
+
+| Validation Target | Current Evidence | Promotion Requirement |
+| --- | --- | --- |
+| Guest/tap/OVS path | TCP and UDP reached approximately 1 GbE line rate. | complete for canary path validation |
+| Aggregate LACP | OVS reports LACP negotiated, but the traffic source was not capable of >1 GbE. | use multi-endpoint or >1 GbE generator and record OVS member hash/load |
+| VPP L3 forwarding | VPP AF_PACKET counters observed traffic, but Linux `iperf3` was the endpoint. | configure VPP L3 forwarding or a VPP traffic generator under separate CCP |
+| Production IP use | `enp0s5` stayed L2-only after temporary RFC 2544 test IP removal. | reserve/update NetBox before assigning a production address |
+
+Rendered PlantUML assets:
+
+- `m70-vpp-lacp-benchmark-ccp-2026-05-26.png`
+- `m70-vpp-lacp-benchmark-ccp-2026-05-26.svg`
+
+```plantuml
+@startuml
+title CCP - M70 VPP/LACP Benchmark Promotion Gates
+|Requirement|
+start
+:Prove more than single-member line rate
+for the M70 OVS workload fabric;
+|Preflight|
+:Confirm NetBox device/interface/IP
+records for each traffic generator;
+:Confirm no production IP is assigned
+to vpp_canary ovs-vpp0 without NetBox;
+:Confirm CSS326/CCR2004 LACP state
+is not changed outside a CCP;
+|Traffic Generators|
+:Choose two or more workload-fabric
+endpoints, or one endpoint faster
+than 1 GbE;
+:Install iperf3 or VPP traffic tooling;
+|Canary|
+:Keep eno1-eno4 on kernel ixgbe
+and OVS balance-tcp LACP;
+:Do not bind to vfio-pci,
+uio_pci_generic, OVS-DPDK, or VPP DPDK
+until a separate DPDK CCP is approved;
+|Validation|
+:Run TCP single-stream baseline;
+:Run parallel TCP flows with
+distinct 5-tuples;
+:Run reverse and UDP tests;
+:Capture OVS member hash/load and
+VPP counters;
+if (Aggregate exceeds one-member line rate?) then (yes)
+  :Record aggregate LACP validation;
+  :Promote benchmark method;
+else (no)
+  :Record single-member limitation;
+  :Plan multi-endpoint or higher-rate
+  generator follow-up;
+endif
+stop
+@enduml
+```
+
 Important guardrails:
 
 - Do not bind `eno1` through `eno4` to `vfio-pci`, `uio_pci_generic`,

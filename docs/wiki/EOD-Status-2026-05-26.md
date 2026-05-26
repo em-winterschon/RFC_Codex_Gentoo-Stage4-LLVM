@@ -145,13 +145,14 @@ Reconciliation findings:
 
 ## Concerns And Gates
 
-- Primary M70 still has `/etc/distcc/hosts` containing `localhost/2`, while
-  `m70_canary` now omits it. Before fleet-wide reuse, validate whether the
-  primary host's wrapper path can safely use local slots or whether the canary
-  policy should become the M70 baseline.
-- PlantUML rendering required host-local Java and Graphviz. If diagram
-  rendering becomes a standing workflow on M70, persist any required Portage USE
-  policy for Graphviz/GD rather than relying on one-off command-scoped USE.
+| Concern | Follow-up Action | Current State |
+| --- | --- | --- |
+| Primary M70 `localhost/2` distcc entry | Removed `localhost/2` from live `/etc/distcc/hosts`; durable policy is to keep M70 documentation-rendering packages native until wrapper probe bypass is proven. | corrected live; durable profile added for documentation renderer |
+| PlantUML/Graphviz/GD dependency policy | Added `documentation-diagram-renderer` profile with PlantUML, Graphviz, GD, FreeType, HarfBuzz, and native-compile package.env policy. | corrected in repo; primary M70, M70 canary, and X12again validated with `plantuml -testdot` |
+| HarfBuzz clang 21 build blocker | Added a managed Portage patch for `media-libs/harfbuzz` so clang 21 accepts VARC generated macro expansion under HarfBuzz's internal warning policy. | corrected in repo; applied to M70 canary via Ansible; HarfBuzz merged successfully |
+| Documentation CCP structure | Added a standing documentation diagram rendering standard with CCP tables and PlantUML workflow. | corrected in repo |
+| Aggregate LACP proof | Added a benchmark CCP gate requiring multi-endpoint or faster-than-1GbE generator before claiming aggregate LACP throughput. | gated |
+| VPP L3 benchmark | Kept Linux `iperf3` scoped to guest/tap/OVS path; separate VPP L3 forwarding CCP required before promotion. | gated |
 - The current iperf validation reached one-member line rate. The primary M70
   source path is active-backup 1 GbE management, so this does not prove
   aggregate multi-link LACP throughput. A higher-bandwidth or multi-endpoint
