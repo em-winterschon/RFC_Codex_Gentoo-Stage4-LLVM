@@ -53,6 +53,7 @@ Current mirrored pages:
 - `SLURM-Pilot-Gap-Analysis-2026-05-25.md`
 - `ITIL-Change-Control-Container-Services-Safe-Move.md`
 - `Changelog.md`
+- `EOD-Status-2026-05-26.md`
 - `SITREP-Status-2026-05-03.md`
 - `EOD-Status-2026-05-25.md`
 - `EOD-Status-2026-05-24.md`

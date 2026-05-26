@@ -1,0 +1,63 @@
+@startuml
+title Atlas Observable Reasoning Workflow - 2026-05-26 Closeout
+skinparam shadowing false
+skinparam backgroundColor #ffffff
+skinparam activity {
+  BackgroundColor #f7f7f7
+  BorderColor #444444
+  FontColor #111111
+}
+skinparam ArrowColor #333333
+
+|Intake|
+start
+:Parse operator request into
+EOD, commits, PRs, docs, diagrams,
+FCP reconciliation, and validation;
+:Identify hard constraints:
+no raw SSH IPs, no NetworkManager,
+NetBox/repo as source of truth,
+no force-push of diverged branches;
+
+|Evidence|
+:Read git branch state and PR state;
+:Read FCP outbox, audit log,
+LTC Forge reply, firmware notes,
+and M70 networking note;
+:Query live primary M70,
+m70_canary, and vpp_canary state;
+
+|Reasoning Checkpoints|
+:Compare FCP approved policy with
+observed live package behavior;
+if (Contradiction found?) then (yes)
+  :Classify as operational concern:
+localhost/2 approved by FCP but unsafe
+on canary wrapper path;
+  :Prefer durable canary-specific
+inventory correction;
+else (no)
+  :Keep approved policy unchanged;
+endif
+:Separate validated facts from
+remaining gates and assumptions;
+
+|Action|
+:Patch documentation and rendered
+workflow sources;
+:Render diagrams locally;
+:Mirror wiki source in docs/wiki;
+:Commit and push scoped branches;
+:Update or create PRs for active work;
+
+|Verification|
+:Run diagram render checks;
+:Run focused shell tests;
+:Run git diff and branch status checks;
+:Confirm no temp IPs or iperf servers remain;
+
+|Report|
+:Publish EOD summary with results,
+concerns, PR links, and next gates;
+stop
+@enduml

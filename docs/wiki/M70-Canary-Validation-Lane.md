@@ -353,6 +353,63 @@ Traffic validation captured on 2026-05-26:
   Aggregate multi-link LACP throughput still needs a higher-bandwidth or
   multi-endpoint generator on the workload fabric.
 
+### M70 To Canary Swimlane
+
+Rendered PlantUML assets for this activity are stored under `docs/diagrams/`:
+
+- `m70-canary-actions-2026-05-26.png`
+- `m70-canary-actions-2026-05-26.svg`
+
+```plantuml
+@startuml
+title M70 <-> M70 Canary Activity - 2026-05-26
+|Operator|
+start
+:Request EOD closure, branch hygiene,
+documentation, diagrams, and workflow
+result capture;
+|Atlas on primary M70|
+:Inventory repo state, PR #144,
+FCP outbox, relay notes, live host state;
+:Preserve source-of-truth rule:
+NetBox and repo docs must describe
+host actions before promotion;
+|m70_canary host|
+:Report persistent Gentoo boot state;
+:Confirm ZFS root, SATADOM -> ZFSBootMenu,
+OpenRC services, OVS bridge, and LACP bond;
+|vpp_canary VM|
+:Report Ubuntu VPP guest state;
+:Confirm vpp.service and
+vpp-canary-afpacket.service are active;
+|Atlas on primary M70|
+:Install iperf3 locally and on endpoints;
+:Observe canary Portage failure caused by
+distcc wrapper recursion on localhost/2;
+|m70_canary host|
+:Remove localhost/2 from durable
+DISTCC_HOSTS policy;
+:Apply selected Ansible roles:
+preflight + distcc_farm;
+:Install net-misc/iperf successfully;
+|Atlas on primary M70|
+:Run ping, TCP, TCP -P 4,
+reverse TCP, and UDP iperf3 tests;
+|m70_canary host|
+:Confirm ovs_workload0 remains
+LACP negotiated over eno1-eno4;
+|vpp_canary VM|
+:Expose VPP AF_PACKET counters on host-enp0s5;
+|Atlas on primary M70|
+:Remove temporary benchmark IPs;
+:Record results in docs and wiki mirror;
+:Commit, push, and update PR #144;
+|Operator|
+:Receive EOD and PR state;
+stop
+@enduml
+```
+
 Important guardrails:
 
 - Do not bind `eno1` through `eno4` to `vfio-pci`, `uio_pci_generic`,

@@ -83,6 +83,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [SLURM Pilot Bringup](SLURM-Pilot-Bringup)
 - [SLURM Pilot Gap Analysis 2026-05-25](SLURM-Pilot-Gap-Analysis-2026-05-25)
 - [Changelog](Changelog)
+- [EOD Status 2026-05-26](EOD-Status-2026-05-26)
 - [SITREP Status 2026-05-03](SITREP-Status-2026-05-03)
 - [EOD Status 2026-05-25](EOD-Status-2026-05-25)
 - [EOD Status 2026-05-24](EOD-Status-2026-05-24)
