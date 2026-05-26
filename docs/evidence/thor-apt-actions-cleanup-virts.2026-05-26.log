@@ -1,0 +1,16 @@
+apt install tmux tmuxp
+apt install tree eza emacs-nox
+apt-mark hold mailutils
+apt-mark hold postfix
+apt install tree eza emacs-nox emacs-common-non-dfsg
+apt install redfishtool slurm-wlm-ipmi-plugins virtualbmc nut-ipmi openipmi ipmitool node_exporter snmpd snmputils snmpwalk prometheus-node-exporter
+apt install chrony
+apt purge thunderbird
+apt-mark hold thunderbird
+apt purge snapd
+apt-mark hold systemd-container
+apt install podman-toolbox python3-podman podman-remote podman-compose cockpit-podman checkpointctl cockpit cockpit-doc cockpit-machines cockpit-packagekit cockpit-networkmanager cockpit-storaged cockpit-system cockpit-ws wget curl libvirt-clients-qemu libvirt-login-shell nfs-common open-iscsi qemu-utils qemu-system-x86 qemu-efi-aarch64 oem-qemu-meta libvirt-clients-qemu libvirt-dbus ipxe-qemu libvirt-daemon-system
+apt install virtiofsd
+
+# Forge 2026-05-26: installed openvswitch-switch python3-openvswitch for Thor MGBE userspace LACP fallback; L4T kernel lacks CONFIG_BONDING and CONFIG_OPENVSWITCH.
+apt install openvswitch-switch python3-openvswitch

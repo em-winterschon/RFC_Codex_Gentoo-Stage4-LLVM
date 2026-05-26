@@ -1,6 +1,6 @@
 # Thor AGX Inference Readiness
 
-Audit timestamp: `2026-05-25T20:56:00-07:00`
+Audit timestamp: `2026-05-26T16:56:00-07:00`
 
 Target:
 
@@ -13,13 +13,16 @@ ssh alias: thor
 ## Summary
 
 Thor is reachable and has a working NVIDIA Thor GPU stack. Podman is installed and validated on Thor.
+Ollama and Open WebUI are live through Podman on the management address.
 
 The safest first workload sequence is:
 
 1. preserve headless multi-user operation;
 2. keep Docker inactive and masked;
 3. deploy Ollama and Open WebUI first using Podman plus NVIDIA CDI;
-4. defer vLLM and SGLang until arm64/L4T/CUDA 13 images are validated.
+4. use the current OVS userspace LACP fallback for MGBE staging only until the
+   CRS354 LACP peer is configured;
+5. defer vLLM and SGLang until arm64/L4T/CUDA 13 images are validated.
 
 ## Live Evidence
 
@@ -32,7 +35,7 @@ The safest first workload sequence is:
 | device model | NVIDIA Jetson AGX Thor Developer Kit |
 | L4T | R38 revision 4.0 |
 | primary management interface | `enP2p1s0`, `172.16.99.34/24` |
-| default route | `172.16.99.1` via `enP2p1s0` |
+| default route | `172.16.99.70` via `enP2p1s0` |
 | GPU | `NVIDIA Thor`, driver `580.00`, CUDA runtime `13.0` from `nvidia-smi` |
 | GPU utilization | `0%`, no GPU processes reported by `nvidia-smi` |
 | CUDA compiler | `nvcc` missing from `PATH` |
@@ -53,17 +56,38 @@ Management is up:
 enP2p1s0 UP 172.16.99.34/24
 ```
 
-The MGBE/QSFP-facing interfaces are not ready for inference data-plane use:
+The MGBE/QSFP-facing interfaces link at 10G and are staged through Open
+vSwitch userspace bridges because the NVIDIA L4T kernel does not include the
+Linux bonding or kernel OVS datapaths:
 
 ```text
-mgbe0_0 UP 169.254.251.154/16
-mgbe1_0 UP 169.254.106.149/16
-mgbe2_0 UP 169.254.1.123/16
-mgbe3_0 UP 169.254.175.105/16
+CONFIG_BONDING is not set
+CONFIG_OPENVSWITCH is not set
+CONFIG_NET_TEAM is not set
 ```
 
-They still need CRS354 `qsfpplus2` physical/link validation and an approved
-bridge or OVS design before VM or container data-plane automation uses them.
+Current host-side bridge layout:
+
+| Bridge | Bond | Members | Intended use | Implementation |
+| --- | --- | --- | --- | --- |
+| `br-podman0` | `bond-podman0` | `mgbe0_0`, `mgbe1_0` | Podman service/container data plane | OVS `datapath_type=netdev` |
+| `br-kata0` | `bond-kata0` | `mgbe2_0`, `mgbe3_0` | QEMU and Kata container data plane | OVS `datapath_type=netdev` |
+
+Observed interface state on 2026-05-26:
+
+```text
+mgbe0_0    UP
+mgbe1_0    UP
+mgbe2_0    UP
+mgbe3_0    UP
+br-podman0 UNKNOWN fe80::4ebb:47ff:fe0e:178/64
+br-kata0   UNKNOWN fe80::4ebb:47ff:fe0e:17a/64
+```
+
+The OVS bonds are configured as active LACP `balance-tcp` with fast LACP timing
+and MTU 9000, but member ports currently report `may_enable: false`. Treat the
+bridges as staged, not production-ready, until CRS354 `qsfpplus2` is configured
+with matching LACP groups and validated from both sides.
 
 Legacy Docker-created networks may remain present until a later cleanup window:
 
@@ -72,9 +96,36 @@ docker0 DOWN 172.17.0.1/16
 br-8c52b4f58767 UP 172.18.0.1/16
 ```
 
+Rollback for the host-side OVS fallback was staged on Thor at:
+
+```text
+/root/forge-backups/thor-ovs-netdev-pre-20260526T235234Z/rollback-thor-ovs-netdev.sh
+```
+
+## Package Action Ledger
+
+Thor host-local package actions from `/tmp/thor-apt-actions-cleanup-virts.log`
+are tracked in this repo as
+`docs/evidence/thor-apt-actions-cleanup-virts.2026-05-26.log`.
+
+Important package state from that ledger:
+
+| Category | State |
+| --- | --- |
+| held packages | `mailutils`, `postfix`, `systemd-container`, `thunderbird` |
+| purged packages | `snapd`, `thunderbird` |
+| Podman tooling | `podman-toolbox`, `python3-podman`, `podman-remote`, `podman-compose`, `cockpit-podman` |
+| virtualization tooling | `libvirt-*`, `qemu-*`, `ipxe-qemu`, `virtiofsd`, `open-iscsi`, `nfs-common` |
+| OVS fallback tooling | `openvswitch-switch`, `python3-openvswitch` |
+
+snapd was purged. systemd-container is held. Keep both states explicit in
+future Thor playbooks so cleanup or upgrades do not reintroduce unwanted
+Ubuntu defaults.
+
 ## Readiness Decision
 
-Thor is ready for Podman-first Ollama and Open WebUI deployment.
+Thor is ready for Podman-first Ollama and Open WebUI service use through the
+management interface.
 
 Recommended inventory stance:
 
@@ -114,12 +165,24 @@ Live validation from M70 `forge1` on 2026-05-25:
 | Open WebUI container | `inference-open-webui` running under Podman |
 | Legacy Docker state | `docker.service` and `docker.socket` inactive and masked |
 
+Live validation from M70 `forge1` on 2026-05-26:
+
+| Check | Result |
+| --- | --- |
+| Ollama API from M70 | `GET http://172.16.99.34:11434/api/version` returned `{"version":"0.24.0"}` |
+| Open WebUI HTTP from M70 | `HEAD http://172.16.99.34:8080/` returned `HTTP/1.1 200 OK` |
+| OVS bridges | `br-podman0` and `br-kata0` exist with `datapath_type=netdev` |
+| OVS LACP state | bonds configured; members disabled until CRS354 peer LACP is configured |
+
 ## Blockers
 
 - `nvcc` is not in `PATH`; CUDA developer tooling is not confirmed.
 - FreeIPA/SSSD enrollment and central operator identity remain outside this
   audit.
-- MGBE/QSFP interfaces are link-local and not bridged for inference traffic.
+- CRS354 IP access and serial login must be repaired before switch-side LACP can
+  be applied for `qsfpplus2`.
+- MGBE/QSFP bridges are staged host-side only; do not assign production Podman,
+  QEMU, or Kata traffic until LACP validates from both Thor and CRS354.
 
 ## Non-Mutation Rule
 
