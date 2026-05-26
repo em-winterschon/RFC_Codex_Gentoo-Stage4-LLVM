@@ -203,8 +203,8 @@ from the netbooted installer environment:
 - A fallback-disabled probe compile with `gcc` completed remotely on X12again,
   proving the canary is using the approved distcc target for compile work.
 - LTC Forge provided a follow-up distcc expansion reply on 2026-05-25:
-  - approved next host string:
-    `10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2`
+  - approved next host string after live validation:
+    `10.200.99.23/24,lzo 172.16.99.108/48,lzo`
   - approved next `MAKEOPTS`: `-j16 -l12`
   - `kvm-sfo200-sec-9923.rfc1918.host` is validated at `10.200.99.23:3632`
     with recommended M70 slots `24`
@@ -212,12 +212,14 @@ from the netbooted installer environment:
     slots `48`
   - caveat: the sec worker is live but still needs durable managed Podman/OCI
     service persistence before assuming reboot survival.
+  - `localhost/2` was removed from the canary host string on 2026-05-26 after
+    `net-misc/iperf` exposed recursive distcc wrapper invocation on local slots.
 - The approved distcc expansion was applied live to the persistent canary OS on
   2026-05-25 using only selected roles `preflight` and `distcc_farm` with
   `install_target_root=/`.
 - Post-apply live Portage state:
   - `MAKEOPTS=-j16 -l12`
-  - `DISTCC_HOSTS=10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2`
+  - `DISTCC_HOSTS=10.200.99.23/24,lzo 172.16.99.108/48,lzo`
   - `DISTCC_FALLBACK=0`
   - `/etc/distcc/hosts` matches the approved host string.
 - Fallback-disabled compile probes passed from `m70_canary` to:
@@ -318,6 +320,38 @@ Validation evidence:
   `external_ids:owner=forge`, `external_ids:role=vpp-canary`, and
   `external_ids:instance=vpp-canary`.
 - `ovs_workload0` LACP remains negotiated across `eno1` through `eno4`.
+
+Traffic validation captured on 2026-05-26:
+
+- `iperf3` was installed on the primary M70, `m70_canary`, and the
+  `vpp_canary` guest.
+- `m70_canary` distcc client policy was corrected to remove `localhost/2`
+  before installing `net-misc/iperf`; local slots recursively invoke the
+  managed distcc wrapper on this host.
+- Temporary RFC 2544 benchmark addresses were used only for the test and then
+  removed:
+  - primary M70 `bond0`: `198.18.70.70/24`
+  - `vpp_canary` `enp0s5`: `198.18.70.72/24`
+- Ping passed both directions:
+  - primary M70 -> `vpp_canary`: `0%` loss, `0.652 ms` average RTT
+  - `vpp_canary` -> primary M70: `0%` loss, `0.318 ms` average RTT
+- `iperf3` primary M70 -> `vpp_canary`:
+  - TCP single stream: `941 Mbits/sec`, `0` retransmits
+  - TCP `-P 4`: `941 Mbits/sec` aggregate, `0` retransmits
+  - UDP `900M` target: `900 Mbits/sec` received, `0.008 ms` jitter,
+    `48/777050` datagrams lost (`0.0062%`)
+- `iperf3 -R` `vpp_canary` -> primary M70:
+  - TCP single stream: `941 Mbits/sec` receiver side, `137` sender-side
+    retransmits
+- VPP observed the traffic on `host-enp0s5`; post-test counters showed
+  `1,716,278` RX packets and `5,679,994,321` RX bytes. The VPP drop counter is
+  expected in this lane because Linux `iperf3`, not VPP L3 forwarding, is the
+  endpoint.
+- OVS continued to report `ovs_workload0` as `lacp_status: negotiated`.
+  Current primary M70 `bond0` is active-backup over 1 GbE management ports, so
+  these tests validate the VPP VM and OVS/LACP path at one-member line rate.
+  Aggregate multi-link LACP throughput still needs a higher-bandwidth or
+  multi-endpoint generator on the workload fabric.
 
 Important guardrails:
 

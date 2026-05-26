@@ -163,7 +163,8 @@ profile_distcc_farm:
   port: 3632
   # LTC Forge approved this expanded worker set on 2026-05-25. Keep cpp mode
   # disabled; sec is live but still needs durable Podman/OCI persistence before
-  # assuming reboot survival.
+  # assuming reboot survival. Localhost slots are intentionally omitted because
+  # the canary distcc wrapper path recurses when localhost is included.
   makeopts_jobs: 16
   makeopts_load: 12
   compression: false
@@ -181,9 +182,6 @@ profile_distcc_farm:
       slots: 48
       options:
         - lzo
-    - name: localhost
-      address: localhost
-      slots: 2
 
 # Package strategy
 kernel_strategy: gentoo-kernel
