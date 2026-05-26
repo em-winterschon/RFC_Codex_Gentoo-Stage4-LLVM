@@ -191,6 +191,7 @@ Reconciliation findings:
 - Preserved stale local RFC activity:
   - branch pushed as `codex/noctosultris-dns-sync-local-20260526`
   - commit: `412f180`
+  - PR: `#169`
   - reason: original local branch conflicted heavily when rebased onto current
     `origin/main`, so it was preserved without force-pushing or rewriting the
     old remote branch
