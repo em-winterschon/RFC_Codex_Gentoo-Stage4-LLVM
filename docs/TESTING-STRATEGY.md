@@ -15,6 +15,7 @@ are best suited for.
 | Python examples | `doctest` | docstrings in `scripts/*.py` when useful | Keep tiny deterministic examples executable. | optional until examples exist |
 | Shell contract tests | Bash | `tests/shell/` | Validate repository policy, generated files, Ansible role contracts, and shell entrypoints. | required |
 | Robot Framework acceptance | Robot Framework | `tests/robot/` | Express operator-readable functional workflows and repo acceptance checks. | required for smoke suites |
+| Agentic eval pilot | DeepEval | proposed `tests/evals/` | Evaluate Forge/Atlas plans, doc-grounded answers, FCP continuity, and tool-call traces. | advisory pilot only |
 | Jenkins orchestration | Jenkins Pipeline | `Jenkinsfile` | Run stages, preserve artifacts, and publish Robot/JUnit-style reports. | optional until Jenkins job is enabled |
 | AI-assisted review | Jenkins AI Agent step | guarded Jenkins stage | Summarize failures and propose non-mutating next actions. | advisory only |
 
@@ -62,6 +63,19 @@ and DNS records. Use BDD-style naming only where it improves operator review.
 Robot tests must not mutate live infrastructure unless the suite name, tags,
 and Jenkins stage make the apply gate explicit.
 
+## DeepEval Candidate Lane
+
+DeepEval is a candidate tool for agentic and LLM-assisted workflow evaluation.
+Use it to assess generated plans, FCP/ntfy coordination messages, doc-grounded
+answers, PR/EOD summaries, and MCP/control-plane tool traces. Do not use it as a
+primary validator for NetBox, DNS, package builds, kernel/initramfs artifacts,
+QEMU, VPP, SLURM, PDU, ATS, UPS, or serial-console operations.
+
+The current assessment is documented in
+`docs/DEEPEVAL-WORKFLOW-ASSESSMENT.md`. Do not add DeepEval to
+`requirements-dev.txt` until a separate change-control decision approves model
+endpoint policy, private-data handling, runtime cost, and CI placement.
+
 ## Jenkins Pipeline
 
 The root `Jenkinsfile` is a draft multistage pipeline for a Jenkins controller
@@ -90,6 +104,7 @@ steps; it must not be a source of truth or a mutation authority.
 | `doctest` | A docstring example is clearer than prose and has stable output. | `python3 -m doctest <file>` passes or is wired into Python tests. |
 | Shell test | A repo contract or generated file invariant must not drift. | Focused shell test prints `PASS`. |
 | Robot test | A workflow should be readable as acceptance evidence. | Robot `output.xml`, `log.html`, and `report.html` are produced. |
+| DeepEval pilot | Agentic or doc-grounded behavior needs model-scored feedback. | Manual `deepeval test run tests/evals/` evidence, stable thresholds, and reviewed datasets. |
 | Jenkins stage | A test class needs artifact publishing or operational scheduling. | Jenkinsfile stage exists and archives relevant artifacts. |
 | AI Agent review | Human wants failure triage or doc-gap analysis. | Stage has manual enablement and `requireApprovals: true`. |
 
@@ -118,3 +133,6 @@ steps; it must not be a source of truth or a mutation authority.
 | Jenkins Pipeline | https://www.jenkins.io/doc/book/pipeline/jenkinsfile/ | Keep the repository pipeline in source control as `Jenkinsfile`. |
 | Jenkins pyenv-pipeline | https://www.jenkins.io/doc/pipeline/steps/pyenv-pipeline/ | Wrap Python commands in `withPythonEnv('python3')` when the Jenkins plugin is installed. |
 | Jenkins AI Agent | https://www.jenkins.io/doc/pipeline/steps/ai-agent/ | Keep AI Agent review gated, manual, approval-backed, and non-mutating. |
+| DeepEval vibe coding | https://deepeval.com/docs/vibe-coding | Candidate agent feedback loop for running evals, reading metric reasons, patching narrowly, and rerunning. |
+| DeepEval synthetic contexts | https://deepeval.com/docs/synthesizer-generate-from-contexts | Candidate way to create reviewed goldens from approved docs, wiki mirrors, and sanitized FCP contexts. |
+| DeepEval plan quality | https://deepeval.com/docs/metrics-plan-quality | Candidate trace-backed metric for evaluating Forge/Atlas plan quality. |
