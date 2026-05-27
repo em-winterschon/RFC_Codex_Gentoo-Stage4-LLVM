@@ -89,6 +89,11 @@ and MTU 9000, but member ports currently report `may_enable: false`. Treat the
 bridges as staged, not production-ready, until CRS354 `qsfpplus2` is configured
 with matching LACP groups and validated from both sides.
 
+Switch-side LACP and cross-bridge performance validation are tracked in
+`docs/THOR-CRS354-LACP-PERF-RUNBOOK.md`. The Thor-local validation harness is
+`scripts/thor-ovs-cross-bridge-iperf.sh`; it refuses to run by default while OVS
+LACP members remain disabled.
+
 Legacy Docker-created networks may remain present until a later cleanup window:
 
 ```text

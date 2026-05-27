@@ -55,7 +55,14 @@ and asymmetric receive power, so do not use those optics as the reference pair.
 | `sfp-sfpplus3` | QNAP TS435XEU SFP+ 1 | 10G DAC | existing `bond-qnap` member |
 | `sfp-sfpplus4` | QNAP TS435XEU SFP+ 2 | 10G DAC | existing `bond-qnap` member |
 | `qsfpplus1` | future RoCE-v2 RDMA fabric | 40G QSFP+ | disconnected |
-| `qsfpplus2` | future RoCE-v2 RDMA fabric | 40G QSFP+ | disconnected |
+| `qsfpplus2-1` | Thor AGX `mgbe0_0` | QSFP28 lane at 10G | planned `bond-thor-podman` member |
+| `qsfpplus2-2` | Thor AGX `mgbe1_0` | QSFP28 lane at 10G | planned `bond-thor-podman` member |
+| `qsfpplus2-3` | Thor AGX `mgbe2_0` | QSFP28 lane at 10G | planned `bond-thor-kata` member |
+| `qsfpplus2-4` | Thor AGX `mgbe3_0` | QSFP28 lane at 10G | planned `bond-thor-kata` member |
+
+Thor AGX `qsfpplus2` LACP work is tracked separately in
+`docs/THOR-CRS354-LACP-PERF-RUNBOOK.md` because it has a distinct validation
+path: `br-kata0 -> CRS354 -> br-podman0`.
 
 The CRS309 side of the distribution LACP is `sfp-sfpplus2` plus
 `sfp-sfpplus3`. The CRS354 side is `sfp-sfpplus1` plus `sfp-sfpplus2`.
