@@ -84,5 +84,6 @@ require_fixed 'apt purge snapd' "${APT_EVIDENCE}"
 require_fixed 'apt install podman-toolbox python3-podman podman-remote podman-compose' "${APT_EVIDENCE}"
 require_fixed 'apt install virtiofsd' "${APT_EVIDENCE}"
 require_fixed 'apt install openvswitch-switch python3-openvswitch' "${APT_EVIDENCE}"
+require_fixed 'apt install tcpdump' "${APT_EVIDENCE}"
 
 printf 'PASS: %s\n' "$(basename "$0")"

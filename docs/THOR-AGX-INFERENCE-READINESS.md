@@ -20,8 +20,8 @@ The safest first workload sequence is:
 1. preserve headless multi-user operation;
 2. keep Docker inactive and masked;
 3. deploy Ollama and Open WebUI first using Podman plus NVIDIA CDI;
-4. use the current OVS userspace LACP fallback for MGBE staging only until the
-   CRS354 LACP peer is configured;
+4. use the current OVS userspace LACP MGBE staging only after validating with
+   distinct endpoints, not same-host bridge hairpin tests;
 5. defer vLLM and SGLang until arm64/L4T/CUDA 13 images are validated.
 
 ## Live Evidence
@@ -85,14 +85,32 @@ br-kata0   UNKNOWN fe80::4ebb:47ff:fe0e:17a/64
 ```
 
 The OVS bonds are configured as active LACP `balance-tcp` with fast LACP timing
-and MTU 9000, but member ports currently report `may_enable: false`. Treat the
-bridges as staged, not production-ready, until CRS354 `qsfpplus2` is configured
-with matching LACP groups and validated from both sides.
+and MTU 9000. CRS354 `qsfpplus2` now has matching `802.3ad` LACP groups and
+both Thor OVS bonds report `lacp_status: negotiated`.
+
+The OVS userspace LACP fallback has moved from peer-pending staging to
+peer-negotiated staging; it still requires distinct-endpoint performance
+validation before production traffic assignment.
 
 Switch-side LACP and cross-bridge performance validation are tracked in
 `docs/THOR-CRS354-LACP-PERF-RUNBOOK.md`. The Thor-local validation harness is
 `scripts/thor-ovs-cross-bridge-iperf.sh`; it refuses to run by default while OVS
 LACP members remain disabled.
+
+Live validation from 2026-05-27:
+
+```text
+CRS354 bond-thor-podman: running, qsfpplus2-1 and qsfpplus2-2
+CRS354 bond-thor-kata:   running, qsfpplus2-3 and qsfpplus2-4
+Thor bond-podman0:       LACP negotiated, members enabled
+Thor bond-kata0:         LACP negotiated, members enabled
+```
+
+The same-host Thor hairpin path is not a valid throughput acceptance path.
+ICMP across `br-kata0 -> CRS354 -> br-podman0` passed with zero packet loss,
+but TCP iperf3 did not produce a valid result. Use two distinct endpoints, or a
+routed/VLAN split, before assigning production Podman, QEMU, or Kata traffic to
+the MGBE data plane.
 
 Legacy Docker-created networks may remain present until a later cleanup window:
 
@@ -122,6 +140,7 @@ Important package state from that ledger:
 | Podman tooling | `podman-toolbox`, `python3-podman`, `podman-remote`, `podman-compose`, `cockpit-podman` |
 | virtualization tooling | `libvirt-*`, `qemu-*`, `ipxe-qemu`, `virtiofsd`, `open-iscsi`, `nfs-common` |
 | OVS fallback tooling | `openvswitch-switch`, `python3-openvswitch` |
+| packet diagnostics | `tcpdump` |
 
 snapd was purged. systemd-container is held. Keep both states explicit in
 future Thor playbooks so cleanup or upgrades do not reintroduce unwanted
@@ -177,17 +196,25 @@ Live validation from M70 `forge1` on 2026-05-26:
 | Ollama API from M70 | `GET http://172.16.99.34:11434/api/version` returned `{"version":"0.24.0"}` |
 | Open WebUI HTTP from M70 | `HEAD http://172.16.99.34:8080/` returned `HTTP/1.1 200 OK` |
 | OVS bridges | `br-podman0` and `br-kata0` exist with `datapath_type=netdev` |
-| OVS LACP state | bonds configured; members disabled until CRS354 peer LACP is configured |
+| OVS LACP state | bonds were staged until CRS354 peer LACP was configured on 2026-05-27 |
+
+Live validation from M70 `forge1` on 2026-05-27:
+
+| Check | Result |
+| --- | --- |
+| CRS354 management | `172.16.99.7` reachable after disabling broken `mgmt-source-rule` |
+| CRS354 Thor LACP | `bond-thor-podman` and `bond-thor-kata` running |
+| Thor OVS LACP | `bond-podman0` and `bond-kata0` negotiated |
+| Cross-bridge ICMP | `10/10` packets passed across `br-kata0 -> CRS354 -> br-podman0` |
+| Cross-bridge TCP | iperf3 not valid in same-host hairpin topology; use distinct endpoints |
 
 ## Blockers
 
 - `nvcc` is not in `PATH`; CUDA developer tooling is not confirmed.
 - FreeIPA/SSSD enrollment and central operator identity remain outside this
   audit.
-- CRS354 IP access and serial login must be repaired before switch-side LACP can
-  be applied for `qsfpplus2`.
-- MGBE/QSFP bridges are staged host-side only; do not assign production Podman,
-  QEMU, or Kata traffic until LACP validates from both Thor and CRS354.
+- MGBE/QSFP bridges have negotiated LACP, but production Podman, QEMU, and Kata
+  traffic should wait for performance validation with distinct endpoints.
 
 ## Non-Mutation Rule
 

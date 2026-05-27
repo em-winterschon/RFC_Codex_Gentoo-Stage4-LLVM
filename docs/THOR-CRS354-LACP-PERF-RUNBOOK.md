@@ -1,6 +1,6 @@
 # Thor CRS354 LACP And Performance Runbook
 
-Status timestamp: `2026-05-26T23:59:00-07:00`
+Status timestamp: `2026-05-27T07:56:08-07:00`
 
 ## Goal
 
@@ -14,24 +14,34 @@ The target path is:
 Thor br-kata0 -> CRS354 qsfpplus2 lanes -> Thor br-podman0
 ```
 
-## Current Gate
+## Live Status
 
-Do not apply the CRS354 mutation until RouterOS authentication is repaired.
+CRS354 management and Thor peer LACP are repaired and applied. The remaining
+gate is cross-host or revised-topology performance validation; the same-host
+OVS bridge hairpin path is not accepted as a throughput validation path.
 
 Observed from M70 `forge1`:
 
 ```text
 CRS354 serial console: reachable
-CRS354 SSH/API/API-SSL from M70: TCP timeout
-vaulted CRS354 RouterOS admin password: login failed over serial
+CRS354 SSH/HTTP/HTTPS/Winbox TCP from M70: reachable
+CRS354 management IP: 172.16.99.7/24 on ether49
+disabled broken rule: /routing rule comment=mgmt-source-rule src-address=172.16.99.7/32
 ```
 
-Thor host-side OVS bridges exist, but LACP members remain disabled because the
-CRS354 peer side has not been configured:
+Root cause for the management outage was `mgmt-source-rule`: replies sourced
+from `172.16.99.7/32` were forced into routing table `mgmt`, which had only a
+default route and no connected `172.16.99.0/24` route. Same-subnet management
+replies were therefore routed to the gateway instead of ARP-resolved directly.
+The rule remains disabled.
+
+Thor host-side OVS bridges and CRS354 peer bonds are now negotiated:
 
 ```text
-bond-podman0: lacp_status configured; members may_enable false
-bond-kata0:   lacp_status configured; members may_enable false
+bond-podman0: lacp_status negotiated; mgbe0_0 and mgbe1_0 enabled
+bond-kata0:   lacp_status negotiated; mgbe2_0 and mgbe3_0 enabled
+CRS354 bond-thor-podman: running, qsfpplus2-1 and qsfpplus2-2
+CRS354 bond-thor-kata:   running, qsfpplus2-3 and qsfpplus2-4
 ```
 
 ## Design Notes
@@ -78,6 +88,16 @@ Apply the peer LACP config:
 /interface bonding add name=bond-thor-kata mode=802.3ad slaves=qsfpplus2-3,qsfpplus2-4 lacp-rate=1sec lacp-mode=active link-monitoring=mii comment="Thor AGX br-kata0 LACP"
 /interface bridge port add bridge=bridge0 interface=bond-thor-podman comment="Thor AGX Podman data plane"
 /interface bridge port add bridge=bridge0 interface=bond-thor-kata comment="Thor AGX QEMU/Kata data plane"
+```
+
+Applied on 2026-05-27 with an additional post-fix backup and export captured on
+CRS354:
+
+```text
+post-mgmt-rule-fix-20260527.backup
+post-mgmt-rule-fix-20260527.rsc
+pre-thor-lacp-20260527-mainthread.backup
+pre-thor-lacp-20260527-mainthread.rsc
 ```
 
 Validate switch-side state:
@@ -136,14 +156,63 @@ thor_pod_test  172.31.254.3/24 -> br-podman0
 
 It refuses to run by default if either OVS bond still reports disabled LACP
 members. Use `--allow-lacp-down` only for negative-path diagnostics.
+The default iperf3 test port is `55201` so validation does not collide with a
+host-level iperf3 daemon on TCP/5201. The client is wrapped with a bounded
+timeout of test duration plus 20 seconds so OVS hairpin failures do not leave a
+hung validation run.
+
+The test attempts to reduce one class of false-negative TCP failures caused by
+MAC-learning pollution by pinning temporary endpoint MAC addresses to the
+correct local OVS veth ports with high-priority OpenFlow rules. If ICMP passes
+but TCP still fails, treat the result as an OVS same-host hairpin diagnostic,
+not as a switch throughput result.
 
 Record:
 
 - ping min/avg/max/mdev from the script pre-check;
+- iperf3 JSON errors, if any;
 - single-stream iperf3 throughput;
 - eight-stream aggregate throughput;
 - OVS `bond/show` output for both bonds before and after;
+- OVS datapath/FDB anomalies if ICMP passes but TCP fails;
 - CRS354 `monitor` and `monitor-slaves` output for both bonds.
+
+### 2026-05-27 Same-Host Hairpin Result
+
+Restored topology state:
+
+```text
+CRS354 bridge fast path: enabled
+CRS354 Thor bridge ports: hardware offload enabled
+CRS354 Thor bond hash: layer-2
+Thor OVS bond mode: balance-tcp
+Thor OVS LACP: negotiated on both bonds
+```
+
+The harness ping pre-check passed across
+`br-kata0 -> CRS354 -> br-podman0`:
+
+```text
+10 packets transmitted, 10 received, 0% packet loss
+rtt min/avg/max/mdev = 0.586/1.566/2.108/0.471 ms
+```
+
+TCP iperf3 did not produce a valid performance result in the same-host hairpin
+topology. The bounded client run exited with status `124` and iperf3 JSON
+reported `"interrupt - the client has terminated"`. Packet tracing showed SYNs
+leaving the Kata-side namespace and physical MGBE member, reaching/returning
+from CRS354 on a Podman-side physical member, but not being delivered to the
+Podman-side namespace. OVS FDB state also showed remote endpoint MACs learned on
+the bond port in both bridges. Temporary static OpenFlow output rules did not
+make TCP reliable.
+
+Operational decision:
+
+- keep the CRS354 LACP and Thor OVS bond configuration in place;
+- do not use the same Thor host as both traffic endpoints for acceptance
+  throughput testing;
+- validate throughput with two distinct endpoints, or with a routed/VLAN split
+  that avoids the same-host two-bridge L2 hairpin.
 
 ## TRex And Kata Gate
 
@@ -160,6 +229,8 @@ Acceptable TRex paths:
 - use a non-DPDK/kernel-stack traffic generator first for bridge validation;
 - defer TRex DPDK until Kata runtime, hugepages, IOMMU grouping, and dedicated
   NIC ownership are proven.
+- run the first load test across two distinct endpoints instead of the
+  same-host Thor bridge hairpin.
 
 Docker is not an acceptable implementation detail for this fleet. If the TRex
 container artifact is reused, run it through an OCI-compatible non-Docker

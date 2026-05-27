@@ -14,3 +14,6 @@ apt install virtiofsd
 
 # Forge 2026-05-26: installed openvswitch-switch python3-openvswitch for Thor MGBE userspace LACP fallback; L4T kernel lacks CONFIG_BONDING and CONFIG_OPENVSWITCH.
 apt install openvswitch-switch python3-openvswitch
+
+# Forge 2026-05-27: installed tcpdump for Thor CRS354 packet-path localization.
+apt install tcpdump
