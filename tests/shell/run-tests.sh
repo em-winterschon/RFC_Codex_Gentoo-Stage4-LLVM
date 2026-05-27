@@ -17,6 +17,8 @@ for script in "${shell_scripts[@]}"; do
 done
 
 bash "${SCRIPT_DIR}/test_generate_ansible_python_setup.sh"
+bash "${REPO_ROOT}/tests/python/run-tests.sh"
+bash "${REPO_ROOT}/tests/robot/run-tests.sh"
 bash "${SCRIPT_DIR}/test_agent_rules_sync.sh"
 bash "${SCRIPT_DIR}/test_ansible_vault_tools.sh"
 bash "${SCRIPT_DIR}/test_hetzner_dns_vault.sh"
@@ -41,6 +43,7 @@ bash "${SCRIPT_DIR}/test_fastmcp_and_hpc_plans.sh"
 bash "${SCRIPT_DIR}/test_fastmcp_infra_servers.sh"
 bash "${SCRIPT_DIR}/test_forge_memory_spool.sh"
 bash "${SCRIPT_DIR}/test_ci_builder_farm_roles.sh"
+bash "${SCRIPT_DIR}/test_testing_strategy_scaffold.sh"
 bash "${SCRIPT_DIR}/test_m70_canary_docs.sh"
 bash "${SCRIPT_DIR}/test_documentation_diagram_rendering.sh"
 bash "${SCRIPT_DIR}/test_identity_aaa_roles.sh"
