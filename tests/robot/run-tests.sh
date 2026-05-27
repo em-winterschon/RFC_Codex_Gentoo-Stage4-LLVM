@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 RESULT_DIR="${REPO_ROOT}/test-results/robot"
 
-if ! command -v robot >/dev/null 2>&1; then
+if ! command -v robot > /dev/null 2>&1; then
   printf 'FAIL: robot command not found. Install requirements-dev.txt first.\n' >&2
   exit 1
 fi

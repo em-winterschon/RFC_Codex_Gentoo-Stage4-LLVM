@@ -26,7 +26,7 @@ wait_for_vpp() {
   local attempt
 
   for ((attempt = 1; attempt <= attempts; attempt++)); do
-    if vppctl show version >/dev/null 2>&1; then
+    if vppctl show version > /dev/null 2>&1; then
       return 0
     fi
     sleep "${sleep_seconds}"
@@ -47,7 +47,7 @@ main() {
 
   wait_for_vpp
   if ! vppctl show interface | awk '{ print $1 }' | grep -Fxq "${vpp_iface}"; then
-    vppctl create host-interface name "${iface}" >/dev/null
+    vppctl create host-interface name "${iface}" > /dev/null
   fi
   vppctl set interface state "${vpp_iface}" up
 
