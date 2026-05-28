@@ -1,0 +1,51 @@
+#
+# Standardized SSHD config - installer/recovery only
+# Managed by Ansible role sshd_baseline. Do not use for normal live hosts.
+#
+AcceptEnv LANG LC_ALL LC_COLLATE LC_CTYPE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME LANGUAGE LC_ADDRESS LC_IDENTIFICATION LC_MEASUREMENT LC_NAME LC_PAPER LC_TELEPHONE
+AcceptEnv COLORTERM
+AllowAgentForwarding yes
+AllowTcpForwarding yes
+#
+Port 22
+AddressFamily inet
+ListenAddress 0.0.0.0
+#
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+#
+ClientAliveCountMax 8
+ClientAliveInterval 2
+Compression delayed
+GatewayPorts no
+KbdInteractiveAuthentication yes
+LogLevel ERROR
+MaxAuthTries 2
+MaxSessions 64
+MaxStartups 32:64:128
+PasswordAuthentication no
+PermitEmptyPasswords no
+PermitRootLogin Yes
+PermitTTY yes
+PermitTunnel yes
+PermitUserEnvironment yes
+PrintLastLog no
+PrintMotd no
+PubkeyAuthentication yes
+SyslogFacility AUTH
+TCPKeepAlive yes
+UsePAM yes
+UseDNS no
+X11DisplayOffset 10
+X11Forwarding yes
+X11UseLocalhost yes
+#
+# Recovery hosts may still consume tightly controlled drop-ins.
+Include "/etc/ssh/sshd_config.d/*.conf"
+#
+#--[START SFTP Enablement]
+Subsystem	sftp	/usr/lib64/misc/sftp-server
+#--[END SFTP Enablement]
+#
+# EOF #

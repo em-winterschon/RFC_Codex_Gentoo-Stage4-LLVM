@@ -1,0 +1,8 @@
+---
+- name: Restart Ansible Redis cache
+  ansible.builtin.command:
+    argv:
+      - rc-service
+      - "{{ ansible_redis_cache_service_name }}"
+      - restart
+  changed_when: true

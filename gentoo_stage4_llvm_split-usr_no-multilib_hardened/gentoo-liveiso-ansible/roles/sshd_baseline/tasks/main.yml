@@ -1,0 +1,188 @@
+---
+- name: Skip unmanaged SSHD baseline hosts
+  ansible.builtin.meta: end_host
+  when: not (sshd_baseline_managed | bool)
+
+- name: Assert SSHD baseline mode is valid
+  ansible.builtin.assert:
+    that:
+      - sshd_baseline_mode in ['audit', 'apply']
+    fail_msg: "sshd_baseline_mode must be audit or apply."
+
+- name: Assert SSHD baseline variant is valid
+  ansible.builtin.assert:
+    that:
+      - sshd_baseline_variant in sshd_baseline_authorized_variants
+    fail_msg: "Unsupported sshd_baseline_variant={{ sshd_baseline_variant }}."
+
+- name: Block installer recovery variant on normal managed hosts
+  ansible.builtin.assert:
+    that:
+      - sshd_baseline_variant != 'installer_recovery_only' or sshd_baseline_allow_recovery_variant | bool
+    fail_msg: >-
+      installer_recovery_only is not allowed for managed live hosts unless
+      sshd_baseline_allow_recovery_variant=true is set explicitly.
+
+- name: Assert apply mode is explicitly gated
+  ansible.builtin.assert:
+    that:
+      - sshd_baseline_apply_required | bool
+    fail_msg: >-
+      Set sshd_baseline_apply_required=true for the intended host scope before
+      mutating live SSHD configuration.
+  when: sshd_baseline_mode == 'apply'
+
+- name: Read current SSHD config metadata
+  ansible.builtin.stat:
+    path: "{{ sshd_baseline_config_path }}"
+  register: sshd_baseline_current_stat
+
+- name: Read current SSHD config content
+  ansible.builtin.slurp:
+    src: "{{ sshd_baseline_config_path }}"
+  register: sshd_baseline_current_slurp
+  when: sshd_baseline_current_stat.stat.exists | bool
+
+- name: Resolve desired and current SSHD baseline content
+  ansible.builtin.set_fact:
+    sshd_baseline_current_content: "{{ (sshd_baseline_current_slurp.content | default('') | b64decode) if sshd_baseline_current_stat.stat.exists else '' }}"
+    sshd_baseline_desired_content: "{{ lookup('ansible.builtin.template', role_path ~ '/templates/sshd_config.' ~ sshd_baseline_variant ~ '.j2') }}"
+
+- name: Resolve SSHD baseline hashes and drift state
+  ansible.builtin.set_fact:
+    sshd_baseline_current_sha256: "{{ sshd_baseline_current_content | hash('sha256') }}"
+    sshd_baseline_desired_sha256: "{{ sshd_baseline_desired_content | hash('sha256') }}"
+    sshd_baseline_drift: "{{ (sshd_baseline_current_content | trim) != (sshd_baseline_desired_content | trim) }}"
+
+- name: Validate current SSHD config syntax
+  ansible.builtin.command:
+    argv:
+      - "{{ sshd_baseline_sshd_binary }}"
+      - -t
+      - -f
+      - "{{ sshd_baseline_config_path }}"
+  register: sshd_baseline_current_syntax
+  changed_when: false
+  failed_when: false
+  when: sshd_baseline_current_stat.stat.exists | bool
+
+- name: Render SSHD audit report directory on controller
+  ansible.builtin.file:
+    path: "{{ sshd_baseline_report_dir }}"
+    state: directory
+    mode: '0750'
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: sshd_baseline_mode == 'audit'
+
+- name: Write SSHD audit report record on controller
+  ansible.builtin.copy:
+    dest: "{{ sshd_baseline_report_dir }}/{{ inventory_hostname | regex_replace('[^A-Za-z0-9_.-]', '_') }}.json"
+    mode: '0640'
+    content: |
+      {{ {
+        'host': inventory_hostname,
+        'managed': sshd_baseline_managed | bool,
+        'variant': sshd_baseline_variant,
+        'config_path': sshd_baseline_config_path,
+        'current_sha256': sshd_baseline_current_sha256,
+        'desired_sha256': sshd_baseline_desired_sha256,
+        'drift': sshd_baseline_drift | bool,
+        'syntax_rc': sshd_baseline_current_syntax.rc | default(1),
+        'syntax_ok': (sshd_baseline_current_syntax.rc | default(1)) == 0,
+        'stderr': sshd_baseline_current_syntax.stderr | default('')
+      } | to_nice_json }}
+  delegate_to: localhost
+  become: false
+  when: sshd_baseline_mode == 'audit'
+
+- name: Publish SSHD audit summary stats
+  ansible.builtin.set_stats:
+    data:
+      sshd_baseline_audit:
+        host: "{{ inventory_hostname }}"
+        variant: "{{ sshd_baseline_variant }}"
+        drift: "{{ sshd_baseline_drift | bool }}"
+        syntax_ok: "{{ (sshd_baseline_current_syntax.rc | default(1)) == 0 }}"
+  when: sshd_baseline_mode == 'audit'
+
+- name: Ensure SSHD backup directory exists
+  ansible.builtin.file:
+    path: "{{ sshd_baseline_backup_dir }}"
+    state: directory
+    mode: '0700'
+  when: sshd_baseline_mode == 'apply'
+
+- name: Backup current SSHD config before replacement
+  ansible.builtin.copy:
+    src: "{{ sshd_baseline_config_path }}"
+    dest: "{{ sshd_baseline_backup_dir }}/{{ ansible_date_time.iso8601_basic_short }}.{{ inventory_hostname }}.sshd_config"
+    remote_src: true
+    mode: '0600'
+  when:
+    - sshd_baseline_mode == 'apply'
+    - sshd_baseline_current_stat.stat.exists | bool
+
+- name: Install canonical SSHD config with syntax validation
+  ansible.builtin.template:
+    src: "sshd_config.{{ sshd_baseline_variant }}.j2"
+    dest: "{{ sshd_baseline_config_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+    validate: "{{ sshd_baseline_validate_command }}"
+  notify: Restart sshd
+  when: sshd_baseline_mode == 'apply'
+
+# Removes /etc/ssh/sshd_config.d/60-sssd-authorized-keys.conf when full-file baseline owns SSSD keys.
+- name: Remove legacy SSSD SSHD drop-in fragment when using full-file baseline
+  ansible.builtin.file:
+    path: "{{ sshd_baseline_legacy_sssd_fragment }}"
+    state: absent
+  notify: Restart sshd
+  when:
+    - sshd_baseline_mode == 'apply'
+    - sshd_baseline_remove_legacy_sssd_fragment | bool
+    - sshd_baseline_variant == 'standard_sssd_no_include'
+
+- name: Apply SSHD restart before post-apply verification
+  ansible.builtin.meta: flush_handlers
+  when:
+    - sshd_baseline_mode == 'apply'
+    - sshd_baseline_restart_service | bool
+
+- name: Verify installed SSHD config syntax
+  ansible.builtin.command:
+    argv:
+      - "{{ sshd_baseline_sshd_binary }}"
+      - -t
+      - -f
+      - "{{ sshd_baseline_config_path }}"
+  register: sshd_baseline_verify_syntax
+  changed_when: false
+  when: sshd_baseline_mode == 'apply'
+
+# Executes sshd -T to verify the effective daemon configuration after apply.
+- name: Capture effective SSHD configuration
+  ansible.builtin.command:
+    argv:
+      - "{{ sshd_baseline_sshd_binary }}"
+      - -T
+      - -f
+      - "{{ sshd_baseline_config_path }}"
+  register: sshd_baseline_effective_config
+  changed_when: false
+  when: sshd_baseline_mode == 'apply'
+
+- name: Assert effective SSHD baseline critical directives
+  ansible.builtin.assert:
+    that:
+      - "'authorizedkeyscommand /usr/bin/sss_ssh_authorizedkeys' in sshd_baseline_effective_config.stdout"
+      - "'authorizedkeyscommanduser nobody' in sshd_baseline_effective_config.stdout"
+      - "'passwordauthentication no' in sshd_baseline_effective_config.stdout"
+      - "'usepam yes' in sshd_baseline_effective_config.stdout"
+    fail_msg: "Installed SSHD effective config does not match required SSSD/PAM/password baseline."
+  when:
+    - sshd_baseline_mode == 'apply'
+    - sshd_baseline_variant == 'standard_sssd_no_include'

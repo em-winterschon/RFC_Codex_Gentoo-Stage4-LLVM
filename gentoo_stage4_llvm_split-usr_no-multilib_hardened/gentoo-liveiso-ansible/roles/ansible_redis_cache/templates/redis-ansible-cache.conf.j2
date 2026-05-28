@@ -1,0 +1,19 @@
+# Managed by Ansible. Local ephemeral Redis cache for Ansible facts only.
+bind {{ ansible_redis_cache_bind | join(' ') }}
+protected-mode yes
+port {{ ansible_redis_cache_port }}
+databases {{ ansible_redis_cache_database_count }}
+timeout {{ ansible_redis_cache_timeout }}
+tcp-keepalive {{ ansible_redis_cache_tcp_keepalive }}
+supervised no
+daemonize no
+pidfile {{ ansible_redis_cache_pidfile }}
+logfile {{ ansible_redis_cache_log_dir }}/ansible-cache.log
+dir {{ ansible_redis_cache_dir }}
+
+# Ephemeral/in-memory posture: no RDB snapshots and no AOF persistence.
+save ""
+appendonly no
+
+maxmemory {{ ansible_redis_cache_maxmemory }}
+maxmemory-policy {{ ansible_redis_cache_maxmemory_policy }}

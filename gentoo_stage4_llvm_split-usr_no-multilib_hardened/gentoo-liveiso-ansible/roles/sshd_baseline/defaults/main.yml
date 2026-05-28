@@ -1,0 +1,19 @@
+---
+sshd_baseline_managed: true
+sshd_baseline_mode: audit
+sshd_baseline_variant: standard_sssd_no_include
+sshd_baseline_authorized_variants:
+  - standard_sssd_no_include
+  - installer_recovery_only
+sshd_baseline_allow_recovery_variant: false
+sshd_baseline_apply_required: false
+sshd_baseline_config_path: /etc/ssh/sshd_config
+sshd_baseline_backup_dir: /var/backups/sshd_config
+sshd_baseline_validate_command: "/usr/bin/sshd -t -f %s"
+sshd_baseline_sshd_binary: /usr/bin/sshd
+sshd_baseline_service_name: sshd
+sshd_baseline_restart_service: true
+sshd_baseline_remove_legacy_sssd_fragment: true
+sshd_baseline_legacy_sssd_fragment: /etc/ssh/sshd_config.d/60-sssd-authorized-keys.conf
+sshd_baseline_run_id: "{{ lookup('env', 'SSHD_BASELINE_RUN_ID') | default('manual', true) }}"
+sshd_baseline_report_dir: "/tmp/ansible-control-flow/sshd-baseline/{{ sshd_baseline_run_id }}"

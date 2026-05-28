@@ -1,0 +1,9 @@
+---
+- name: Audit canonical SSHD baseline drift
+  hosts: "local_management:aaa_domain_clients:install_targets:netboot_publishers:!mikrotik_routeros:!mikrotik_swos:!routeros_rfc99_gateways"
+  gather_facts: false
+  become: true
+  vars:
+    sshd_baseline_mode: audit
+  roles:
+    - role: sshd_baseline

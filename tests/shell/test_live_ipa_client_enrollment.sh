@@ -8,13 +8,13 @@ ANSIBLE_ROOT="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gen
 assert_file_contains() {
   local file=$1
   local pattern=$2
-  grep -q -- "${pattern}" "${file}"
+  grep -F -q -- "${pattern}" "${file}"
 }
 
 assert_file_not_contains() {
   local file=$1
   local pattern=$2
-  ! grep -q -- "${pattern}" "${file}"
+  ! grep -F -q -- "${pattern}" "${file}"
 }
 
 inventory="${ANSIBLE_ROOT}/inventories/local-network/hosts.yml"
@@ -23,6 +23,7 @@ apply_playbook="${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml"
 validate_playbook="${ANSIBLE_ROOT}/playbooks/ipa-client-live-validate.yml"
 profile_definition="${ANSIBLE_ROOT}/profile-definitions/aaa-domain-client.yml"
 sssd_template="${ANSIBLE_ROOT}/roles/ipa_client/templates/sssd.conf.j2"
+sshd_baseline_template="${ANSIBLE_ROOT}/roles/sshd_baseline/templates/sshd_config.standard_sssd_no_include.j2"
 netboot_manifest="${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml"
 identity_doc="${REPO_ROOT}/docs/IDENTITY-AAA.md"
 roadmap_doc="${REPO_ROOT}/docs/ROADMAP-AND-TODO.md"
@@ -46,7 +47,9 @@ assert_file_contains "${apply_playbook}" 'delegate_to: "{{ ipa_client_live_contr
 assert_file_contains "${apply_playbook}" 'owner: sssd'
 assert_file_contains "${apply_playbook}" 'group: sssd'
 assert_file_contains "${apply_playbook}" '--buildpkg=y'
-assert_file_contains "${apply_playbook}" 'AuthorizedKeysCommand /usr/bin/sss_ssh_authorizedkeys'
+assert_file_contains "${apply_playbook}" 'Apply canonical SSHD baseline with inline SSSD key lookup'
+assert_file_contains "${apply_playbook}" 'name: sshd_baseline'
+assert_file_contains "${apply_playbook}" 'sshd_baseline_variant'
 assert_file_contains "${apply_playbook}" 'sys-auth/sssd samba'
 assert_file_contains "${apply_playbook}" 'net-fs/samba winbind'
 assert_file_not_contains "${apply_playbook}" 'config_file_version = 2'
@@ -55,6 +58,9 @@ assert_file_contains "${profile_definition}" 'sys-auth/sssd samba'
 assert_file_contains "${profile_definition}" 'net-fs/samba winbind'
 assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-domain-client.packages" 'net-fs/samba'
 assert_file_not_contains "${sssd_template}" 'config_file_version = 2'
+assert_file_contains "${sshd_baseline_template}" 'AuthorizedKeysCommand /usr/bin/sss_ssh_authorizedkeys'
+assert_file_contains "${sshd_baseline_template}" 'AuthorizedKeysCommandUser nobody'
+assert_file_contains "${sshd_baseline_template}" '# Include "/etc/ssh/sshd_config.d/*.conf"'
 assert_file_contains "${netboot_manifest}" 'profile-definitions/aaa-domain-client.yml'
 assert_file_contains "${netboot_manifest}" 'profile-definitions/secure-firstboot-enrollment.yml'
 assert_file_contains "${netboot_manifest}" 'profile-package-lists/stage5-domain-client.packages'
