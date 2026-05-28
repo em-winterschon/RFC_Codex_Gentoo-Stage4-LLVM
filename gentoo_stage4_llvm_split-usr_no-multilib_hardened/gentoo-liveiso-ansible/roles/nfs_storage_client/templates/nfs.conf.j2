@@ -16,9 +16,11 @@ rpc-verbosity = 0
 
 [mount]
 proto = tcp
-{% if resolved_nfs_storage_client.protocol_default == 'nfsv4_tcp' %}
+{% if resolved_nfs_storage_client.protocol_default in ['nfsv4_2_tcp', 'nfsv4_2_tcp_multipath', 'nfsv4_tcp', 'nfs_rdma'] %}
 vers = 4.2
 nconnect = {{ resolved_nfs_storage_client.nconnect }}
+{% elif resolved_nfs_storage_client.protocol_default == 'nfsv4_1_tcp' %}
+vers = 4.1
 {% else %}
 vers = 3
 {% endif %}
