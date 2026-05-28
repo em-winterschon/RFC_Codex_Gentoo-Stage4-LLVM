@@ -1,6 +1,6 @@
 # Inference Service Playbooks
 
-Audit timestamp: `2026-05-24T03:15:49Z`
+Audit timestamp: `2026-05-25T20:56:00-07:00`
 
 ## Scope
 
@@ -50,9 +50,8 @@ Do not require SELinux. For RedHat-family hosts where SELinux is active, the
 role may set compatible labels or use a documented opt-in, but the baseline must
 work without making SELinux a prerequisite.
 
-Use Podman by default. Allow a host-level container engine override for
-transition hosts where the NVIDIA runtime is already Docker-only and Podman CDI
-has not been validated.
+Use Podman for all inference service playbooks. Container handling must remain
+OCI-compatible and must not depend on Docker engine behavior.
 
 ## Accelerator Profiles
 
@@ -69,10 +68,9 @@ For Podman/CDI-capable hosts, expose GPUs with:
 --device nvidia.com/gpu=all
 ```
 
-Do not assume this is already valid on Jetson/L4T hosts. Thor AGX currently has
-Docker and NVIDIA Container Toolkit active, but Podman is absent. Treat
-Jetson/L4T as a host-prep exception until Podman plus NVIDIA CDI is validated or
-a temporary Docker engine override is approved.
+Thor AGX now uses Podman plus NVIDIA CDI. The live Thor CDI file is
+`/etc/cdi/nvidia.yaml`, and the validated CDI devices are `nvidia.com/gpu=0`
+and `nvidia.com/gpu=all`.
 
 ### `amd_rocm`
 
@@ -118,18 +116,14 @@ in the playbooks.
 
 ### Thor AGX
 
-Use Thor as an Ubuntu/L4T exception host:
+Use Thor as an Ubuntu/L4T Podman host:
 
 ```yaml
 inference_service_architecture: arm64
-inference_service_accelerator_profile: nvidia
-inference_service_container_engine: docker  # temporary until Podman/CDI is validated
-inference_service_allow_docker_exception: true
+inference_service_accelerator: nvidia
+inference_service_container_engine: podman
+inference_service_manager: systemd
 ```
-
-This is not a recommendation to standardize on Docker. It records current live
-state so automation can avoid breaking existing NVIDIA runtime assumptions.
-Prefer an approved Podman/CDI prep step before making Podman mandatory on Thor.
 
 Start with Ollama and Open WebUI. Defer vLLM and SGLang on Thor until their
 arm64, Jetson/L4T, and CUDA 13 image path is validated.

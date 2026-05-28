@@ -7,6 +7,7 @@
   vars:
     inference_service_backend: ollama
     inference_service_name: ollama
+    inference_service_accelerator: nvidia
 
   roles:
     - role: inference_service

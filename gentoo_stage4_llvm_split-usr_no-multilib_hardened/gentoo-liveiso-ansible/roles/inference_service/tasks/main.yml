@@ -4,8 +4,7 @@
     resolved_inference_service_manager: >-
       {{ ansible_service_mgr if inference_service_manager == 'auto' else inference_service_manager }}
     resolved_inference_service_packages: >-
-      {{ [] if inference_service_container_engine == 'docker' else
-        inference_service_package_map.get(
+      {{ inference_service_package_map.get(
           ansible_os_family,
           inference_service_package_map.get(ansible_distribution, [])
         ) }}
@@ -23,15 +22,13 @@
 - name: Assert inference service inputs are supported
   ansible.builtin.assert:
     that:
-      - inference_service_container_engine == 'podman' or
-        (inference_service_container_engine == 'docker' and inference_service_allow_docker_exception | bool)
+      - inference_service_container_engine == 'podman'
       - resolved_inference_service_manager in ['systemd', 'openrc']
       - resolved_inference_service_accelerator in inference_service_accelerator_profiles
       - resolved_inference_services | length > 0
     fail_msg: >-
-      inference_service requires podman unless an explicit Docker exception is
-      allowed, systemd/openrc, a known accelerator profile, and at least one
-      selected service definition.
+      inference_service requires podman, systemd/openrc, a known accelerator
+      profile, and at least one selected service definition.
   when: inference_service_enabled | bool
 
 - name: Install inference service container prerequisites
