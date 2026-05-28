@@ -13,6 +13,7 @@ REDIS_ROLE="${ANSIBLE_ROOT}/roles/ansible_redis_cache"
 REDIS_PLAYBOOK="${ANSIBLE_ROOT}/playbooks/ansible-redis-cache-local.yml"
 ANSIBLE_CFG="${ANSIBLE_ROOT}/ansible.cfg"
 REQS="${ANSIBLE_ROOT}/requirements.txt"
+COLLECTION_REQS="${ANSIBLE_ROOT}/requirements.yml"
 IPA_PLAYBOOK="${ANSIBLE_ROOT}/playbooks/ipa-client-live-apply.yml"
 RUN_TESTS="${SCRIPT_DIR}/run-tests.sh"
 
@@ -62,6 +63,7 @@ assert_file_contains "${ANSIBLE_CFG}" 'fact_caching_timeout = 86400'
 assert_file_contains "${ANSIBLE_CFG}" 'fact_caching_prefix = forge_ansible_facts'
 assert_file_contains "${ANSIBLE_CFG}" 'fact_caching_redis_keyset_name = forge_ansible_cache_keys'
 assert_file_contains "${REQS}" 'redis>=5.0'
+assert_file_contains "${COLLECTION_REQS}" 'community.general'
 
 REDIS_TEMPLATE="${REDIS_ROLE}/templates/redis-ansible-cache.conf.j2"
 assert_file_contains "${REDIS_TEMPLATE}" 'bind {{ ansible_redis_cache_bind | join'
@@ -121,6 +123,7 @@ assert_file_not_contains "${IPA_PLAYBOOK}" '60-sssd-authorized-keys.conf'
 
 assert_file_contains "${SLURM_SCRIPT}" 'sbatch'
 assert_file_contains "${SLURM_SCRIPT}" '--array=0-'
+assert_file_contains "${SLURM_SCRIPT}" 'ANSIBLE_STDOUT_CALLBACK'
 assert_file_contains "${SLURM_SCRIPT}" 'ANSIBLE_CACHE_PLUGIN_CONNECTION'
 assert_file_contains "${SLURM_SCRIPT}" 'playbooks/sshd-baseline-audit.yml'
 assert_file_contains "${SLURM_SCRIPT}" 'playbooks/sshd-baseline-apply.yml'

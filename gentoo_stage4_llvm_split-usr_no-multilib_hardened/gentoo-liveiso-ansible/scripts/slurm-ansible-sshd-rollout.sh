@@ -81,6 +81,7 @@ submit_sbatch() {
 base_exports() {
   cat <<EXPORTS
 export ANSIBLE_CONFIG='${ANSIBLE_ROOT}/ansible.cfg'
+export ANSIBLE_STDOUT_CALLBACK='default'
 export ANSIBLE_CACHE_PLUGIN='${CACHE_PLUGIN}'
 export ANSIBLE_CACHE_PLUGIN_CONNECTION='${CACHE_CONNECTION}'
 export ANSIBLE_CONTROL_FLOW_ENABLED=true
@@ -197,6 +198,7 @@ case "${MODE}" in
     read -r -d '' WRAP <<'WRAP' || true
 set -euo pipefail
 export ANSIBLE_CONFIG="${ANSIBLE_ROOT}/ansible.cfg"
+export ANSIBLE_STDOUT_CALLBACK="default"
 export ANSIBLE_CACHE_PLUGIN="community.general.redis"
 export ANSIBLE_CACHE_PLUGIN_CONNECTION="localhost:6379:0:"
 export ANSIBLE_CONTROL_FLOW_ENABLED=true

@@ -20,6 +20,7 @@ Run once on the Ansible controller before large host-fact collection:
 
 ```bash
 cd gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible
+ansible-galaxy collection install -r requirements.yml
 ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i localhost, playbooks/ansible-redis-cache-local.yml
 ```
 
