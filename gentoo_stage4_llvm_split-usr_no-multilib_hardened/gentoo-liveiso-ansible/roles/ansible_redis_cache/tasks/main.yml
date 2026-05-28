@@ -3,6 +3,22 @@
   ansible.builtin.meta: end_host
   when: not (ansible_redis_cache_manage | bool)
 
+- name: Ensure Portage package.use directory exists for Redis cache
+  ansible.builtin.file:
+    path: "{{ ansible_redis_cache_package_use_file | dirname }}"
+    state: directory
+    mode: '0755'
+  when: ansible_redis_cache_install_package | bool
+
+- name: Write Redis cache package USE override
+  ansible.builtin.copy:
+    dest: "{{ ansible_redis_cache_package_use_file }}"
+    mode: '0644'
+    content: "{{ ansible_redis_cache_package_use_content }}"
+  when:
+    - ansible_redis_cache_install_package | bool
+    - ansible_redis_cache_package_use_content | length > 0
+
 - name: Optionally install Redis package for Ansible cache
   ansible.builtin.command:
     argv:
