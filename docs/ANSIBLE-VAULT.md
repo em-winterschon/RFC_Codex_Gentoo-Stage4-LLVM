@@ -120,6 +120,30 @@ Use `GH_TOKEN="$(cat /root/.ssh/codex.d/tokens/FORGE_TOKEN)" gh ...` for
 operator-local GitHub CLI calls. Do not commit the token file or print token
 contents to logs.
 
+## NetBox Admin Credentials
+
+The active `svc-netbox-stage4` local admin credentials are stored in the
+local-network vault under:
+
+```text
+vault_netbox_admin_username
+vault_netbox_admin_password
+vault_netbox_api_token
+vault_netbox_api_token_name
+vault_netbox_api_token_owner
+vault_netbox_api_token_purpose
+```
+
+The root-only break-glass token file remains available on the operator host at:
+
+```bash
+/root/operator-private/netbox/svc-netbox-stage4-admin-token
+```
+
+Do not print the token or password in command output. When rotating the local
+NetBox `admin` password, update the encrypted vault and validate a web login
+before committing the encrypted vault change.
+
 ## BigNetwork Token
 
 The operator-private BigNetwork API/client token for the Forge/Codexian portal

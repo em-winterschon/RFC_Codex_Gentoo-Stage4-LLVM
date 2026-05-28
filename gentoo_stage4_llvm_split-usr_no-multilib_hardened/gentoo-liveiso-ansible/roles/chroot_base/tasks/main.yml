@@ -136,6 +136,23 @@
     content: "{{ install_hostname }}\n"
     mode: '0644'
 
+- name: Write OpenRC hostname fallback
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/conf.d/hostname"
+    content: |
+      hostname="{{ install_hostname }}"
+    mode: '0644'
+
+- name: Write hosts file
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/hosts"
+    content: |
+      127.0.0.1 localhost
+      ::1 localhost
+      {% set target_fqdn = fqdn | default('', true) %}
+      127.0.1.1 {{ target_fqdn if target_fqdn else install_hostname }}{% if target_fqdn and target_fqdn != install_hostname %} {{ install_hostname }}{% endif %}
+    mode: '0644'
+
 - name: Write keymap
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/etc/conf.d/keymaps"
@@ -143,9 +160,22 @@
       keymap="{{ install_keymap }}"
     mode: '0644'
 
-- name: Write kernel command line for installkernel/dracut
+- name: Ensure installkernel command line directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/kernel"
+    state: directory
+    mode: '0755'
+
+- name: Write legacy kernel command line for installkernel/dracut
   ansible.builtin.copy:
     dest: "{{ install_target_root }}/etc/cmdline"
+    mode: '0644'
+    content: |
+      {{ install_kernel_cmdline | default('root=ZFS=' + zpool_name + '/ROOT/gentoo ro console=tty0 console=ttyS0,115200') }}
+
+- name: Write kernel command line for installkernel/dracut
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/kernel/cmdline"
     mode: '0644'
     content: |
       {{ install_kernel_cmdline | default('root=ZFS=' + zpool_name + '/ROOT/gentoo ro console=tty0 console=ttyS0,115200') }}

@@ -10,22 +10,6 @@
         )
       }}
 
-- name: Ensure kernel config fragment directory exists
-  ansible.builtin.file:
-    path: "{{ install_target_root }}/etc/kernel/config.d"
-    state: directory
-    mode: '0755'
-  when: (resolved_kernel_config_fragment_files | default({})) | length > 0
-
-- name: Install kernel config fragments
-  ansible.builtin.copy:
-    dest: "{{ install_target_root }}/etc/kernel/config.d/{{ kernel_config_fragment_file.key }}"
-    mode: '0644'
-    content: "{{ kernel_config_fragment_file.value | trim }}\n"
-  loop: "{{ (resolved_kernel_config_fragment_files | default({})) | dict2items }}"
-  loop_control:
-    loop_var: kernel_config_fragment_file
-
 - name: Resolve system package atom set
   ansible.builtin.set_fact:
     resolved_system_package_atoms: >-
@@ -44,17 +28,80 @@
             'sys-kernel/installkernel',
             selected_kernel_package
           ]
-          + (install_networkmanager | ternary(['net-misc/networkmanager'], []))
           + (install_openssh | ternary(['net-misc/openssh'], []))
           + selected_gpu_profile.packages
           + (resolved_profile_package_atoms | default([]))
         ) | unique
       }}
 
+- name: Resolve system package distcc guard settings
+  ansible.builtin.set_fact:
+    system_packages_distcc_farm: "{{ resolved_profile_distcc_farm | default(profile_distcc_farm | default({})) }}"
+
+- name: Verify distcc client policy before system package build
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{
+      (
+        'set -e; '
+        + 'test -n "$(portageq envvar DISTCC_HOSTS)"; '
+        + 'test "$(portageq envvar DISTCC_FALLBACK)" = "0"; '
+        + 'case " $(portageq envvar FEATURES) " in '
+        + '*" distcc "*) ;; '
+        + '*) exit 1 ;; '
+        + 'esac; '
+        + 'case ":$(portageq envvar PATH):" in '
+        + '*:/usr/local/libexec/distcc-farm/bin:*) exit 0 ;; '
+        + '*) exit 1 ;; '
+        + 'esac'
+      ) | quote
+    }}
+  when:
+    - system_packages_distcc_farm.enabled | default(false) | bool
+    - system_packages_distcc_farm.client_enabled | default(false) | bool
+    - system_packages_distcc_farm.hosts | default([]) | length > 0
+
+- name: Verify distcc MAKEOPTS before system package build
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{
+      (
+        'test "$(portageq envvar MAKEOPTS)" = "-j'
+        + (system_packages_distcc_farm.makeopts_jobs | string)
+        + (
+          (
+            ' -l'
+            + (system_packages_distcc_farm.makeopts_load | string)
+          )
+          if (system_packages_distcc_farm.makeopts_load | default('') | string | length > 0)
+          else ''
+        )
+        + '"'
+      ) | quote
+    }}
+  when:
+    - system_packages_distcc_farm.enabled | default(false) | bool
+    - system_packages_distcc_farm.client_enabled | default(false) | bool
+    - system_packages_distcc_farm.hosts | default([]) | length > 0
+    - system_packages_distcc_farm.makeopts_jobs | default('') | string | length > 0
+
 - name: Install core packages in target
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ ('emerge --verbose --oneshot ' + (resolved_system_package_atoms | join(' '))) | trim | quote }}
+    {{
+      (
+        'set -o pipefail; '
+        + 'log=/var/log/stage4-system-packages-emerge.log; '
+        + ': > "${log}"; '
+        + 'emerge --oneshot ' + (resolved_system_package_atoms | join(' '))
+        + ' > "${log}" 2>&1 || { '
+        + 'rc=$?; '
+        + 'printf "%s\n" "emerge failed; sanitized tail follows:"; '
+        + 'LC_ALL=C tail -240 "${log}" | LC_ALL=C tr -cd "\11\12\15\40-\176"; '
+        + 'exit "${rc}"; '
+        + '}'
+      ) | trim | quote
+    }}
 
 - name: Refresh environment cache in target
   ansible.builtin.command: >-

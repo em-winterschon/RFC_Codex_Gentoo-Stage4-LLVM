@@ -107,6 +107,12 @@ cpu_architecture_registry:
       tune: arrowlake
       optimization_scope: native_reviewed
       notes: Compiler support must be verified before live use.
+  intel_atom:
+    atom_c3758_denverton:
+      march: goldmont
+      tune: goldmont
+      optimization_scope: native_reviewed
+      notes: Intel Atom C3758 / Denverton appliance CPU used by the M70 nodes.
   arm64_reference:
     cortex_a72:
       mcpu: cortex-a72
@@ -180,3 +186,9 @@ portage_cpu_profiles:
     rust_target_cpu: broadwell
     llvm_targets: "AMDGPU NVPTX X86"
     notes: "Broadwell-EP"
+  intel_atom_c3758_goldmont:
+    march: goldmont
+    tune: goldmont
+    rust_target_cpu: goldmont
+    llvm_targets: "X86"
+    notes: "Intel Atom C3758 / Denverton M70 profile; confirm CPU_FLAGS_X86 on live hardware before shared binpkg promotion"

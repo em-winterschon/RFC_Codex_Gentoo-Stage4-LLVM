@@ -1,31 +1,121 @@
 ---
-- name: Enable NetworkManager service on OpenRC
+- name: Resolve OpenRC network renderer settings
+  ansible.builtin.set_fact:
+    resolved_openrc_netifrc: "{{ openrc_netifrc | default({}) }}"
+    resolved_openrc_ovs_fabric: "{{ openrc_ovs_fabric | default({}) }}"
+
+- name: Reject unsupported NetworkManager requests
+  ansible.builtin.fail:
+    msg: NetworkManager is not supported by this installer path. Use openrc_netifrc and openrc_ovs_fabric instead.
+  when:
+    - (install_networkmanager | default(false) | bool) or ((networkmanager_connections | default([])) | length > 0)
+
+- name: Remove unsupported NetworkManager configuration
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/NetworkManager"
+    state: absent
+
+- name: Ensure OpenRC network configuration directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ openrc_network_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/conf.d
+    - /etc/init.d
+    - /usr/local/libexec
+  loop_control:
+    loop_var: openrc_network_dir
+  when: resolved_openrc_netifrc.enabled | default(false) | bool
+
+- name: Render OpenRC netifrc configuration
+  ansible.builtin.template:
+    src: conf.d.net.j2
+    dest: "{{ install_target_root }}/etc/conf.d/net"
+    mode: '0644'
+  when: resolved_openrc_netifrc.enabled | default(false) | bool
+
+- name: Link OpenRC netifrc services
+  ansible.builtin.file:
+    src: net.lo
+    dest: "{{ install_target_root }}/etc/init.d/net.{{ openrc_netifrc_interface.name }}"
+    state: link
+    force: true
+  loop: "{{ resolved_openrc_netifrc.interfaces | default([]) }}"
+  loop_control:
+    loop_var: openrc_netifrc_interface
+    label: "{{ openrc_netifrc_interface.name }}"
+  when:
+    - resolved_openrc_netifrc.enabled | default(false) | bool
+    - openrc_netifrc_interface.name | length > 0
+
+- name: Enable OpenRC netifrc services
   ansible.builtin.command: >-
     {{ liveiso_work_dir }}/chroot-runner.sh
-    {{ item | quote }}
-  loop:
-    - rc-update add NetworkManager default
-    - rc-update add dbus default
-  when: install_networkmanager | bool
-
-- name: Ensure NetworkManager system connection directory exists
-  ansible.builtin.file:
-    path: "{{ install_target_root }}/etc/NetworkManager/system-connections"
-    state: directory
-    mode: '0700'
-  when:
-    - install_networkmanager | bool
-    - networkmanager_connections | default([]) | length > 0
-
-- name: Render managed NetworkManager connections
-  ansible.builtin.template:
-    src: networkmanager-connection.nmconnection.j2
-    dest: "{{ install_target_root }}/etc/NetworkManager/system-connections/{{ item.name }}.nmconnection"
-    mode: '0600'
-  loop: "{{ networkmanager_connections | default([]) }}"
+    {{ ('rc-update add net.' + openrc_netifrc_interface.name + ' default') | quote }}
+  loop: "{{ resolved_openrc_netifrc.interfaces | default([]) }}"
   loop_control:
-    label: "{{ item.name }}"
-  when: install_networkmanager | bool
+    loop_var: openrc_netifrc_interface
+    label: "{{ openrc_netifrc_interface.name }}"
+  when:
+    - resolved_openrc_netifrc.enabled | default(false) | bool
+    - openrc_netifrc_interface.name | length > 0
+
+- name: Install OpenRC OVS fabric apply helper
+  ansible.builtin.template:
+    src: ovs-fabric.sh.j2
+    dest: "{{ install_target_root }}/usr/local/libexec/{{ resolved_openrc_ovs_fabric.service_name | default('ovs-fabric') }}"
+    mode: '0755'
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Install OpenRC OVS fabric service
+  ansible.builtin.template:
+    src: ovs-fabric.initd.j2
+    dest: "{{ install_target_root }}/etc/init.d/{{ resolved_openrc_ovs_fabric.service_name | default('ovs-fabric') }}"
+    mode: '0755'
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Check OpenRC OVS daemon services
+  ansible.builtin.stat:
+    path: "{{ install_target_root }}/etc/init.d/{{ openrc_ovs_daemon_service }}"
+  loop:
+    - ovsdb-server
+    - ovs-vswitchd
+  loop_control:
+    loop_var: openrc_ovs_daemon_service
+  register: openrc_ovs_daemon_service_stats
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Assert OpenRC OVS daemon services exist
+  ansible.builtin.assert:
+    that:
+      - openrc_ovs_daemon_service_stat.stat.exists
+    fail_msg: >-
+      OpenRC OVS fabric is enabled but
+      {{ install_target_root }}/etc/init.d/{{ openrc_ovs_daemon_service_stat.openrc_ovs_daemon_service }}
+      is missing. Install net-misc/openvswitch before enabling the OVS fabric.
+  loop: "{{ openrc_ovs_daemon_service_stats.results | default([]) }}"
+  loop_control:
+    loop_var: openrc_ovs_daemon_service_stat
+    label: "{{ openrc_ovs_daemon_service_stat.openrc_ovs_daemon_service }}"
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Enable OpenRC OVS daemon services
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('rc-update add ' + openrc_ovs_daemon_service + ' default') | quote }}
+  loop:
+    - ovsdb-server
+    - ovs-vswitchd
+  loop_control:
+    loop_var: openrc_ovs_daemon_service
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
+
+- name: Enable OpenRC OVS fabric service
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('rc-update add ' + (resolved_openrc_ovs_fabric.service_name | default('ovs-fabric')) + ' default') | quote }}
+  when: resolved_openrc_ovs_fabric.enabled | default(false) | bool
 
 - name: Enable sshd on OpenRC
   ansible.builtin.command: >-

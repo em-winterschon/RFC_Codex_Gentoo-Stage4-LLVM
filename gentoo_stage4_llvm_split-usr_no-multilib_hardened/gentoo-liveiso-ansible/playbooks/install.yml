@@ -16,6 +16,8 @@
       - profile
       - portage
       - chroot_base
+      - distcc_farm
+      - kernel_config
       - system_packages
       - boot
       - network
@@ -49,7 +51,6 @@
       - memory_storage
       - slurm_cluster
       - jenkins_controller
-      - distcc_farm
       - container_host
       - container_app_rsyslog_collector
       - container_app_elastic_apm

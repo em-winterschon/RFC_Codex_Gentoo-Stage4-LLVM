@@ -91,11 +91,19 @@
     mode: "{{ portage_runtime_dir.mode }}"
   loop:
     - { path: /var/tmp/portage-tmpfs, mode: '1777' }
-    - { path: /var/tmp/portage-tmpfs/ccache-tmp, mode: '1777' }
     - { path: /var/log/portage, mode: '0755' }
-    - { path: /var/cache/ccache, mode: '0755' }
   loop_control:
     loop_var: portage_runtime_dir
+
+- name: Remove unsupported compiler cache directories
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ unsupported_compiler_cache_dir }}"
+    state: absent
+  loop:
+    - /var/tmp/portage-tmpfs/ccache-tmp
+    - /var/cache/ccache
+  loop_control:
+    loop_var: unsupported_compiler_cache_dir
 
 - name: Ensure configured Portage binary package directory exists
   ansible.builtin.file:
@@ -123,13 +131,26 @@
     content: |
       sys-kernel/installkernel dracut -systemd
 
-- name: Enable D-Bus support for wpa_supplicant when NetworkManager is requested
+- name: Ensure dracut configuration directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/dracut.conf.d"
+    state: directory
+    mode: '0755'
+
+- name: Force universal dracut initramfs with dual-vendor early microcode
   ansible.builtin.copy:
-    dest: "{{ install_target_root }}/etc/portage/package.use/networkmanager"
+    dest: "{{ install_target_root }}/etc/dracut.conf.d/95-universal-netboot-microcode.conf"
     mode: '0644'
     content: |
-      net-wireless/wpa_supplicant dbus
-  when: install_networkmanager | bool
+      # Netboot initramfs artifacts are published by role, not by requestor CPU.
+      # Keep the image generic and let dracut include both Intel and AMD ucode.
+      hostonly="no"
+      early_microcode="yes"
+
+- name: Remove unsupported NetworkManager package.use fragment
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/etc/portage/package.use/networkmanager"
+    state: absent
 
 - name: Write env fragments from selected profile definitions
   ansible.builtin.copy:

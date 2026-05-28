@@ -1,0 +1,12 @@
+[Unit]
+Description=VPP canary AF_PACKET attachment
+After=vpp.service network-online.target
+Requires=vpp.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/vpp-canary-afpacket.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

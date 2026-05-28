@@ -16,7 +16,6 @@ gentoo_system_profile_metadata:
   package_pins:
     tracked_atoms:
       - sys-devel/distcc
-      - dev-util/ccache
       - sys-devel/gcc
       - llvm-core/clang
       - llvm-core/lld

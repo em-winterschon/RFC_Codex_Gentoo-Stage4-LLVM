@@ -1,0 +1,77 @@
+@startuml
+title M70 <-> M70 Canary Activity - 2026-05-26
+skinparam shadowing false
+skinparam backgroundColor #ffffff
+skinparam activity {
+  BackgroundColor #f7f7f7
+  BorderColor #444444
+  FontColor #111111
+}
+skinparam ArrowColor #333333
+
+|Operator|
+start
+:Request EOD closure, branch hygiene,
+documentation, diagrams, and workflow
+result capture;
+
+|Atlas on primary M70|
+:Inventory repo state, PR #144,
+FCP outbox, relay notes, live host state;
+:Preserve source-of-truth rule:
+NetBox and repo docs must describe
+host actions before promotion;
+
+|m70_canary host|
+:Report persistent Gentoo boot state;
+:Confirm ZFS root, SATADOM -> ZFSBootMenu,
+OpenRC services, OVS bridge, and LACP bond;
+
+|vpp_canary VM|
+:Report Ubuntu VPP guest state;
+:Confirm vpp.service and
+vpp-canary-afpacket.service are active;
+
+|Atlas on primary M70|
+:Install iperf3 locally and on endpoints;
+:Observe canary Portage failure caused by
+distcc wrapper recursion on localhost/2;
+
+|m70_canary host|
+:Remove localhost/2 from durable
+DISTCC_HOSTS policy;
+:Apply selected Ansible roles:
+preflight + distcc_farm;
+:Install net-misc/iperf successfully;
+
+|Atlas on primary M70|
+:Assign temporary RFC 2544
+benchmark IP to primary bond0;
+
+|vpp_canary VM|
+:Assign temporary RFC 2544
+benchmark IP to enp0s5;
+:Run iperf3 server during validation;
+
+|Atlas on primary M70|
+:Run ping, TCP, TCP -P 4,
+reverse TCP, and UDP iperf3 tests;
+
+|m70_canary host|
+:Confirm ovs_workload0 remains
+LACP negotiated over eno1-eno4;
+
+|vpp_canary VM|
+:Expose VPP AF_PACKET counters on host-enp0s5;
+:Remove temporary benchmark IP
+and stop iperf3 server;
+
+|Atlas on primary M70|
+:Remove temporary benchmark IP from bond0;
+:Record results in docs and wiki mirror;
+:Commit, push, and update PR #144;
+
+|Operator|
+:Receive EOD and PR state;
+stop
+@enduml

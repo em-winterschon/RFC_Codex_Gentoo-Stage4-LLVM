@@ -115,6 +115,37 @@ Current apply scope:
   because the current `radiusd` account uses a FreeIPA sysaccount DN rather than
   a normal IPA user object.
 
+## NetBox Admin Access
+
+As of 2026-05-22, `svc-netbox-stage4` is not yet using FreeIPA-backed NetBox
+group or superuser mapping. The live NetBox API shows only the local `admin`
+account and no NetBox groups or object permissions, so adding a FreeIPA user
+does not by itself grant NetBox login or admin rights. The local NetBox `admin`
+password and API token are stored in the encrypted local-network vault as
+`vault_netbox_admin_password` and `vault_netbox_api_token`.
+
+Current process:
+
+1. Model the human identity in
+   `identity-source-definitions/local-rfc1918.yml`, including a UID/GID from
+   the reserved human-user range, the correct FreeIPA groups, and vault-backed
+   password or SSH-key variable references.
+2. Run `scripts/validate_identity_source.py` and
+   `scripts/render_identity_sync_plan.py`, then review the rendered plan.
+3. Apply the FreeIPA side only through the explicit gated apply path
+   (`IDENTITY_SYNC_APPLY=1`, `IDENTITY_SYNC_APPLY_FREEIPA=1`,
+   `--provider freeipa`) from an operator context with the required vault
+   values loaded.
+4. Grant NetBox admin access separately in NetBox using the local `admin`
+   account, the NetBox admin UI/API, or an on-host Django management command.
+   Until FreeIPA/NetBox SSO mapping is implemented, this is a NetBox-local
+   permission step, not an identity-source apply side effect.
+
+The intended durable path is to add a repo-modeled `netbox-admin` FreeIPA group,
+configure NetBox authentication against FreeIPA, and map that group to NetBox
+staff/superuser or an equivalent least-privilege permission set. That mapping is
+not active yet.
+
 ## Live Bootstrap
 
 Because native FreeIPA server packaging is not available in the current Gentoo

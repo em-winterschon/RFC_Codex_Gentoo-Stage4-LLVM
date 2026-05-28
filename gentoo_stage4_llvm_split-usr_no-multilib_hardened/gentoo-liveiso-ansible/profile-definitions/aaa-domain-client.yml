@@ -12,8 +12,9 @@ gentoo_profile_definition:
       sys-auth/sssd samba
   aaa_policy_files:
     - aaa-policy-definitions/site-baseline.yml
-  openrc_services_enable:
-    - sssd
+  # SSSD is enabled by the FreeIPA enrollment apply path after it writes
+  # /etc/sssd/sssd.conf. Enabling it in the base profile makes pre-enrollment
+  # hosts boot with a known-bad service.
   ipa_client:
     enabled: true
     domain_join_mode: manual

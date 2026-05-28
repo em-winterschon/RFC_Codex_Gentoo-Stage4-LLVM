@@ -8,6 +8,7 @@ gentoo_profile_definition:
   package_use_files:
     30-slurm-pilot: |
       sys-cluster/slurm munge
+      sys-cluster/rdma-core -python
       sys-auth/munge gcrypt
       sys-cluster/pmix munge
   patch_files:

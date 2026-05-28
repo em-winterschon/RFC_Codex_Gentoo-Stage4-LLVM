@@ -8,8 +8,10 @@ app-portage/eix
 app-portage/gentoolkit
 net-misc/chrony
 net-misc/curl
+net-misc/dhcp
 net-misc/openssh
 net-misc/wget
+sys-apps/gptfdisk
 sys-apps/iproute2
 sys-apps/pciutils
 sys-apps/smartmontools

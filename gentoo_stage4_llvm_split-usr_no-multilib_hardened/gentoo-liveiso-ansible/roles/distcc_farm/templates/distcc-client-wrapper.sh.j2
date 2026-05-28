@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+compiler_name="$(basename -- "$0")"
+wrapper_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
+filtered_path=""
+
+IFS=':' read -r -a path_parts <<< "${PATH:-}"
+for path_part in "${path_parts[@]}"; do
+  if [[
+    -z "${path_part}"
+    || "${path_part}" == "${wrapper_dir}"
+    || "${path_part}" == "/usr/lib/distcc/bin"
+  ]]; then
+    continue
+  fi
+  if [[ -z "${filtered_path}" ]]; then
+    filtered_path="${path_part}"
+  else
+    filtered_path="${filtered_path}:${path_part}"
+  fi
+done
+export PATH="${filtered_path:-/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/bin}"
+
+distcc_runtime_dir="${DISTCC_CLIENT_RUNTIME_DIR:-/tmp/distcc-${UID:-0}}"
+mkdir -p "${distcc_runtime_dir}/lock" "${distcc_runtime_dir}/state"
+export DISTCC_DIR="${distcc_runtime_dir}"
+
+run_native_probe=false
+has_compile_action=false
+has_preprocess_only_action=false
+has_dependency_flag=false
+has_dependency_file_flag=false
+output_file=""
+args=("$@")
+
+for arg_index in "${!args[@]}"; do
+  arg="${args[${arg_index}]}"
+  arg_base="${arg##*/}"
+  case "${arg}" in
+    -c|-S)
+      has_compile_action=true
+      ;;
+    -E)
+      has_preprocess_only_action=true
+      ;;
+    -MD|-MMD)
+      has_dependency_flag=true
+      ;;
+    -MF|-MF*)
+      has_dependency_file_flag=true
+      ;;
+    -o)
+      next_index=$((arg_index + 1))
+      output_file="${args[${next_index}]:-}"
+      ;;
+    -o*)
+      output_file="${arg#-o}"
+      ;;
+    */CMakeFiles/CMakeScratch/TryCompile-*/*|*/CMakeFiles/CMakeTmp/*|*/meson-private/tmp*/*|*/meson-private/sanitycheck*|*/.conf_check_*/*|*/config-temp/*|config-temp/*|*/zfs-*/build/*.c|*/zfs-*/build/*/*.c|*/config_*/config_*.c|config_*/config_*.c|*/lib/test_fortify/*|lib/test_fortify/*|*/kernel/configs.c|kernel/configs.c|*/kernel/kheaders.c|kernel/kheaders.c)
+      run_native_probe=true
+      break
+      ;;
+  esac
+  case "${arg_base}" in
+    conftest*.c|conftest*.cc|conftest*.cpp|conftest*.cxx|conftest*.C|conftest*.S|conftest*.s|conftest*.m|conftest*.mm|config_*.c|test.c|test.cc|test.cpp|test.cxx|test.C)
+      run_native_probe=true
+      break
+      ;;
+  esac
+  if [[
+    "${arg}" == *.c
+    && (
+      "${PWD:-}" == */zfs-*/build
+      || "${PWD:-}" == */zfs-*/build/*
+    )
+  ]]; then
+    run_native_probe=true
+    break
+  fi
+done
+
+if [[
+  "${run_native_probe}" == "true"
+  || "${has_compile_action}" == "false"
+  || "${has_preprocess_only_action}" == "true"
+]]; then
+  real_compiler="$(command -v -- "${compiler_name}")"
+  exec "${real_compiler}" "$@"
+fi
+
+distcc_args=("$@")
+if [[
+  "${has_dependency_flag}" == "true"
+  && "${has_dependency_file_flag}" == "false"
+  && -n "${output_file}"
+  && "${output_file}" != "/dev/null"
+]]; then
+  distcc_args=("-MF" "${output_file%.*}.d" "${distcc_args[@]}")
+fi
+
+exec /usr/bin/distcc "${compiler_name}" "${distcc_args[@]}"

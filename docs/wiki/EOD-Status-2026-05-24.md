@@ -1,6 +1,20 @@
 # EOD Status 2026-05-24
 
-## Completed
+See [EOD-STATUS-2026-05-24.md](../EOD-STATUS-2026-05-24.md).
+
+This wiki summary preserves the two 2026-05-24 work lanes that were merged
+from PR #144 and its base branch.
+
+## M70 Canary Runtime Lane
+
+- Universal dracut policy was implemented for generic netboot/initramfs
+  artifacts with Intel and AMD early microcode.
+- `network-legacy` initramfs support was completed without NetworkManager by
+  adding `net-misc/dhcp` client policy.
+- M70 canary package convergence and final initramfs verification completed.
+- Distcc package concurrency for the canary/X12again path was increased.
+
+## SLURM Pilot And Standards Lane
 
 - Designed the cross-distro baseline atom contract with NetBox-authoritative
   host targeting and platform-specific package/service resolution.
