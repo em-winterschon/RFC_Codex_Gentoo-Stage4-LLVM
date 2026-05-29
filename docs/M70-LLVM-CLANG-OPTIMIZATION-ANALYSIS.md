@@ -83,6 +83,28 @@ Recommended profile split:
 The X12AGAIN distcc worker must continue compiling for the requesting M70
 flags. Never let `-march=native` leak to X12AGAIN for M70-targeted builds.
 
+## Distcc worker expansion from FCP note
+
+The 2026-05-25 Forge control-plane distcc note adds one validated FMT2 worker
+next to X12AGAIN. The approved canary host string is:
+
+```text
+DISTCC_HOSTS="10.200.99.23/24,lzo 172.16.99.108/48,lzo localhost/2"
+MAKEOPTS="-j16 -l12"
+```
+
+Validated worker facts from the note:
+
+| Worker | Address | Service shape | Capacity | Recommended M70 slots | Caveat |
+| --- | --- | --- | ---: | ---: | --- |
+| `kvm-sfo200-sec-9923.rfc1918.host` | `10.200.99.23:3632` | Podman/OCI `distccd`, host networking | `jobs=56` | `24` | Fallback-disabled smoke passed from M70, but durable managed Podman/OCI service persistence still needs validation before assuming reboot survival. |
+| `x12again.rfc1918.host` | `172.16.99.108:3632` | OpenRC `distccd` | `jobs=48` | `48` | Existing M70/X12 worker; still must compile for M70-requested flags, never worker-native flags. |
+
+Canary validation should test each worker independently before using the combined
+`DISTCC_HOSTS` string. Capture `distccmon-text`, worker logs, and
+fallback-disabled compile smoke evidence before starting large `@system` or
+`@world` rebuild stages.
+
 ## Review of additional system packages
 
 The package notes ask for:
