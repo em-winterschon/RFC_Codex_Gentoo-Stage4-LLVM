@@ -11,7 +11,7 @@ VAULT_ENV_FILE="${ANSIBLE_VAULT_ENV_FILE:-${HOME}/.ssh/vault/ANSIBLE_VARS.ENV}"
 LIMIT_ARGS=()
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Usage: audit-fleet-ipa-nfs-readiness.sh [--inventory PATH] [--limit PATTERN]
 
 Runs the read-only FreeIPA client and NFS floating-home readiness audit.
@@ -20,23 +20,23 @@ USAGE
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --inventory)
-      INVENTORY="${2:?missing --inventory value}"
-      shift 2
-      ;;
-    --limit)
-      LIMIT_ARGS=(--limit "${2:?missing --limit value}")
-      shift 2
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      printf 'ERROR: unknown argument: %s\n' "$1" >&2
-      usage >&2
-      exit 2
-      ;;
+  --inventory)
+    INVENTORY="${2:?missing --inventory value}"
+    shift 2
+    ;;
+  --limit)
+    LIMIT_ARGS=(--limit "${2:?missing --limit value}")
+    shift 2
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'ERROR: unknown argument: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
 done
 
