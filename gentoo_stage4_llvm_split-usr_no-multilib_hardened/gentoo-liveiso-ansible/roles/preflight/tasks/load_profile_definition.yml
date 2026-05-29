@@ -381,6 +381,14 @@
             recursive=True
           )
       }}
+    resolved_profile_slurm_cluster: >-
+      {{
+        resolved_profile_slurm_cluster
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.slurm_cluster | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_jenkins_controller: >-
       {{
         resolved_profile_jenkins_controller
