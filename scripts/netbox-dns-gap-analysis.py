@@ -35,6 +35,12 @@ def load_json_file(path: str) -> Any:
         return json.load(handle)
 
 
+def write_text_file(path: str, content: str) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+
+
 def load_token(path: str) -> str:
     return Path(path).read_text(encoding="utf-8").strip()
 
@@ -818,10 +824,10 @@ def main() -> int:
     json_output = json.dumps(report, indent=2, sort_keys=True) + "\n"
     markdown_output = render_markdown(report)
     if args.markdown_output:
-        Path(args.markdown_output).write_text(markdown_output, encoding="utf-8")
+        write_text_file(args.markdown_output, markdown_output)
     output = markdown_output if args.format == "markdown" else json_output
     if args.output:
-        Path(args.output).write_text(output, encoding="utf-8")
+        write_text_file(args.output, output)
     else:
         sys.stdout.write(output)
     gap_count = sum(

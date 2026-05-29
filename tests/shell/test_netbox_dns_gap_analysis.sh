@@ -28,6 +28,8 @@ done
 assert_file_contains "${GAP_SCRIPT}" "generate_gap_analysis"
 assert_file_contains "${GAP_SCRIPT}" "NetBox is authoritative"
 assert_file_contains "${GAP_PLAYBOOK}" "netbox-dns-gap-analysis.py"
+assert_file_contains "${GAP_PLAYBOOK}" "netbox_dns_gap_run_id_resolved"
+assert_file_contains "${GAP_PLAYBOOK}" "netbox_dns_gap_output_dir_resolved"
 assert_file_contains "${DNS_VARS}" "dns_hetzner_cloud_audit_domains"
 assert_file_contains "${DNS_VARS}" "rfc1918.systems"
 assert_file_contains "${DNS_VARS}" "vernetzen.io"
@@ -167,10 +169,10 @@ python3 "${GAP_SCRIPT}" \
   --hetzner-token-groups-file "${tmpdir}/token-groups.json" \
   --hetzner-fixture-file "${tmpdir}/hetzner-fixture.json" \
   --format json \
-  --output "${tmpdir}/gap.json" \
-  --markdown-output "${tmpdir}/gap.md"
+  --output "${tmpdir}/nested/report/gap.json" \
+  --markdown-output "${tmpdir}/nested/report/gap.md"
 
-python3 - "${tmpdir}/gap.json" "${tmpdir}/gap.md" << 'PY'
+python3 - "${tmpdir}/nested/report/gap.json" "${tmpdir}/nested/report/gap.md" << 'PY'
 import json
 import sys
 from pathlib import Path

@@ -5,10 +5,8 @@
   vars:
     repo_root: "{{ playbook_dir }}/../../.."
     netbox_dns_gap_script: "{{ repo_root }}/scripts/netbox-dns-gap-analysis.py"
-    netbox_dns_gap_run_id: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
-    netbox_dns_gap_output_dir: "/tmp/netbox-dns-gap-analysis/{{ netbox_dns_gap_run_id }}"
-    netbox_dns_gap_json_output: "{{ netbox_dns_gap_output_dir }}/gap-analysis.json"
-    netbox_dns_gap_markdown_output: "{{ netbox_dns_gap_output_dir }}/gap-analysis.md"
+    netbox_dns_gap_run_id: ""
+    netbox_dns_gap_output_root: /tmp/netbox-dns-gap-analysis
     netbox_dns_gap_inventory: "{{ playbook_dir }}/../inventories/local-network/hosts.yml"
     netbox_dns_gap_api_url: "{{ netbox_api_url | default('http://172.16.99.62') }}"
     netbox_dns_gap_token_file: "{{ netbox_seed_token_file | default('/root/operator-private/netbox/svc-netbox-stage4-admin-token') }}"
@@ -17,6 +15,19 @@
     netbox_dns_gap_domains: "{{ dns_hetzner_cloud_audit_domains | default(['rfc1918.host']) }}"
     netbox_dns_gap_fail_on_gap: false
   tasks:
+    - name: Freeze NetBox DNS GAP analysis run id
+      ansible.builtin.set_fact:
+        netbox_dns_gap_run_id_resolved: >-
+          {{ netbox_dns_gap_run_id
+             if (netbox_dns_gap_run_id | default('', true) | length) > 0
+             else lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}
+
+    - name: Resolve NetBox DNS GAP analysis artifact paths
+      ansible.builtin.set_fact:
+        netbox_dns_gap_output_dir_resolved: "{{ netbox_dns_gap_output_root }}/{{ netbox_dns_gap_run_id_resolved }}"
+        netbox_dns_gap_json_output_resolved: "{{ netbox_dns_gap_output_root }}/{{ netbox_dns_gap_run_id_resolved }}/gap-analysis.json"
+        netbox_dns_gap_markdown_output_resolved: "{{ netbox_dns_gap_output_root }}/{{ netbox_dns_gap_run_id_resolved }}/gap-analysis.md"
+
     - name: Assert NetBox and Hetzner inputs are configured
       ansible.builtin.assert:
         that:
@@ -26,7 +37,7 @@
 
     - name: Create NetBox DNS GAP analysis output directory
       ansible.builtin.file:
-        path: "{{ netbox_dns_gap_output_dir }}"
+        path: "{{ netbox_dns_gap_output_dir_resolved }}"
         state: directory
         mode: "0700"
 
@@ -66,22 +77,22 @@
                 '--managed-domains-json',
                 netbox_dns_gap_domains | to_json,
                 '--output',
-                netbox_dns_gap_json_output,
+                netbox_dns_gap_json_output_resolved,
                 '--markdown-output',
-                netbox_dns_gap_markdown_output
+                netbox_dns_gap_markdown_output_resolved
               ] + (['--fail-on-gap'] if netbox_dns_gap_fail_on_gap | bool else []) }}
           changed_when: false
 
         - name: Read NetBox DNS GAP analysis JSON
           ansible.builtin.slurp:
-            src: "{{ netbox_dns_gap_json_output }}"
+            src: "{{ netbox_dns_gap_json_output_resolved }}"
           register: netbox_dns_gap_json_raw
 
         - name: Report NetBox DNS GAP analysis summary
           ansible.builtin.debug:
             msg: >-
-              NetBox DNS GAP analysis wrote {{ netbox_dns_gap_json_output }} and
-              {{ netbox_dns_gap_markdown_output }}; summary={{
+              NetBox DNS GAP analysis wrote {{ netbox_dns_gap_json_output_resolved }} and
+              {{ netbox_dns_gap_markdown_output_resolved }}; summary={{
               (netbox_dns_gap_json_raw.content | b64decode | from_json).summary }}.
       always:
         - name: Remove temporary Hetzner token group file
