@@ -58,7 +58,7 @@ assert_file_contains "${run_tests}" "test_forge_floating_home_contract.sh"
 if command -v ansible-playbook > /dev/null 2>&1; then
   tmpdir="$(mktemp -d)"
   trap 'rm -rf "${tmpdir}"' EXIT
-  cat > "${tmpdir}/hosts.yml" <<'YAML'
+  cat > "${tmpdir}/hosts.yml" << 'YAML'
 ---
 all:
   hosts:
