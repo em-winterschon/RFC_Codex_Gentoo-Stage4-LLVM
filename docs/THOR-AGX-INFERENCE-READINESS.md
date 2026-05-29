@@ -24,6 +24,24 @@ The safest first workload sequence is:
    distinct endpoints, not same-host bridge hairpin tests;
 5. defer vLLM and SGLang until arm64/L4T/CUDA 13 images are validated.
 
+## 2026-05-25 Historical Update
+
+Operator approval authorized Thor inference playbook testing and deployment
+work. Forge3 completed the repeatable non-runtime deployment lane before the
+later Podman/CDI validation superseded the temporary Docker transition state:
+
+- inventory host `agx_rfc99_bunnydev_099034` targets Thor at `172.16.99.34`;
+- Thor remains a member of `ollama_servers` and `open_webui_servers` only;
+- `vllm_servers` and `sglang_servers` intentionally do not include Thor;
+- Ansible ping succeeded through the M70 root automation SSH path;
+- Ollama and Open WebUI syntax checks and check-mode runs passed.
+
+The 2026-05-25 pre-validation state observed Docker wrappers using `--gpus all`
+and Docker units masked/inactive. That state is preserved as historical context
+only; current Thor service deployment is Podman plus NVIDIA CDI, and Docker must
+remain inactive unless a separate operator-approved maintenance window changes
+host policy.
+
 ## Live Evidence
 
 | Check | Result |
@@ -237,4 +255,5 @@ Live validation from M70 `forge1` on 2026-05-27:
 
 Earlier audits were read-only. The current approved mutation lane allows Podman
 inference service deployment while preserving headless operation, current
-management networking, and the inactive legacy Docker state.
+management networking, and the inactive legacy Docker state. Docker wrapper
+compatibility does not authorize unmasking or starting Docker on Thor.

@@ -142,12 +142,28 @@ Podman/CDI and renders `--device nvidia.com/gpu=all`.
 Start with Ollama and Open WebUI. Defer vLLM and SGLang on Thor until their
 arm64, Jetson/L4T, and CUDA 13 image path is validated.
 
+2026-05-25/26 execution update:
+
+- Thor is modeled as `agx_rfc99_bunnydev_099034` in the local-network
+  inventory.
+- The active inventory uses `inference_service_accelerator: nvidia`,
+  `inference_service_container_engine: podman`, `inference_service_manager:
+  systemd`, and NVIDIA CDI device `nvidia.com/gpu=all`.
+- Docker/NVIDIA wrappers render `--gpus all` only for explicit legacy Docker
+  exception rendering; this does not authorize Docker deployment on Thor.
+- Check mode skips service enable/start because planned systemd unit files are
+  not present on the target until a real apply.
+- Ollama and Open WebUI are the first validated Thor services; vLLM and SGLang
+  remain deferred.
+
 ## Acceptance Gates
 
 Before merge:
 
 ```bash
 bash tests/shell/test_inference_service_playbooks.sh
+bash tests/shell/test_inference_service_role_core.sh
+bash tests/shell/test_thor_inference_inventory.sh
 git diff --check
 ```
 
