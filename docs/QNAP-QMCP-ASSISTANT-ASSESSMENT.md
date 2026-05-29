@@ -243,3 +243,21 @@ Proceed with a Swagger UI **read-only documentation container** first.  Keep
 `try it out` disabled until we have a hand-reviewed OpenAPI file and explicit
 operator auth handling.  Use QMCP for non-critical operator insight, not
 critical-path automation.
+
+## NFSv4.2 remediation endpoint assessment
+
+A live NFSv4.2 client probe against `172.16.254.28:/rfc1918-floating-homes/forge1`
+returned `protocol-not-supported` while the QNAP UI indicated NFSv4.2 was
+enabled. SSH/sudo inspection showed `/proc/fs/nfsd/versions` as `+2 +3 +4 +4.1
+-4.2`, and `/etc/init.d/nfs` hard-disabled v4.2 with `NO_V42="-N 4.2"`.
+
+QMCP health/statistics/UI-derived endpoints did not expose a confirmed NFS
+service configuration API or provider tool for toggling NFS protocol versions.
+For this remediation, the reliable control path is SSH/sudo with an explicit
+backup of `/etc/init.d/nfs`, a QNAP config key (`NFS Enable_V42 TRUE`), and an
+NFS restart. After that patch, `/proc/fs/nfsd/versions` reported `+4.2` and a
+client NFSv4.2 mount succeeded.
+
+Recommendation: do not place QNAP NFS protocol mutation behind QMCP until a
+versioned, authenticated, documented endpoint is found. QMCP remains useful for
+non-critical operator quick-reference and status checks only.

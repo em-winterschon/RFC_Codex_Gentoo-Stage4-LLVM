@@ -7,16 +7,46 @@
     forge_floating_home_apply_required: false
     forge_floating_home_server: 172.16.254.28
     forge_floating_home_export_prefix: /rfc1918-floating-homes
-    forge_floating_home_mount_options: vers=4.1,proto=tcp,sec=sys,nconnect=4,_netdev,nofail,soft,timeo=50
+    forge_floating_home_mount_options: vers=4.2,proto=tcp,sec=sys,nconnect=4,_netdev,nofail,soft,timeo=50
     forge_floating_home_install_nfs_utils: true
     forge_floating_home_nfs_utils_package: net-fs/nfs-utils
     forge_floating_home_users:
+      - { name: eva, home: /home/eva }
+      - { name: robin, home: /home/robin }
+      - { name: verwalterin, home: /home/verwalterin }
+      - { name: backups, home: /home/backups }
+      - { name: codex-admin, home: /home/codex-admin }
+      - { name: ltcol-forge, home: /home/ltcol-forge }
+      - { name: toor, home: /home/toor }
       - { name: forge1, home: /home/forge1 }
       - { name: forge2, home: /home/forge2 }
       - { name: forge3, home: /home/forge3 }
       - { name: forge4, home: /home/forge4 }
       - { name: forge5, home: /home/forge5 }
       - { name: forge6, home: /home/forge6 }
+    forge_floating_home_local_groups:
+      - name: root
+        gid: 0
+        members: [root, eva, robin, verwalterin, ltcol-forge, toor]
+      - name: wheel
+        gid: 10
+        members:
+          - root
+          - backups
+          - eva
+          - robin
+          - verwalterin
+          - forge1
+          - forge2
+          - forge3
+          - forge4
+          - forge5
+          - forge6
+          - ltcol-forge
+          - toor
+      - name: whee
+        gid: 201001
+        members: [eva, robin, verwalterin, ltcol-forge, toor]
   pre_tasks:
     - name: Gate live Forge floating-home mount apply
       ansible.builtin.assert:
@@ -55,6 +85,24 @@
       loop_control:
         loop_var: forge_home_user
         label: "{{ forge_home_user.home }}"
+
+    - name: Ensure requested local operator groups exist with exact membership
+      ansible.builtin.lineinfile:
+        path: /etc/group
+        regexp: "^{{ forge_local_group.name }}:[^:]*:{{ forge_local_group.gid }}:"
+        line: "{{ forge_local_group.name }}:x:{{ forge_local_group.gid }}:{{ forge_local_group.members | join(',') }}"
+        create: true
+        mode: "0644"
+      loop: "{{ forge_floating_home_local_groups }}"
+      loop_control:
+        loop_var: forge_local_group
+        label: "{{ forge_local_group.name }}"
+
+    - name: Refresh SSSD caches after FreeIPA identity changes
+      ansible.builtin.command:
+        argv: [sss_cache, -E]
+      changed_when: false
+      failed_when: false
 
     - name: Document managed Forge QNAP fstab block ownership
       ansible.builtin.blockinfile:

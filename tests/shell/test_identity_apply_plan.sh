@@ -120,6 +120,12 @@ freeipa_stdout="$(
     vault_identity_forge4_ssh_public_keys='ssh-ed25519 AAAATEST forge4' \
     vault_identity_forge5_ssh_public_keys='ssh-ed25519 AAAATEST forge5' \
     vault_identity_forge6_ssh_public_keys='ssh-ed25519 AAAATEST forge6' \
+    vault_identity_ltcol_forge_ssh_public_keys='ssh-ed25519 AAAATEST ltcol-forge' \
+    vault_identity_toor_ssh_public_keys='ssh-ed25519 AAAATEST toor' \
+    vault_identity_eva_ssh_public_keys='ssh-ed25519 AAAATEST eva' \
+    vault_identity_robin_ssh_public_keys='ssh-ed25519 AAAATEST robin' \
+    vault_identity_verwalterin_ssh_public_keys='ssh-ed25519 AAAATEST verwalterin' \
+    vault_identity_backups_ssh_public_keys='ssh-ed25519 AAAATEST backups' \
     python3 "${apply_script}" "${source_file}" \
     --apply \
     --provider freeipa \
@@ -134,6 +140,8 @@ grep -Fq 'group-add linux-admin' "${fake_log}" || fail "FreeIPA fake log missing
 grep -Fq 'group-add forge-superusers' "${fake_log}" || fail "FreeIPA fake log missing Forge group-add"
 grep -Fq 'user-add codex-admin' "${fake_log}" || fail "FreeIPA fake log missing user-add"
 grep -Fq 'user-add forge1' "${fake_log}" || fail "FreeIPA fake log missing Forge user-add"
+grep -Fq 'user-add ltcol-forge' "${fake_log}" || fail "FreeIPA fake log missing ltcol-forge user-add"
+grep -Fq -- '--noprivate' "${fake_log}" || fail "FreeIPA fake log missing noprivate user-add guard"
 grep -Fq 'group-add-member ci-builder' "${fake_log}" || fail "FreeIPA fake log missing group membership"
 grep -Fq 'group-add-member forge-superusers --users=forge1' "${fake_log}" ||
   fail "FreeIPA fake log missing Forge superuser membership"

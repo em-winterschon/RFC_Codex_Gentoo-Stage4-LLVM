@@ -5,6 +5,13 @@
   become: true
   vars:
     forge_floating_home_users:
+      - { name: eva, uid: 1024, gid: 1024, home: /home/eva }
+      - { name: robin, uid: 16385, gid: 16385, home: /home/robin }
+      - { name: verwalterin, uid: 4096, gid: 4096, home: /home/verwalterin }
+      - { name: backups, uid: 2048, gid: 2048, home: /home/backups }
+      - { name: codex-admin, uid: 200100, gid: 201000, home: /home/codex-admin }
+      - { name: ltcol-forge, uid: 64, gid: 64, home: /home/ltcol-forge }
+      - { name: toor, uid: 32, gid: 32, home: /home/toor }
       - { name: forge1, uid: 1001, gid: 1001, home: /home/forge1 }
       - { name: forge2, uid: 1002, gid: 1002, home: /home/forge2 }
       - { name: forge3, uid: 1003, gid: 1003, home: /home/forge3 }
@@ -14,8 +21,10 @@
     forge_floating_home_required_nfs_versions:
       - "vers=4.2"
       - "nfsvers=4.2"
-      - "vers=4.1"
-      - "nfsvers=4.1"
+    forge_floating_home_local_group_expectations:
+      - { name: root, pattern: '(^|,)eva(,|$).*ltcol-forge|(^|,)ltcol-forge(,|$).*toor|(^|,)toor(,|$)' }
+      - { name: wheel, pattern: '(^|,)eva(,|$).*forge6|(^|,)forge6(,|$).*toor|(^|,)toor(,|$)' }
+      - { name: whee, pattern: '(^|,)eva(,|$).*ltcol-forge|(^|,)ltcol-forge(,|$).*toor|(^|,)toor(,|$)' }
   tasks:
     - name: Validate Forge NSS identity resolution
       ansible.builtin.command:
@@ -79,6 +88,16 @@
       register: forge_home_write_test
       changed_when: false
 
+    - name: Validate requested local operator group entries
+      ansible.builtin.command:
+        argv: [getent, group, "{{ forge_local_group.name }}"]
+      loop: "{{ forge_floating_home_local_group_expectations }}"
+      loop_control:
+        loop_var: forge_local_group
+        label: "{{ forge_local_group.name }}"
+      register: forge_local_group_getent
+      changed_when: false
+
     - name: Assert Forge floating home contract
       ansible.builtin.assert:
         that:
@@ -87,7 +106,15 @@
           - forge_sssd_ssh_keys.results | map(attribute='stdout') | reject('equalto', '') | list | length == forge_floating_home_users | length
           - forge_home_findmnt.results | map(attribute='rc') | max == 0
           - forge_home_findmnt.results | map(attribute='stdout') | select('search', 'nfs') | list | length == forge_floating_home_users | length
+          - forge_home_stat.results | map(attribute='stat.uid') | list == (forge_floating_home_users | map(attribute='uid') | list)
+          - forge_home_stat.results | map(attribute='stat.gid') | list == (forge_floating_home_users | map(attribute='gid') | list)
           - forge_home_write_test.results | map(attribute='rc') | max == 0
+          - forge_local_group_getent.results | map(attribute='rc') | max == 0
+          - >-
+            forge_local_group_getent.results |
+            map(attribute='stdout') |
+            select('search', 'ltcol-forge') |
+            list | length == 3
           - >-
             forge_home_findmnt.results |
             map(attribute='stdout') |
