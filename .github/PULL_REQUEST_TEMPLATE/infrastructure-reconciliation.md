@@ -2,7 +2,7 @@
 
 <!-- What infrastructure or source-of-truth records changed? Keep this to 2-5 bullets. -->
 
-- 
+-
 
 ## Source Of Truth
 
@@ -16,7 +16,7 @@
 
 <!-- List sites, racks, hosts, VMs, containers, IPs, services, cables, power devices, or inventory classes touched. -->
 
-- 
+-
 
 ## Changes Applied
 
@@ -24,19 +24,19 @@
 
 Created:
 
-- 
+-
 
 Updated:
 
-- 
+-
 
 Moved/Reassigned:
 
-- 
+-
 
 Not changed:
 
-- 
+-
 
 ## Safety And Blast Radius
 
@@ -60,7 +60,7 @@ Not changed:
 
 <!-- What remains unknown or intentionally deferred? -->
 
-- 
+-
 
 ## Rollback
 

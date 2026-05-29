@@ -2,7 +2,7 @@
 
 <!-- What changed? Keep this to 2-5 bullets. -->
 
-- 
+-
 
 ## Why
 
@@ -15,17 +15,17 @@
 
 Included:
 
-- 
+-
 
 Excluded:
 
-- 
+-
 
 ## Validation
 
 <!-- Commands run and results observed. If not run, explain why. -->
 
-- [ ] 
+- [ ]
 
 ## Risk And Rollback
 
@@ -38,5 +38,3 @@ Rollback:
 ## Notes For Reviewers
 
 <!-- Anything the reviewer should inspect closely. -->
-
-

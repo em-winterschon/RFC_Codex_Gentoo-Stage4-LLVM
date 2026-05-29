@@ -2,7 +2,7 @@
 
 <!-- What automation changed? Keep this to 2-5 bullets. -->
 
-- 
+-
 
 ## Purpose
 
@@ -13,7 +13,7 @@
 
 <!-- List files, commands, playbooks, services, or workflows touched. -->
 
-- 
+-
 
 ## Safety Model
 

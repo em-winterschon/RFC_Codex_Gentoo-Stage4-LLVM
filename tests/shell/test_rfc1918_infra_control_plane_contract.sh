@@ -96,7 +96,7 @@ assert_file_contains "${JENKINS_TEMPLATE}" 'schema: rfc1918.jenkins.job-seed-man
 assert_file_contains "${PREFLIGHT_MAIN}" 'resolved_profile_slurm_cluster'
 assert_file_contains "${PREFLIGHT_LOAD}" 'gentoo_profile_definition.slurm_cluster'
 
-python3 - "${WORKFLOW}" "${CONTRACT}" <<'PY'
+python3 - "${WORKFLOW}" "${CONTRACT}" << 'PY'
 import json
 import sys
 from pathlib import Path

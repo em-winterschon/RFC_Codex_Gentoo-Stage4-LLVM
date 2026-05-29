@@ -2,7 +2,7 @@
 
 <!-- What documentation changed? Keep this to 2-5 bullets. -->
 
-- 
+-
 
 ## Audience
 
@@ -18,7 +18,7 @@
 
 <!-- List live commands, systems, files, tickets, handoff notes, or operator facts used. -->
 
-- 
+-
 
 ## Validation
 
@@ -33,7 +33,7 @@
 
 <!-- What should be revisited later? -->
 
-- 
+-
 
 ## Reviewer Checklist
 
