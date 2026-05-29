@@ -7,6 +7,7 @@ profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/observability-native-haproxy-tls-proxy.yml"
   - "{{ playbook_dir }}/../profile-definitions/vm-observability-grafana.yml"
 
 install_networkmanager: true
@@ -25,6 +26,20 @@ profile_rsyslog:
   forward_hostname: log-sun99-rsyslog.rfc1918.host
   forward_protocol: tcp
   forward_port: 6514
+
+profile_native_haproxy_tls_proxy:
+  frontends:
+    - name: grafana
+      bind: "*:443"
+      mode: http
+      cert_path: /etc/grafana/tls/obs-sun99-grafana.crt
+      key_path: /etc/grafana/tls/obs-sun99-grafana.key
+      pem_path: /etc/haproxy/tls/obs-sun99-grafana.pem
+      backend_name: be_grafana
+      servers:
+        - name: grafana
+          address: 127.0.0.1
+          port: 3000
 
 profile_telemetry:
   grafana:

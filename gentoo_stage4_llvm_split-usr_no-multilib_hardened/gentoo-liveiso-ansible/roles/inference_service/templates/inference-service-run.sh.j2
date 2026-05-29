@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+service_name={{ inference_service.name | quote }}
+container_name="inference-${service_name}"
+state_dir={{ (inference_service.state_dir | default(inference_service_state_root ~ '/' ~ inference_service.name)) | quote }}
+log_dir={{ (inference_service.log_dir | default(inference_service_log_root ~ '/' ~ inference_service.name)) | quote }}
+
+mkdir -p "${state_dir}" "${log_dir}"
+{{ inference_service_container_engine }} rm -f "${container_name}" >/dev/null 2>&1 || true
+
+{% set selected_image = (inference_service.images_by_architecture | default({})).get(resolved_inference_service_architecture, inference_service.image) %}
+{% set selected_command = (inference_service.commands_by_architecture | default({})).get(resolved_inference_service_architecture, inference_service.command | default(inference_service_default_command)) %}
+{% set service_accelerator_name = inference_service.accelerator | default(resolved_inference_service_accelerator) %}
+{% set service_accelerator_profile = inference_service_accelerator_profiles[service_accelerator_name] %}
+{% set service_docker_args = service_accelerator_profile.docker_args | default([]) %}
+{% set service_devices = [] if (inference_service_container_engine == 'docker' and (service_docker_args | length > 0)) else (service_accelerator_profile.devices | default([])) %}
+exec {{ inference_service_container_engine }} run \
+  --name "${container_name}" \
+{% if inference_service_container_engine == 'podman' %}
+  --replace \
+{% endif %}
+  --rm \
+  --pull {{ inference_service.pull_policy | default(inference_service_pull_policy) | quote }} \
+  --detach=false \
+  --network {{ inference_service.network | default(inference_service_network) | quote }} \
+  --env-file {{ (inference_service_config_dir ~ '/' ~ inference_service.name ~ '.env') | quote }} \
+{% if inference_service_container_engine == 'docker' %}
+{% for docker_arg in service_docker_args %}
+  {{ docker_arg }} \
+{% endfor %}
+{% endif %}
+{% for device in service_devices %}
+  --device {{ device | quote }} \
+{% endfor %}
+{% for security_opt in service_accelerator_profile.security_opts | default([]) %}
+  --security-opt {{ security_opt | quote }} \
+{% endfor %}
+{% for published_port in inference_service.ports | default(inference_service_default_ports) %}
+  -p {{ published_port | quote }} \
+{% endfor %}
+{% if (inference_service.port | default('') | string | length > 0) and (inference_service.ports | default([]) | length == 0) and (inference_service.network | default(inference_service_network) != 'host') %}
+  -p {{ (inference_service.port | string ~ ':' ~ inference_service.port | string) | quote }} \
+{% endif %}
+{% for volume_mount in inference_service.volumes | default(inference_service_default_volumes) %}
+  -v {{ volume_mount | quote }} \
+{% endfor %}
+{% for extra_arg in service_accelerator_profile.extra_args | default([]) %}
+  {{ extra_arg }} \
+{% endfor %}
+{% for extra_arg in inference_service.extra_args | default(inference_service_default_extra_args) %}
+  {{ extra_arg }} \
+{% endfor %}
+  {{ selected_image | quote }}{% for command_arg in selected_command %} {{ command_arg | quote }}{% endfor %}

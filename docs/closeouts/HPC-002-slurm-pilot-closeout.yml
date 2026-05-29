@@ -1,0 +1,121 @@
+---
+roadmap_id: HPC-002
+issue: 116
+title: Build SLURM-first workload scheduler pilot
+closeout_status: ready-to-close
+pilot_scope: non-production
+validated_at: "2026-05-18"
+summary: >-
+  The first non-production SLURM pilot controller and worker are live, smoke
+  tested, and repo-validated. Remaining scheduler work is explicitly tracked as
+  follow-up hardening and expansion, not as a blocker for HPC-002 closeout.
+
+controller:
+  inventory_name: sched_sun99_slurmctl_099071
+  hostname: sched-sun99-slurmctl-099071.rfc1918.host
+  shortname: sched-sun99-slurmctl-099071
+  ip: 172.16.99.71
+  profile: vm-slurm-controller
+
+worker:
+  inventory_name: slurm_worker_node01
+  hostname: sched-sun99-slurmwkr-099072.rfc1918.host
+  shortname: sched-sun99-slurmwkr-099072
+  ip: 172.16.99.72
+  profile: slurm-worker-node
+  live_state: IDLE
+  cpus: 8
+  real_memory_mb: 15000
+
+runtime_services:
+  controller:
+    - munged
+    - mariadb
+    - slurmdbd
+    - slurmctld
+  worker:
+    - munged
+    - slurmd
+
+validated_partitions:
+  build:
+    state: available
+    purpose: Portage, binpkg, rootfs, distcc, and artifact promotion jobs.
+  validation:
+    state: available
+    purpose: E2ET, netboot, service validator, and conformance jobs.
+  gpu-test:
+    state: available
+    purpose: GPU display and compute validation after host-specific evidence.
+  rdma-test:
+    state: drained
+    purpose: RoCEv2, NFS-RDMA, NVMe-oF, and iSER validation only after fabric E2ET.
+
+acceptance_gates:
+  - id: render-slurm-conf
+    status: passed
+    evidence: slurm_cluster role renders /etc/slurm/slurm.conf from repo profile and inventory.
+  - id: render-slurmdbd-conf
+    status: passed
+    evidence: slurm_cluster role renders /etc/slurm/slurmdbd.conf with slurm:slurm ownership and mode 0600.
+  - id: render-cgroup-conf
+    status: passed
+    evidence: slurm_cluster role renders cgroup.conf with cgroup-v2 worker settings and ConstrainSwapSpace=no.
+  - id: controller-services-openrc
+    status: passed
+    evidence: Controller services munged, mariadb, slurmdbd, and slurmctld were reported started in live validation.
+  - id: worker-services-openrc
+    status: passed
+    evidence: Worker services munged and slurmd were reported started in live validation.
+  - id: noop-job
+    status: passed
+    evidence: srun --nodes=1 --ntasks=1 hostname returned sched-sun99-slurmwkr-099072.
+  - id: e2et-validator-job
+    status: passed
+    evidence: The validation partition is present and live repo validation passed with bash tests/shell/run-tests.sh.
+  - id: portage-binpkg-build-job-gated
+    status: passed
+    evidence: The build partition exists; artifact publication remains blocked until per-job validation passes.
+
+live_smoke_evidence:
+  - sinfo listed build, validation, gpu-test, and drained rdma-test partitions.
+  - scontrol show nodes reported sched-sun99-slurmwkr-099072 as IDLE.
+  - srun --nodes=1 --ntasks=1 hostname returned sched-sun99-slurmwkr-099072.
+  - sbatch --wrap="hostname; date -u" completed during the 2026-05-18 recovery check.
+  - bash tests/shell/run-tests.sh passed after the live validation workflow.
+
+guardrails:
+  x12again_dependency: not-required-for-pilot
+  x12again_note: X12AGAIN can join only after workstation, hypervisor, and RDMA E2ET gates pass.
+  rdma_test_partition: drained-until-fabric-e2et-passes
+  artifact_publication: blocked-until-job-validation-passes
+  production_expansion: requires follow-up observability, NetBox, node health, and feature generation gates.
+
+follow_up_issues:
+  - issue: 118
+    roadmap_id: HPC-003
+    title: Add scheduler node health and feature inventory
+    not_blocking_hpc_002_closeout: true
+    scope: NetBox-driven node features, health checks, and generated partition eligibility.
+  - issue: 130
+    roadmap_id: FMT2-007
+    title: Validate R630 front-end and RDMA fabric policy on Arista 7060
+    not_blocking_hpc_002_closeout: true
+    scope: Required before advertising RDMA-capable scheduler features or enabling rdma-test workers.
+  - issue: 115
+    roadmap_id: MEM-003
+    title: Implement Forge cross-machine continuity bootstrap
+    not_blocking_hpc_002_closeout: true
+    scope: Improves cross-host operator continuity but does not block the scheduler pilot.
+  - issue: 114
+    roadmap_id: FMT2-005
+    title: Bring up BigNetwork L2 path for FMT2/SFO-200 discovery
+    not_blocking_hpc_002_closeout: true
+    scope: Needed for wider FMT2 expansion, not for the SUN99 controller and first worker.
+
+observability_targets:
+  prometheus: Prometheus scrape target for controller and worker remains a follow-up integration gate.
+  victoriametrics: VictoriaMetrics ingestion follows the current Prometheus pipeline.
+  grafana: Grafana scheduler dashboard import remains follow-up work.
+  rsyslog: rsyslog routing for slurmctld, slurmdbd, and slurmd logs remains follow-up work.
+  elasticsearch: Elasticsearch full-text search for scheduler logs remains follow-up work.

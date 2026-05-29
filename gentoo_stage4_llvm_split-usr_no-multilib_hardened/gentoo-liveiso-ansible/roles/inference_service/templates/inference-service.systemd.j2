@@ -1,0 +1,17 @@
+[Unit]
+Description=Inference service {{ inference_service.name }}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ inference_service_service_user }}
+Group={{ inference_service_service_group }}
+EnvironmentFile=-{{ inference_service_config_dir }}/{{ inference_service.name }}.env
+ExecStart={{ inference_service_libexec_dir }}/run-{{ inference_service.name }}.sh
+Restart=always
+RestartSec=5
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

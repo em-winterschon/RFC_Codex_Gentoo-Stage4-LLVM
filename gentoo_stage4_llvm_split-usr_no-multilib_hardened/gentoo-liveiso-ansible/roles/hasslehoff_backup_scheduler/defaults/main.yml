@@ -1,0 +1,39 @@
+---
+hasslehoff_backup_scheduler_enabled: false
+hasslehoff_backup_scheduler_apply: false
+hasslehoff_backup_scheduler_mode: cron
+hasslehoff_backup_scheduler_cron_file: /etc/cron.d/hasslehoff-backup
+hasslehoff_backup_scheduler_cron_minute: "17"
+hasslehoff_backup_scheduler_cron_hour: "9"
+hasslehoff_backup_scheduler_cron_user: root
+hasslehoff_backup_scheduler_repo_root: "{{ playbook_dir }}/../../.."
+hasslehoff_backup_scheduler_runtime_root: /opt/rfc1918/hasslehoff-backup
+hasslehoff_backup_scheduler_install_runtime_bundle: true
+hasslehoff_backup_scheduler_policy_path: docs/backup-policies/hasslehoff-backup-policy.yml
+hasslehoff_backup_scheduler_script_path: scripts/backup-hasslehoff-scheduled.sh
+hasslehoff_backup_scheduler_validate_policy: true
+hasslehoff_backup_scheduler_run_preflight: false
+hasslehoff_backup_scheduler_mirror_target: root@admin-sun99-forge-099070:/mnt/nasa/hasslehoff/config-bundles
+hasslehoff_backup_scheduler_environment:
+  - HASSLEHOFF_BACKUP_MIRROR_VERIFY=1
+  - HASSLEHOFF_BACKUP_RESTORE_VERIFY=1
+  - HASSLEHOFF_BACKUP_NOTIFY=1
+  - HASSLEHOFF_BACKUP_MIRROR_RSYNC_OPTS='--no-owner --no-group'
+  - HASSLEHOFF_BACKUP_MIRROR_TARGET={{ hasslehoff_backup_scheduler_mirror_target }}
+hasslehoff_backup_scheduler_forbidden_target_patterns:
+  - x12again
+  - prinzessin
+  - 172.16.99.108
+hasslehoff_backup_scheduler_runtime_files:
+  - src: scripts/backup-hasslehoff-config.sh
+    dest: scripts/backup-hasslehoff-config.sh
+    mode: "0755"
+  - src: scripts/backup-hasslehoff-scheduled.sh
+    dest: scripts/backup-hasslehoff-scheduled.sh
+    mode: "0755"
+  - src: scripts/validate-hasslehoff-backup-policy.py
+    dest: scripts/validate-hasslehoff-backup-policy.py
+    mode: "0755"
+  - src: docs/backup-policies/hasslehoff-backup-policy.yml
+    dest: docs/backup-policies/hasslehoff-backup-policy.yml
+    mode: "0644"

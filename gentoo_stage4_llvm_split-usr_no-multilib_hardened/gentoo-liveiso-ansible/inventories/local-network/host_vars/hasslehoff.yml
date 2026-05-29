@@ -136,8 +136,10 @@ hasslehoff_qlogic_lacp:
 
 hasslehoff_usb_serial_console_gateway:
   captured_at: "2026-05-10T23:49:40Z"
-  status: interim-live
+  status: moved-to-admin_sun99_forge_099070
+  moved_at: "2026-05-17T18:59:00Z"
   purpose: Move RouterOS router and switch serial consoles off X12AGAIN before bare-metal reimage.
+  current_gateway_host: admin_sun99_forge_099070
   upstream_host_controller: "0000:00:14.0"
   interim_hub:
     manufacturer: VIA Labs, Inc.

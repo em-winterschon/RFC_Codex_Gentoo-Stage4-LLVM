@@ -1,4 +1,4 @@
-{% for parent in (resolved_profile_parents | default(profile_parents)) %}
+{% for parent in (resolved_profile_parents | default(profile_parents | default([]))) %}
 {% if ':' in parent %}
 {% set repo_name, repo_profile = parent.split(':', 1) %}
 ../../../{{ repo_name }}/profiles/{{ repo_profile }}

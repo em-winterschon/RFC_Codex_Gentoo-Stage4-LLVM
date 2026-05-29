@@ -1,0 +1,75 @@
+---
+- name: Resolve Trac MCP bridge settings
+  ansible.builtin.set_fact:
+    trac_mcp_bridge_enabled: "{{ resolved_profile_trac_mcp_bridge.enabled | default(trac_mcp_bridge_default_enabled) | bool }}"
+    resolved_trac_mcp_bridge:
+      service_user: "{{ resolved_profile_trac_mcp_bridge.service_user | default(trac_mcp_bridge_default_service_user) }}"
+      service_group: "{{ resolved_profile_trac_mcp_bridge.service_group | default(trac_mcp_bridge_default_service_group) }}"
+      config_root: "{{ resolved_profile_trac_mcp_bridge.config_root | default(trac_mcp_bridge_default_config_root) }}"
+      log_root: "{{ resolved_profile_trac_mcp_bridge.log_root | default(trac_mcp_bridge_default_log_root) }}"
+      implementation_mode: "{{ resolved_profile_trac_mcp_bridge.implementation_mode | default(trac_mcp_bridge_default_implementation_mode) }}"
+      command: "{{ resolved_profile_trac_mcp_bridge.command | default(trac_mcp_bridge_default_command) }}"
+      listen_host: "{{ resolved_profile_trac_mcp_bridge.listen_host | default(trac_mcp_bridge_default_listen_host) }}"
+      listen_port: "{{ resolved_profile_trac_mcp_bridge.listen_port | default(trac_mcp_bridge_default_listen_port) }}"
+      trac_base_url: "{{ resolved_profile_trac_mcp_bridge.trac_base_url | default(trac_mcp_bridge_default_trac_base_url) }}"
+      token_vault_var: "{{ resolved_profile_trac_mcp_bridge.token_vault_var | default(trac_mcp_bridge_default_token_vault_var) }}"
+      mutation_allowlist: "{{ resolved_profile_trac_mcp_bridge.mutation_allowlist | default(trac_mcp_bridge_default_mutation_allowlist) }}"
+
+- name: Ensure Trac MCP service group exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('getent group ' ~ resolved_trac_mcp_bridge.service_group ~ ' >/dev/null || groupadd --system ' ~ resolved_trac_mcp_bridge.service_group) | quote }}
+  changed_when: true
+  when: trac_mcp_bridge_enabled
+
+- name: Ensure Trac MCP service user exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('id -u ' ~ resolved_trac_mcp_bridge.service_user ~ ' >/dev/null 2>&1 || useradd --system --home-dir ' ~ resolved_trac_mcp_bridge.config_root ~ ' --shell /sbin/nologin --gid ' ~ resolved_trac_mcp_bridge.service_group ~ ' ' ~ resolved_trac_mcp_bridge.service_user) | quote }}
+  changed_when: true
+  when: trac_mcp_bridge_enabled
+
+- name: Ensure Trac MCP directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ trac_mcp_bridge_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_trac_mcp_bridge.config_root }}"
+    - "{{ resolved_trac_mcp_bridge.log_root }}"
+    - /etc/init.d
+  loop_control:
+    loop_var: trac_mcp_bridge_dir
+  when: trac_mcp_bridge_enabled
+
+- name: Render Trac MCP environment
+  ansible.builtin.template:
+    src: trac-mcp.env.j2
+    dest: "{{ install_target_root }}{{ resolved_trac_mcp_bridge.config_root }}/trac-mcp.env"
+    mode: '0640'
+  when: trac_mcp_bridge_enabled
+
+- name: Render Trac MCP OpenRC service
+  ansible.builtin.template:
+    src: trac-mcp.openrc.j2
+    dest: "{{ install_target_root }}/etc/init.d/trac-mcp"
+    mode: '0755'
+  when: trac_mcp_bridge_enabled
+
+- name: Assign Trac MCP runtime ownership in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('chown -R ' ~ resolved_trac_mcp_bridge.service_user ~ ':' ~ resolved_trac_mcp_bridge.service_group ~ ' ' ~ resolved_trac_mcp_bridge.config_root ~ ' ' ~ resolved_trac_mcp_bridge.log_root) | quote }}
+  changed_when: true
+  when: trac_mcp_bridge_enabled
+
+- name: Enable Trac MCP OpenRC service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + ['trac-mcp']
+        ) | unique
+      }}
+  when: trac_mcp_bridge_enabled

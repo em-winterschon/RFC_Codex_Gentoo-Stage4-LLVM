@@ -1,0 +1,18 @@
+---
+telemetry_nut_default_enabled: false
+telemetry_nut_default_device_name: cyberpower_cp1500
+telemetry_nut_default_description: SUN99 CyberPower CP1500PFCRM2U
+telemetry_nut_default_driver: usbhid-ups
+telemetry_nut_default_port: auto
+telemetry_nut_default_vendorid: "0764"
+telemetry_nut_default_productid: "0601"
+telemetry_nut_default_pollinterval: 15
+telemetry_nut_default_maxretry: 3
+telemetry_nut_default_listen_lan: false
+telemetry_nut_default_listen_address: 127.0.0.1
+telemetry_nut_default_monitor_username: nutmon
+telemetry_nut_default_monitor_password: ""
+telemetry_nut_default_enable_shutdown_policy: false
+telemetry_nut_default_textfile_directory: /var/lib/node_exporter
+telemetry_nut_default_textfile_output: /var/lib/node_exporter/nut_ups.prom
+telemetry_nut_default_collector_interval_seconds: 15

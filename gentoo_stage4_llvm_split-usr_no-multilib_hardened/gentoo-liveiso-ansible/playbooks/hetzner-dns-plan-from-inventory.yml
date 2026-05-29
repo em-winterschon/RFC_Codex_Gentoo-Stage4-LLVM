@@ -49,6 +49,7 @@
           + (['--apply'] if hetzner_dns_apply_flag | bool else [])
           + (['--allow-delete'] if hetzner_dns_allow_delete_flag | bool else []) }}
       changed_when: false
+      check_mode: false
 
     - name: Read DNS desired state plan
       ansible.builtin.slurp:

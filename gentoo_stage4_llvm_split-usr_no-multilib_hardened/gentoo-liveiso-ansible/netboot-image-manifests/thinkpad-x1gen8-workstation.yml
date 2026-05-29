@@ -1,0 +1,84 @@
+---
+apiVersion: rfc-codex/v1alpha1
+kind: NetbootImageManifest
+metadata:
+  name: thinkpad-x1gen8-workstation
+  description: Reproducible Path B boot-image manifest for ThinkPad X1 Gen8 basic workstation validation.
+target:
+  inventory_name: lab_sun99_x1gen8_099082
+  hostname: lab-sun99-x1gen8-099082
+  fqdn: lab-sun99-x1gen8-099082.rfc1918.dev
+  machine_type: metal
+  architecture: amd64
+  platform: uefi
+  protocol_flow: pxe-to-ipxe
+network:
+  interface_name: eth0
+  mac_address: "54:05:DB:34:CC:75"
+  static_address: 172.16.99.82
+  gateway: 172.16.99.1
+  netmask: 255.255.255.0
+  nameserver: 9.9.9.9
+artifacts:
+  publish_root: /var/lib/netboot/path-b
+  public_base_url: http://172.16.99.88:8080
+  tftp_first_stage: x1gen8-ipxe.efi
+  first_stage_source: /opt/gentoo-netboot/path-b/path-b-by-mac-172.16.99.88-ipxe.efi
+  host_script: hosts/lab-sun99-x1gen8-099082.ipxe
+  role_script: roles/thinkpad-x1gen8-workstation.ipxe
+  kernel_url: http://172.16.99.88:8080/g/vmlinuz
+  initramfs_url: http://172.16.99.88:8080/g/initramfs-gz.img
+  initramfs_boot_name: initrd.magic
+  rootfs_url: http://172.16.99.88:8080/g/rootfs.img
+  hash_strategy: sha256sum sidecar files generated during Jenkins rebuilds
+builder:
+  script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
+  profile_definition_requirements:
+    - profile-definitions/aaa-domain-client.yml
+    - profile-definitions/workstation-nscde.yml
+  rootfs_package_list_requirements:
+    - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/workstation-nscde.packages
+  package_requirements:
+    - sys-kernel/linux-firmware
+    - sys-apps/pciutils
+    - sys-apps/usbutils
+    - sys-auth/sssd
+    - net-fs/samba
+    - x11-base/xorg-server
+    - x11-drivers/xf86-video-intel
+    - media-libs/mesa
+    - x11-misc/slim
+  dracut_modules:
+    add:
+      - network
+      - dmsquash-live
+    omit: []
+  kernel_modules:
+    require:
+      - e1000e
+      - i915
+  firmware:
+    require:
+      - i915
+cmdline:
+  console:
+    - console=tty0
+    - console=ttyS0,115200
+  initrd: initrd=initrd.magic
+  network:
+    - ifname=eth0:54:05:db:34:cc:75
+    - ip=172.16.99.82::172.16.99.1:255.255.255.0:lab-sun99-x1gen8-099082:eth0:none
+    - rd.hostname=lab-sun99-x1gen8-099082
+    - hostname=lab-sun99-x1gen8-099082
+    - nameserver=9.9.9.9
+    - rd.neednet=1
+    - rd.net.timeout.carrier=60
+  root:
+    - rd.live.image
+    - root=live:http://172.16.99.88:8080/g/rootfs.img
+validation:
+  expected_result: Gentoo live login prompt with Intel graphics available for the basic workstation profile.
+  last_validated: null
+  reboot_durable_aaa_gate: blocked until the laptop completes first-boot enrollment and persistent disk install.
+  backout: Remove the X1 Gen8 DHCP option 67/static lease and disconnect the laptop access port.

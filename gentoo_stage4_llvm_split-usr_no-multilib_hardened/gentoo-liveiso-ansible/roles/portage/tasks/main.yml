@@ -242,6 +242,35 @@
   loop_control:
     loop_var: portage_package_env_file
 
+- name: Assert extra Portage config file paths stay under allowed config roots
+  ansible.builtin.assert:
+    that:
+      - portage_config_file.key.startswith('/etc/portage/') or portage_config_file.key.startswith('/etc/eixrc/')
+      - "'/../' not in portage_config_file.key"
+      - not portage_config_file.key.endswith('/..')
+    fail_msg: "Unsafe extra Portage config path {{ portage_config_file.key }}"
+  loop: "{{ (resolved_portage_config_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_config_file
+
+- name: Ensure extra Portage config parent directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ portage_config_file.key | dirname }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ (resolved_portage_config_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_config_file
+
+- name: Write extra Portage config files from selected profile definitions
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}{{ portage_config_file.key }}"
+    mode: '0644'
+    content: "{{ portage_config_file.value | trim }}\n"
+  loop: "{{ (resolved_portage_config_files | default({})) | dict2items }}"
+  loop_control:
+    loop_var: portage_config_file
+
 - name: Ensure extra Portage user patch directories exist
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc/portage/patches/{{ portage_patch_file.key | dirname }}"

@@ -1,0 +1,102 @@
+---
+run:
+  id: fmt2-r630-kolla-podman-rocky10-20260520
+  phase: kolla-admission-blocked-until-live-deploy
+  timestamp: "2026-05-20T00:00:00-07:00"
+host:
+  name: fmt2_r630_kolla_podman_rocky10
+  fqdn: os-api-sfo200-9921.rfc1918.host
+  profile: metal-fmt2-r630-openstack-kolla-podman-rocky10
+baseline:
+  name: RFC99 FMT2 R630 Kolla-Ansible Podman Rocky 10 admission
+  target_tier: p99
+gates:
+  - name: Host Substrate Admission Gate
+    weight: 20
+    hard_required: true
+    checks:
+      - name: Rocky Linux 10 installed on approved OS mirror media
+        status: fail
+        hard_fail: true
+        evidence: pri and sec may now be rebuilt, but live evidence must prove Rocky Linux 10 is installed on the approved IDSDM/SATA OS mirror path and not on SAS data bays.
+      - name: SOL remains enabled
+        status: fail
+        hard_fail: true
+        evidence: Serial-over-LAN must be verified enabled before and after each wipe, firmware update, Rocky install, and Kolla deployment stage.
+      - name: X710 front-end bonds are active
+        status: fail
+        hard_fail: true
+        evidence: bootnet must remain the standalone management interface until Arista management port-channel state is explicit; bond1 must exist on eno3np2+eno4np3 for provider traffic before Kolla-Ansible prechecks.
+      - name: ConnectX independent RDMA paths stay out of first-pass LACP
+        status: warn
+        evidence: First-pass API deployment does not require RDMA, but ConnectX paths must remain independent until pairwise RDMA evidence exists.
+  - name: Kolla Deployer Admission Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: Podman container engine active
+        status: fail
+        hard_fail: true
+        evidence: Podman must be installed and active on the deployer and target Rocky Linux 10 nodes before bootstrap-servers.
+      - name: Kolla-Ansible 2026.1 deployer available
+        status: fail
+        hard_fail: true
+        evidence: The ops-fmt2-kolla-deployer-9928 VM must provide /opt/kolla-ansible-2026.1 and a working kolla-ansible 2026.1 command path.
+      - name: Kolla-Ansible configuration rendered from repo templates
+        status: fail
+        hard_fail: true
+        evidence: /etc/kolla/globals.yml and /etc/kolla/multinode must be rendered from the committed Podman/Rocky templates, with passwords handled outside plaintext git.
+  - name: Kolla-Ansible Execution Gate
+    weight: 30
+    hard_required: true
+    checks:
+      - name: kolla-ansible bootstrap-servers passed
+        status: fail
+        hard_fail: true
+        evidence: Live bootstrap-servers output has not yet passed against the rebuilt pri/sec target set.
+      - name: kolla-ansible prechecks passed
+        status: fail
+        hard_fail: true
+        evidence: Live kolla-ansible prechecks output is required; do not bypass failed checks.
+      - name: kolla-ansible validate-config passed
+        status: fail
+        hard_fail: true
+        evidence: Live validate-config output is required before deploy.
+      - name: kolla-ansible deploy passed
+        status: fail
+        hard_fail: true
+        evidence: Live deploy output is required before API smoke testing.
+      - name: kolla-ansible post-deploy passed
+        status: fail
+        hard_fail: true
+        evidence: Live post-deploy output and generated admin-openrc.sh are required before OpenStack CLI smoke tests.
+  - name: OpenStack API Smoke Gate
+    weight: 20
+    hard_required: true
+    checks:
+      - name: openstack endpoint list passed
+        status: fail
+        hard_fail: true
+        evidence: Keystone endpoint discovery must pass from the deployer after sourcing /etc/kolla/admin-openrc.sh.
+      - name: openstack hypervisor list passed
+        status: fail
+        hard_fail: true
+        evidence: Nova hypervisor discovery must show admitted compute hosts before the deployment can leave blocked state.
+      - name: OpenStack smoke instance reached ACTIVE
+        status: fail
+        hard_fail: true
+        evidence: A tiny smoke instance must reach ACTIVE or the Nova/Neutron/libvirt/Podman failure path must be captured.
+  - name: First-Pass Operations Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: Cinder disabled for first-pass baseline
+        status: pass
+        evidence: The committed Kolla globals contract keeps enable_cinder set to no until API, Nova, Neutron, and observability baselines pass.
+      - name: rsyslog, node exporter, Check_MK, NTP, CA trust, and AAA validated
+        status: fail
+        hard_fail: true
+        evidence: Operational baseline checks must pass after rebuild so logs, monitoring, time, TLS trust, and FreeIPA/SSSD access are validated with the new Rocky Linux 10 substrate.
+      - name: Storage and RDMA promotion remains gated
+        status: pass
+        evidence: Storage/RDMA promotion is separated into fmt2-kolla-storage-rdma-promotion and remains blocked until first-pass API deployment succeeds.

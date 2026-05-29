@@ -1,0 +1,35 @@
+#!/sbin/openrc-run
+
+name="Trac MCP bridge"
+description="Agent-facing MCP bridge for Trac project management"
+command="{{ resolved_trac_mcp_bridge.command }}"
+command_args="--host ${TRAC_MCP_LISTEN_HOST} --port ${TRAC_MCP_LISTEN_PORT}"
+command_user="{{ resolved_trac_mcp_bridge.service_user }}:{{ resolved_trac_mcp_bridge.service_group }}"
+pidfile="/run/trac-mcp.pid"
+command_background="yes"
+output_log="{{ resolved_trac_mcp_bridge.log_root }}/trac-mcp.out"
+error_log="{{ resolved_trac_mcp_bridge.log_root }}/trac-mcp.err"
+
+start_pre() {
+  checkpath -d -m 0750 -o "{{ resolved_trac_mcp_bridge.service_user }}:{{ resolved_trac_mcp_bridge.service_group }}" "{{ resolved_trac_mcp_bridge.log_root }}"
+}
+
+depend() {
+  need net
+  use tracd rsyslog
+  after tracd
+}
+
+export_env() {
+  if [ -r "{{ resolved_trac_mcp_bridge.config_root }}/trac-mcp.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "{{ resolved_trac_mcp_bridge.config_root }}/trac-mcp.env"
+    set +a
+  fi
+}
+
+start() {
+  export_env
+  default_start
+}

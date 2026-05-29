@@ -1,6 +1,7 @@
 ---
 gentoo_profile_definition:
   package_list_files:
+    - profile-package-lists/stage5-metal-intel-platform.packages
     - profile-package-lists/stage5-metal-host-builder-farm-node.packages
   make_conf_append: |
     PORTAGE_NICENESS="10"

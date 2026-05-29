@@ -11,6 +11,8 @@
   ansible.builtin.set_fact:
     resolved_nfs_storage_client:
       protocol_default: "{{ nfs_storage_client_profile.protocol_default | default(nfs_storage_client_protocol_default) }}"
+      non_lacp_protocol_default: "{{ nfs_storage_client_profile.non_lacp_protocol_default | default(nfs_storage_client_non_lacp_protocol_default) }}"
+      lacp_protocol_default: "{{ nfs_storage_client_profile.lacp_protocol_default | default(nfs_storage_client_lacp_protocol_default) }}"
       idmap_domain: "{{ nfs_storage_client_profile.idmap_domain | default(nfs_storage_client_idmap_domain) }}"
       require_aaa_for_nfsv4: "{{ nfs_storage_client_profile.require_aaa_for_nfsv4 | default(nfs_storage_client_require_aaa_for_nfsv4) | bool }}"
       enable_nfsv3: "{{ nfs_storage_client_profile.enable_nfsv3 | default(nfs_storage_client_enable_nfsv3) | bool }}"
@@ -19,6 +21,7 @@
       enable_multipath: "{{ nfs_storage_client_profile.enable_multipath | default(nfs_storage_client_enable_multipath) | bool }}"
       rdma_port: "{{ nfs_storage_client_profile.rdma_port | default(nfs_storage_client_rdma_port) }}"
       nconnect: "{{ nfs_storage_client_profile.nconnect | default(nfs_storage_client_nconnect) }}"
+      fstab_safety_options: "{{ nfs_storage_client_profile.fstab_safety_options | default(nfs_storage_client_fstab_safety_options) }}"
       mounts: "{{ nfs_storage_client_profile.mounts | default(nfs_storage_client_mounts) }}"
       exports: "{{ nfs_storage_client_profile.exports | default(nfs_storage_client_exports) }}"
   when: nfs_storage_client_enabled

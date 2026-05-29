@@ -70,6 +70,7 @@
     resolved_portage_package_license_files: "{{ portage_package_license_files | default({}) }}"
     resolved_portage_env_files: "{{ portage_env_files | default({}) }}"
     resolved_portage_package_env_files: "{{ portage_package_env_files | default({}) }}"
+    resolved_portage_config_files: "{{ portage_config_files | default({}) }}"
     resolved_kernel_config_fragment_files: "{{ kernel_config_fragment_files | default({}) }}"
     resolved_portage_patch_files: "{{ portage_patch_files | default({}) }}"
     resolved_profile_parents: "{{ profile_parents | default([]) }}"
@@ -96,9 +97,13 @@
     resolved_profile_nfs_storage_client: "{{ profile_nfs_storage_client | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
     resolved_profile_nexus_repo: "{{ profile_nexus_repo | default({}) }}"
+    resolved_profile_trac_server: "{{ profile_trac_server | default({}) }}"
+    resolved_profile_trac_mcp_bridge: "{{ profile_trac_mcp_bridge | default({}) }}"
+    resolved_profile_forge_memory_object_store: "{{ profile_forge_memory_object_store | default({}) }}"
     resolved_profile_nscde_workstation: "{{ profile_nscde_workstation | default({}) }}"
     resolved_profile_workstation_session_stack: "{{ profile_workstation_session_stack | default({}) }}"
     resolved_profile_haproxy_service_types: "{{ profile_haproxy_service_types | default([]) }}"
+    resolved_profile_native_haproxy_tls_proxy: "{{ profile_native_haproxy_tls_proxy | default({}) }}"
     resolved_profile_service_readiness: "{{ profile_service_readiness | default({}) }}"
     resolved_profile_container_base_image: "{{ profile_container_base_image | default({}) }}"
     resolved_profile_container_app_build_defaults: "{{ profile_container_app_build_defaults | default({}) }}"
@@ -107,8 +112,10 @@
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
     resolved_profile_site_security_profile: "{{ profile_site_security_profile | default({}) }}"
     resolved_profile_memory_storage: "{{ profile_memory_storage | default({}) }}"
+    resolved_profile_slurm_cluster: "{{ profile_slurm_cluster | default({}) }}"
     resolved_profile_jenkins_controller: "{{ profile_jenkins_controller | default({}) }}"
     resolved_profile_distcc_farm: "{{ profile_distcc_farm | default({}) }}"
+    resolved_profile_mcp_control_plane: "{{ profile_mcp_control_plane | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml
@@ -214,6 +221,21 @@
         resolved_profile_nexus_repo
         | combine(profile_nexus_repo | default({}), recursive=True)
       }}
+    resolved_profile_trac_server: >-
+      {{
+        resolved_profile_trac_server
+        | combine(profile_trac_server | default({}), recursive=True)
+      }}
+    resolved_profile_trac_mcp_bridge: >-
+      {{
+        resolved_profile_trac_mcp_bridge
+        | combine(profile_trac_mcp_bridge | default({}), recursive=True)
+      }}
+    resolved_profile_forge_memory_object_store: >-
+      {{
+        resolved_profile_forge_memory_object_store
+        | combine(profile_forge_memory_object_store | default({}), recursive=True)
+      }}
     resolved_profile_nscde_workstation: >-
       {{
         resolved_profile_nscde_workstation
@@ -271,6 +293,11 @@
         resolved_profile_memory_storage
         | combine(profile_memory_storage | default({}), recursive=True)
       }}
+    resolved_profile_slurm_cluster: >-
+      {{
+        resolved_profile_slurm_cluster
+        | combine(profile_slurm_cluster | default({}), recursive=True)
+      }}
     resolved_profile_jenkins_controller: >-
       {{
         resolved_profile_jenkins_controller
@@ -280,6 +307,16 @@
       {{
         resolved_profile_distcc_farm
         | combine(profile_distcc_farm | default({}), recursive=True)
+      }}
+    resolved_profile_mcp_control_plane: >-
+      {{
+        resolved_profile_mcp_control_plane
+        | combine(profile_mcp_control_plane | default({}), recursive=True)
+      }}
+    resolved_portage_config_files: >-
+      {{
+        resolved_portage_config_files
+        | combine(portage_config_files | default({}), recursive=True)
       }}
 
 - name: Resolve package atoms from selected profile package list files

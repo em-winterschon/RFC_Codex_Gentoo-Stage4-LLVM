@@ -1,0 +1,28 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-forge-memory-object-store
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-forge-memory-object-store.packages
+  forge_memory_object_store:
+    enabled: true
+    provider: external-s3-compatible
+    endpoint_url: https://s3.rfc1918.host
+    region: rfc1918
+    bucket: forge-memory
+    prefix: forge-memory/v1
+    spool_root: /var/lib/forge-memory/spool
+    data_root: /srv/forge-memory-object-store
+    config_dir: /etc/forge-memory
+    log_root: /var/log/forge-memory
+    audit_log_prefix: forge-memory/v1/audit
+    object_lock_enabled: true
+    versioning_enabled: true
+    sse_algorithm: AES256
+    lifecycle_retention_days: 365
+    noncurrent_retention_days: 90
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+  openrc_services_enable:
+    - forge-memory-object-store
+    - rsyslog

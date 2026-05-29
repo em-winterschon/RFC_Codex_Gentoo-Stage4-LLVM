@@ -1,0 +1,38 @@
+---
+- name: Render FMT2 Kolla configuration on the deployer
+  hosts: fmt2_kolla_deployers
+  gather_facts: false
+  vars:
+    kolla_config_dir: /etc/kolla
+    kolla_template_root: "{{ playbook_dir }}/../templates/kolla"
+  tasks:
+    - name: Ensure Kolla config directory exists
+      ansible.builtin.file:
+        path: "{{ kolla_config_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0750'
+
+    - name: Render Kolla globals.yml
+      ansible.builtin.template:
+        src: "{{ kolla_template_root }}/globals.yml.j2"
+        dest: /etc/kolla/globals.yml
+        owner: root
+        group: root
+        mode: '0640'
+
+    - name: Render Kolla multinode inventory
+      ansible.builtin.template:
+        src: "{{ kolla_template_root }}/multinode.j2"
+        dest: /etc/kolla/multinode
+        owner: root
+        group: root
+        mode: '0640'
+
+    - name: Report password handling requirement
+      ansible.builtin.debug:
+        msg: >-
+          passwords.yml is generated on the deployer with kolla-genpwd and must
+          be encrypted into the private vault workflow before reuse; never commit
+          /etc/kolla/passwords.yml as plaintext.

@@ -115,36 +115,78 @@ Current apply scope:
   because the current `radiusd` account uses a FreeIPA sysaccount DN rather than
   a normal IPA user object.
 
-## NetBox Admin Access
+## FreeIPA SSH Key Sync Workflow
 
-As of 2026-05-22, `svc-netbox-stage4` is not yet using FreeIPA-backed NetBox
-group or superuser mapping. The live NetBox API shows only the local `admin`
-account and no NetBox groups or object permissions, so adding a FreeIPA user
-does not by itself grant NetBox login or admin rights. The local NetBox `admin`
-password and API token are stored in the encrypted local-network vault as
-`vault_netbox_admin_password` and `vault_netbox_api_token`.
+The repo now includes a focused FreeIPA SSH key sync workflow for centralizing
+operator SSH keys without copying `authorized_keys` files between hosts:
 
-Current process:
+- `scripts/render_freeipa_ssh_sync_checks.py`
+- `playbooks/freeipa-ssh-key-sync.yml`
 
-1. Model the human identity in
-   `identity-source-definitions/local-rfc1918.yml`, including a UID/GID from
-   the reserved human-user range, the correct FreeIPA groups, and vault-backed
-   password or SSH-key variable references.
-2. Run `scripts/validate_identity_source.py` and
-   `scripts/render_identity_sync_plan.py`, then review the rendered plan.
-3. Apply the FreeIPA side only through the explicit gated apply path
-   (`IDENTITY_SYNC_APPLY=1`, `IDENTITY_SYNC_APPLY_FREEIPA=1`,
-   `--provider freeipa`) from an operator context with the required vault
-   values loaded.
-4. Grant NetBox admin access separately in NetBox using the local `admin`
-   account, the NetBox admin UI/API, or an on-host Django management command.
-   Until FreeIPA/NetBox SSO mapping is implemented, this is a NetBox-local
-   permission step, not an identity-source apply side effect.
+The renderer derives non-secret validation commands from
+`identity-source-definitions/local-rfc1918.yml`. It reports the vault variable
+names required for SSH public keys, FreeIPA controller checks such as
+`ipa user-show`, `ipa group-show`, `ipa host-show`, `ipa hostgroup-show`, and
+`ipa hbactest`, plus Linux client checks such as `getent passwd`,
+`sss_ssh_authorizedkeys`, and `sudo -l -U`.
 
-The intended durable path is to add a repo-modeled `netbox-admin` FreeIPA group,
-configure NetBox authentication against FreeIPA, and map that group to NetBox
-staff/superuser or an equivalent least-privilege permission set. That mapping is
-not active yet.
+The playbook is dry-run by default. Live mutation requires
+`identity_freeipa_ssh_sync_enabled=true`, which sets both mutation gates for the
+underlying apply tool:
+
+```bash
+IDENTITY_SYNC_APPLY=1
+IDENTITY_SYNC_APPLY_FREEIPA=1
+```
+
+Use vault-backed environment variables for SSH public key values:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/freeipa-ssh-key-sync.yml \
+  -e identity_freeipa_ssh_sync_enabled=true \
+  -e identity_freeipa_ssh_sync_validate_live=true
+```
+
+The workflow keeps resolved SSH key material out of the JSON summary and audit
+log. Controller-side validation requires a Kerberos ticket for the FreeIPA admin
+principal; client-side validation should be run from enrolled hosts to prove
+SSSD/NSS/PAM/SSH policy resolution end-to-end.
+
+## Vault SSH CA Pilot
+
+The first short-lived SSH certificate pilot is represented by:
+
+- `roles/vault_ssh_ca_pilot`
+- `playbooks/vault-ssh-ca-pilot.yml`
+
+This is not a replacement for FreeIPA. Vault signs a public key with a short TTL
+and the host trusts the Vault user CA through OpenSSH `TrustedUserCAKeys`.
+FreeIPA and SSSD must still resolve the user principal, and HBAC/sudo policy
+remain authoritative.
+
+The expected initial Vault mount and role are:
+
+- mount: `ssh-client-signer`
+- role: `rfc1918-operator-codex-admin`
+
+The Ansible role is disabled by default and requires both gates before it edits
+`sshd_config`:
+
+```yaml
+vault_ssh_ca_pilot_enabled: true
+vault_ssh_ca_pilot_apply: true
+```
+
+It installs the CA public key at `/etc/ssh/rfc1918_user_ca.pub`, validates
+`sshd_config` with `sshd -t -f`, checks `sshd -T` for the effective
+`trustedusercakeys` value, and validates that the pilot principal such as
+`codex-admin` resolves through NSS/SSSD with `getent passwd`.
+
+Do not place the A6-capable human operator private key on a Forge-readable host.
+The first pilot should use an operator-held key, a non-critical host, and a
+short TTL such as 30 minutes.
 
 ## Live Bootstrap
 

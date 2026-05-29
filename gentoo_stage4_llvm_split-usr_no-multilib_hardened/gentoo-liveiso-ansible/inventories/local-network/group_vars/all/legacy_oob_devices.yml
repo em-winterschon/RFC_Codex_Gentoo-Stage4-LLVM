@@ -1,0 +1,68 @@
+---
+legacy_oob_device_policy:
+  description: >-
+    Legacy OOB and power devices that cannot safely run modern TLS are managed
+    through constrained management protocols instead of RFC1918 service TLS.
+  default_management_vlan_only: true
+  preferred_protocol_order:
+    - snmpv3
+    - serial
+    - http_legacy
+  tls_compliance_state: exempt-legacy-firmware
+  mutation_required: true
+  secret_namespace: vault_legacy_oob_devices
+
+legacy_oob_devices:
+  pdu_rfc99_corectrl_ap7901:
+    lifecycle_state: active
+    device_class: power_distribution_unit
+    owner_inventory_host: pdu_rfc99_corectrl_ap7901
+    manufacturer: APC
+    model: AP7901
+    firmware_tls_state: unsupported-modern-tls
+    tls_supported: false
+    tls_exemption_reason: >-
+      AP7901 firmware is already at its latest available release and cannot
+      provide a modern TLS stack. Do not include this device in RFC1918 service
+      TLS validation or certificate deployment.
+    management_fqdn: pdu-rfc99-corectrl-p08-099241.rfc1918.host
+    management_ips:
+      - 172.16.99.241
+    dns_aliases:
+      - pdu-rfc99-corectrl-099241.rfc1918.host
+    allowed_protocols:
+      snmpv3:
+        enabled: true
+        purpose:
+          - telemetry
+          - outlet-control
+        secret_refs:
+          username: vault_pdu_rfc99_corecontrol_snmpv3_username
+          auth_password: vault_pdu_rfc99_corecontrol_snmpv3_auth_password
+          privacy_password: vault_pdu_rfc99_corecontrol_snmpv3_privacy_password
+      serial:
+        enabled: true
+        purpose:
+          - rescue
+          - configuration
+        console_host: pending-dedicated-console-link
+        console_path: pending-dedicated-console-link
+        baud: 9600
+      http_legacy:
+        enabled: true
+        purpose:
+          - break-glass-web
+        vlan_scope: management-only
+        tls_required: false
+        url: http://pdu-rfc99-corectrl-p08-099241.rfc1918.host/
+    forbidden_protocols:
+      - https
+      - telnet
+    validation:
+      primary: snmpv3
+      snmp_sysobjectid_expected: APC AP7901
+      http_legacy_reachability_allowed: true
+      openssl_validation_allowed: false
+    notes:
+      - Local break-glass credentials remain in Ansible Vault or operator-private storage only.
+      - Outlet mutation automation must verify outlet labels before setting command OIDs.

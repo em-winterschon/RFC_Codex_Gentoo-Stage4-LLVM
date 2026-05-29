@@ -43,11 +43,15 @@ Current mirrored pages:
 - `Binpkg-Repository.md`
 - `Nexus-Repository.md`
 - `Package-Version-Pinning.md`
+- `M70-Forge-Automation-Admin.md`
+- `X11SCL-IF-Forge-Automation-Admin.md`
 - `Container-Services-Validation.md`
 - `Container-Building.md`
 - `Container-Publishing.md`
 - `Identity-AAA.md`
+- `ITIL-ADR-RFC1918-CA-TLS-Deployment.md`
 - `Hetzner-DNS-Automation.md`
+- `CheckMK-FMT2-Recovery-Upgrade.md`
 - `Telemetry-Observability.md`
 - `Observability-Access.md`
 - `SLURM-Pilot-Bringup.md`

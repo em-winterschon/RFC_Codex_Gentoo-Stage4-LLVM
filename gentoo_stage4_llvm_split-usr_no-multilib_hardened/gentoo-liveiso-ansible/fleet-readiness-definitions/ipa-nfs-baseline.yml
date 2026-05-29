@@ -1,0 +1,55 @@
+---
+fleet_ipa_nfs_baseline:
+  version: 1
+  freeipa_client_required: true
+  freeipa_admin_cli_required_on_admin_hosts: true
+  nfs_home_mount_required: true
+  default_nfs_protocol_lacp: nfsv4_2_tcp_multipath
+  default_nfs_protocol_non_lacp: nfsv4_1_tcp
+  fstab_required_options: [nofail, soft]
+  required_client_capabilities:
+    - sssd
+    - krb5
+    - ldap
+    - nss
+    - pam
+    - ssh_authorizedkeys_via_sssd
+    - sudo_policy_via_sssd
+    - nfs_client
+    - nfsv4_idmap
+  required_gentoo_atoms:
+    - sys-auth/sssd
+    - app-crypt/mit-krb5
+    - net-nds/openldap
+    - app-misc/ca-certificates
+    - net-fs/nfs-utils
+    - net-nds/rpcbind
+    - sys-apps/keyutils
+  required_rhel_packages:
+    - freeipa-client
+    - sssd
+    - sssd-ipa
+    - krb5-workstation
+    - openldap-clients
+    - nfs-utils
+  required_debian_packages:
+    - freeipa-client
+    - sssd-ipa
+    - krb5-user
+    - ldap-utils
+    - nfs-common
+  gentoo_freeipa_cli_note: >
+    The current Gentoo Portage tree does not provide a native FreeIPA admin CLI
+    package. Gentoo hosts must still meet FreeIPA client readiness through SSSD,
+    NSS, PAM, SSH authorized key lookup, sudo policy, Kerberos, and LDAP. FreeIPA
+    admin mutation commands must run on ipa01 or another admin host with the ipa
+    CLI until a repo-managed Gentoo-compatible CLI path exists.
+  floating_home_policy:
+    authority: FreeIPA UID/GID and group membership
+    mountpoint: /home
+    sun99_primary: QNAP NFSv4.2 over CRS354 LACP
+    fmt2_primary: NASA NFSv4.2 where local latency is acceptable
+    replication: SUN99 QNAP and FMT2 NASA should sync home datasets after UID/GID parity is proven.
+    boot_mount_options:
+      - nofail
+      - soft

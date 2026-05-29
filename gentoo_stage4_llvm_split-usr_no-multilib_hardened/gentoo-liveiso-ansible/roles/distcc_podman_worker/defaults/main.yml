@@ -1,0 +1,42 @@
+---
+distcc_podman_worker_enabled: true
+distcc_podman_worker_manage_service: true
+distcc_podman_worker_start_service: true
+distcc_podman_worker_service_manager: auto
+distcc_podman_worker_allow_systemd_on_native_hosts: true
+
+distcc_podman_worker_container_name: forge-distcc-gentoo
+distcc_podman_worker_image: localhost/forge-distcc-gentoo:llvm21
+distcc_podman_worker_pull_policy: never
+distcc_podman_worker_network_mode: host
+
+distcc_podman_worker_runtime_root: /srv/forge-build
+distcc_podman_worker_config_dir: /etc/forge-distcc-worker
+distcc_podman_worker_cache_dir: "{{ distcc_podman_worker_runtime_root }}/cache"
+distcc_podman_worker_log_dir: "{{ distcc_podman_worker_runtime_root }}/logs/distcc"
+distcc_podman_worker_start_script: /usr/local/sbin/forge-distcc-gentoo-start
+distcc_podman_worker_service_name: forge-distcc-gentoo
+distcc_podman_worker_openrc_runlevel: default
+
+distcc_podman_worker_listen_address: 0.0.0.0
+distcc_podman_worker_port: 3632
+distcc_podman_worker_jobs: 56
+distcc_podman_worker_nice: 10
+distcc_podman_worker_log_level: notice
+distcc_podman_worker_service_user: distcc
+distcc_podman_worker_allowed_client_cidrs:
+  - 172.16.99.0/24
+  - 10.200.99.0/24
+  - 192.168.132.0/24
+
+distcc_podman_worker_host_packages:
+  - podman
+  - tar
+  - zstd
+  - xz
+  - gzip
+  - curl
+distcc_podman_worker_install_packages: true
+
+distcc_podman_worker_extra_podman_args: []
+distcc_podman_worker_extra_distccd_args: []

@@ -93,8 +93,8 @@ and verified by CSS326 SwOS snapshot `20260521T232928Z`:
 CRS354 `ether49` management must move from CSS326 `ge24` to CSS326 `ge15` to
 free `ge24` for the canary workload LACP set. That move was physically
 confirmed on 2026-05-21. NetBox cable `4` now records CSS326 `ge15` to CRS354
-`ether49` as connected, and the structured inventory records Chonkers' former
-CSS326 `ge15` connection as historical.
+`ether49` as connected, and the structured inventory records the paused validation laptop's former
+CSS326 `ge15` connection as historical pending re-inventory.
 
 NetBox device `m70_canary` now has six physical Ethernet interfaces. NetBox
 cables `5` through `10` record the CSS326 `ge19` through `ge24` links, and

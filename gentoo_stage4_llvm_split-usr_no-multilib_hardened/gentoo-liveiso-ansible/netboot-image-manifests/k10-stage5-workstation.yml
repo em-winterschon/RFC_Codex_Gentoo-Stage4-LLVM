@@ -17,13 +17,13 @@ network:
   static_address: 172.16.99.156
   gateway: 172.16.99.1
   netmask: 255.255.255.0
-  nameserver: 172.16.99.1
+  nameserver: 9.9.9.9
 artifacts:
   publish_root: /var/lib/netboot/path-b
   public_base_url: http://172.16.99.88:8080
   tftp_first_stage: k10-ipxe.efi
   host_script: hosts/gmktek-k10-stage5.ipxe
-  role_script: roles/installer-k10.ipxe
+  role_script: roles/workstation-validation.ipxe
   kernel_url: http://172.16.99.88:8080/g/vmlinuz
   initramfs_url: http://172.16.99.88:8080/g/initramfs-gz.img
   initramfs_boot_name: initrd.magic
@@ -31,25 +31,33 @@ artifacts:
   hash_strategy: sha256sum sidecar files generated during Jenkins rebuilds
 builder:
   script: gentoo-liveiso-ansible/scripts/build-path-b-netboot-artifacts.sh
+  rebuild_environment:
+    - PATHB_REUSE_INITRAMFS_NETWORK=0
+    - PATHB_STATIC_INTERFACE=enp4s0
+    - PATHB_STATIC_ADDRESS_CIDR=172.16.99.156/24
+    - PATHB_STATIC_GATEWAY=172.16.99.1
+    - PATHB_STATIC_DNS="172.16.99.63 172.16.99.1 9.9.9.9"
   profile_definition_requirements:
-    - profile-definitions/aaa-domain-client.yml
+    - profile-definitions/metal-workstation-basic-xorg.yml
     - profile-definitions/secure-firstboot-enrollment.yml
   rootfs_package_list_requirements:
-    - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/stage5-domain-client-freeipa-minimal.packages
     - profile-package-lists/stage5-secure-firstboot-enrollment.packages
   rootfs_package_use_requirements:
-    - sys-auth/sssd samba
-    - net-fs/samba winbind
+    - app-admin/sudo -sendmail
+    - sys-apps/smartmontools -daemon
   package_requirements:
     - sys-kernel/linux-firmware
     - sys-auth/sssd
-    - net-fs/samba
     - app-crypt/mit-krb5
     - net-nds/openldap
     - app-crypt/age
     - net-misc/curl
     - app-misc/jq
     - sys-apps/gptfdisk
+  installer_prerequisites:
+    - sys-apps/gptfdisk
+    - boot_create_efi_nvram_entry: false
   dracut_modules:
     add:
       - network
@@ -69,7 +77,6 @@ cmdline:
   network:
     - ifname=eth0:84:47:09:5f:21:64
     - ip=172.16.99.156::172.16.99.1:255.255.255.0:gmktek-k10-stage5:eth0:none
-    - nameserver=172.16.99.1
     - nameserver=9.9.9.9
     - rd.neednet=1
     - rd.net.timeout.carrier=60
@@ -81,5 +88,5 @@ validation:
   last_validated: "2026-05-11"
   transient_live_aaa_gate: passed before reboot with repo-managed apply playbook.
   reboot_durable_aaa_gate: blocked on disk install or secure first-boot age-encrypted FreeIPA OTP bundle apply; /etc/krb5.keytab must be generated on the target, never embedded in HTTP netboot artifacts.
-  last_reboot_observation: AP7901 outlet 6 reboot returned the promoted rootfs with SSSD, Samba, Kerberos, OpenLDAP, and libsss_ipa.so present; post-boot FreeIPA live apply and codex-admin SSH validation passed.
+  last_reboot_observation: AP7901 outlet 6 reboot returned the promoted rootfs with SSSD, Kerberos, OpenLDAP, and libsss_ipa.so present; post-boot FreeIPA live apply and codex-admin SSH validation passed.
   backout: Remove K10 DHCP option 67 and leave CSS326 ge16 disconnected.

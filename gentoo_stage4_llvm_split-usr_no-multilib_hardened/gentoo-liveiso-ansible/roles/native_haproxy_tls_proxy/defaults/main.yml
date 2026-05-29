@@ -1,0 +1,7 @@
+---
+native_haproxy_tls_proxy_enabled: "{{ resolved_profile_native_haproxy_tls_proxy.enabled | default(false) }}"
+native_haproxy_tls_proxy_config_path: "{{ resolved_profile_native_haproxy_tls_proxy.config_path | default('/etc/haproxy/haproxy.cfg') }}"
+native_haproxy_tls_proxy_user: "{{ resolved_profile_native_haproxy_tls_proxy.user | default('haproxy') }}"
+native_haproxy_tls_proxy_group: "{{ resolved_profile_native_haproxy_tls_proxy.group | default('haproxy') }}"
+native_haproxy_tls_proxy_frontends: "{{ resolved_profile_native_haproxy_tls_proxy.frontends | default([]) }}"
+native_haproxy_tls_proxy_install_root: "{{ install_target_root | default('') }}"

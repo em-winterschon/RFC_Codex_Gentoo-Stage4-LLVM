@@ -1,0 +1,35 @@
+---
+mcp_control_plane:
+  default_mode: "{{ resolved_mcp_control_plane.default_mode }}"
+  write_gate: "{{ resolved_mcp_control_plane.write_gate }}"
+  audit_log_path: "{{ resolved_mcp_control_plane.audit_log_path }}"
+  candidates:
+{% for candidate in resolved_mcp_control_plane.candidates %}
+    - id: "{{ candidate.id }}"
+      name: "{{ candidate.name }}"
+      source_url: "{{ candidate.source_url }}"
+      upstream_kind: "{{ candidate.upstream_kind }}"
+      capability: "{{ candidate.capability }}"
+      risk_tier: "{{ candidate.risk_tier }}"
+      promotion_status: "{{ candidate.promotion_status }}"
+      default_mode: "{{ candidate.default_mode | default(resolved_mcp_control_plane.default_mode) }}"
+      auth_method: "{{ candidate.auth_method }}"
+{% if candidate.runtime_flags is defined %}
+      runtime_flags:
+{% for flag in candidate.runtime_flags %}
+        - "{{ flag }}"
+{% endfor %}
+{% endif %}
+      vault_secret_refs:
+{% for secret_ref in candidate.vault_secret_refs | default([]) %}
+        - "{{ secret_ref }}"
+{% endfor %}
+      allowed_operations:
+{% for operation in candidate.allowed_operations | default([]) %}
+        - "{{ operation }}"
+{% endfor %}
+      blocked_operations:
+{% for operation in candidate.blocked_operations | default([]) %}
+        - "{{ operation }}"
+{% endfor %}
+{% endfor %}

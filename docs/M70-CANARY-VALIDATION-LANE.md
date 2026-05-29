@@ -105,8 +105,8 @@ Required CSS326 prep:
 - NetBox cables `5` through `10` record CSS326 `ge19` through `ge24` to the
   canary's six Ethernet interfaces.
 - NetBox cable `11` records AP7901 outlet 7 to the canary power input.
-- The structured inventory records Chonkers' former CSS326 `ge15` connection as
-  historical.
+- The structured inventory records the paused validation laptop's former CSS326 `ge15` connection as
+  historical pending re-inventory.
 
 Once the canary boots, reconcile host-observed state back to NetBox. The
 remaining five NIC MAC addresses were discovered from the old HBSD/FreeBSD
@@ -302,7 +302,7 @@ Status captured on 2026-05-25:
 
 The OVS/VPP NIC briefly received `172.16.99.157/24` during the first boot
 because the generic cloud-init network config matched all `en*` interfaces.
-NetBox already assigns `172.16.99.157/24` to `lap_sun99_chonkers`, so this was
+NetBox already reserves `172.16.99.157/24` for the paused validation laptop, so this was
 immediately corrected. The live guest now uses a canary netplan file that keeps
 `enp0s5` L2-only, and the repo launcher now ships
 `vpp-canary-network-config.yaml` so future rebuilds only DHCP the QEMU
@@ -680,7 +680,7 @@ Required evidence:
 - RS232 is physically attached
 - NetBox has the canary device, interfaces, Ethernet cabling, and power cabling
 - `/dev/serial/by-id` is stable after the USB hub power swap
-- CSS326 `ge15` is recorded as CRS354 management, not Chonkers LOM
+- CSS326 `ge15` is recorded as CRS354 management, not the paused laptop LOM
 - CSS326 `ge19` through `ge24` match the canary physical cabling plan
 - management IP, hostname/FQDN, and serial intent are added after discovery
 

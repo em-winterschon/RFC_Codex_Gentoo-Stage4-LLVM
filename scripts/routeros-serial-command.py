@@ -10,12 +10,6 @@ import sys
 import time
 from collections.abc import Iterable
 
-try:
-    import serial
-except ImportError as exc:  # pragma: no cover - exercised on hosts missing pyserial.
-    raise SystemExit("missing Python module: pyserial") from exc
-
-
 TERMINAL_QUERY = b"\x1bZ"
 TERMINAL_ANSWERBACK = b"\x1b[?1;0c"
 PROMPT_MARKER = b"] >"
@@ -55,10 +49,19 @@ def sanitize_transcript(text: str, secret: str) -> str:
     return text
 
 
+def require_serial_module():
+    try:
+        import serial
+    except ImportError as exc:  # pragma: no cover - exercised on hosts missing pyserial.
+        raise RuntimeError("missing Python module: pyserial") from exc
+    return serial
+
+
 class RouterOSSerialSession:
     def __init__(self, port: str, baud: int, password: str):
         self.password = password
-        self.serial = serial.Serial(port, baud, timeout=0.1, write_timeout=1)
+        serial_module = require_serial_module()
+        self.serial = serial_module.Serial(port, baud, timeout=0.1, write_timeout=1)
 
     def close(self) -> None:
         self.serial.close()

@@ -127,7 +127,7 @@
   ansible.builtin.command: "zfs mount -a"
   changed_when: false
 
-- name: Ensure target /etc exists for root-on-ZFS hostid
+- name: Ensure target /etc exists before preserving root-on-ZFS hostid
   ansible.builtin.file:
     path: "{{ install_target_root }}/etc"
     state: directory

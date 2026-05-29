@@ -23,11 +23,20 @@ assert_file_contains() {
   grep -Fq "${pattern}" "${file}" || fail "expected ${file} to contain ${pattern}"
 }
 
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+create_project_output="${tmpdir}/github-project-seed-project.out"
+
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/roadmap_task.yml" "name: Roadmap task"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/change_control.yml" "name: Change control"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/service_role.yml" "name: Service role"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/blocker.yml" "name: Blocker"
 assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/config.yml" "blank_issues_enabled: false"
+assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/config.yml" "github.com/yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM"
+assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/task.yml" "name: Task"
+assert_file_contains "${REPO_ROOT}/.github/ISSUE_TEMPLATE/change_request.yml" "name: Change Request"
+assert_file_contains "${REPO_ROOT}/.github/PULL_REQUEST_TEMPLATE/infrastructure-change.md" "Change Class"
+assert_file_contains "${REPO_ROOT}/.github/PULL_REQUEST_TEMPLATE/infrastructure-reconciliation.md" "Source Of Truth"
 assert_file_contains "${LABELS}" "area:identity-aaa"
 assert_file_contains "${LABELS}" "type:epic"
 assert_file_contains "${LABELS}" "type:task"
@@ -77,10 +86,10 @@ grep -Fq 'relationship edges:' <<< "${dry_run}" ||
 grep -Fq 'https://github.com/example/example/issues/new?template=roadmap_task.yml' <<< "${dry_run}" ||
   fail 'dry run did not include issue query URL'
 
-if "${SEED}" --repo example/example --create-project > /tmp/github-project-seed-project.out 2>&1; then
+if "${SEED}" --repo example/example --create-project > "${create_project_output}" 2>&1; then
   fail 'create-project succeeded without --apply'
 fi
-grep -Fq -- '--create-project requires --apply' /tmp/github-project-seed-project.out ||
+grep -Fq -- '--create-project requires --apply' "${create_project_output}" ||
   fail 'create-project refusal message missing'
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

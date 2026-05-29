@@ -1,0 +1,104 @@
+---
+- name: Validate native HAProxy TLS proxy profile
+  ansible.builtin.assert:
+    that:
+      - native_haproxy_tls_proxy_frontends | length > 0
+      - native_haproxy_tls_proxy_frontends | map(attribute='name') | list | length == native_haproxy_tls_proxy_frontends | length
+    fail_msg: "native_haproxy_tls_proxy requires at least one named frontend."
+  when: native_haproxy_tls_proxy_enabled | bool
+
+- name: Ensure native HAProxy TLS proxy directories exist
+  ansible.builtin.file:
+    path: "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_directory }}"
+    state: directory
+    mode: "0755"
+  loop: >-
+    {{
+      (
+        [native_haproxy_tls_proxy_config_path | dirname]
+        + (native_haproxy_tls_proxy_frontends | map(attribute='pem_path') | map('dirname') | list)
+      ) | unique
+    }}
+  loop_control:
+    loop_var: native_haproxy_tls_proxy_directory
+  when: native_haproxy_tls_proxy_enabled | bool
+
+- name: Combine native HAProxy TLS certificate/key PEMs
+  ansible.builtin.shell: |
+    set -euo pipefail
+    tmp="$(mktemp "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_frontend.pem_path }}.tmp.XXXXXX")"
+    cat \
+      "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_frontend.cert_path }}" \
+      "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_frontend.key_path }}" \
+      > "${tmp}"
+    chmod 0600 "${tmp}"
+    if [ -f "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_frontend.pem_path }}" ] \
+      && cmp -s "${tmp}" "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_frontend.pem_path }}"; then
+      rm -f "${tmp}"
+      printf 'unchanged\n'
+    else
+      mv "${tmp}" "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_frontend.pem_path }}"
+      printf 'updated\n'
+    fi
+  args:
+    executable: /bin/bash
+  loop: "{{ native_haproxy_tls_proxy_frontends }}"
+  loop_control:
+    loop_var: native_haproxy_tls_proxy_frontend
+    label: "{{ native_haproxy_tls_proxy_frontend.name }}"
+  register: native_haproxy_tls_proxy_pems
+  changed_when: "'updated' in native_haproxy_tls_proxy_pems.stdout"
+  no_log: true
+  when: native_haproxy_tls_proxy_enabled | bool
+
+- name: Render native HAProxy TLS proxy config
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_config_path }}"
+    mode: "0644"
+  register: native_haproxy_tls_proxy_config
+  when: native_haproxy_tls_proxy_enabled | bool
+
+- name: Validate native HAProxy TLS proxy config
+  ansible.builtin.command:
+    argv:
+      - haproxy
+      - -c
+      - -f
+      - "{{ native_haproxy_tls_proxy_install_root }}{{ native_haproxy_tls_proxy_config_path }}"
+  changed_when: false
+  when:
+    - native_haproxy_tls_proxy_enabled | bool
+    - native_haproxy_tls_proxy_install_root in ['', '/']
+
+- name: Enable native HAProxy TLS proxy service
+  ansible.builtin.command: rc-update add haproxy default
+  changed_when: false
+  failed_when: false
+  when:
+    - native_haproxy_tls_proxy_enabled | bool
+    - native_haproxy_tls_proxy_install_root in ['', '/']
+
+- name: Restart native HAProxy TLS proxy service after config changes
+  ansible.builtin.command: rc-service haproxy restart
+  changed_when: true
+  when:
+    - native_haproxy_tls_proxy_enabled | bool
+    - native_haproxy_tls_proxy_install_root in ['', '/']
+    - >
+      (native_haproxy_tls_proxy_config.changed | default(false))
+      or
+      (
+        native_haproxy_tls_proxy_pems.results | default([])
+        | selectattr('changed')
+        | list
+        | length > 0
+      )
+
+- name: Ensure native HAProxy TLS proxy service is started
+  ansible.builtin.command: rc-service haproxy start
+  changed_when: false
+  failed_when: false
+  when:
+    - native_haproxy_tls_proxy_enabled | bool
+    - native_haproxy_tls_proxy_install_root in ['', '/']

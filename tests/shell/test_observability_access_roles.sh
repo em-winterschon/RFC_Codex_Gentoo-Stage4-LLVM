@@ -16,6 +16,7 @@ for role_dir in \
   elasticsearch_cluster \
   kibana_interface \
   service_readiness \
+  native_haproxy_tls_proxy \
   netbox_connector \
   zerotier_access \
   container_app_rsyslog_collector \
@@ -32,6 +33,7 @@ for profile in \
   container-rsyslog-collector.yml \
   container-elastic-apm.yml \
   container-haproxy-elasticsearch-test-vip.yml \
+  observability-native-haproxy-tls-proxy.yml \
   vm-elasticsearch-node.yml \
   vm-elasticsearch-test.yml \
   vm-kibana-interface.yml; do
@@ -72,6 +74,11 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-node.
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-test.yml" 'app-misc/elasticsearch Elastic-2.0'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-kibana-interface.yml" 'install_method: upstream_tarball'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-kibana-interface.yml" 'kibana-9.3.1-linux-x86_64.tar.gz'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/observability-native-haproxy-tls-proxy.yml" 'net-proxy/haproxy'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/observability-native-haproxy-tls-proxy.yml" 'gcc-compat.conf'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/observability-native-haproxy-tls-proxy.yml" 'native_haproxy_tls_proxy:'
+assert_file_contains "${ANSIBLE_ROOT}/roles/native_haproxy_tls_proxy/tasks/main.yml" 'Validate native HAProxy TLS proxy config'
+assert_file_contains "${ANSIBLE_ROOT}/roles/native_haproxy_tls_proxy/templates/haproxy.cfg.j2" 'ssl crt'
 assert_file_contains "${ANSIBLE_ROOT}/roles/kibana_interface/templates/kibana.openrc.j2" 'export TZ='
 assert_file_contains "${ANSIBLE_ROOT}/roles/kibana_interface/templates/stage5-kibana-bootstrap-data-views.sh.j2" '/api/data_views/data_view'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/telemetry-elasticsearch-exporter.yml" 'app-metrics/elasticsearch_exporter ~amd64'
@@ -116,6 +123,8 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-test.
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-elasticsearch-test.yml" 'number_of_replicas: 0'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '172.16.99.92'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '10.9.8.91'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" 'obs-sun99-esvip-099092.rfc1918.host obs-sun99-esvip.rfc1918.host'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" 'log-sun99-rsyslog.pem'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '6514:6514/tcp'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-haproxy-elasticsearch-test-vip.yml" '9200:9200/tcp'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'forward_hostname: log-sun99-rsyslog.rfc1918.host'
@@ -134,6 +143,11 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-jenkins-controller.
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-identity-controller.yml" 'freeipa-ldaps'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-observability-prometheus.yml" 'prometheus-http'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-observability-grafana.yml" 'grafana-http'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/obs_sun99_prometheus_099064.yml" 'observability-native-haproxy-tls-proxy.yml'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/obs_sun99_prometheus_099064.yml" 'obs-sun99-prometheus.pem'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/obs_sun99_vmetrics_099065.yml" 'obs-sun99-vmetrics.pem'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/obs_sun99_grafana_099066.yml" 'obs-sun99-grafana.pem'
+assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/obs_sun99_kibana_099067.yml" 'obs-sun99-kibana.pem'
 
 test -f "${REPO_ROOT}/docs/OBSERVABILITY-ACCESS.md"
 test -f "${REPO_ROOT}/docs/wiki/Observability-Access.md"

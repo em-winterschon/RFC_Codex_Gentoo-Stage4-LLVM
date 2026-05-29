@@ -1,0 +1,49 @@
+---
+gentoo_binpkg_repository_root: /mnt/nasa/forge/gentoo-binpkgs
+gentoo_binpkg_repository_publish_mode: local_nfs_rsync_after_success
+gentoo_binpkg_repository_arches:
+  x86_64-pc-linux-gnu:
+    contract_root: /mnt/nasa/forge/gentoo-binpkgs/contracts/x86_64-pc-linux-gnu
+    contracts:
+      baseline-portable-openrc-llvm:
+        description: Portable x86_64 OpenRC LLVM baseline for heterogeneous RFC1918 hosts.
+        common_flags: -O2 -pipe
+        cpu_class: x86_64-portable
+        avoid_cpu_flags:
+          - intel_sha
+          - avx
+          - avx2
+          - avx512
+        repo_path: /mnt/nasa/forge/gentoo-binpkgs/contracts/x86_64-pc-linux-gnu/baseline-portable-openrc-llvm
+      m70-goldmont-openrc-llvm:
+        description: M70 Atom C3758 Goldmont-tuned OpenRC LLVM packages.
+        cpu_class: m70-goldmont
+        common_flags: -O2 -pipe -march=goldmont -mtune=goldmont
+        compatible_hosts:
+          - admin-sun99-forge-099070
+      k10-raptorlake-openrc-llvm:
+        description: GMKtec K10 Intel 13th-gen Core/Raptor Lake tuned packages.
+        cpu_class: k10-raptorlake
+        compatible_hosts:
+          - gmktek-nucbox-k10-stage5-candidate
+      x12-icelake-server-openrc-llvm:
+        description: X12AGAIN Intel Xeon Platinum 8370C Ice Lake Server tuned packages.
+        cpu_class: x12-icelake-server
+        compatible_hosts:
+          - x12again
+      r630-broadwell-openrc-llvm:
+        description: Dell R630 E5-2600v4 Broadwell baseline for FMT2 cluster nodes.
+        cpu_class: r630-broadwell
+        avoid_cpu_flags:
+          - intel_sha
+          - avx512
+        compatible_hosts:
+          - kvm-sfo200-pri-9922
+          - kvm-sfo200-sec-9923
+          - kvm-sfo200-ter-9924
+  aarch64:
+    contract_root: /mnt/nasa/forge/gentoo-binpkgs/contracts/aarch64
+    contracts: {}
+  ppc64le:
+    contract_root: /mnt/nasa/forge/gentoo-binpkgs/contracts/ppc64le
+    contracts: {}

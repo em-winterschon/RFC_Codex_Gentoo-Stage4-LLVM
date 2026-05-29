@@ -24,14 +24,6 @@ prefixes:
     vlan:
       id: 1
       name: management-compat
-  - prefix: 172.16.20.0/24
-    site: local-rfc1918-lab
-    status: active
-    role: home-automation
-    gateway: 172.16.20.1
-    vlan:
-      id: 20
-      name: home-automation
   - prefix: 172.16.98.0/24
     site: local-rfc1918-lab
     status: active
@@ -60,6 +52,20 @@ prefixes:
     vlan:
       id: 1078
       name: container-applications
+  - prefix: 10.78.0.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-management
+    vlan:
+      id: 1079
+      name: mcp-container-management
+  - prefix: 10.78.1.0/24
+    site: local-rfc1918-lab
+    status: reserved
+    role: mcp-container-applications
+    vlan:
+      id: 1080
+      name: mcp-container-applications
 
 devices:
   - name: hasslehoff
@@ -95,22 +101,23 @@ devices:
     model: CSS326-24G-2S+
     status: active
     management_ip: 172.16.99.6
-    management_interface: mgmt
-    fqdn: sw-mgmt-css326.rfc1918.host
     management_protocol: swos-http
     serial_number: HHD0AERY8JN
     software_target: SwOS 2.18.1751448030
     interfaces:
-      - name: mgmt
-        type: 1000base-t
-        purpose: management
       - name: ge4
         purpose: ccr2004-management
       - name: ge5
         lag: hasslehoff-bond0
         status: active
+      - name: ge7
+        purpose: thor-agx-rj45-management
+        status: active
       - name: ge6
         lag: hasslehoff-bond0
+        status: active
+      - name: ge14
+        purpose: admin-sun99-forge-099070-primary
         status: active
       - name: ge15
         purpose: crs354-management
@@ -158,7 +165,6 @@ devices:
     status: active
     management_ip: 172.16.99.7
     management_interface: ether49
-    fqdn: sw-mgmt-mkcrs354.rfc1918.host
     serial_number: HJV0AWTYBCD
     software_target: RouterOS 7.22.2
     serial_console: /dev/ttyUSB1
@@ -215,7 +221,6 @@ devices:
     status: active
     management_ip: 172.16.99.8
     management_interface: br-spine
-    fqdn: sw-spine-crs309-rfc99.rfc1918.host
     software_target: RouterOS 7.22.2
     serial_console: /dev/ttyUSB0
     interfaces:
@@ -291,14 +296,8 @@ devices:
     role: routeros-gateway-candidate
     manufacturer: MikroTik
     model: CCR2004-1G-2XS-PCIe
-    status: planned
+    status: active
     management_ip: 172.16.99.120
-    management_interface: mgmt
-    fqdn: rtr-mgmt-ccr2004.rfc1918.host
-    interfaces:
-      - name: mgmt
-        type: 1000base-t
-        purpose: management
   - name: svc_netbox_stage4
     site: local-rfc1918-lab
     role: ipam-dcim
@@ -502,23 +501,6 @@ devices:
       - Persistent Gentoo install targets only the two KIOXIA NVMe devices, FreeBSD nda0 and nda1, expected as Linux /dev/disk/by-id/nvme-eui.8ce38e0403ef1a38 and /dev/disk/by-id/nvme-eui.8ce38e0403ef1adf.
       - SATA-DOM ada0, SATADOM-SH 3ME3 serial 20180915AA9241033080, is excluded from the Gentoo install target set.
       - RS232 console is /dev/serial/by-id/usb-FTDI_FT2232H_device_FT5W5FZH-if01-port0 on admin-sun99-forge-099070 at 115200 baud.
-  - name: atmos_sun99_controller_020227
-    site: local-rfc1918-lab
-    role: home-automation-device
-    manufacturer: Hubitat
-    model: C8
-    status: active
-    management_ip: 172.16.20.227
-    management_interface: mgmt
-    fqdn: atmos-sun99-controller-020227.rfc1918.host
-    interfaces:
-      - name: mgmt
-        type: 100base-tx
-        purpose: home automation management
-        status: active
-    notes:
-      - Hubitat C8 home automation controller.
-      - Authentication and application service port are intentionally not tracked here.
   - name: svc_container_services_safe_move_01
     site: local-rfc1918-lab
     role: container-services-staging
@@ -532,6 +514,75 @@ devices:
     notes:
       - Temporary Hasslehoff staging VM for safe container-services migration.
       - Do not assign the production Path B service IP until cutover validation passes.
+  - name: vm_mcp_control_plane
+    site: local-rfc1918-lab
+    role: mcp-control-plane
+    manufacturer: Gentoo
+    model: gentoo-stage5-container-vm
+    status: planned
+    management_ip: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    dns_aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    hypervisor: hasslehoff
+    vmid: 1068
+    stage5_profile: vm-mcp-control-plane
+    service_tls_id: mcp_control_plane
+    interfaces:
+      - name: eth0
+        type: virtual
+        purpose: management-and-mcp-frontdoor
+        status: planned
+      - name: podman-mcp-mgmt0
+        type: virtual
+        purpose: mcp-container-management
+        status: planned
+      - name: podman-mcp-apps0
+        type: virtual
+        purpose: mcp-container-applications
+        status: planned
+    notes:
+      - LAN-only MCP control-plane VM for Nginx-UI and future FastMCP wrappers.
+      - Required before live deployment: Nginx-UI vault secrets, RFC1918 TLS material, DNS records, and HAProxy config with MCP query-string logging disabled.
+      - Docker socket access must remain disabled unless a separate mutation proposal is approved.
+  - name: agx_rfc99_bunnydev
+    site: local-rfc1918-lab
+    role: edge-ai-gpu-host
+    manufacturer: NVIDIA
+    model: Jetson AGX Thor
+    status: active
+    management_ip: 172.16.99.34
+    management_interface: enP2p1s0
+    fqdn: agx-rfc99-bunnydev.rfc1918.host
+    interfaces:
+      - name: enP2p1s0
+        type: 1000base-t
+        purpose: thor-agx-rj45-management
+        connected_device: sw_mgmt_css326
+        connected_interface: ge7
+        status: active
+    notes:
+      - NVIDIA Thor AGX development host.
+      - RJ45 Realtek r8126 management link is connected to CSS326 ge7 and statically addressed as 172.16.99.34/24.
+      - CSS326 copper ports are 1GbE, so the RJ45 management path is expected to negotiate no faster than 1Gbps despite the Thor NIC capability.
+      - QSFP28 interface will be cabled separately to CRS354 qsfpplus2 as a four-lane 10G breakout for VM/OVS data-plane work.
+      - Keep GUI and vendor bloat reduction gated until SSH access confirms CUDA, MIG/vGPU, and required L4T services.
+  - name: inf_rfc99_noctosultris_099165
+    site: local-rfc1918-lab
+    role: inference-gpu-host
+    manufacturer: Supermicro
+    model: X12SPA-TF
+    status: planned
+    management_ip: 172.16.99.165
+    management_interface: pending-live-validate
+    fqdn: inf-rfc99-noctosultris-099165.rfc1918.host
+    bmc_ip: 172.16.199.111
+    notes:
+      - Inference GPU host with Xeon 8370C class CPU and 4x NVIDIA A4000.
+      - Management IP uses 172.16.99.165/24 to avoid conflict with existing VictoriaMetrics VM at 172.16.99.65.
+      - BMC endpoint is active at 172.16.199.111 and should be used for OOB power/control tasks.
+      - Switch interface/cable mapping should be captured in NetBox before enabling port policy automation.
   - name: gmktek_nucbox_k10_stage5_candidate
     site: local-rfc1918-lab
     role: baremetal-workstation-validation
@@ -557,30 +608,80 @@ devices:
       - UEFI PXE/TFTP loads k10-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
       - Dracut uses static initramfs networking at 172.16.99.156/24 via 172.16.99.1.
       - Do not treat 172.16.99.160 as K10 without resolving duplicate host evidence.
-  - name: lap_sun99_chonkers
+  - name: admin_sun99_forge_099070
     site: local-rfc1918-lab
-    role: baremetal-workstation-validation
-    manufacturer: Alienware
-    model: 16X Aurora
+    role: automation-admin
+    manufacturer: M70
+    model: Atom C3758 appliance
     status: active
-    management_ip: 172.16.99.157
-    management_interface: LOM
-    fqdn: lap-sun99-chonkers.rfc1918.dev
-    asset_tag: AC16251
+    management_ip: 172.16.99.70
+    management_interface: bond0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    dns_aliases:
+      - admin-sun99-forge.rfc1918.host
+      - forge.rfc1918.host
+      - forge-sun99.rfc1918.host
     interfaces:
-      - name: LOM
+      - name: bond0
+        type: lag
+        purpose: automation-admin-management
+        status: approved-pending-cutover
+      - name: netboot0
         type: 1000base-t
-        purpose: native-ipxe-httpv4-netboot
-        mac_address: "84:5C:31:A5:CF:51"
-        netboot_type: dynamic
-        netboot_protocol_flow: ipxe-httpv4-with-pxe-fallback
+        purpose: bond0-member-and-uefi-pxe-ipxe-netboot
+        mac_address: "00:07:32:78:65:C6"
+        lag: bond0
+        connected_device: sw_mgmt_css326
+        connected_interface: ge14
+        netboot_type: static
+        netboot_protocol_flow: pxe-to-ipxe
         status: active
+      - name: enp3s0
+        type: 1000base-t
+        purpose: bond0-member
+        mac_address: "00:07:32:78:65:C7"
+        lag: bond0
+        connected_device: sw_mgmt_css326
+        connected_interface: ge17
+        status: active
+      - name: eno1
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:C8"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge3
+        status: planned
+      - name: eno2
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:C9"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge4
+        status: active
+      - name: eno3
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:CA"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge5
+        status: planned
+      - name: eno4
+        type: 1000base-t
+        purpose: ovs-dpdk-vpp-sriov-reserved
+        mac_address: "00:07:32:78:65:CB"
+        connected_device: gw_rfc99_mkccr2004_16g
+        connected_interface: ge6
+        status: planned
     notes:
-      - Alienware 16X Aurora Stage5 workstation validation laptop.
-      - SKU AC16251; CPU Intel Ultra 9 class; graphics path includes Intel integrated display and Nvidia RTX 5060M mobile discrete GPU.
-      - BIOS configured for iPXE / HTTPv4 boot with PXE fallback.
-      - Realtek RTL8111H 1GbE LOM was previously connected to CSS326 ge15.
-      - CSS326 ge15 is reassigned to CRS354 management as of 2026-05-21.
+      - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
+      - CPU Intel Atom C3758; planned 64 GiB ECC RAM, but 2026-05-13 live serial validation observed 32 GiB available.
+      - Six 1GbE NICs; 32GB SATADOM iPXE boot anchor; two 238.5GB KIOXIA NVMe devices mirrored as zroot.
+      - Desired state remains UEFI PXE/TFTP to m70-forge-ipxe.efi, then iPXE loads HTTP assets from 172.16.99.88.
+      - Operational 2026-05-14 state is local SATADOM ESP chainload to the M70-specific iPXE EFI binary, then HTTP kernel/initramfs boot of local ZFS root zroot/ROOT/gentoo.
+      - Persistent management target is bond0 over netboot0 and enp3s0, with CSS326 LACP on ge14/ge17.
+      - Initramfs netboot remains netboot0 MAC 00:07:32:78:65:C6 on CSS326 ge14.
+      - X553 ports eno1..eno4 are reserved for OVS-DPDK/VPP/SR-IOV and the lightweight Slurm VM path; keep them unnumbered on the host.
+      - 10.64.64.70/24 was removed from eno2 on 2026-05-24 and must not be reintroduced as persistent host addressing.
       - Uses AP7901 outlet 4 on pdu-rfc99-corectrl-099241.
   - name: pdu_rfc99_corectrl_ap7901
     site: local-rfc1918-lab
@@ -599,9 +700,9 @@ devices:
         status: active
     power_outlets:
       - name: outlet4
-        label: host_lap_sun99_chonkers
+        label: admin-sun99-forge
         outlet_index: 4
-        target_device: lap_sun99_chonkers
+        target_device: admin_sun99_forge_099070
         target_power_port: power0
         status: active
       - name: outlet6
@@ -620,10 +721,10 @@ devices:
       - RFC99 core-control AP7901 switched PDU.
       - SNMPv3 is enabled; usernames and auth/privacy secrets live only in Ansible Vault.
       - Operator/control-panel name is pdu-rfc99-corectrl-099241.
-      - Outlet 4 maps to lap_sun99_chonkers.
+      - Outlet 4 control-panel label is admin-sun99-forge and maps to admin_sun99_forge_099070.
       - Outlet 6 label is host_gmktec_k10 and maps to gmktek_nucbox_k10_stage5_candidate.
       - Outlet 7 label is m70-canary and maps to m70_canary.
-      - PDU mutation automation must verify outlet label host_gmktec_k10 before setting command OIDs.
+      - PDU mutation automation must verify the expected outlet label before setting command OIDs.
 
 clusters:
   - name: hasslehoff-proxmox
@@ -650,6 +751,7 @@ clusters:
       - sched_sun99_slurmctl_099071
       - slurm_worker_node01
       - svc_container_services_safe_move_01
+      - vm_mcp_control_plane
 
 service_vips:
   - name: msg-sun99-ntfysys
@@ -751,6 +853,24 @@ service_vips:
     listeners:
       - protocol: http
         port: 5601
+  - name: mcp-control-plane
+    site: local-rfc1918-lab
+    address: 172.16.99.68
+    fqdn: mcp-control-plane.rfc1918.host
+    aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    owners:
+      - automation
+      - mcp-control-plane
+    listeners:
+      - protocol: http
+        port: 80
+      - protocol: https
+        port: 443
+    notes:
+      - HAProxy front door for Nginx-UI native MCP and future FastMCP infrastructure wrappers.
+      - TLS certificate service ID is mcp_control_plane.
   - name: sched-sun99-slurmctl
     site: local-rfc1918-lab
     address: 172.16.99.71

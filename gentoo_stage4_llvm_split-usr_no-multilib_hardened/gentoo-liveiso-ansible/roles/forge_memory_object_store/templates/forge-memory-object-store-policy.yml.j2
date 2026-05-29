@@ -1,0 +1,37 @@
+---
+policy_schema: forge-memory-object-store/v1
+provider: "{{ resolved_forge_memory_object_store.provider }}"
+endpoint_url: "{{ resolved_forge_memory_object_store.endpoint_url }}"
+bucket: "{{ resolved_forge_memory_object_store.bucket }}"
+prefix: "{{ resolved_forge_memory_object_store.prefix }}"
+storage_contract:
+  semantics: append-only
+  object_naming:
+    session_events: "{{ resolved_forge_memory_object_store.prefix }}/agents/{agent_id}/sessions/{session_id}/events.jsonl"
+    closeout_manifest: "{{ resolved_forge_memory_object_store.prefix }}/agents/{agent_id}/sessions/{session_id}/closeout-manifest.json"
+    publish_manifest: "{{ resolved_forge_memory_object_store.prefix }}/agents/{agent_id}/sessions/{session_id}/publish-manifest.json"
+  agent_namespace_isolation: true
+  agent_namespace_template: "{{ resolved_forge_memory_object_store.agent_namespace_template }}"
+security_controls:
+  server_side_encryption: "{{ resolved_forge_memory_object_store.sse_algorithm }}"
+  object_lock_enabled: {{ resolved_forge_memory_object_store.object_lock_enabled | bool | lower }}
+  versioning_enabled: {{ resolved_forge_memory_object_store.versioning_enabled | bool | lower }}
+  credential_source: vault-or-runtime-environment
+  secret_material_rendered_by_role: false
+retention:
+  lifecycle_retention_days: {{ resolved_forge_memory_object_store.lifecycle_retention_days }}
+  noncurrent_retention_days: {{ resolved_forge_memory_object_store.noncurrent_retention_days }}
+audit:
+  audit_log_prefix: "{{ resolved_forge_memory_object_store.audit_log_prefix }}"
+  required_event_fields:
+    - timestamp_utc
+    - agent_id
+    - session_id
+    - repo
+    - branch
+    - commit
+    - event_type
+    - intent
+permissions:
+  write_operations: {{ resolved_forge_memory_object_store.allowed_write_operations | to_json }}
+  read_operations: {{ resolved_forge_memory_object_store.allowed_read_operations | to_json }}

@@ -58,15 +58,20 @@ container_service_layers:
         - Built in two phases so libestr and libfastjson land before rsyslog pkg-config/configure.
         - Enables app-admin/rsyslog[elasticsearch] for omelasticsearch forwarding.
     ntfy:
-      build_mode: upstream-image
+      build_mode: controlled-archive-preload
       image_name: ntfy
+      image: localhost/rfc1918/ntfy:v2.14.0
       upstream_image: docker.io/binwiederhier/ntfy:v2.14.0
       runtime_pull_policy: never
+      preload:
+        required: true
+        archive_path: /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive
+        sha256_file: /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive.sha256
       config_role: container_app_ntfy
       runtime_profile: vm-container-services
       notes:
-        - No Gentoo Portage atom was present in the current builder tree; keep upstream-image mode until an overlay ebuild exists.
-        - Live Path B deployment disables ntfy and uses pull_policy=never until the image source is controlled.
+        - No Gentoo Portage atom was present in the current builder tree; use a controlled local Podman archive preload until an overlay ebuild exists.
+        - Runtime uses pull_policy=never and a localhost image tag so redeploys do not depend on Docker Hub availability.
     nginx_ui:
       build_mode: upstream-image
       image_name: nginx-ui

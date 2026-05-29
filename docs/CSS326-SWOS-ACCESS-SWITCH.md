@@ -67,41 +67,20 @@ Expected normalized state:
 | `ge4` | CCR2004-1G-2XS-PCIe management copper | linked |
 | `ge5` | Hasslehoff `bond0` LACP member | active LACP group 1 |
 | `ge6` | Hasslehoff `bond0` LACP member | active LACP group 1 |
-| `ge15` | CRS354 `ether49` management copper | moved from `ge24` on 2026-05-21 |
-| `ge19` | M70 canary `netboot0` | linked; NetBox cable `5` |
-| `ge20` | M70 canary `enp3s0` | linked; NetBox cable `6` |
-| `ge21` | M70 canary `eno1` workload member | linked; NetBox cable `7` |
-| `ge22` | M70 canary `eno2` workload member | linked; NetBox cable `8` |
-| `ge23` | M70 canary `eno3` workload member | linked; NetBox cable `9` |
-| `ge24` | M70 canary `eno4` workload member | linked; NetBox cable `10` |
+| `ge14` | M70 Forge admin `netboot0` management | linked, SNMP FDB MAC `00:07:32:78:65:C6` |
+| `ge17` | M70 Forge admin `bond0` member `enp3s0` | active LACP group 2, unnumbered, partner `8a:87:45:85:5d:5a` |
+| `ge18` | M70 Forge admin `bond0` member `eno1` | active LACP group 2, unnumbered, partner `8a:87:45:85:5d:5a` |
+| `ge24` | CRS354 `ether49` management copper | linked |
 | `sfp1` | planned CRS309 `sfp-sfpplus8` access/aggregation uplink | 10G-SR optic present |
 | `sfp2` | legacy CRS354 uplink / temporary access path | 10G-SR optic present |
+
+The M70 `ge17`/`ge18` pair is active as an unnumbered 802.3ad LACP bond. Do not
+configure a host bridge or IP address on `bond0` until a staging VLAN or VM
+bridge change is explicitly approved.
 
 The current SFP modules are Intel `FTLX8571D3BCV-IT` 10G-SR MMF optics. The
 fabric default remains FS.com `SFP-10GSR-85` or 10Gtek `AXS85-192-M3` for new
 10G-SR links unless a device record explicitly states otherwise.
-
-## Confirmed M70 Canary Recable
-
-Operator-provided physical plan on 2026-05-21, confirmed active by operator
-report and SwOS snapshot `20260521T232928Z`:
-
-| CSS326 port | Endpoint | Purpose |
-| --- | --- | --- |
-| `ge15` | CRS354 `ether49` | CRS354 management moved here from `ge24` |
-| `ge19` | M70 canary `netboot0`, MAC `00:07:32:58:73:34` | iPXE, rescue, primary management |
-| `ge20` | M70 canary `enp3s0` | post-boot management backup |
-| `ge21` | M70 canary `eno1` | OVS workload LACP member |
-| `ge22` | M70 canary `eno2` | OVS workload LACP member |
-| `ge23` | M70 canary `eno3` | OVS workload LACP member |
-| `ge24` | M70 canary `eno4` | OVS workload LACP member |
-
-Source-of-truth update: NetBox now records CSS326 `ge15` as
-`crs354-management`, device `m70_canary` as the active M70 canary, CSS326
-`ge19` through `ge24` as active M70 canary links, cable `4` for the CRS354
-management move, and cables `5` through `10` for the six canary Ethernet links.
-The structured inventory now marks Chonkers' former CSS326 `ge15` connection as
-historical.
 
 ## Automation Boundary
 
@@ -145,3 +124,21 @@ CSS326 changes should be avoided until a tested writer exists. If a SwOS
 configuration change breaks management, use the local web UI from the management
 subnet or the physical reset process, then restore from the latest
 operator-private `backup.swb`.
+
+
+## M70 Canary Cabling Addendum
+
+The M70 canary validation lane records the post-2026-05-21 CSS326 copper
+assignments used for the canary persistent Gentoo root and later SLURM/VPP
+workload validation:
+
+- CSS326 `ge15` carries CRS354 management after the CRS354 move away from the
+  previous `ge24` attachment.
+- CSS326 `ge19` maps to M70 canary `netboot0` for iPXE, rescue, and primary
+  management.
+- CSS326 `ge20` maps to M70 canary `enp3s0` as the post-boot management backup.
+- CSS326 `ge21` through `ge24` map to M70 canary `eno1` through `eno4` for the
+  future OVS workload LACP validation lane.
+
+Do not mutate SwOS LACP membership from automation until a tested SwOS writer
+exists and a separate coordinated change window approves the port policy.

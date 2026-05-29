@@ -46,6 +46,10 @@ PATHB_DRACUT_DM_PACKAGE="${PATHB_DRACUT_DM_PACKAGE:-sys-fs/lvm2}"
 PATHB_SSH_PACKAGE="${PATHB_SSH_PACKAGE:-net-misc/openssh}"
 PATHB_NETWORK_SERVICE="${PATHB_NETWORK_SERVICE:-dhcpcd}"
 PATHB_REUSE_INITRAMFS_NETWORK="${PATHB_REUSE_INITRAMFS_NETWORK:-1}"
+PATHB_STATIC_INTERFACE="${PATHB_STATIC_INTERFACE:-}"
+PATHB_STATIC_ADDRESS_CIDR="${PATHB_STATIC_ADDRESS_CIDR:-}"
+PATHB_STATIC_GATEWAY="${PATHB_STATIC_GATEWAY:-}"
+PATHB_STATIC_DNS="${PATHB_STATIC_DNS:-}"
 PATHB_SSH_SERVICE="${PATHB_SSH_SERVICE:-sshd}"
 PATHB_EXTRA_PACKAGES="${PATHB_EXTRA_PACKAGES:-app-admin/sudo dev-lang/python sys-apps/iproute2 sys-kernel/linux-firmware sys-fs/zfs sys-fs/zfs-kmod sys-fs/dosfstools sys-block/parted sys-apps/pciutils sys-apps/usbutils sys-apps/kmod}"
 PATHB_PACKAGE_USE_APPEND="${PATHB_PACKAGE_USE_APPEND:-}"
@@ -335,6 +339,23 @@ cat > /etc/hosts <<'HOSTS'
 127.0.1.1 ${PATHB_HOSTNAME}
 HOSTS
 
+if [[ -n ${PATHB_STATIC_INTERFACE@Q} && -n ${PATHB_STATIC_ADDRESS_CIDR@Q} ]]; then
+  ln -sfn net.lo /etc/init.d/net.${PATHB_STATIC_INTERFACE}
+  cat >> /etc/conf.d/net <<NETCONF
+config_${PATHB_STATIC_INTERFACE}="${PATHB_STATIC_ADDRESS_CIDR}"
+NETCONF
+  if [[ -n ${PATHB_STATIC_GATEWAY@Q} ]]; then
+    cat >> /etc/conf.d/net <<NETCONF
+routes_${PATHB_STATIC_INTERFACE}="default via ${PATHB_STATIC_GATEWAY}"
+NETCONF
+  fi
+  if [[ -n ${PATHB_STATIC_DNS@Q} ]]; then
+    cat >> /etc/conf.d/net <<NETCONF
+dns_servers_${PATHB_STATIC_INTERFACE}="${PATHB_STATIC_DNS}"
+NETCONF
+  fi
+fi
+
 if ! awk '/^[[:space:]]*[^#].*ttyS0/ {found=1} END { exit(found ? 0 : 1) }' /etc/inittab; then
   printf 's0:12345:respawn:/sbin/agetty -L ${PATHB_SERIAL_BAUD} ttyS0 vt100\n' >> /etc/inittab
 fi
@@ -399,7 +420,9 @@ LOCALNET
 chmod 0755 /etc/local.d/pathb-network-handoff.start
 fi
 
-if [[ "${PATHB_REUSE_INITRAMFS_NETWORK}" != '1' ]]; then
+if [[ -n ${PATHB_STATIC_INTERFACE@Q} && -n ${PATHB_STATIC_ADDRESS_CIDR@Q} ]]; then
+  rc-update add net.${PATHB_STATIC_INTERFACE} default
+elif [[ "${PATHB_REUSE_INITRAMFS_NETWORK}" != '1' ]]; then
   rc-update add ${PATHB_NETWORK_SERVICE} default
 fi
 rc-update add ${PATHB_SSH_SERVICE} default

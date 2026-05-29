@@ -1,0 +1,6 @@
+# Managed by gentoo-liveiso-ansible.
+MAXAGE 25
+LISTEN 127.0.0.1 3493
+{% if resolved_nut_monitoring.listen_lan %}
+LISTEN {{ resolved_nut_monitoring.listen_address }} 3493
+{% endif %}

@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+description="CoreDNS local resolver container"
+command={{ coredns_resolver_start_script | quote }}
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="{{ coredns_resolver_log_dir }}/openrc.log"
+error_log="{{ coredns_resolver_log_dir }}/openrc.err.log"
+
+depend() {
+  need net
+  after firewall
+}
+
+stop_pre() {
+{% if coredns_resolver_runtime == 'podman' %}
+  /usr/bin/podman stop -t 10 {{ coredns_resolver_container_name | quote }} >/dev/null 2>&1 || true
+{% else %}
+  true
+{% endif %}
+}

@@ -33,6 +33,8 @@ for profile in \
   hardened-llvm-stage4-split-usr.yml \
   llvm-clang-hardened-portage.yml \
   hypervisor-xen-qemu-libvirt-host.yml \
+  metal-fmt2-r630-openstack-roce.yml \
+  metal-forge-automation-admin.yml \
   logging-rsyslog-client.yml \
   metal-builder-farm-node.yml \
   metal-identity-controller.yml \
@@ -56,8 +58,10 @@ for profile in \
   vm-observability-prometheus.yml \
   vm-observability-victoriametrics.yml \
   vm-redfish-emulator.yml \
+  vm-trac-service.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
+  vm-mcp-control-plane.yml \
   vm-nexus-repository.yml \
   zerotier-managed-access.yml; do
   test -f "${PROFILE_DIR}/${profile}"
@@ -76,6 +80,8 @@ for metadata in \
   hardened-llvm-stage4-merged-usr.metadata.yml \
   hardened-llvm-stage4-split-usr.metadata.yml \
   hypervisor-xen-qemu-libvirt-host.metadata.yml \
+  metal-fmt2-r630-openstack-roce.metadata.yml \
+  metal-forge-automation-admin.metadata.yml \
   metal-builder-farm-node.metadata.yml \
   metal-identity-controller.metadata.yml \
   nfs-storage-client.metadata.yml \
@@ -92,8 +98,10 @@ for metadata in \
   vm-observability-prometheus.metadata.yml \
   vm-observability-victoriametrics.metadata.yml \
   vm-redfish-emulator.metadata.yml \
+  vm-trac-service.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
+  vm-mcp-control-plane.metadata.yml \
   vm-nexus-repository.metadata.yml; do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
@@ -135,6 +143,8 @@ for package_list in \
   stage5-base-minimal-xorg-slim.packages \
   stage5-domain-client.packages \
   stage5-managed-access-zerotier.packages \
+  stage5-metal-intel-platform.packages \
+  stage5-metal-forge-automation-admin.packages \
   stage5-metal-host-builder-farm-node.packages \
   stage5-metal-host-hypervisor.packages \
   stage5-metal-host-identity-controller.packages \
@@ -153,11 +163,13 @@ for package_list in \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-kibana-interface.packages \
+  stage5-virtual-host-mcp-control-plane.packages \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
   stage5-virtual-host-observability-victoriametrics.packages \
   stage5-virtual-host-redfish-emulator.packages \
+  stage5-virtual-host-trac-service.packages \
   stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages; do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"

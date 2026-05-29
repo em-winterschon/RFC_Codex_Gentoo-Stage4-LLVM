@@ -1,0 +1,140 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-trac-service
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-trac-service.packages
+    - profile-package-lists/stage5-observability-client.packages
+    - profile-package-lists/stage5-domain-client.packages
+  package_use_files:
+    40-trac-service: |
+      www-apps/trac postgres
+      dev-python/psycopg postgres
+  trac_server:
+    enabled: true
+    service_user: trac
+    service_group: trac
+    project_name: rfc1918-platform-fabric
+    project_path: /var/lib/trac/rfc1918-platform-fabric
+    config_root: /etc/trac
+    log_root: /var/log/trac
+    listen_host: 127.0.0.1
+    listen_port: 8082
+    public_base_url: https://trac.rfc1918.host/
+    database:
+      engine: postgresql
+      name: trac_platform_fabric
+      user: trac
+      password_vault_var: vault_trac_postgres_password
+      host: 127.0.0.1
+      port: 5432
+    auth:
+      mode: freeipa-ldap
+      require_domain_groups:
+        - infra-admins
+        - infra-operators
+      break_glass_local_admin: true
+    workflow_states:
+      - intake
+      - ready
+      - in_progress
+      - blocked
+      - review
+      - validation
+      - done
+    ticket_custom_fields:
+      - name: site
+        type: text
+        label: Site
+      - name: system_type
+        type: select
+        label: System Type
+        options:
+          - metal-host
+          - virtual-host
+          - service-container
+          - network-device
+          - power-device
+      - name: service_role
+        type: text
+        label: Service Role
+      - name: component
+        type: text
+        label: Component
+      - name: blocked_by
+        type: text
+        label: Blocked By
+      - name: github_pr
+        type: text
+        label: GitHub PR
+      - name: codeberg_ref
+        type: text
+        label: Codeberg Ref
+      - name: netbox_object
+        type: text
+        label: NetBox Object
+      - name: change_window
+        type: text
+        label: Change Window
+      - name: backout_plan
+        type: textarea
+        label: Backout Plan
+      - name: slo_validation
+        type: textarea
+        label: SLO Validation
+    plugins:
+      policy: pinned-minimal
+      desired_classes:
+        - git
+        - rpc-api
+        - ticket-dependencies
+        - jenkins
+        - buildbot
+        - ldap-auth
+  trac_mcp_bridge:
+    enabled: true
+    service_user: trac-mcp
+    service_group: trac-mcp
+    implementation_mode: third_party
+    listen_host: 127.0.0.1
+    listen_port: 8765
+    trac_base_url: http://127.0.0.1:8082/
+    token_vault_var: vault_trac_mcp_service_token
+    mutation_allowlist:
+      - ticket.create
+      - ticket.update
+      - ticket.comment
+      - milestone.create
+      - milestone.update
+      - wiki.create
+      - wiki.update
+  rsyslog:
+    enabled: true
+    forward_enabled: true
+  telemetry:
+    node_exporter:
+      enabled: true
+  openrc_services_enable:
+    - postgresql
+    - tracd
+    - trac-mcp
+    - haproxy
+    - rsyslog
+  haproxy_service_types:
+    - name: trac-http
+      bind: "*:8082"
+      mode: http
+      backend_name: be_trac_http
+      servers:
+        - name: trac-local
+          address: 127.0.0.1
+          port: 8082
+  service_readiness:
+    probes:
+      - name: trac-http
+        type: http
+        url: http://127.0.0.1:8082/
+        expected_status: 200
+      - name: trac-mcp-local
+        type: tcp
+        host: 127.0.0.1
+        port: 8765

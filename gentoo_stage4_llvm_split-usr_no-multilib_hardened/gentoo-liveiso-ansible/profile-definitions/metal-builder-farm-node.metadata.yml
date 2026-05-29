@@ -8,6 +8,7 @@ gentoo_system_profile_metadata:
     role_name: distcc-worker
     package_layers:
       - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-metal-intel-platform.packages
       - profile-package-lists/stage5-metal-host-builder-farm-node.packages
   base_profile:
     intended_overlay_on:
@@ -15,6 +16,8 @@ gentoo_system_profile_metadata:
       - cloud-init-baremetal
   package_pins:
     tracked_atoms:
+      - sys-firmware/intel-microcode
+      - sys-kernel/linux-firmware
       - sys-devel/distcc
       - sys-devel/gcc
       - llvm-core/clang

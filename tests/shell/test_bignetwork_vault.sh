@@ -43,6 +43,7 @@ vault_env_file="${tmpdir}/ANSIBLE_VARS.ENV"
 plain_vault="${tmpdir}/vault.plain.yml"
 vault_file="${tmpdir}/vault.yml"
 token_file="${tmpdir}/BIGNETWORK_TOKEN_CODEXIAN"
+import_output="${tmpdir}/bignetwork-import.out"
 
 printf 'test-vault-password\n' > "${vault_password_file}"
 chmod 600 "${vault_password_file}"
@@ -63,9 +64,9 @@ ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" \
 printf 'fixture-bignetwork-token\n' > "${token_file}"
 chmod 600 "${token_file}"
 
-ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${IMPORTER}" "${token_file}" "${vault_file}" > /tmp/bignetwork-import.out
+ANSIBLE_VAULT_ENV_FILE="${vault_env_file}" "${IMPORTER}" "${token_file}" "${vault_file}" > "${import_output}"
 
-grep -Fq 'updated_vault=' /tmp/bignetwork-import.out || fail "importer did not report updated vault"
+grep -Fq 'updated_vault=' "${import_output}" || fail "importer did not report updated vault"
 head -n 1 "${vault_file}" | grep -q '^\$ANSIBLE_VAULT;' || fail "updated vault is not encrypted"
 if grep -Fq 'fixture-bignetwork-token' "${vault_file}"; then
   fail "updated vault contains plaintext token"

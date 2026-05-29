@@ -54,7 +54,7 @@ DNS names corrected or populated on existing IPAM rows:
 
 The NetBox IPAM DNS plan initially had 7 missing A records and no conflicts. These records were created:
 
-- `lap-sun99-chonkers.rfc1918.dev` A
+- `paused-validation-laptop.rfc1918.dev` A placeholder (withheld until re-inventory)
 - `admin-sun99-forge-099070-tun-fmt2.rfc1918.host` A
 - `boot-sun99-netboot-099088.rfc1918.host` A
 - `mcp-control-plane.rfc1918.host` A

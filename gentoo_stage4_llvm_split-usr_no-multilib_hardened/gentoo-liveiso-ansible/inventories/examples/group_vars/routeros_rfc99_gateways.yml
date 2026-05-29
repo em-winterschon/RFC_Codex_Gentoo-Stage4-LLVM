@@ -39,6 +39,11 @@ routeros_rfc99_gateway_dns_static_records:
     cname: log-sun99-rsyslog-099093.rfc1918.host
     ttl: 5m
     comment: codex rsyslog service cname
+  - name: gw-rfc99-mkccr2004-16g.rfc1918.host
+    type: A
+    address: 172.16.99.1
+    ttl: 5m
+    comment: codex RouterOS CCR2004 gateway API
   - name: boot-sun99-netboot-099088.rfc1918.host
     type: A
     address: 172.16.99.88
@@ -49,6 +54,21 @@ routeros_rfc99_gateway_dns_static_records:
     cname: boot-sun99-netboot-099088.rfc1918.host
     ttl: 5m
     comment: codex netboot publisher cname
+  - name: agx-rfc99-bunnydev.rfc1918.host
+    type: A
+    address: 172.16.99.34
+    ttl: 5m
+    comment: thor agx rj45 management
+  - name: lab-sun99-x1gen8-099082.rfc1918.dev
+    type: A
+    address: 172.16.99.82
+    ttl: 5m
+    comment: codex ThinkPad X1 Gen8 workstation netboot
+  - name: lab-sun99-x1gen8.rfc1918.dev
+    type: CNAME
+    cname: lab-sun99-x1gen8-099082.rfc1918.dev
+    ttl: 5m
+    comment: codex ThinkPad X1 Gen8 workstation cname
 routeros_rfc99_gateway_service_vips:
   - name: obs-sun99-esvip-099092
     address: 172.16.99.92/32
@@ -66,6 +86,13 @@ routeros_rfc99_gateway_dst_nat_rules:
     to_address: 172.16.99.89
     to_port: 9200
     comment: obs-sun99-esvip-099092 elasticsearch to container-services HAProxy
+  - name: obs-sun99-esvip-099092-https
+    protocol: tcp
+    dst_address: 172.16.99.92
+    dst_port: 443
+    to_address: 172.16.99.89
+    to_port: 443
+    comment: obs-sun99-esvip-099092 https to container-services HAProxy
   - name: log-sun99-rsyslog-099093-syslog
     protocol: tcp
     dst_address: 172.16.99.93
@@ -81,6 +108,12 @@ routeros_rfc99_gateway_src_nat_rules:
     dst_address: 172.16.99.89
     dst_port: 9200
     comment: obs-sun99-esvip-099092 hairpin to container-services HAProxy
+  - name: obs-sun99-esvip-099092-web-hairpin
+    action: masquerade
+    protocol: tcp
+    src_address: 172.16.99.0/24
+    dst_address: 172.16.99.89
+    comment: obs-sun99-esvip-099092 web hairpin to container-services HAProxy
   - name: log-sun99-rsyslog-099093-hairpin
     action: masquerade
     protocol: tcp
@@ -95,9 +128,18 @@ routeros_rfc99_gateway_dhcp_options:
     code: 67
     value: k10-ipxe.efi
     purpose: UEFI PXE/TFTP handoff for GMKtek K10 Stage5 validation
+  - name: x1gen8-pxe-bootfile
+    code: 67
+    value: x1gen8-ipxe.efi
+    purpose: UEFI PXE/TFTP handoff for ThinkPad X1 Gen8 workstation validation
 routeros_rfc99_gateway_dhcp_static_leases:
   - comment: gmktek-k10-stage5-ipxe
     address: 172.16.99.156
     mac_address: "84:47:09:5F:21:64"
     dhcp_options:
       - k10-pxe-bootfile
+  - comment: lab-sun99-x1gen8-099082-ipxe
+    address: 172.16.99.82
+    mac_address: "54:05:DB:34:CC:75"
+    dhcp_options:
+      - x1gen8-pxe-bootfile

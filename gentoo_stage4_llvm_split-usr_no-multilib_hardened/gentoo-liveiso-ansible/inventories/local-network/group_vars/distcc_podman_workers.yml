@@ -1,0 +1,12 @@
+---
+distcc_podman_worker_image: localhost/forge-distcc-gentoo:llvm21
+distcc_podman_worker_container_name: forge-distcc-gentoo
+distcc_podman_worker_jobs: 56
+distcc_podman_worker_nice: 10
+distcc_podman_worker_allowed_client_cidrs:
+  - 172.16.99.0/24
+  - 10.200.99.0/24
+  - 192.168.132.0/24
+distcc_podman_worker_extra_distccd_args:
+  - -N
+  - "10"

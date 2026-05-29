@@ -27,6 +27,10 @@ gentoo_profile_definition:
     QA_STRICT_FLAGS_IGNORED="set"
     PORTAGE_TMPDIR="/var/tmp/portage-tmpfs"
     PORTAGE_LOGDIR="/var/log/portage"
+    CCACHE_DIR="/var/cache/ccache"
+    CCACHE_SIZE="20G"
+    CCACHE_TEMPDIR="/var/tmp/portage-tmpfs/ccache-tmp"
+    CCACHE_PREFIX="distcc"
     LLVM_TARGETS="AMDGPU X86"
     PYTHON_SINGLE_TARGET="python3_13"
     PYTHON_TARGETS="python3_13"
@@ -36,17 +40,23 @@ gentoo_profile_definition:
       llvm-core/lld-toolchain-symlinks native-symlinks
       llvm-core/clang-linker-config default-lld
       llvm-runtimes/clang-runtime compiler-rt default-compiler-rt default-lld sanitize
+      dev-util/ccache static-c++
       sys-libs/glibc -clang
     10-no-systemd: |
       sys-auth/pambase elogind
+      net-misc/networkmanager elogind
       sys-apps/accountsservice elogind
       x11-base/xorg-server elogind
       media-video/pipewire elogind
       media-video/wireplumber elogind
       sys-fs/udisks elogind
+      sys-apps/systemd-utils acl kmod tmpfiles udev -boot -kernel-install -sysusers -ukify
       sys-process/procps elogind
     15-dracut-network-legacy: |
       net-misc/dhcp client -server
+  package_unmask_files:
+    21-minimal-systemd-utils: |
+      sys-apps/systemd-utils
   package_mask_files:
     00-no-systemd: |
       sys-apps/systemd
@@ -70,6 +80,13 @@ gentoo_profile_definition:
       FCFLAGS="${COMMON_FLAGS}"
       FFLAGS="${COMMON_FLAGS}"
       LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
+    no-lto.conf: |
+      COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+      FCFLAGS="${COMMON_FLAGS}"
+      FFLAGS="${COMMON_FLAGS}"
+      LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=lld"
     distcc-cgo-probe-fallback.conf: |
       # Go cgo emits intentionally failing compiler probes and needs native diagnostics.
       DISTCC_FALLBACK="1"
@@ -126,6 +143,19 @@ gentoo_profile_definition:
     00-gcc-compat: |
       sys-devel/gcc gcc-compat.conf
       sys-libs/glibc gcc-compat.conf
+      dev-vcs/git no-lto.conf
+      dev-libs/icu no-lto.conf
+      dev-libs/libnl no-lto.conf
+      dev-libs/nss no-lto.conf
+      dev-util/glslang no-lto.conf
+      dev-util/spirv-tools no-lto.conf
+      dev-util/spirv-llvm-translator no-lto.conf
+      media-libs/mesa no-lto.conf
+      sys-libs/binutils-libs no-lto.conf
+      net-misc/curl no-lto.conf
+      app-editors/vim-core no-lto.conf
+      x11-base/xorg-server no-lto.conf
+      net-fs/samba no-lto.conf
     10-go-cgo-distcc-fallback: |
       dev-lang/go distcc-cgo-probe-fallback.conf
     11-go-toolchain-native-cc: |

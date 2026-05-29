@@ -70,9 +70,17 @@ After install, apply the `bignetwork_edge` role with:
 ```yaml
 resolved_profile_bignetwork_edge:
   enabled: true
+  user: root
+  group: root
   service_manager: sysvinit
   service_enabled: true
   service_started: true
+  orbit_enabled: true
+  orbit_worlds:
+    - world_id: 6aaf7fee5a
+      seed: 6aaf7fee5a
+  join_networks:
+    - network_id: <fmt2-bignetwork-network-id>
 ```
 
 Secrets such as BigNetwork auth tokens must come from Ansible Vault. Do not
@@ -94,6 +102,16 @@ scripts/validate-ansible-vaults.sh
 The local-network inventory exposes the token to `bignetwork_edge` through
 `vault_bignetwork_codexian_api_token`; role tasks write the runtime token file
 with `no_log` enabled.
+
+The BigNetwork desktop package runs the service as root and executes:
+
+```bash
+bn-cli orbit 6aaf7fee5a 6aaf7fee5a
+```
+
+The Ansible role mirrors that orbit bootstrap before attempting network joins.
+Keep service execution root-owned unless a disposable host proves the daemon can
+create TUN interfaces and routes correctly as an unprivileged user.
 
 ### Preferred Permanent Edge
 
@@ -190,6 +208,45 @@ nmap -Pn -p 22,80,443,6556 app-sfo200-monitoring-9927.vernetzen.io
 If the target hostnames do not resolve through LAN DNS, record that as a DNS
 blocker instead of substituting guessed IPs.
 
+### Live M70 Smoke-Test: 2026-05-14
+
+M70 host: `admin-sun99-forge-099070.rfc1918.host` / `172.16.99.70`.
+
+Observed state after installing the extracted `bn` binary and starting it with
+`/var/lib/bn`:
+
+1. `bn-cli orbit 6aaf7fee5a 6aaf7fee5a` returned `200 orbit OK`.
+2. `bn-cli info` reported `ONLINE`.
+3. Public planet/root peers were reachable.
+4. `bn-cli listnetworks` returned no joined networks.
+5. No overlay interface or route to `10.200.99.0/24` appeared.
+6. Pings to `10.200.99.27` and `10.200.99.1` failed, as expected with no joined network.
+7. `https://api.bignetwork.com/consumer/networks` returned `401` with the current operator token when tested as a bearer/API-key style portal token.
+8. Joining FMT2/SFO200 network `607daa3a01933028` succeeded locally and created interface `bnlj6dscrj`, but the controller returned `ACCESS_DENIED`; no assigned address or managed route was installed.
+9. After controller authorization, `607daa3a01933028` reported `OK` as `SDWAN_NET`; M70 received `172.17.170.214/24` on `bnlj6dscrj`.
+10. The controller still advertised only `172.17.170.0/24`; no managed route to `10.200.99.0/24` was installed.
+11. A temporary direct local route for `10.200.99.0/24` over `bnlj6dscrj` did not reach `10.200.99.27` and was removed.
+12. The Edge Lite node is visible as peer `ab4af90f44` with direct low-latency transport.
+13. Operator topology note: `SDWAN_NET` was intentionally isolated when created on 2022-06-10 and was not routed to the FMT2 OPNsense router pair. `10.200.99.1` is the FMT2 OPNsense CARP VIP for primary host traffic and transit uplinks.
+
+Current blocker: M70 is online, authorized, and joined to `SDWAN_NET`; the lack
+of reachability to `10.200.99.0/24` is an intentional segmentation boundary, not
+a local client failure. Any path from M70 into FMT2 host/management networks now
+requires a routed or bridged change with explicit backout.
+
+Safe promotion options:
+
+1. L3 route: assign/confirm an Edge Lite overlay IP in `172.17.170.0/24`, enable
+   forwarding on the Edge Lite side, add a BigNetwork managed route for
+   `10.200.99.0/24` via that Edge Lite overlay IP, and add/confirm the return
+   route on the FMT2 OPNsense pair for `172.17.170.0/24`.
+2. L2 bridge: convert/confirm Edge Lite bridge behavior into the target FMT2
+   segment, then assign M70 a safe non-conflicting FMT2-side IP. This has higher
+   blast radius and should require loop/ARP-flood checks before enablement.
+3. Per-service jump path: keep `SDWAN_NET` isolated and deploy a minimal FMT2
+   jump/agent endpoint on the overlay for Check_MK, SSH, rsyslog, and NetBox
+   discovery until the broader route is approved.
+
 ### Promotion Gates
 
 Promote FMT2 transport from smoke-test to managed service only after all gates
@@ -203,6 +260,17 @@ pass:
 5. NetBox imports remain dry-run until live reachability evidence is attached
    to issue #114.
 6. Check_MK onboarding waits for NetBox prefix/device promotion.
+
+### Active Workaround: 2026-05-15
+
+BigNetwork route publication and M70 route installation succeeded, but Edge Lite
+forwarding/return behavior still blocked end-to-end reachability. A temporary
+legacy OpenVPN compatibility transport is now active on M70 as
+`openvpn.fmt2`.
+
+See `docs/FMT2-OPENVPN-COMPAT-TRANSPORT.md` for live routes, validation, and
+backout. BigNetwork remains a preferred steady-state candidate after Edge Lite
+forwarding is corrected.
 
 ### Phase 3: Gentoo/OpenRC Promotion
 
