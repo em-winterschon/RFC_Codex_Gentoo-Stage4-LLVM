@@ -1,5 +1,12 @@
 # QNAP SUN99 Floating Homes And MCP Assistant Assessment
 
+> **Historical note (2026-05-29):** This document captures the read-only
+> pre-remediation QNAP assessment from PR #210. The live target state was later
+> advanced by PR #213: QNAP NFSv4.2 was enabled, operator homes were seeded,
+> FreeIPA identities were applied, and SUN99 validation succeeded. Treat this
+> document as background evidence; use `docs/FREEIPA-FORGE-WORKERS-QNAP-HOMES.md`
+> for the current operational runbook.
+
 ## Decision
 
 Use site-local storage for floating home directories:

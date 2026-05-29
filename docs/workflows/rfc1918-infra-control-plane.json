@@ -1,0 +1,131 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "rfc1918-infra-control-plane",
+    "description": "Repo-safe control-plane contract for SLURM/Jenkins/DistCC CI/CD, Nexus publication, RFC1918 CA packages, and NetBox-driven DNS propagation.",
+    "owners": [
+      "codex",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "repo_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM",
+      "description": "Repository root for source-of-truth, scripts, docs, and workflow manifests."
+    },
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible root containing inventories, roles, and playbooks."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/local-network/hosts.yml",
+      "description": "Local-network inventory for Nexus, Jenkins, SLURM, DNS, and client rollout paths."
+    },
+    {
+      "name": "control_plane_contract",
+      "required": true,
+      "default": "gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/vars/rfc1918_infra_control_plane.yml",
+      "description": "Declarative contract tying CI/CD, repositories, CA packages, and DNS propagation together."
+    }
+  ],
+  "stages": [
+    {
+      "id": "repo-clean-source-of-truth-gate",
+      "summary": "Refuse live publication or DNS mutation if the source-of-truth repository is dirty or out of date.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "git diff --quiet && git diff --cached --quiet && git status -sb"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "vault-preflight",
+      "summary": "Validate that Ansible Vault identity material is loaded through the repo wrapper before any live playbook runs.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "scripts/with-ansible-vault-env.sh bash -lc 'test -r \"$ANSIBLE_VAULT_PASSWORD_FILE\" && test -n \"${ANSIBLE_VAULT_IDENTITY_LIST:-}\"'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "jenkins-seed-contract-render",
+      "summary": "Render the Jenkins controller profile with the RFC1918 infrastructure seed manifest; this does not create live jobs by itself.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\n' 'Render vm-jenkins-controller and verify /var/lib/jenkins/seed-manifests/rfc1918-infra-control-plane.yml before enabling a seed job.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "slurm-distcc-build-plan",
+      "summary": "Plan CI build execution through SLURM with DistCC metadata and no ad-hoc local package publication.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\n' 'Jenkins job seed submits build stages to SLURM, consumes distcc_farm metadata, and publishes only through approved repository stages.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "ca-package-publication-plan",
+      "summary": "Plan RFC1918 CA package builds for Gentoo and Rocky/RHEL repositories without embedding private key material.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\n' 'Build app-misc/rfc99-atlasforge-ca-certs and rfc99-atlasforge-ca-certs RPM from public CA cert material; publish via Nexus only after CI validation.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "nexus-repository-readiness",
+      "summary": "Validate Nexus hosted repository intent for Gentoo overlay, Gentoo binpkgs/raw artifacts, and RPM/Yum packages.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "test -f profile-definitions/vm-nexus-repository.yml && test -f roles/nexus_repo/templates/nexus-proxy-intent.yml.j2 && printf '%s\n' 'Nexus repo intent exists; live API repository creation remains gated on vaulted admin credentials.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "netbox-dns-dry-run-chain",
+      "summary": "Dry-run NetBox authoritative host/IP data through Hetzner DNS planning and CoreDNS local split-horizon render paths.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\n' 'Dry-run chain: NetBox -> scripts/plan-hetzner-dns-from-netbox.py -> scripts/apply-hetzner-dns-plan.py --check -> playbooks/coredns-resolver.yml render/reload gate.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

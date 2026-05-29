@@ -1,0 +1,67 @@
+---
+rfc1918_infra_control_plane:
+  schema: rfc1918.infra-control-plane.v1
+  source_of_truth:
+    repository: yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM
+    inventory_branch_policy: main-must-match-netbox-before-live-apply
+    netbox_authoritative: true
+  vault:
+    wrapper: scripts/with-ansible-vault-env.sh
+    required_env_file: /root/.ssh/vault/ANSIBLE_VARS.ENV
+    preflight_command: scripts/with-ansible-vault-env.sh ansible-vault view gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/vault.yml
+  ci_cd:
+    scheduler: slurm
+    jenkins_profile: vm-jenkins-controller
+    distcc_profile: distcc_farm
+    slurm_controller: sched_sun99_slurmctl_099071
+    slurm_worker_group: slurm_workers
+    publish_only_from_ci: true
+    job_seed_manifest: /var/lib/jenkins/seed-manifests/rfc1918-infra-control-plane.yml
+  repositories:
+    nexus_profile: vm-nexus-repository
+    nexus_issue: 217
+    hosted:
+      - id: rfc99-gentoo-overlay
+        format: raw
+        purpose: eselect-repository-compatible Gentoo overlay metadata and ebuilds.
+      - id: rfc99-gentoo-binpkg
+        format: raw
+        purpose: Portage binary package artifacts and Packages index data.
+      - id: rfc99-yum-hosted
+        format: yum
+        purpose: Rocky/RHEL RPM artifacts and repodata.
+  ca_packages:
+    issue: 216
+    authority: rfc1918_private_ca
+    gentoo:
+      atom: app-misc/rfc99-atlasforge-ca-certs
+      install_anchor_dir: /usr/local/share/ca-certificates
+      refresh_command: update-ca-certificates
+      repository_id: rfc99-gentoo-overlay
+    rocky_rhel:
+      package: rfc99-atlasforge-ca-certs
+      install_anchor_dir: /etc/pki/ca-trust/source/anchors
+      refresh_command: update-ca-trust
+      repository_id: rfc99-yum-hosted
+  dns_propagation:
+    issue: 218
+    source: netbox
+    public_provider: hetzner
+    local_provider: coredns
+    zones:
+      - rfc1918.host
+      - rfc1918.dev
+      - rfc1918.ai
+      - rfc1918.io
+      - rfc1918.sh
+      - rfc1918.systems
+      - rfc1918.org
+      - vernetzen.io
+      - yukon.systems
+    dry_run_first: true
+    apply_requires_repo_clean: true
+    apply_requires_audit_artifact: true
+    scripts:
+      plan_public_dns: scripts/plan-hetzner-dns-from-netbox.py
+      apply_public_dns: scripts/apply-hetzner-dns-plan.py
+      render_local_dns: playbooks/coredns-resolver.yml

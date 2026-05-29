@@ -40,6 +40,8 @@
             | default(jenkins_controller_default_plugin_catalog),
           'folders': resolved_profile_jenkins_controller.folders
             | default(jenkins_controller_default_folders),
+          'job_seed_manifests': resolved_profile_jenkins_controller.job_seed_manifests
+            | default(jenkins_controller_default_job_seed_manifests),
           'builder_farm_uplink_interfaces': resolved_profile_jenkins_controller.builder_farm_uplink_interfaces
             | default(jenkins_controller_default_builder_farm_uplink_interfaces),
           'builder_farm_switch_name': resolved_profile_jenkins_controller.builder_farm_switch_name
@@ -98,6 +100,15 @@
     dest: "{{ install_target_root }}{{ resolved_jenkins_controller.home }}/builder-farm/builder-farm.json"
     mode: '0644'
   when: jenkins_controller_enabled
+
+- name: Render Jenkins RFC1918 infrastructure job seed manifest
+  ansible.builtin.template:
+    src: rfc1918-infra-job-seed.yml.j2
+    dest: "{{ install_target_root }}{{ resolved_jenkins_controller.home }}/seed-manifests/rfc1918-infra-control-plane.yml"
+    mode: '0644'
+  when:
+    - jenkins_controller_enabled
+    - resolved_jenkins_controller.job_seed_manifests | length > 0
 
 - name: Render Jenkins init hook for setup wizard suppression
   ansible.builtin.template:
