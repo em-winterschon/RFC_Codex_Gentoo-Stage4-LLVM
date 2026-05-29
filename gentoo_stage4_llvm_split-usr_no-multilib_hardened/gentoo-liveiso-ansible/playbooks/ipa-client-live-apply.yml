@@ -12,13 +12,14 @@
     ipa_client_live_server: "{{ freeipa_client_server | default('ipa01.rfc1918.host') }}"
     ipa_client_live_server_ip: "{{ freeipa_client_server_ip | default('172.16.99.63') }}"
     ipa_client_live_controller_inventory_host: "{{ freeipa_client_controller_inventory_host | default('svc_identity_ipa01') }}"
-    ipa_client_live_fqdn: "{{ freeipa_client_fqdn | default(inventory_hostname ~ '.' ~ ipa_client_live_domain) }}"
+    ipa_client_live_fqdn: "{{ freeipa_client_fqdn | default(fqdn | default(inventory_hostname ~ '.' ~ ipa_client_live_domain)) }}"
     ipa_client_live_short_hostname: "{{ freeipa_client_short_hostname | default(ipa_client_live_fqdn.split('.')[0]) }}"
     ipa_client_live_package_atoms: "{{ freeipa_client_package_atoms | default(['sys-auth/sssd', 'net-fs/samba', 'app-crypt/mit-krb5', 'net-nds/openldap', 'app-misc/ca-certificates']) }}"
     ipa_client_live_package_use_file: /etc/portage/package.use/30-aaa-domain-client-sssd
     ipa_client_live_keytab_tmp: "/tmp/{{ ipa_client_live_fqdn }}.krb5.keytab"
     ipa_client_live_keytab_dest: /etc/krb5.keytab
     ipa_client_live_pam_validate_user: "{{ freeipa_client_pam_validate_user | default(ipa_client_live_validate_user) }}"
+    ipa_client_live_freeipa_kinit_env_file: /root/stage5-identity/bootstrap.env
   pre_tasks:
     - name: Gate live IPA client apply
       ansible.builtin.assert:
@@ -225,6 +226,28 @@
         group: root
         mode: '0644'
         content: "{{ ipa_client_live_ca_crt.content | b64decode }}"
+
+    - name: Acquire FreeIPA admin Kerberos ticket on controller
+      ansible.builtin.shell: |
+        set -euo pipefail
+        source "{{ ipa_client_live_freeipa_kinit_env_file }}"
+        printf '%s\n' "${IPA_ADMIN_PASSWORD}" | sudo kinit admin
+      args:
+        executable: /bin/bash
+      changed_when: false
+      delegate_to: "{{ ipa_client_live_controller_inventory_host }}"
+      no_log: true
+
+    - name: Ensure FreeIPA host principal exists
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sudo ipa host-show "{{ ipa_client_live_fqdn }}" >/dev/null 2>&1 \
+          || sudo ipa host-add "{{ ipa_client_live_fqdn }}" --force
+      args:
+        executable: /bin/bash
+      register: ipa_client_live_host_principal
+      changed_when: "'Added host' in ipa_client_live_host_principal.stdout"
+      delegate_to: "{{ ipa_client_live_controller_inventory_host }}"
 
     - name: Generate host keytab on IPA controller
       ansible.builtin.command:

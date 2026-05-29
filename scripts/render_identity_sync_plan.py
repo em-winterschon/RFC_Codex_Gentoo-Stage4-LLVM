@@ -25,11 +25,16 @@ def render_identity_sync_plan(source: dict[str, Any]) -> dict[str, Any]:
     host_enrollments = source.get("host_enrollments", []) or []
     radius_clients = source.get("radius_clients", []) or []
     uid_gid_policy = source.get("uid_gid_policy", {}) or {}
+    primary_idrange = uid_gid_policy.get("freeipa_local_idrange", {}) or {}
+    local_idranges = ([primary_idrange] if primary_idrange else []) + (
+        uid_gid_policy.get("additional_freeipa_local_idranges", []) or []
+    )
 
     return {
         "realm": source["realm"],
         "domain": source["domain"],
-        "freeipa_local_idrange": uid_gid_policy.get("freeipa_local_idrange", {}) or {},
+        "freeipa_local_idrange": primary_idrange,
+        "freeipa_local_idranges": local_idranges,
         "freeipa_groups": [
             {
                 "name": group["name"],
@@ -45,6 +50,8 @@ def render_identity_sync_plan(source: dict[str, Any]) -> dict[str, Any]:
                 "primary_group": user["primary_group"],
                 "groups": user.get("groups", []) or [],
                 "shell": user.get("shell", "/bin/bash"),
+                "home_directory": user.get("home_directory", ""),
+                "floating_home": user.get("floating_home", {}) or {},
                 "ssh_public_key_vars": user.get("ssh_public_key_vars", []) or [],
                 "password_var": user.get("password_var", ""),
                 "description": user.get("description", ""),

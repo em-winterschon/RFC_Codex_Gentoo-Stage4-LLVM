@@ -1,0 +1,96 @@
+---
+- name: forge-floating-home-validate
+  hosts: "{{ forge_floating_home_target_hosts | default('aaa_domain_clients') }}"
+  gather_facts: false
+  become: true
+  vars:
+    forge_floating_home_users:
+      - { name: forge1, uid: 1001, gid: 1001, home: /home/forge1 }
+      - { name: forge2, uid: 1002, gid: 1002, home: /home/forge2 }
+      - { name: forge3, uid: 1003, gid: 1003, home: /home/forge3 }
+      - { name: forge4, uid: 1004, gid: 1004, home: /home/forge4 }
+      - { name: forge5, uid: 1005, gid: 1005, home: /home/forge5 }
+      - { name: forge6, uid: 1006, gid: 1006, home: /home/forge6 }
+    forge_floating_home_required_nfs_versions:
+      - "vers=4.2"
+      - "nfsvers=4.2"
+      - "vers=4.1"
+      - "nfsvers=4.1"
+  tasks:
+    - name: Validate Forge NSS identity resolution
+      ansible.builtin.command:
+        argv: [getent, passwd, "{{ forge_home_user.name }}"]
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.name }}"
+      register: forge_getent_passwd
+      changed_when: false
+
+    - name: Validate Forge SSH keys resolve through SSSD
+      ansible.builtin.command:
+        argv: [sss_ssh_authorizedkeys, "{{ forge_home_user.name }}"]
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.name }}"
+      register: forge_sssd_ssh_keys
+      changed_when: false
+
+    - name: Validate Forge floating home mount metadata
+      ansible.builtin.command:
+        argv:
+          - findmnt
+          - --noheadings
+          - --output
+          - SOURCE,FSTYPE,OPTIONS
+          - "{{ forge_home_user.home }}"
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.home }}"
+      register: forge_home_findmnt
+      changed_when: false
+
+    - name: Validate Forge floating home ownership
+      ansible.builtin.stat:
+        path: "{{ forge_home_user.home }}"
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.home }}"
+      register: forge_home_stat
+
+    - name: Validate Forge user write path on floating home
+      ansible.builtin.command:
+        argv:
+          - su
+          - -s
+          - /bin/sh
+          - "{{ forge_home_user.name }}"
+          - -c
+          - >-
+            touch "{{ forge_home_user.home }}/.forge-floating-home-write-test" &&
+            rm -f "{{ forge_home_user.home }}/.forge-floating-home-write-test"
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.name }}"
+      register: forge_home_write_test
+      changed_when: false
+
+    - name: Assert Forge floating home contract
+      ansible.builtin.assert:
+        that:
+          - forge_getent_passwd.results | map(attribute='rc') | max == 0
+          - forge_sssd_ssh_keys.results | map(attribute='rc') | max == 0
+          - forge_sssd_ssh_keys.results | map(attribute='stdout') | reject('equalto', '') | list | length == forge_floating_home_users | length
+          - forge_home_findmnt.results | map(attribute='rc') | max == 0
+          - forge_home_findmnt.results | map(attribute='stdout') | select('search', 'nfs') | list | length == forge_floating_home_users | length
+          - forge_home_write_test.results | map(attribute='rc') | max == 0
+          - >-
+            forge_home_findmnt.results |
+            map(attribute='stdout') |
+            select('search', forge_floating_home_required_nfs_versions | join('|')) |
+            list | length == forge_floating_home_users | length
+        fail_msg: "Forge FreeIPA/SSSD SSH key and QNAP NFS floating home validation failed."
