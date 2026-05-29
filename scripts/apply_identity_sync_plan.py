@@ -177,6 +177,7 @@ def build_summary(
         "requires_vars": build_required_vars(plan, providers),
         "freeipa": {
             "local_idrange": plan.get("freeipa_local_idrange", {}) or {},
+            "local_idranges": plan.get("freeipa_local_idranges", []) or [],
             "groups": len(plan["freeipa_groups"]),
             "users": len(plan["freeipa_users"]),
             "service_accounts": len(plan["freeipa_service_accounts"]),
@@ -214,12 +215,23 @@ def parse_ipa_raw_attrs(output: str) -> dict[str, str]:
 
 
 def require_ids_within_local_idrange(plan: dict[str, Any]) -> None:
-    idrange = plan.get("freeipa_local_idrange", {}) or {}
-    if not idrange:
-        raise IdentityApplyError("freeipa_local_idrange is required before FreeIPA UID/GID apply")
+    idranges = plan.get("freeipa_local_idranges", []) or []
+    if not idranges:
+        legacy_idrange = plan.get("freeipa_local_idrange", {}) or {}
+        idranges = [legacy_idrange] if legacy_idrange else []
+    if not idranges:
+        raise IdentityApplyError(
+            "freeipa_local_idrange/freeipa_local_idranges is required before FreeIPA UID/GID apply"
+        )
 
-    base_id = int(idrange["base_id"])
-    limit = base_id + int(idrange["range_size"])
+    parsed_ranges = [
+        (
+            str(idrange["name"]),
+            int(idrange["base_id"]),
+            int(idrange["base_id"]) + int(idrange["range_size"]),
+        )
+        for idrange in idranges
+    ]
     targets: list[tuple[str, str, int]] = []
     targets.extend(("group", group["name"], int(group["gid"])) for group in plan["freeipa_groups"])
     targets.extend(("user", user["name"], int(user["uid"])) for user in plan["freeipa_users"])
@@ -228,20 +240,20 @@ def require_ids_within_local_idrange(plan: dict[str, Any]) -> None:
         for account in plan["freeipa_service_accounts"]
     )
     for kind, name, value in targets:
-        if not base_id <= value < limit:
-            raise IdentityApplyError(
-                f"{kind} {name} ID {value} is outside FreeIPA local ID range "
-                f"{base_id}-{limit - 1}"
-            )
+        if any(base_id <= value < limit for _, base_id, limit in parsed_ranges):
+            continue
+        formatted = ", ".join(
+            f"{range_name}:{base_id}-{limit - 1}" for range_name, base_id, limit in parsed_ranges
+        )
+        raise IdentityApplyError(
+            f"{kind} {name} ID {value} is outside configured FreeIPA local ID ranges "
+            f"({formatted})"
+        )
 
 
-def ensure_freeipa_local_idrange(
-    plan: dict[str, Any], *, ipa_command: str, audit_log: Path | None
+def ensure_one_freeipa_local_idrange(
+    idrange: dict[str, Any], *, ipa_command: str, audit_log: Path | None
 ) -> int:
-    idrange = plan.get("freeipa_local_idrange", {}) or {}
-    if not idrange:
-        return 0
-
     name = idrange["name"]
     expected = {
         "ipabaseid": str(idrange["base_id"]),
@@ -286,6 +298,35 @@ def ensure_freeipa_local_idrange(
     return 0
 
 
+def ensure_freeipa_local_idranges(
+    plan: dict[str, Any], *, ipa_command: str, audit_log: Path | None
+) -> int:
+    idranges = plan.get("freeipa_local_idranges", []) or []
+    if not idranges:
+        legacy_idrange = plan.get("freeipa_local_idrange", {}) or {}
+        idranges = [legacy_idrange] if legacy_idrange else []
+    commands = 0
+    for idrange in idranges:
+        commands += ensure_one_freeipa_local_idrange(
+            idrange, ipa_command=ipa_command, audit_log=audit_log
+        )
+    return commands
+
+
+def ensure_freeipa_local_idrange(
+    plan: dict[str, Any], *, ipa_command: str, audit_log: Path | None
+) -> int:
+    """Backward-compatible wrapper for callers expecting the singular helper."""
+    return ensure_freeipa_local_idranges(plan, ipa_command=ipa_command, audit_log=audit_log)
+
+
+def build_user_home_args(user: dict[str, Any]) -> list[str]:
+    home_directory = user.get("home_directory")
+    if home_directory:
+        return [f"--homedir={home_directory}"]
+    return []
+
+
 def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | None) -> int:
     require_ids_within_local_idrange(plan)
     commands = ensure_freeipa_local_idrange(plan, ipa_command=ipa_command, audit_log=audit_log)
@@ -328,7 +369,8 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
                     f"--uid={user['uid']}",
                     f"--gidnumber={gid}",
                     f"--shell={user['shell']}",
-                ],
+                ]
+                + build_user_home_args(user),
                 audit_log=audit_log,
                 allow_no_modifications=True,
             )
@@ -343,7 +385,8 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
                     f"--uid={user['uid']}",
                     f"--gidnumber={gid}",
                     f"--shell={user['shell']}",
-                ],
+                ]
+                + build_user_home_args(user),
                 audit_log=audit_log,
             )
         commands += 1

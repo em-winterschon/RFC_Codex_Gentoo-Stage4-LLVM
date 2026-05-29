@@ -429,3 +429,42 @@ nasa_binpkg_publish_policy:
   direct_build_into_nfs: false
   index_command: emaint binhost --fix
   sync_helper: scripts/sync-binpkgs-to-repo.sh
+
+profile_nfs_storage_client:
+  enabled: true
+  protocol_default: nfsv4_1_tcp_multipath
+  idmap_domain: rfc1918.host
+  require_aaa_for_nfsv4: true
+  enable_nfsv3: false
+  enable_nfsv4: true
+  enable_multipath: true
+  enable_rdma: false
+  nconnect: 4
+  fstab_safety_options:
+    - nofail
+    - soft
+  mounts:
+    - src: 172.16.254.28:/rfc1918-floating-homes/forge1
+      path: /home/forge1
+      fstype: nfs4
+      options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, _netdev]
+    - src: 172.16.254.28:/rfc1918-floating-homes/forge2
+      path: /home/forge2
+      fstype: nfs4
+      options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, _netdev]
+    - src: 172.16.254.28:/rfc1918-floating-homes/forge3
+      path: /home/forge3
+      fstype: nfs4
+      options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, _netdev]
+    - src: 172.16.254.28:/rfc1918-floating-homes/forge4
+      path: /home/forge4
+      fstype: nfs4
+      options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, _netdev]
+    - src: 172.16.254.28:/rfc1918-floating-homes/forge5
+      path: /home/forge5
+      fstype: nfs4
+      options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, _netdev]
+    - src: 172.16.254.28:/rfc1918-floating-homes/forge6
+      path: /home/forge6
+      fstype: nfs4
+      options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, _netdev]

@@ -114,6 +114,12 @@ freeipa_stdout="$(
     IDENTITY_SYNC_APPLY_FREEIPA=1 \
     FAKE_IPA_LOG="${fake_log}" \
     vault_identity_codex_admin_ssh_public_keys='ssh-ed25519 AAAATEST codex-admin' \
+    vault_identity_forge1_ssh_public_keys='ssh-ed25519 AAAATEST forge1' \
+    vault_identity_forge2_ssh_public_keys='ssh-ed25519 AAAATEST forge2' \
+    vault_identity_forge3_ssh_public_keys='ssh-ed25519 AAAATEST forge3' \
+    vault_identity_forge4_ssh_public_keys='ssh-ed25519 AAAATEST forge4' \
+    vault_identity_forge5_ssh_public_keys='ssh-ed25519 AAAATEST forge5' \
+    vault_identity_forge6_ssh_public_keys='ssh-ed25519 AAAATEST forge6' \
     python3 "${apply_script}" "${source_file}" \
     --apply \
     --provider freeipa \
@@ -122,9 +128,15 @@ freeipa_stdout="$(
 )"
 grep -Fq '"applied": true' <<< "${freeipa_stdout}" || fail "FreeIPA apply did not report applied"
 grep -Fq 'idrange-add RFC1918.HOST_low_id_range' "${fake_log}" || fail "FreeIPA fake log missing idrange-add"
+grep -Fq 'idrange-add RFC1918.HOST_legacy_forge_worker_id_range' "${fake_log}" ||
+  fail "FreeIPA fake log missing legacy Forge idrange-add"
 grep -Fq 'group-add linux-admin' "${fake_log}" || fail "FreeIPA fake log missing group-add"
+grep -Fq 'group-add forge-superusers' "${fake_log}" || fail "FreeIPA fake log missing Forge group-add"
 grep -Fq 'user-add codex-admin' "${fake_log}" || fail "FreeIPA fake log missing user-add"
+grep -Fq 'user-add forge1' "${fake_log}" || fail "FreeIPA fake log missing Forge user-add"
 grep -Fq 'group-add-member ci-builder' "${fake_log}" || fail "FreeIPA fake log missing group membership"
+grep -Fq 'group-add-member forge-superusers --users=forge1' "${fake_log}" ||
+  fail "FreeIPA fake log missing Forge superuser membership"
 grep -Fq 'host-add gmktek-k10-stage5.rfc1918.host' "${fake_log}" || fail "FreeIPA fake log missing host-add"
 assert_not_contains "${freeipa_stdout}" 'ssh-ed25519 AAAATEST'
 
