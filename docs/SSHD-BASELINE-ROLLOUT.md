@@ -41,7 +41,24 @@ scripts/slurm-ansible-sshd-rollout.sh apply --run-id sshd-YYYYMMDD-audit --shard
 scripts/slurm-ansible-sshd-rollout.sh verify --run-id sshd-YYYYMMDD-verify
 ```
 
-Use `--limit` for canaries and bounded blast radius. Use `--dependency afterok:<jobid>` to chain apply after audit or verify after apply.
+Use `--limit` for canaries and bounded blast radius. For `apply`, the Slurm wrapper resolves the Ansible limit against the inventory before sharding and applies only the intersection of:
+
+1. drifted, managed, syntax-clean audit records, and
+2. hosts matched by the requested `--limit` pattern.
+
+This also applies when `--eligible-hosts-file` is supplied: the file is filtered through the same resolved limit before any Slurm shard is written. If the limit matches no inventory hosts, the wrapper fails before submitting apply jobs. If the limit is valid but no drifted audit host intersects it, the wrapper prints `No eligible hosts to apply` and submits nothing.
+
+Canary example:
+
+```bash
+scripts/slurm-ansible-sshd-rollout.sh apply \
+  --run-id sshd-YYYYMMDD-audit \
+  --limit m70_canary \
+  --shard-size 1 \
+  --max-parallel-shards 1
+```
+
+Use `--dependency afterok:<jobid>` to chain apply after audit or verify after apply.
 
 ## Rollback
 

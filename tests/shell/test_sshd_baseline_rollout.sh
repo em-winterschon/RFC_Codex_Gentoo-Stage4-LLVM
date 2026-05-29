@@ -173,4 +173,135 @@ case "${slurm_rollback_dry_run}" in
   ;;
 esac
 
+limit_tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmp_audit_dir}" "${limit_tmpdir}"' EXIT
+
+limit_inventory="${limit_tmpdir}/hosts.yml"
+limit_audit_dir="${limit_tmpdir}/audit"
+mkdir -p "${limit_audit_dir}"
+cat > "${limit_inventory}" << 'YAML'
+---
+all:
+  hosts:
+    hostA:
+      ansible_connection: local
+    hostB:
+      ansible_connection: local
+  children:
+    canary:
+      hosts:
+        hostA: {}
+YAML
+cat > "${limit_audit_dir}/hostA.json" << 'JSON'
+{"host":"hostA","managed":true,"variant":"standard_sssd_no_include","syntax_ok":true,"drift":true}
+JSON
+cat > "${limit_audit_dir}/hostB.json" << 'JSON'
+{"host":"hostB","managed":true,"variant":"standard_sssd_no_include","syntax_ok":true,"drift":true}
+JSON
+
+limit_run_id="sshd-limit-test-$$"
+limit_output="$("${SLURM_SCRIPT}" apply \
+  --inventory "${limit_inventory}" \
+  --run-id "${limit_run_id}" \
+  --audit-dir "${limit_audit_dir}" \
+  --limit hostA \
+  --shard-size 1 \
+  --max-parallel-shards 2 \
+  --skip-preflight \
+  --dry-run)"
+limit_log_dir="/tmp/ansible-control-flow/sshd-baseline-slurm/${limit_run_id}"
+
+case "${limit_output}" in
+*'--array=0-0%2'*) ;;
+*)
+  printf 'apply --limit did not collapse to one shard:\n%s\n' "${limit_output}" >&2
+  exit 1
+  ;;
+esac
+
+if grep -R -Fq 'hostB' "${limit_log_dir}/eligible-hosts"* "${limit_log_dir}/shards"; then
+  printf 'apply --limit hostA leaked hostB into eligible hosts or shards\n' >&2
+  find "${limit_log_dir}" -maxdepth 2 -type f -print -exec sed -n '1,20p' {} \; >&2
+  exit 1
+fi
+assert_file_contains "${limit_log_dir}/eligible-hosts.limit-filtered.txt" 'hostA'
+
+external_hosts="${limit_tmpdir}/external-eligible-hosts.txt"
+printf '%s\n' hostA hostB > "${external_hosts}"
+external_run_id="sshd-limit-external-test-$$"
+external_output="$("${SLURM_SCRIPT}" apply \
+  --inventory "${limit_inventory}" \
+  --run-id "${external_run_id}" \
+  --audit-dir "${limit_audit_dir}" \
+  --eligible-hosts-file "${external_hosts}" \
+  --limit canary \
+  --shard-size 1 \
+  --max-parallel-shards 2 \
+  --skip-preflight \
+  --dry-run)"
+external_log_dir="/tmp/ansible-control-flow/sshd-baseline-slurm/${external_run_id}"
+
+case "${external_output}" in
+*'--array=0-0%2'*) ;;
+*)
+  printf 'external eligible file was not constrained to the canary limit:\n%s\n' "${external_output}" >&2
+  exit 1
+  ;;
+esac
+if grep -R -Fq 'hostB' "${external_log_dir}/eligible-hosts"* "${external_log_dir}/shards"; then
+  printf 'external eligible-hosts-file leaked hostB after --limit canary\n' >&2
+  find "${external_log_dir}" -maxdepth 2 -type f -print -exec sed -n '1,20p' {} \; >&2
+  exit 1
+fi
+
+zero_match_run_id="sshd-limit-zero-test-$$"
+if zero_match_output="$("${SLURM_SCRIPT}" apply \
+  --inventory "${limit_inventory}" \
+  --run-id "${zero_match_run_id}" \
+  --audit-dir "${limit_audit_dir}" \
+  --limit does_not_exist \
+  --shard-size 1 \
+  --skip-preflight \
+  --dry-run 2>&1)"; then
+  printf 'zero-match --limit unexpectedly succeeded:\n%s\n' "${zero_match_output}" >&2
+  exit 1
+fi
+case "${zero_match_output}" in
+*'matched zero inventory hosts'*)
+  if [[ "${zero_match_output}" == *'DRY-RUN sbatch'* ]]; then
+    printf 'zero-match --limit submitted Slurm work:\n%s\n' "${zero_match_output}" >&2
+    exit 1
+  fi
+  ;;
+*)
+  printf 'zero-match --limit did not report the limit failure:\n%s\n' "${zero_match_output}" >&2
+  exit 1
+  ;;
+esac
+
+no_intersection_hosts="${limit_tmpdir}/no-intersection-eligible-hosts.txt"
+printf '%s\n' hostB > "${no_intersection_hosts}"
+no_intersection_run_id="sshd-limit-no-intersection-test-$$"
+no_intersection_output="$("${SLURM_SCRIPT}" apply \
+  --inventory "${limit_inventory}" \
+  --run-id "${no_intersection_run_id}" \
+  --audit-dir "${limit_audit_dir}" \
+  --eligible-hosts-file "${no_intersection_hosts}" \
+  --limit hostA \
+  --shard-size 1 \
+  --skip-preflight \
+  --dry-run)"
+case "${no_intersection_output}" in
+*'eligible_hosts=0'*'No eligible hosts to apply'*)
+  if [[ "${no_intersection_output}" == *'DRY-RUN sbatch'* ]]; then
+    printf 'no-intersection --limit submitted Slurm work:\n%s\n' "${no_intersection_output}" >&2
+    exit 1
+  fi
+  ;;
+*)
+  printf 'no-intersection --limit did not stop cleanly:\n%s\n' "${no_intersection_output}" >&2
+  exit 1
+  ;;
+esac
+
 printf 'PASS: %s\n' "$(basename "$0")"

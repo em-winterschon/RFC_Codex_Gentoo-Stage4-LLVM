@@ -193,6 +193,75 @@ print(f"eligible_hosts={len(hosts)} path={out}")
 PY
 }
 
+build_limit_hosts_file() {
+  local output=$1
+  python3 - "${INVENTORY}" "${LIMIT}" "${output}" "${ANSIBLE_ROOT}/ansible.cfg" << 'PY'
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+inventory = sys.argv[1]
+limit = sys.argv[2]
+out = pathlib.Path(sys.argv[3])
+ansible_config = sys.argv[4]
+env = os.environ.copy()
+env["ANSIBLE_CONFIG"] = ansible_config
+env["ANSIBLE_CACHE_PLUGIN"] = "memory"
+payload = json.loads(
+    subprocess.check_output(
+        ["ansible-inventory", "-i", inventory, "--list", "--limit", limit],
+        text=True,
+        env=env,
+    )
+)
+hostvars = payload.get("_meta", {}).get("hostvars", {})
+if not isinstance(hostvars, dict):
+    hostvars = {}
+hosts = sorted(str(host) for host in hostvars if str(host).strip())
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text("\n".join(hosts) + ("\n" if hosts else ""), encoding="utf-8")
+if not hosts:
+    print(f"ERROR: --limit {limit!r} matched zero inventory hosts", file=sys.stderr)
+    raise SystemExit(2)
+print(f"limit_hosts={len(hosts)} path={out}")
+PY
+}
+
+filter_hosts_file() {
+  local source_file=$1
+  local limit_file=$2
+  local output=$3
+  python3 - "${source_file}" "${limit_file}" "${output}" << 'PY'
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1])
+limit = pathlib.Path(sys.argv[2])
+out = pathlib.Path(sys.argv[3])
+source_hosts = [
+    line.strip()
+    for line in source.read_text(encoding="utf-8").splitlines()
+    if line.strip()
+]
+limit_hosts = {
+    line.strip()
+    for line in limit.read_text(encoding="utf-8").splitlines()
+    if line.strip()
+}
+seen = set()
+filtered = []
+for host in source_hosts:
+    if host in limit_hosts and host not in seen:
+        seen.add(host)
+        filtered.append(host)
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text("\n".join(filtered) + ("\n" if filtered else ""), encoding="utf-8")
+print(f"eligible_hosts={len(filtered)} path={out} limit_path={limit}")
+PY
+}
+
 submit_preflight() {
   if [[ "${SKIP_PREFLIGHT}" == 1 ]]; then
     return 0
@@ -259,12 +328,28 @@ rollback)
   ;;
 apply)
   mkdir -p "${AUDIT_DIR}"
-  ELIGIBLE_HOSTS_FILE="${ELIGIBLE_HOSTS_FILE:-${LOG_DIR}/eligible-hosts.txt}"
+  if [[ -z "${ELIGIBLE_HOSTS_FILE}" ]]; then
+    if [[ -n "${LIMIT}" ]]; then
+      ELIGIBLE_HOSTS_FILE="${LOG_DIR}/audit-eligible-hosts.unfiltered.txt"
+    else
+      ELIGIBLE_HOSTS_FILE="${LOG_DIR}/eligible-hosts.txt"
+    fi
+  fi
   if [[ ! -s "${ELIGIBLE_HOSTS_FILE}" ]]; then
     build_eligible_hosts_file "${ELIGIBLE_HOSTS_FILE}"
   fi
+
+  APPLY_HOSTS_FILE="${ELIGIBLE_HOSTS_FILE}"
+  if [[ -n "${LIMIT}" ]]; then
+    LIMIT_HOSTS_FILE="${LOG_DIR}/limit-hosts.txt"
+    FILTERED_ELIGIBLE_HOSTS_FILE="${LOG_DIR}/eligible-hosts.limit-filtered.txt"
+    build_limit_hosts_file "${LIMIT_HOSTS_FILE}"
+    filter_hosts_file "${ELIGIBLE_HOSTS_FILE}" "${LIMIT_HOSTS_FILE}" "${FILTERED_ELIGIBLE_HOSTS_FILE}"
+    APPLY_HOSTS_FILE="${FILTERED_ELIGIBLE_HOSTS_FILE}"
+  fi
+
   SHARD_DIR="${LOG_DIR}/shards"
-  SHARD_COUNT="$(build_shards "${ELIGIBLE_HOSTS_FILE}" "${SHARD_DIR}")"
+  SHARD_COUNT="$(build_shards "${APPLY_HOSTS_FILE}" "${SHARD_DIR}")"
   if [[ "${SHARD_COUNT}" == 0 ]]; then
     printf 'No eligible hosts to apply. Audit dir: %s\n' "${AUDIT_DIR}"
     exit 0
