@@ -37,7 +37,7 @@ assert_file_contains "${RUN_TESTS}" "test_netbox_dns_gap_analysis.sh"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
-cat > "${tmpdir}/netbox-ip-addresses.json" <<'JSON'
+cat > "${tmpdir}/netbox-ip-addresses.json" << 'JSON'
 {
   "results": [
     {
@@ -74,7 +74,7 @@ cat > "${tmpdir}/netbox-ip-addresses.json" <<'JSON'
 }
 JSON
 
-cat > "${tmpdir}/ansible-inventory.json" <<'JSON'
+cat > "${tmpdir}/ansible-inventory.json" << 'JSON'
 {
   "_meta": {
     "hostvars": {
@@ -108,7 +108,7 @@ cat > "${tmpdir}/ansible-inventory.json" <<'JSON'
 }
 JSON
 
-cat > "${tmpdir}/token-groups.json" <<'JSON'
+cat > "${tmpdir}/token-groups.json" << 'JSON'
 [
   {
     "name": "rfc1918",
@@ -131,7 +131,7 @@ cat > "${tmpdir}/token-groups.json" <<'JSON'
 ]
 JSON
 
-cat > "${tmpdir}/hetzner-fixture.json" <<'JSON'
+cat > "${tmpdir}/hetzner-fixture.json" << 'JSON'
 {
   "token_groups": [
     {
@@ -170,7 +170,7 @@ python3 "${GAP_SCRIPT}" \
   --output "${tmpdir}/gap.json" \
   --markdown-output "${tmpdir}/gap.md"
 
-python3 - "${tmpdir}/gap.json" "${tmpdir}/gap.md" <<'PY'
+python3 - "${tmpdir}/gap.json" "${tmpdir}/gap.md" << 'PY'
 import json
 import sys
 from pathlib import Path
@@ -214,7 +214,7 @@ PY
 if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -rf "${tmpdir}" "${tmp_inventory}"' EXIT
-  cat > "${tmp_inventory}" <<'YAML'
+  cat > "${tmp_inventory}" << 'YAML'
 ---
 all:
   hosts:
