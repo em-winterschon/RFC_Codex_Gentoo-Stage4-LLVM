@@ -16,6 +16,8 @@ ROLLBACK_SOURCE=""
 CACHE_CONNECTION="localhost:6379:0:"
 CACHE_PLUGIN="community.general.redis"
 CONTROL_FLOW_DIR="/tmp/ansible-control-flow"
+PREFLIGHT_SCRIPT="${SCRIPT_DIR}/slurm-ansible-preflight.sh"
+SKIP_PREFLIGHT=0
 
 usage() {
   cat << USAGE
@@ -31,6 +33,7 @@ Options:
   --shard-size N                Hosts per apply array task (default: ${SHARD_SIZE})
   --max-parallel-shards N       Slurm array throttle (default: ${MAX_PARALLEL_SHARDS})
   --rollback-source PATH        Host-local backup path for rollback mode
+  --skip-preflight              Do not submit the Slurm Ansible dependency preflight
   --dry-run                     Print sbatch commands instead of submitting
 USAGE
 }
@@ -79,6 +82,10 @@ while [[ $# -gt 0 ]]; do
   --rollback-source)
     ROLLBACK_SOURCE="$2"
     shift 2
+    ;;
+  --skip-preflight)
+    SKIP_PREFLIGHT=1
+    shift
     ;;
   --dry-run)
     DRY_RUN=1
@@ -186,6 +193,31 @@ print(f"eligible_hosts={len(hosts)} path={out}")
 PY
 }
 
+submit_preflight() {
+  if [[ "${SKIP_PREFLIGHT}" == 1 ]]; then
+    return 0
+  fi
+  local args=(--ansible-root "${ANSIBLE_ROOT}" --inventory "${INVENTORY}" --run-id "${RUN_ID}" --control-flow-dir "${CONTROL_FLOW_DIR}" --cache-connection "${CACHE_CONNECTION}")
+  if [[ -n "${DEPENDENCY}" ]]; then
+    args+=(--dependency "${DEPENDENCY}")
+  fi
+  if [[ "${DRY_RUN}" == 1 ]]; then
+    args+=(--dry-run)
+    "${PREFLIGHT_SCRIPT}" "${args[@]}"
+    return 0
+  fi
+  local output
+  output="$("${PREFLIGHT_SCRIPT}" "${args[@]}")"
+  printf '%s\n' "${output}"
+  local job_ids
+  job_ids="$(awk '/Submitted batch job/ { print $4 }' <<< "${output}" | paste -sd ':' -)"
+  if [[ -z "${job_ids}" ]]; then
+    printf 'could not parse Slurm preflight job id from: %s\n' "${output}" >&2
+    exit 1
+  fi
+  DEPENDENCY="afterok:${job_ids}"
+}
+
 build_shards() {
   local hosts_file=$1
   local shard_dir=$2
@@ -206,6 +238,8 @@ for idx in range(0, len(hosts), size):
 print((len(hosts) + size - 1) // size if hosts else 0)
 PY
 }
+
+submit_preflight
 
 case "${MODE}" in
 audit)
