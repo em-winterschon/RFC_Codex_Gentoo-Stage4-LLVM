@@ -35,6 +35,7 @@
 - [M70 Forge Automation Admin](M70-Forge-Automation-Admin)
 - [X11SCL-IF Forge Automation Admin](X11SCL-IF-Forge-Automation-Admin)
 - [X12AGAIN Bare Metal Reimage Prep](X12AGAIN-Bare-Metal-Reimage-Prep)
+- [Thor AGX Stabilization](Thor-AGX-Stabilization)
 - [Container-Services Validation](Container-Services-Validation)
 - [Container Building](Container-Building)
 - [Container Publishing](Container-Publishing)

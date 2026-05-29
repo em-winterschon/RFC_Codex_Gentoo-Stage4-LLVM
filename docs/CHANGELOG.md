@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-05-23 - Thor AGX Stabilization Evidence Intake
+
+- Added the historical Thor AGX stabilization record for
+  `agx-rfc99-bunnydev`, including the dpkg/APT repair trail, NVIDIA runtime
+  observations, and active blockers from the first bring-up pass.
+- Preserved that record as historical evidence only: the later
+  `THOR-AGX-INFERENCE-READINESS` document and
+  `agx_rfc99_bunnydev_099034` inventory now supersede Docker-specific runtime
+  state for current desired-state work.
+- Added the RouterOS static DNS entry and NetBox inventory-intake fabric link
+  for the Thor RJ45 management path at `172.16.99.34/24`, with CSS326 `ge7`
+  cabled to `enP2p1s0` for management-plane tracking.
+- Extended the NetBox intake apply path to represent interface cabling and to
+  preserve intentionally connected-but-unassigned endpoints without marking
+  cabled interfaces as virtually connected.
+
 ## 2026-05-20 - FMT2 R630 `sec` RDMA Positive-Control Workflow
 
 - Added `sec` and `ter` to the local-network `roce_hosts` inventory with

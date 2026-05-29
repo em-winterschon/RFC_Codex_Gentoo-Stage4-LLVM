@@ -107,6 +107,7 @@ test_routeros_rfc99_gateway_rendered_config() {
   assert_file_contains "${rsc}" '/ip dns static add name="log-sun99-rsyslog-099093.rfc1918.host" type=A address=172.16.99.93 ttl=5m comment="codex rsyslog service vip"'
   assert_file_contains "${rsc}" '/ip dns static add name="log-sun99-rsyslog.rfc1918.host" type=CNAME cname="log-sun99-rsyslog-099093.rfc1918.host" ttl=5m comment="codex rsyslog service cname"'
   assert_file_contains "${rsc}" '/ip dns static add name="gw-rfc99-mkccr2004-16g.rfc1918.host" type=A address=172.16.99.1 ttl=5m comment="codex RouterOS CCR2004 gateway API"'
+  assert_file_contains "${rsc}" '/ip dns static add name="agx-rfc99-bunnydev.rfc1918.host" type=A address=172.16.99.34 ttl=5m comment="thor agx rj45 management"'
   assert_file_contains "${rsc}" '/ip dns static add name="boot-sun99-netboot-099088.rfc1918.host" type=A address=172.16.99.88 ttl=5m comment="codex netboot publisher vm"'
   assert_file_contains "${rsc}" '/ip dns static add name="boot-sun99-netboot.rfc1918.host" type=CNAME cname="boot-sun99-netboot-099088.rfc1918.host" ttl=5m comment="codex netboot publisher cname"'
   assert_file_contains "${rsc}" '/ip dns static add name="lab-sun99-x1gen8-099082.rfc1918.dev" type=A address=172.16.99.82 ttl=5m comment="codex ThinkPad X1 Gen8 workstation netboot"'

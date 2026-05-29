@@ -105,6 +105,7 @@ network_fabric_devices:
       - Static management IP is 172.16.99.6.
       - Address acquisition mode is static.
       - ge5 and ge6 are active LACP members for Hasslehoff bond0.
+      - ge7 is assigned to Thor AGX RJ45 management for agx-rfc99-bunnydev at 172.16.99.34/24.
       - ge17 and ge18 are active LACP members for M70 Forge bond0.
       - sfp1 and sfp2 currently contain Intel FTLX8571D3BCV-IT 10G-SR MMF optics.
   sw_mgmt_mkcrs354:
@@ -294,6 +295,19 @@ network_fabric_devices:
       - Kibana web interface for full-text infrastructure log search.
       - Initial target is the live CCR2004 SUN99 Elasticsearch VIP until the multi-node Elasticsearch service VIP is promoted.
 
+  agx_rfc99_bunnydev:
+    role: edge-ai-gpu-host
+    manufacturer: NVIDIA
+    model: Jetson AGX Thor
+    status: active
+    management_ip: 172.16.99.34
+    management_interface: enP2p1s0
+    fqdn: agx-rfc99-bunnydev.rfc1918.host
+    notes:
+      - Thor AGX development host with RJ45 Realtek r8126 management on CSS326 ge7.
+      - RJ45 management is statically configured as 172.16.99.34/24 on enP2p1s0.
+      - QSFP28 data-plane cabling target is CRS354 qsfpplus2 with four 10G lanes for OVS/VM allocation.
+
   inf_rfc99_noctosultris_099165:
     role: inference-gpu-host
     manufacturer: Supermicro
@@ -333,6 +347,15 @@ network_fabric_links:
       interface: eno2
     purpose: hasslehoff-lacp-member
     lag: hasslehoff-bond0
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge7
+    endpoint_b:
+      device: agx_rfc99_bunnydev
+      interface: enP2p1s0
+    purpose: thor-agx-rj45-management
+    media: 1GBASE-T
+    status: active
   - endpoint_a:
       device: sw_mgmt_css326
       interface: ge14
