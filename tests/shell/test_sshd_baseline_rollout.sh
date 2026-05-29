@@ -82,7 +82,7 @@ assert_file_contains "${REDIS_PLAYBOOK}" 'ansible_redis_cache_install_package: t
 
 STANDARD_TEMPLATE="${ROLE}/templates/sshd_config.standard_sssd_no_include.j2"
 standard_template_sha256="$(sha256sum "${STANDARD_TEMPLATE}" | awk '{print $1}')"
-if [[ "${standard_template_sha256}" != "26f6487c46b763e5ba43509da87d689076a7c146defb106c1d63e7398daffd25" ]]; then
+if [[ "${standard_template_sha256}" != "2a045fc24ba3002098ccaa93f31b8d82ae5fde2651e8a82cd34017617543fc15" ]]; then
   printf 'unexpected canonical SSHD template sha256: %s\n' "${standard_template_sha256}" >&2
   exit 1
 fi
@@ -131,19 +131,19 @@ assert_file_contains "${SLURM_SCRIPT}" 'playbooks/sshd-baseline-rollback.yml'
 assert_file_not_contains "${SLURM_SCRIPT}" 'ssh -o'
 
 cd "${ANSIBLE_ROOT}"
-ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i inventories/local-network/hosts.yml playbooks/sshd-baseline-audit.yml --syntax-check >/dev/null
-ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i inventories/local-network/hosts.yml playbooks/sshd-baseline-apply.yml --syntax-check >/dev/null
-ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i inventories/local-network/hosts.yml playbooks/sshd-baseline-rollback.yml --syntax-check >/dev/null
-ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i localhost, playbooks/ansible-redis-cache-local.yml --syntax-check >/dev/null
+ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i inventories/local-network/hosts.yml playbooks/sshd-baseline-audit.yml --syntax-check > /dev/null
+ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i inventories/local-network/hosts.yml playbooks/sshd-baseline-apply.yml --syntax-check > /dev/null
+ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i inventories/local-network/hosts.yml playbooks/sshd-baseline-rollback.yml --syntax-check > /dev/null
+ANSIBLE_CACHE_PLUGIN=memory ansible-playbook -i localhost, playbooks/ansible-redis-cache-local.yml --syntax-check > /dev/null
 
 bash -n "${SLURM_SCRIPT}"
 
 tmp_audit_dir="$(mktemp -d)"
 trap 'rm -rf "${tmp_audit_dir}"' EXIT
-cat > "${tmp_audit_dir}/drift-host.json" <<'JSON'
+cat > "${tmp_audit_dir}/drift-host.json" << 'JSON'
 {"host":"drift-host","managed":true,"variant":"standard_sssd_no_include","syntax_ok":true,"drift":true}
 JSON
-cat > "${tmp_audit_dir}/clean-host.json" <<'JSON'
+cat > "${tmp_audit_dir}/clean-host.json" << 'JSON'
 {"host":"clean-host","managed":true,"variant":"standard_sssd_no_include","syntax_ok":true,"drift":false}
 JSON
 
@@ -152,16 +152,25 @@ slurm_audit_dry_run="$("${SLURM_SCRIPT}" audit --run-id "${slurm_test_run_id}" -
 slurm_apply_dry_run="$("${SLURM_SCRIPT}" apply --run-id "${slurm_test_run_id}" --audit-dir "${tmp_audit_dir}" --shard-size 1 --max-parallel-shards 2 --dry-run)"
 slurm_rollback_dry_run="$("${SLURM_SCRIPT}" rollback --run-id "${slurm_test_run_id}" --rollback-source /var/backups/sshd_config/example --limit drift-host --dry-run)"
 case "${slurm_audit_dry_run}" in
-  *'DRY-RUN sbatch'*'playbooks/sshd-baseline-audit.yml'*) ;;
-  *) printf 'unexpected audit dry-run output: %s\n' "${slurm_audit_dry_run}" >&2; exit 1 ;;
+*'DRY-RUN sbatch'*'playbooks/sshd-baseline-audit.yml'*) ;;
+*)
+  printf 'unexpected audit dry-run output: %s\n' "${slurm_audit_dry_run}" >&2
+  exit 1
+  ;;
 esac
 case "${slurm_apply_dry_run}" in
-  *'eligible_hosts=1'*'--array=0-0%2'*'playbooks/sshd-baseline-apply.yml'*) ;;
-  *) printf 'unexpected apply dry-run output: %s\n' "${slurm_apply_dry_run}" >&2; exit 1 ;;
+*'eligible_hosts=1'*'--array=0-0%2'*'playbooks/sshd-baseline-apply.yml'*) ;;
+*)
+  printf 'unexpected apply dry-run output: %s\n' "${slurm_apply_dry_run}" >&2
+  exit 1
+  ;;
 esac
 case "${slurm_rollback_dry_run}" in
-  *'DRY-RUN sbatch'*'playbooks/sshd-baseline-rollback.yml'*'--limit drift-host'*) ;;
-  *) printf 'unexpected rollback dry-run output: %s\n' "${slurm_rollback_dry_run}" >&2; exit 1 ;;
+*'DRY-RUN sbatch'*'playbooks/sshd-baseline-rollback.yml'*'--limit drift-host'*) ;;
+*)
+  printf 'unexpected rollback dry-run output: %s\n' "${slurm_rollback_dry_run}" >&2
+  exit 1
+  ;;
 esac
 
 printf 'PASS: %s\n' "$(basename "$0")"

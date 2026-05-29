@@ -9,7 +9,7 @@ Distribute the canonical RFC99/SUN99/FMT2 SSHD server configuration through Ansi
 Canonical standard baseline hash:
 
 ```text
-26f6487c46b763e5ba43509da87d689076a7c146defb106c1d63e7398daffd25  sshd_config.standard_sssd_no_include
+2a045fc24ba3002098ccaa93f31b8d82ae5fde2651e8a82cd34017617543fc15  sshd_config.standard_sssd_no_include
 ```
 
 The standard baseline owns `/etc/ssh/sshd_config` as a full file, keeps SSSD SSH authorized key lookup inline, and leaves `Include "/etc/ssh/sshd_config.d/*.conf"` commented out to avoid unmanaged drop-in drift. The `installer_recovery_only` variant is gated and must not be used on normal managed live hosts.

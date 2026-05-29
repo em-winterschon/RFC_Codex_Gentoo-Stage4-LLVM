@@ -18,7 +18,7 @@ CACHE_PLUGIN="community.general.redis"
 CONTROL_FLOW_DIR="/tmp/ansible-control-flow"
 
 usage() {
-  cat <<USAGE
+  cat << USAGE
 Usage: $(basename "$0") <audit|apply|verify|rollback> [options]
 
 Options:
@@ -44,24 +44,65 @@ shift
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --inventory) INVENTORY="$2"; shift 2 ;;
-    --limit) LIMIT="$2"; shift 2 ;;
-    --run-id) RUN_ID="$2"; shift 2 ;;
-    --dependency) DEPENDENCY="$2"; shift 2 ;;
-    --audit-dir) AUDIT_DIR="$2"; shift 2 ;;
-    --eligible-hosts-file) ELIGIBLE_HOSTS_FILE="$2"; shift 2 ;;
-    --shard-size) SHARD_SIZE="$2"; shift 2 ;;
-    --max-parallel-shards) MAX_PARALLEL_SHARDS="$2"; shift 2 ;;
-    --rollback-source) ROLLBACK_SOURCE="$2"; shift 2 ;;
-    --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) usage; exit 0 ;;
-    *) printf 'unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+  --inventory)
+    INVENTORY="$2"
+    shift 2
+    ;;
+  --limit)
+    LIMIT="$2"
+    shift 2
+    ;;
+  --run-id)
+    RUN_ID="$2"
+    shift 2
+    ;;
+  --dependency)
+    DEPENDENCY="$2"
+    shift 2
+    ;;
+  --audit-dir)
+    AUDIT_DIR="$2"
+    shift 2
+    ;;
+  --eligible-hosts-file)
+    ELIGIBLE_HOSTS_FILE="$2"
+    shift 2
+    ;;
+  --shard-size)
+    SHARD_SIZE="$2"
+    shift 2
+    ;;
+  --max-parallel-shards)
+    MAX_PARALLEL_SHARDS="$2"
+    shift 2
+    ;;
+  --rollback-source)
+    ROLLBACK_SOURCE="$2"
+    shift 2
+    ;;
+  --dry-run)
+    DRY_RUN=1
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    printf 'unknown option: %s\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
   esac
 done
 
 case "${MODE}" in
-  audit|apply|verify|rollback) ;;
-  *) printf 'unknown mode: %s\n' "${MODE}" >&2; usage >&2; exit 2 ;;
+audit | apply | verify | rollback) ;;
+*)
+  printf 'unknown mode: %s\n' "${MODE}" >&2
+  usage >&2
+  exit 2
+  ;;
 esac
 
 AUDIT_DIR="${AUDIT_DIR:-${CONTROL_FLOW_DIR}/sshd-baseline/${RUN_ID}}"
@@ -79,7 +120,7 @@ submit_sbatch() {
 }
 
 base_exports() {
-  cat <<EXPORTS
+  cat << EXPORTS
 export ANSIBLE_CONFIG='${ANSIBLE_ROOT}/ansible.cfg'
 export ANSIBLE_STDOUT_CALLBACK='default'
 export ANSIBLE_CACHE_PLUGIN='${CACHE_PLUGIN}'
@@ -114,7 +155,7 @@ ansible-playbook -i '${INVENTORY}' '${playbook}'$(limit_args) ${extra_args}"
 
 build_eligible_hosts_file() {
   local output=$1
-  python3 - "${AUDIT_DIR}" "${output}" <<'PY'
+  python3 - "${AUDIT_DIR}" "${output}" << 'PY'
 import json
 import pathlib
 import sys
@@ -148,7 +189,7 @@ PY
 build_shards() {
   local hosts_file=$1
   local shard_dir=$2
-  python3 - "${hosts_file}" "${shard_dir}" "${SHARD_SIZE}" <<'PY'
+  python3 - "${hosts_file}" "${shard_dir}" "${SHARD_SIZE}" << 'PY'
 import pathlib
 import sys
 
@@ -167,35 +208,35 @@ PY
 }
 
 case "${MODE}" in
-  audit)
-    mkdir -p "${AUDIT_DIR}"
-    submit_single_playbook_job "sshd-audit" "playbooks/sshd-baseline-audit.yml" "-e sshd_baseline_run_id='${RUN_ID}' -e sshd_baseline_report_dir='${AUDIT_DIR}'"
-    ;;
-  verify)
-    mkdir -p "${AUDIT_DIR}"
-    submit_single_playbook_job "sshd-verify" "playbooks/sshd-baseline-audit.yml" "-e sshd_baseline_run_id='${RUN_ID}' -e sshd_baseline_report_dir='${AUDIT_DIR}'"
-    ;;
-  rollback)
-    if [[ -z "${ROLLBACK_SOURCE}" ]]; then
-      printf 'rollback mode requires --rollback-source PATH\n' >&2
-      exit 2
-    fi
-    submit_single_playbook_job "sshd-rollback" "playbooks/sshd-baseline-rollback.yml" "-e sshd_baseline_rollback_source='${ROLLBACK_SOURCE}'"
-    ;;
-  apply)
-    mkdir -p "${AUDIT_DIR}"
-    ELIGIBLE_HOSTS_FILE="${ELIGIBLE_HOSTS_FILE:-${LOG_DIR}/eligible-hosts.txt}"
-    if [[ ! -s "${ELIGIBLE_HOSTS_FILE}" ]]; then
-      build_eligible_hosts_file "${ELIGIBLE_HOSTS_FILE}"
-    fi
-    SHARD_DIR="${LOG_DIR}/shards"
-    SHARD_COUNT="$(build_shards "${ELIGIBLE_HOSTS_FILE}" "${SHARD_DIR}")"
-    if [[ "${SHARD_COUNT}" == 0 ]]; then
-      printf 'No eligible hosts to apply. Audit dir: %s\n' "${AUDIT_DIR}"
-      exit 0
-    fi
-    LAST_INDEX=$((SHARD_COUNT - 1))
-    read -r -d '' WRAP <<'WRAP' || true
+audit)
+  mkdir -p "${AUDIT_DIR}"
+  submit_single_playbook_job "sshd-audit" "playbooks/sshd-baseline-audit.yml" "-e sshd_baseline_run_id='${RUN_ID}' -e sshd_baseline_report_dir='${AUDIT_DIR}'"
+  ;;
+verify)
+  mkdir -p "${AUDIT_DIR}"
+  submit_single_playbook_job "sshd-verify" "playbooks/sshd-baseline-audit.yml" "-e sshd_baseline_run_id='${RUN_ID}' -e sshd_baseline_report_dir='${AUDIT_DIR}'"
+  ;;
+rollback)
+  if [[ -z "${ROLLBACK_SOURCE}" ]]; then
+    printf 'rollback mode requires --rollback-source PATH\n' >&2
+    exit 2
+  fi
+  submit_single_playbook_job "sshd-rollback" "playbooks/sshd-baseline-rollback.yml" "-e sshd_baseline_rollback_source='${ROLLBACK_SOURCE}'"
+  ;;
+apply)
+  mkdir -p "${AUDIT_DIR}"
+  ELIGIBLE_HOSTS_FILE="${ELIGIBLE_HOSTS_FILE:-${LOG_DIR}/eligible-hosts.txt}"
+  if [[ ! -s "${ELIGIBLE_HOSTS_FILE}" ]]; then
+    build_eligible_hosts_file "${ELIGIBLE_HOSTS_FILE}"
+  fi
+  SHARD_DIR="${LOG_DIR}/shards"
+  SHARD_COUNT="$(build_shards "${ELIGIBLE_HOSTS_FILE}" "${SHARD_DIR}")"
+  if [[ "${SHARD_COUNT}" == 0 ]]; then
+    printf 'No eligible hosts to apply. Audit dir: %s\n' "${AUDIT_DIR}"
+    exit 0
+  fi
+  LAST_INDEX=$((SHARD_COUNT - 1))
+  read -r -d '' WRAP << 'WRAP' || true
 set -euo pipefail
 export ANSIBLE_CONFIG="${ANSIBLE_ROOT}/ansible.cfg"
 export ANSIBLE_STDOUT_CALLBACK="default"
@@ -209,16 +250,16 @@ LIMIT_PATTERN="$(paste -sd, "${SHARD_FILE}")"
 cd "${ANSIBLE_ROOT}"
 ansible-playbook -i "${INVENTORY}" playbooks/sshd-baseline-apply.yml --limit "${LIMIT_PATTERN}" -e sshd_baseline_apply_required=true -e sshd_baseline_run_id="${RUN_ID}"
 WRAP
-    # Expand selected variables now while preserving Slurm's runtime array id.
-    WRAP="${WRAP//'${ANSIBLE_ROOT}'/${ANSIBLE_ROOT}}"
-    WRAP="${WRAP//'${RUN_ID}'/${RUN_ID}}"
-    WRAP="${WRAP//'${SHARD_DIR}'/${SHARD_DIR}}"
-    WRAP="${WRAP//'${INVENTORY}'/${INVENTORY}}"
-    local_args=(--job-name "sshd-apply-${RUN_ID}" "--array=0-${LAST_INDEX}%${MAX_PARALLEL_SHARDS}" --output "${LOG_DIR}/sshd-apply.%A.%a.out" --error "${LOG_DIR}/sshd-apply.%A.%a.err")
-    if [[ -n "${DEPENDENCY}" ]]; then
-      local_args+=(--dependency "${DEPENDENCY}")
-    fi
-    local_args+=(--wrap "${WRAP}")
-    submit_sbatch "${local_args[@]}"
-    ;;
+  # Expand selected variables now while preserving Slurm's runtime array id.
+  WRAP="${WRAP//'${ANSIBLE_ROOT}'/${ANSIBLE_ROOT}}"
+  WRAP="${WRAP//'${RUN_ID}'/${RUN_ID}}"
+  WRAP="${WRAP//'${SHARD_DIR}'/${SHARD_DIR}}"
+  WRAP="${WRAP//'${INVENTORY}'/${INVENTORY}}"
+  local_args=(--job-name "sshd-apply-${RUN_ID}" "--array=0-${LAST_INDEX}%${MAX_PARALLEL_SHARDS}" --output "${LOG_DIR}/sshd-apply.%A.%a.out" --error "${LOG_DIR}/sshd-apply.%A.%a.err")
+  if [[ -n "${DEPENDENCY}" ]]; then
+    local_args+=(--dependency "${DEPENDENCY}")
+  fi
+  local_args+=(--wrap "${WRAP}")
+  submit_sbatch "${local_args[@]}"
+  ;;
 esac
