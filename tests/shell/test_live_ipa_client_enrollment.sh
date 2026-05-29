@@ -40,6 +40,11 @@ assert_file_not_contains "${host_vars}" 'net-fs/samba'
 test -f "${apply_playbook}"
 assert_file_contains "${apply_playbook}" 'hosts: aaa_domain_clients'
 assert_file_contains "${apply_playbook}" 'ipa_client_live_apply'
+assert_file_contains "${apply_playbook}" "freeipa_client_fqdn | default(fqdn | default"
+assert_file_contains "${apply_playbook}" 'Acquire FreeIPA admin Kerberos ticket on controller'
+assert_file_contains "${apply_playbook}" 'IPA_ADMIN_PASSWORD'
+assert_file_contains "${apply_playbook}" 'Ensure FreeIPA host principal exists'
+assert_file_contains "${apply_playbook}" 'ipa host-add "{{ ipa_client_live_fqdn }}" --force'
 assert_file_contains "${apply_playbook}" 'ipa-getkeytab'
 assert_file_contains "${apply_playbook}" 'no_log: true'
 assert_file_contains "${apply_playbook}" 'delegate_to: "{{ ipa_client_live_controller_inventory_host }}"'

@@ -3,74 +3,73 @@ ansible_host: 172.16.99.70
 ansible_user: root
 ansible_python_interpreter: /usr/bin/python3
 local_network_role: automation-admin
-
 local_inventory_observed:
-  captured_at: "2026-05-15T03:08:21Z"
+  captured_at: '2026-05-15T03:08:21Z'
   source: ssh-plus-css326-snmp-plus-bonding
   fqdn: admin-sun99-forge-099070.rfc1918.host
   network_interfaces:
-    - name: netboot0
-      mac_address: "00:07:32:78:65:C6"
-      driver: igb
-      link: up
-      speed: 1000Mb/s
-      duplex: full
-      role: management
-      address: 172.16.99.70/24
-      gateway: 172.16.99.1
-      switch: sw_mgmt_css326
-      switch_port: ge14
-      validation: css326_bridge_fdb
-    - name: enp3s0
-      mac_address: "00:07:32:78:65:C7"
-      driver: igb
-      link: up
-      speed: 1000Mb/s
-      duplex: full
-      role: forge-transfer-lag-member
-      bond: bond0
-      switch: sw_mgmt_css326
-      switch_port: ge17
-      validation: css326_bridge_fdb-and-link-bounce
-    - name: eno1
-      mac_address: "00:07:32:78:65:C8"
-      driver: ixgbe
-      link: up
-      speed: 1000Mb/s
-      duplex: full
-      role: forge-transfer-lag-member
-      bond: bond0
-      switch: sw_mgmt_css326
-      switch_port: ge18
-      validation: css326_bridge_fdb
-    - name: eno2
-      mac_address: "00:07:32:78:65:C9"
-      driver: ixgbe
-      link: down
-      role: spare
-    - name: eno3
-      mac_address: "00:07:32:78:65:CA"
-      driver: ixgbe
-      link: down
-      role: spare
-    - name: eno4
-      mac_address: "00:07:32:78:65:CB"
-      driver: ixgbe
-      link: down
-      role: spare
+  - name: netboot0
+    mac_address: 00:07:32:78:65:C6
+    driver: igb
+    link: up
+    speed: 1000Mb/s
+    duplex: full
+    role: management
+    address: 172.16.99.70/24
+    gateway: 172.16.99.1
+    switch: sw_mgmt_css326
+    switch_port: ge14
+    validation: css326_bridge_fdb
+  - name: enp3s0
+    mac_address: 00:07:32:78:65:C7
+    driver: igb
+    link: up
+    speed: 1000Mb/s
+    duplex: full
+    role: forge-transfer-lag-member
+    bond: bond0
+    switch: sw_mgmt_css326
+    switch_port: ge17
+    validation: css326_bridge_fdb-and-link-bounce
+  - name: eno1
+    mac_address: 00:07:32:78:65:C8
+    driver: ixgbe
+    link: up
+    speed: 1000Mb/s
+    duplex: full
+    role: forge-transfer-lag-member
+    bond: bond0
+    switch: sw_mgmt_css326
+    switch_port: ge18
+    validation: css326_bridge_fdb
+  - name: eno2
+    mac_address: 00:07:32:78:65:C9
+    driver: ixgbe
+    link: down
+    role: spare
+  - name: eno3
+    mac_address: 00:07:32:78:65:CA
+    driver: ixgbe
+    link: down
+    role: spare
+  - name: eno4
+    mac_address: 00:07:32:78:65:CB
+    driver: ixgbe
+    link: down
+    role: spare
   routes:
     default: 172.16.99.1 via netboot0
     bignetwork_overlay: 172.17.170.0/24 via bnlj6dscrj
     bignetwork_fmt2_edge_lan: 172.17.17.0/24 via 172.17.170.200 dev bnlj6dscrj
     bignetwork_fmt2_oob_management: 172.18.20.0/24 via 172.17.170.200 dev bnlj6dscrj
     fmt2_openvpn_legacy:
-      - 10.100.99.0/24 via 192.168.132.1 dev tun-fmt2
-      - 10.200.99.0/24 via 192.168.132.1 dev tun-fmt2
-      - 172.18.20.0/24 via 192.168.132.1 dev tun-fmt2
+    - 10.100.99.0/24 via 192.168.132.1 dev tun-fmt2
+    - 10.200.99.0/24 via 192.168.132.1 dev tun-fmt2
+    - 172.18.20.0/24 via 192.168.132.1 dev tun-fmt2
   temporary_transports:
     fmt2_openvpn_legacy:
       status: active
-      observed_at: "2026-05-15T12:41:45Z"
+      observed_at: '2026-05-15T12:41:45Z'
       service: openvpn.fmt2
       service_manager: openrc
       tunnel_interface: tun-fmt2
@@ -91,22 +90,22 @@ local_inventory_observed:
         temporary_snat: masquerade
         iptables_chain: FORGE-FMT2-OPENVPN
       routed_prefixes:
-        - 10.100.99.0/24
-        - 10.200.99.0/24
-        - 172.18.20.0/24
+      - 10.100.99.0/24
+      - 10.200.99.0/24
+      - 172.18.20.0/24
       validation:
         m70_ping_targets_ok:
-          - 192.168.132.1
-          - 10.200.99.1
-          - 172.18.20.1
-          - 172.18.20.4
-          - 10.100.99.1
+        - 192.168.132.1
+        - 10.200.99.1
+        - 172.18.20.1
+        - 172.18.20.4
+        - 10.100.99.1
         lan_client_source: x12again 172.16.99.108
         lan_client_ping_targets_ok:
-          - 10.200.99.1
-          - 172.18.20.1
-          - 172.18.20.4
-          - 10.100.99.1
+        - 10.200.99.1
+        - 172.18.20.1
+        - 172.18.20.4
+        - 10.100.99.1
   bonds:
     bond0:
       role: forge-transfer-vm-staging
@@ -117,30 +116,29 @@ local_inventory_observed:
       address_family: unnumbered
       switch: sw_mgmt_css326
       switch_ports:
-        - ge17
-        - ge18
+      - ge17
+      - ge18
       members:
-        - enp3s0
-        - eno1
+      - enp3s0
+      - eno1
       validation:
         mii_status: up
         partner_mac: f4:1e:57:89:af:be
         partner_key: 2
-        observed_at: "2026-05-15T03:08:21Z"
+        observed_at: '2026-05-15T03:08:21Z'
       persistence:
         openrc_service: net.bond0
         enabled_runlevel: default
         config_file: /etc/conf.d/net
   notes:
-    - This local_inventory_observed section is historical evidence captured on 2026-05-15, before the 2026-05-24 cutover.
-    - Current live network state is recorded under m70_network_target.live_state_as_of_2026_05_24.
-    - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
-    - The old bond0 was intentionally left unnumbered until the 2026-05-24 management cutover.
-    - M70 is the temporary FMT2/SFO200 OpenVPN compatibility transport as of 2026-05-15; remove after a cleaner BigNetwork or router replacement path is validated.
-
+  - This local_inventory_observed section is historical evidence captured on 2026-05-15, before the 2026-05-24 cutover.
+  - Current live network state is recorded under m70_network_target.live_state_as_of_2026_05_24.
+  - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
+  - The old bond0 was intentionally left unnumbered until the 2026-05-24 management cutover.
+  - M70 is the temporary FMT2/SFO200 OpenVPN compatibility transport as of 2026-05-15; remove after a cleaner BigNetwork or router replacement path is validated.
 m70_network_target:
-  approved_at: "2026-05-24T16:24:11Z"
-  live_cutover_at: "2026-05-24T17:27:32Z"
+  approved_at: '2026-05-24T16:24:11Z'
+  live_cutover_at: '2026-05-24T17:27:32Z'
   coordinator: LTC Forge
   status: live-temporary-active-backup
   service_address: 172.16.99.70/24
@@ -157,41 +155,41 @@ m70_network_target:
     miimon: 100
     primary: netboot0
     members:
-      - name: netboot0
-        pci_address: "0000:02:00.0"
-        driver: igb
-        chipset: Intel i211
-        mac_address: "00:07:32:78:65:C6"
-        switch: sw_mgmt_css326
-        switch_port: ge14
-        live_role: active-slave
-      - name: enp3s0
-        pci_address: "0000:03:00.0"
-        driver: igb
-        chipset: Intel i211
-        mac_address: "00:07:32:78:65:C7"
-        switch: sw_mgmt_css326
-        switch_port: ge17
-        live_role: backup-slave
+    - name: netboot0
+      pci_address: '0000:02:00.0'
+      driver: igb
+      chipset: Intel i211
+      mac_address: 00:07:32:78:65:C6
+      switch: sw_mgmt_css326
+      switch_port: ge14
+      live_role: active-slave
+    - name: enp3s0
+      pci_address: '0000:03:00.0'
+      driver: igb
+      chipset: Intel i211
+      mac_address: 00:07:32:78:65:C7
+      switch: sw_mgmt_css326
+      switch_port: ge17
+      live_role: backup-slave
     notes:
-      - The initramfs still names and uses netboot0 for iPXE/ZFS-root bootstrapping.
-      - The persistent root now owns 172.16.99.70/24 and the default route on bond0.
-      - Active-backup was selected live because CSS326 SwOS LACP mutation is not yet tested automation.
-      - Future 802.3ad requires CSS326 LACP group membership on ge14/ge17 before changing M70 bond mode.
+    - The initramfs still names and uses netboot0 for iPXE/ZFS-root bootstrapping.
+    - The persistent root now owns 172.16.99.70/24 and the default route on bond0.
+    - Active-backup was selected live because CSS326 SwOS LACP mutation is not yet tested automation.
+    - Future 802.3ad requires CSS326 LACP group membership on ge14/ge17 before changing M70 bond mode.
     openrc_fragment:
-      - config_bond0="172.16.99.70/24"
-      - routes_bond0="default via 172.16.99.1"
-      - dns_servers_bond0="172.16.99.1 9.9.9.9"
-      - slaves_bond0="netboot0 enp3s0"
-      - mode_bond0="active-backup"
-      - miimon_bond0="100"
-      - primary_bond0="netboot0"
-      - config_netboot0="null"
-      - config_enp3s0="null"
-      - config_eno1="null"
-      - config_eno2="null"
-      - config_eno3="null"
-      - config_eno4="null"
+    - config_bond0="172.16.99.70/24"
+    - routes_bond0="default via 172.16.99.1"
+    - dns_servers_bond0="172.16.99.1 9.9.9.9"
+    - slaves_bond0="netboot0 enp3s0"
+    - mode_bond0="active-backup"
+    - miimon_bond0="100"
+    - primary_bond0="netboot0"
+    - config_netboot0="null"
+    - config_enp3s0="null"
+    - config_eno1="null"
+    - config_eno2="null"
+    - config_eno3="null"
+    - config_eno4="null"
   live_state_as_of_2026_05_24:
     bond0: owns 172.16.99.70/24 and default route via 172.16.99.1.
     active_slave: netboot0
@@ -204,115 +202,113 @@ m70_network_target:
     ipv6_link_local: disabled
     sysctl_file: /etc/sysctl.d/91-m70-reserved-x553.conf
     sysctl_keys:
-      - net.ipv6.conf.eno1.disable_ipv6=1
-      - net.ipv6.conf.eno2.disable_ipv6=1
-      - net.ipv6.conf.eno3.disable_ipv6=1
-      - net.ipv6.conf.eno4.disable_ipv6=1
+    - net.ipv6.conf.eno1.disable_ipv6=1
+    - net.ipv6.conf.eno2.disable_ipv6=1
+    - net.ipv6.conf.eno3.disable_ipv6=1
+    - net.ipv6.conf.eno4.disable_ipv6=1
   reserved_ovs_dpdk_sriov_ports:
-    - name: eno1
-      pci_address: "0000:06:00.0"
-      driver_before_binding: ixgbe
-      chipset: Intel X553
-      mac_address: "00:07:32:78:65:C8"
-      target_driver: vfio-pci
-      target_switch: gw_rfc99_mkccr2004_16g
-      target_switch_port: ge3
-      live_validation: CCR2004 bridge FDB learned C8 on ge3 after L2 probe.
-    - name: eno2
-      pci_address: "0000:06:00.1"
-      driver_before_binding: ixgbe
-      chipset: Intel X553
-      mac_address: "00:07:32:78:65:C9"
-      target_driver: vfio-pci
-      target_switch: gw_rfc99_mkccr2004_16g
-      target_switch_port: ge4
-      live_validation: CCR2004 bridge FDB learned C9 on ge4 after L2 probe; no host IPv4 address remains.
-    - name: eno3
-      pci_address: "0000:07:00.0"
-      driver_before_binding: ixgbe
-      chipset: Intel X553
-      mac_address: "00:07:32:78:65:CA"
-      target_driver: vfio-pci
-      target_switch: gw_rfc99_mkccr2004_16g
-      target_switch_port: ge5
-      live_validation: CCR2004 bridge FDB learned CA on ge5 after L2 probe.
-    - name: eno4
-      pci_address: "0000:07:00.1"
-      driver_before_binding: ixgbe
-      chipset: Intel X553
-      mac_address: "00:07:32:78:65:CB"
-      target_driver: vfio-pci
-      target_switch: gw_rfc99_mkccr2004_16g
-      target_switch_port: ge6
-      live_validation: CCR2004 bridge FDB learned CB on ge6 after L2 probe.
+  - name: eno1
+    pci_address: '0000:06:00.0'
+    driver_before_binding: ixgbe
+    chipset: Intel X553
+    mac_address: 00:07:32:78:65:C8
+    target_driver: vfio-pci
+    target_switch: gw_rfc99_mkccr2004_16g
+    target_switch_port: ge3
+    live_validation: CCR2004 bridge FDB learned C8 on ge3 after L2 probe.
+  - name: eno2
+    pci_address: '0000:06:00.1'
+    driver_before_binding: ixgbe
+    chipset: Intel X553
+    mac_address: 00:07:32:78:65:C9
+    target_driver: vfio-pci
+    target_switch: gw_rfc99_mkccr2004_16g
+    target_switch_port: ge4
+    live_validation: CCR2004 bridge FDB learned C9 on ge4 after L2 probe; no host IPv4 address remains.
+  - name: eno3
+    pci_address: '0000:07:00.0'
+    driver_before_binding: ixgbe
+    chipset: Intel X553
+    mac_address: 00:07:32:78:65:CA
+    target_driver: vfio-pci
+    target_switch: gw_rfc99_mkccr2004_16g
+    target_switch_port: ge5
+    live_validation: CCR2004 bridge FDB learned CA on ge5 after L2 probe.
+  - name: eno4
+    pci_address: '0000:07:00.1'
+    driver_before_binding: ixgbe
+    chipset: Intel X553
+    mac_address: 00:07:32:78:65:CB
+    target_driver: vfio-pci
+    target_switch: gw_rfc99_mkccr2004_16g
+    target_switch_port: ge6
+    live_validation: CCR2004 bridge FDB learned CB on ge6 after L2 probe.
   backout:
-    - Restore /root/m70-net-pre-bond0-cutover.conf.<timestamp> to /etc/conf.d/net.
-    - Stop net.bond0 and start net.netboot0.
-    - Validate SSH to 172.16.99.70 before changing or stopping any other network service.
-    - CSS326 LACP backout is only required after a future 802.3ad switch-side LACP mutation.
+  - Restore /root/m70-net-pre-bond0-cutover.conf.<timestamp> to /etc/conf.d/net.
+  - Stop net.bond0 and start net.netboot0.
+  - Validate SSH to 172.16.99.70 before changing or stopping any other network service.
+  - CSS326 LACP backout is only required after a future 802.3ad switch-side LACP mutation.
   usb_serial_console_gateway:
-    captured_at: "2026-05-17T18:59:00Z"
+    captured_at: '2026-05-17T18:59:00Z'
     status: active
     purpose: Host SUN99 RouterOS serial consoles and CyberPower USB UPS telemetry after migration off Hasslehoff.
-    upstream_host_controller: "0000:00:15.0"
+    upstream_host_controller: '0000:00:15.0'
     interim_hub:
       manufacturer: VIA Labs, Inc.
-      usb2_root_path: "1-2"
-      usb2_vid_pid: "2109:2811"
-      usb3_root_path: "2-2"
-      usb3_vid_pid: "2109:8110"
+      usb2_root_path: 1-2
+      usb2_vid_pid: 2109:2811
+      usb3_root_path: 2-2
+      usb3_vid_pid: 2109:8110
       notes:
-        - Generic hub has no per-port power control.
-        - Replace with Coolgear CG-4PU3MGD managed hub after replacement power supply is available.
+      - Generic hub has no per-port power control.
+      - Replace with Coolgear CG-4PU3MGD managed hub after replacement power supply is available.
     console_links:
-      - device: gw_rfc99_mkccr2004_16g
-        prompt: "[admin@gw-rfc99-mkccr2004-16g] >"
-        hub_port: 1
-        adapter: FTDI FT232R USB UART
-        adapter_serial: A9888PID
-        by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0
-        by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.1:1.0-port0
-        current_tty: /dev/ttyUSB0
-        baud: 115200
-      - device: sw_mgmt_mkcrs354
-        prompt: "[admin@sw-mgmt-mkcrs354] >"
-        hub_port: 2
-        adapter: FTDI FT232R USB UART via dual-RS232 internal hub
-        adapter_serial: AB0MRY3W
-        by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0
-        by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.2.1:1.0-port0
-        current_tty: /dev/ttyUSB1
-        baud: 115200
-      - device: sw_spine_crs309_rfc99
-        prompt: "[admin@sw-spine-crs309-rfc99] >"
-        hub_port: 2
-        adapter: FTDI FT232R USB UART via dual-RS232 internal hub
-        adapter_serial: AB0MRY3X
-        by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0
-        by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.2.4:1.0-port0
-        current_tty: /dev/ttyUSB4
-        baud: 115200
+    - device: gw_rfc99_mkccr2004_16g
+      prompt: '[admin@gw-rfc99-mkccr2004-16g] >'
+      hub_port: 1
+      adapter: FTDI FT232R USB UART
+      adapter_serial: A9888PID
+      by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0
+      by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.1:1.0-port0
+      current_tty: /dev/ttyUSB0
+      baud: 115200
+    - device: sw_mgmt_mkcrs354
+      prompt: '[admin@sw-mgmt-mkcrs354] >'
+      hub_port: 2
+      adapter: FTDI FT232R USB UART via dual-RS232 internal hub
+      adapter_serial: AB0MRY3W
+      by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0
+      by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.2.1:1.0-port0
+      current_tty: /dev/ttyUSB1
+      baud: 115200
+    - device: sw_spine_crs309_rfc99
+      prompt: '[admin@sw-spine-crs309-rfc99] >'
+      hub_port: 2
+      adapter: FTDI FT232R USB UART via dual-RS232 internal hub
+      adapter_serial: AB0MRY3X
+      by_id: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0
+      by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.2.4:1.0-port0
+      current_tty: /dev/ttyUSB4
+      baud: 115200
     usb_hid_devices:
-      - device: ups_secondary_cyberpower
-        product: CP1500PFCRM2U
-        vendor: CPS
-        vendorid: "0764"
-        productid: "0601"
-        driver: usbhid-ups
-        observed_kernel_driver: usbhid
-        usb_path: "1-2.4.3.1"
-        hidraw: /dev/hidraw0
-        telemetry_preference: nut_usbhid_ups
+    - device: ups_secondary_cyberpower
+      product: CP1500PFCRM2U
+      vendor: CPS
+      vendorid: "0764"
+      productid: "0601"
+      driver: usbhid-ups
+      observed_kernel_driver: usbhid
+      usb_path: 1-2.4.3.1
+      hidraw: /dev/hidraw0
+      telemetry_preference: nut_usbhid_ups
     target_state:
-      - Replace generic hub with Coolgear CG-4PU3MGD managed hub when power supply is available.
-      - Move console access into a dedicated serial gateway VM after USB passthrough policy is implemented.
-      - Attach a separate external OOB adapter before relying on M70 serial console recovery.
-
+    - Replace generic hub with Coolgear CG-4PU3MGD managed hub when power supply is available.
+    - Move console access into a dedicated serial gateway VM after USB passthrough policy is implemented.
+    - Attach a separate external OOB adapter before relying on M70 serial console recovery.
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
-  - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"
-  - "{{ playbook_dir }}/../profile-definitions/metal-forge-automation-admin.yml"
-
+- '{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml'
+- '{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml'
+- '{{ playbook_dir }}/../profile-definitions/metal-forge-automation-admin.yml'
 install_target_root: /
 install_hostname: admin-sun99-forge-099070
 install_storage_layout:
@@ -321,13 +317,13 @@ install_storage_layout:
   zfs_pool_name: zroot
   zfs_pool_topology: mirror
   zfs_mirror_disks:
-    - /dev/nvme0n1
-    - /dev/nvme1n1
+  - /dev/nvme0n1
+  - /dev/nvme1n1
   destructive_wipe_approved: true
   wipe_scope:
-    - /dev/sda
-    - /dev/nvme0n1
-    - /dev/nvme1n1
+  - /dev/sda
+  - /dev/nvme0n1
+  - /dev/nvme1n1
   firmware_probe:
     fwupd_candidate: true
     expected_likely_result: vendor-bios-update-required
@@ -335,15 +331,15 @@ hardware_acceleration:
   intel_qat:
     enabled: true
     generation: c3000
-    pci_address: "0000:01:00.0"
+    pci_address: '0000:01:00.0'
     pci_id: "8086:19e2"
     kernel_driver_observed: c3xxx
     kernel_modules:
-      - intel_qat
-      - qat_c3xxx
+    - intel_qat
+    - qat_c3xxx
     required_firmware:
-      - qat_c3xxx.bin
-      - qat_c3xxx_mmp.bin
+    - qat_c3xxx.bin
+    - qat_c3xxx_mmp.bin
     consumer_enablement_status:
       openssl: planned
       haproxy_tls: planned
@@ -352,14 +348,14 @@ hardware_acceleration:
     validation_policy:
       production_default: disabled_until_benchmarked
       required_gates:
-        - kernel_module_load
-        - firmware_present
-        - qat_service_or_userspace_runtime
-        - openssl_provider_or_engine_smoke_test
-        - haproxy_tls_rps_baseline
-        - nginx_tls_rps_baseline
-        - openzfs_qat_build_pipeline
-        - zfs_compression_encryption_checksum_benchmark
+      - kernel_module_load
+      - firmware_present
+      - qat_service_or_userspace_runtime
+      - openssl_provider_or_engine_smoke_test
+      - haproxy_tls_rps_baseline
+      - nginx_tls_rps_baseline
+      - openzfs_qat_build_pipeline
+      - zfs_compression_encryption_checksum_benchmark
 freeipa_client_apply_required: false
 freeipa_client_fqdn: admin-sun99-forge-099070.rfc1918.host
 freeipa_client_short_hostname: admin-sun99-forge-099070
@@ -375,36 +371,25 @@ freeipa_client_manage_hosts_fallback: true
 freeipa_client_install_packages: false
 freeipa_client_build_binary_packages: true
 freeipa_client_package_atoms:
-  - sys-auth/sssd
-  - net-fs/samba
-  - app-crypt/mit-krb5
-  - net-nds/openldap
-  - app-misc/ca-certificates
-
+- sys-auth/sssd
+- net-fs/samba
+- app-crypt/mit-krb5
+- net-nds/openldap
+- app-misc/ca-certificates
 secure_firstboot_enrollment_enabled: false
 secure_firstboot_enrollment_expected_fqdn: admin-sun99-forge-099070.rfc1918.host
-secure_firstboot_enrollment_command: >-
-  ipa-client-install
-  --unattended
-  --domain="${STAGE5_ENROLL_DOMAIN}"
-  --realm="${STAGE5_ENROLL_REALM}"
-  --server="${STAGE5_ENROLL_IPA_SERVER}"
-  --hostname="${STAGE5_ENROLL_FQDN}"
-  --password="${STAGE5_ENROLL_OTP}"
-  --mkhomedir
-
+secure_firstboot_enrollment_command: ipa-client-install --unattended --domain="${STAGE5_ENROLL_DOMAIN}" --realm="${STAGE5_ENROLL_REALM}" --server="${STAGE5_ENROLL_IPA_SERVER}" --hostname="${STAGE5_ENROLL_FQDN}" --password="${STAGE5_ENROLL_OTP}" --mkhomedir
 portage_buildpkg_enabled: true
 portage_getbinpkg_enabled: true
 portage_usepkg_enabled: true
 portage_pkgdir: /srv/build-cache/binpkgs
 portage_features:
-  - buildpkg
-  - parallel-fetch
-  - distcc
+- buildpkg
+- parallel-fetch
+- distcc
 portage_emerge_default_opts_extra:
-  - --binpkg-changed-deps=y
-  - --verbose-conflicts
-
+- --binpkg-changed-deps=y
+- --verbose-conflicts
 profile_distcc_farm:
   enabled: true
   client_enabled: true
@@ -413,14 +398,13 @@ profile_distcc_farm:
   cpp_mode: false
   makeopts_jobs: "16 -l12"
   hosts:
-    - name: x12again
-      address: 172.16.99.108
-      slots: 48
-      options:
-        - lzo
+  - name: x12again
+    address: 172.16.99.108
+    slots: 48
+    options:
+    - lzo
   builder_fabric_name: sun99-build-fabric
   builder_fabric_cidr: 172.16.99.0/24
-
 nasa_binpkg_publish_root: /mnt/nasa/forge/gentoo-binpkgs
 nasa_binpkg_default_contract: baseline-portable-openrc-llvm
 nasa_binpkg_contract_path: /mnt/nasa/forge/gentoo-binpkgs/contracts/x86_64-pc-linux-gnu/baseline-portable-openrc-llvm
@@ -429,3 +413,134 @@ nasa_binpkg_publish_policy:
   direct_build_into_nfs: false
   index_command: emaint binhost --fix
   sync_helper: scripts/sync-binpkgs-to-repo.sh
+profile_nfs_storage_client:
+  enabled: true
+  protocol_default: nfsv4_2_tcp_multipath
+  idmap_domain: rfc1918.host
+  require_aaa_for_nfsv4: true
+  enable_nfsv3: false
+  enable_nfsv4: true
+  enable_multipath: true
+  enable_rdma: false
+  nconnect: 4
+  fstab_safety_options:
+  - nofail
+  - soft
+  mounts:
+  - src: 172.16.254.28:/rfc1918-floating-homes/eva
+    path: /home/eva
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/robin
+    path: /home/robin
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/verwalterin
+    path: /home/verwalterin
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/backups
+    path: /home/backups
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/codex-admin
+    path: /home/codex-admin
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/ltcol-forge
+    path: /home/ltcol-forge
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/toor
+    path: /home/toor
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/forge1
+    path: /home/forge1
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/forge2
+    path: /home/forge2
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/forge3
+    path: /home/forge3
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/forge4
+    path: /home/forge4
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/forge5
+    path: /home/forge5
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
+  - src: 172.16.254.28:/rfc1918-floating-homes/forge6
+    path: /home/forge6
+    fstype: nfs4
+    options:
+    - vers=4.2
+    - proto=tcp
+    - sec=sys
+    - nconnect=4
+    - _netdev
