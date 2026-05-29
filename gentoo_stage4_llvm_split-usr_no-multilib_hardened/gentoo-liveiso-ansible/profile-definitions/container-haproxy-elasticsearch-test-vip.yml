@@ -12,10 +12,23 @@ gentoo_profile_definition:
       bind: "*:9200"
       mode: http
       backend_name: be_elasticsearch_test_http
+      tls_https_route: true
+      host_acl: obs-sun99-esvip-099092.rfc1918.host obs-sun99-esvip.rfc1918.host
       servers:
         - name: elasticsearch-test
           address: 10.9.8.91
           port: 9200
+    - name: syslog-tcp
+      bind: "*:6514"
+      mode: tcp
+      backend_name: be_syslog_tcp
+      tls:
+        enabled: true
+        cert_path: /etc/haproxy/tls/log-sun99-rsyslog.pem
+      servers:
+        - name: rsyslog-collector
+          address: 10.77.0.40
+          port: 514
   service_readiness:
     enabled: true
     checks:

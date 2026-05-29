@@ -3,13 +3,100 @@ ansible_host: 172.16.99.156
 ansible_user: root
 ansible_python_interpreter: /usr/bin/python3
 local_network_role: baremetal-workstation-validation
+stage5_profile: metal-workstation-basic-xorg
 
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-split-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/base-minimal-nox.yml"
+  - "{{ playbook_dir }}/../profile-definitions/base-minimal-xorg-slim.yml"
   - "{{ playbook_dir }}/../profile-definitions/secure-firstboot-enrollment.yml"
+  - "{{ playbook_dir }}/../profile-definitions/metal-workstation-basic-xorg.yml"
 
-install_target_root: /
+liveiso_work_dir: /root/gentoo-liveiso-work/k10-stage5
+install_target_root: /mnt/gentoo
 install_hostname: gmktek-k10-stage5
+install_arch: amd64
+install_boot_mode: uefi
+preflight_require_runtime_uefi: true
+install_timezone: America/Los_Angeles
+install_keymap: us
+install_locale: en_US.UTF-8 UTF-8
+
+storage_confirm_destroy: true
+storage_layout: zfs-mirror
+storage_devices:
+  - /dev/disk/by-id/nvme-Force_MP600_230179710001314900AD
+  - /dev/disk/by-id/nvme-Force_MP600_2301797100013149004C
+esp_size_mib: 1024
+swap_size_gib: 32
+zpool_name: rpool
+zpool_compatibility: 'off'
+boot_strategy: zfsbootmenu
+boot_create_efi_nvram_entry: false
+zfsbootmenu_boot_label: ZFSBootMenu
+zfsbootmenu_prefer: "{{ zpool_name }}/ROOT/gentoo"
+zfsbootmenu_timeout: 0
+install_kernel_cmdline: "root=ZFS={{ zpool_name }}/ROOT/gentoo ro console=tty0 console=ttyS0,115200"
+
+stage3_flavor: llvm-openrc
+stage3_base_url: https://distfiles.gentoo.org/releases/amd64/autobuilds
+stage3_verify_checksum: true
+portage_sync_command: emerge-webrsync
+profile_overlay_name: local-install-profile
+profile_name: k10-stage5-workstation
+portage_cpu_profile: intel_core_i9_13900hk
+gpu_stack: intel
+kernel_strategy: gentoo-kernel-bin
+installer_prerequisites:
+  - sys-apps/gptfdisk
+portage_accept_license: "* *.*"
+portage_features:
+  - buildpkg
+  - parallel-install
+  - merge-sync
+portage_buildpkg_enabled: true
+portage_usepkg_enabled: false
+portage_getbinpkg_enabled: false
+portage_pkgdir: /var/cache/binpkgs/stage4-lox__stage5-metal-workstation-basic-xorg__amd64__intel-display-xorg
+portage_binpkg_format: tar
+portage_binpkg_compress: zstd
+portage_binpkg_compress_flags: "-2"
+portage_global_use:
+  - bindist
+  - bzip2
+  - cli
+  - ipv6
+  - lld
+  - zstd
+portage_extra_use: []
+portage_makeopts_jobs: 1
+portage_emerge_jobs: 1
+portage_load_average: 1
+cpu_flags_x86_override: []
+
+install_openssh: true
+install_networkmanager: true
+networkmanager_connections:
+  - name: sun99-management-static
+    type: ethernet
+    interface_name: enp4s0
+    mac_address: "84:47:09:5F:21:64"
+    autoconnect: true
+    addresses:
+      - 172.16.99.156/24
+    gateway4: 172.16.99.1
+    dns4:
+      - 172.16.99.63
+      - 172.16.99.1
+      - 9.9.9.9
+
+root_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB18sYCCsAYkwctlHZpbZYGcwZ7WCrP1xrHpi5KCtbD7 root@x12again
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6nVoltIxtd5SjEfmCIrSgi4M+Y35+GUq0gGbnYdjgZ root@admin-sun99-forge-099070
+finalize_unmount_target: false
+finalize_reboot_host: false
+
 freeipa_client_fqdn: gmktek-k10-stage5.rfc1918.host
 freeipa_client_short_hostname: gmktek-k10-stage5
 freeipa_client_realm: RFC1918.HOST
@@ -25,7 +112,21 @@ freeipa_client_install_packages: true
 freeipa_client_build_binary_packages: true
 freeipa_client_package_atoms:
   - sys-auth/sssd
-  - net-fs/samba
   - app-crypt/mit-krb5
   - net-nds/openldap
   - app-misc/ca-certificates
+
+profile_ipa_client:
+  hostname: gmktek-k10-stage5.rfc1918.host
+
+secure_firstboot_enrollment_enabled: false
+secure_firstboot_enrollment_expected_fqdn: gmktek-k10-stage5.rfc1918.host
+secure_firstboot_enrollment_command: >-
+  ipa-client-install
+  --unattended
+  --domain="${STAGE5_ENROLL_DOMAIN}"
+  --realm="${STAGE5_ENROLL_REALM}"
+  --server="${STAGE5_ENROLL_IPA_SERVER}"
+  --hostname="${STAGE5_ENROLL_FQDN}"
+  --password="${STAGE5_ENROLL_OTP}"
+  --mkhomedir

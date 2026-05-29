@@ -1,0 +1,10 @@
+dev-python/pip
+dev-python/virtualenv
+dev-vcs/git
+net-misc/curl
+net-proxy/haproxy
+sys-apps/shadow
+www-apps/trac
+www-servers/nginx
+dev-db/postgresql
+app-admin/rsyslog

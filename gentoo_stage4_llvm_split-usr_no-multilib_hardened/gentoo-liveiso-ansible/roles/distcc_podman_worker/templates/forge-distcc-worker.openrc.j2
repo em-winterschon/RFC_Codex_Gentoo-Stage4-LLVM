@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+description="Forge Gentoo distcc worker container"
+command={{ distcc_podman_worker_start_script | quote }}
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="{{ distcc_podman_worker_log_dir }}/openrc.log"
+error_log="{{ distcc_podman_worker_log_dir }}/openrc.err.log"
+
+depend() {
+  need net
+  after firewall
+}
+
+stop_pre() {
+  /usr/bin/podman stop -t 10 {{ distcc_podman_worker_container_name | quote }} >/dev/null 2>&1 || true
+}

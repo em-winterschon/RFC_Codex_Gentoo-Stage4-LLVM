@@ -238,6 +238,60 @@ vault_private_ca_rfc1918_pkcs12_path
 Until this CA is imported and distributed to clients, service TLS may use
 runtime-generated self-signed certificates for transport testing only.
 
+Service leaf certificates are tracked separately from the CA under a nested
+vault namespace:
+
+```text
+vault_service_tls_certificates.<service_id>.fullchain_pem
+vault_service_tls_certificates.<service_id>.private_key_pem
+vault_service_tls_certificates.<service_id>.pkcs12_base64
+vault_service_tls_certificates.<service_id>.pkcs12_password
+```
+
+FreeIPA server certificate migration additionally requires the existing
+Directory Manager password:
+
+```text
+vault_freeipa_ipa01_directory_manager_password
+```
+
+`cn=Directory Manager` is the 389-DS LDAP root DN created during FreeIPA
+installation. It is not a Kerberos admin user and it bypasses normal IPA RBAC,
+so it must be stored only in Ansible Vault and consumed only by the gated
+`freeipa_server_certificate` role. If the value is unknown, rotate or reset it
+in a dedicated identity maintenance window before adding the new value to vault.
+
+The `freeipa_ipa01` service TLS vault entry must include PKCS#12 material:
+
+```text
+vault_service_tls_certificates.freeipa_ipa01.pkcs12_base64
+vault_service_tls_certificates.freeipa_ipa01.pkcs12_password
+```
+
+The migration playbook is opt-in and should be run only after FreeIPA health and
+backout paths are validated:
+
+```bash
+ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/freeipa-server-cert-migration.yml \
+  -e freeipa_server_certificate_enabled=true \
+  -e freeipa_server_certificate_apply=true \
+  -e freeipa_server_certificate_service_id=freeipa_ipa01
+```
+
+The non-secret deployment matrix is:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/service_tls_certificates.yml
+```
+
+Do not commit literal leaf PEM, private-key PEM, or PKCS#12 data. File-backed
+services use `fullchain_pem` and `private_key_pem`; supported RouterOS and
+device APIs may additionally require PKCS#12 material. Legacy firmware that
+cannot run modern TLS belongs in `legacy_oob_devices.yml`, not in the service
+TLS certificate matrix.
+
 ## APC PDU Credentials
 
 The operator-private AP7901 RFC99 core-control PDU credential source is:
@@ -261,6 +315,50 @@ NetBox inventory for the AP7901 must remain non-secret. It may contain the
 device model, management IP, serial number, SNMPv3 capability marker, and outlet
 labels, but it must not contain SNMPv3 usernames, authentication secrets,
 privacy secrets, or local break-glass passwords.
+
+The AP7901 PDU is TLS-exempt legacy firmware. Do not create
+`vault_service_tls_certificates.pdu_rfc99_corectrl` entries for it. Manage it
+through SNMPv3 first, serial rescue/configuration second, and management-only
+legacy HTTP as break-glass. The non-secret policy lives in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/legacy_oob_devices.yml
+```
+
+## SUN99 Power Device Credentials
+
+The SUN99 white-rack UPS, ATS, and PDU credential source is:
+
+```bash
+/root/operator-private/voltage-ops/ups-ats-pdu.sun99-white-rack-infra.info
+```
+
+Import or rotate it with:
+
+```bash
+scripts/import-sun99-power-device-vault.sh
+```
+
+The importer accepts the operator-private markdown/key-value source and copies
+only section-scoped `username` and `password` fields into the encrypted
+local-network vault. It supports these source sections:
+
+- `Primary UPS`
+- `Secondary UPS`
+- `Primary ATS`
+- `Primary PDU`
+
+The resulting vault variables use the
+`vault_power_devices_sun99_white_rack_*` prefix. The non-secret variable map
+lives in:
+
+```text
+gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/group_vars/all/power_devices.yml
+```
+
+Do not commit the operator-private source file, decrypted vault views, local
+device passwords, SNMP communities, SNMPv3 auth/privacy secrets, or rendered
+configuration files that contain those values.
 
 ## Safety Rules
 

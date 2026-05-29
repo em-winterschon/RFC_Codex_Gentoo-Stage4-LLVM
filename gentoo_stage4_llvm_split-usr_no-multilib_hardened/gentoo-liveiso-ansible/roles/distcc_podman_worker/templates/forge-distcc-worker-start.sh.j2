@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+container_name={{ distcc_podman_worker_container_name | quote }}
+image={{ distcc_podman_worker_image | quote }}
+cache_dir={{ distcc_podman_worker_cache_dir | quote }}
+log_dir={{ distcc_podman_worker_log_dir | quote }}
+
+mkdir -p "${cache_dir}" "${log_dir}"
+
+podman_args=(
+  run
+  --replace
+  --name "${container_name}"
+  --network {{ distcc_podman_worker_network_mode | quote }}
+  --pull {{ distcc_podman_worker_pull_policy | quote }}
+  --env DISTCC_SERVICE_USER={{ distcc_podman_worker_service_user | quote }}
+  --volume "${cache_dir}:/var/cache/distcc:rw"
+  --volume "${log_dir}:/var/log/distcc:rw"
+{% for arg in distcc_podman_worker_extra_podman_args %}
+  {{ arg | quote }}
+{% endfor %}
+  "${image}"
+)
+
+distccd_args=(
+  /usr/bin/distccd
+  --daemon
+  --no-detach
+  --listen {{ distcc_podman_worker_listen_address | quote }}
+  --port {{ distcc_podman_worker_port | quote }}
+  --jobs {{ distcc_podman_worker_jobs | quote }}
+  --nice {{ distcc_podman_worker_nice | quote }}
+  --user {{ distcc_podman_worker_service_user | quote }}
+  --log-file /var/log/distcc/distccd.log
+  --log-level {{ distcc_podman_worker_log_level | quote }}
+)
+
+{% for cidr in distcc_podman_worker_allowed_client_cidrs %}
+distccd_args+=(--allow {{ cidr | quote }})
+{% endfor %}
+{% for arg in distcc_podman_worker_extra_distccd_args %}
+distccd_args+=({{ arg | quote }})
+{% endfor %}
+
+exec /usr/bin/podman "${podman_args[@]}" /bin/bash -lc \
+  'mkdir -p /var/cache/distcc /var/log/distcc &&
+   chown -R "${DISTCC_SERVICE_USER}:${DISTCC_SERVICE_USER}" /var/cache/distcc /var/log/distcc &&
+   exec "$@"' bash "${distccd_args[@]}"

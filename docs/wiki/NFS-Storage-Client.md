@@ -8,8 +8,15 @@ Roadmap tracking:
 - Issue #117: `RDMA-002`, host RDMA storage client baseline.
 - Issue #111: `RDMA-003`, DOCA/OFED deployment consumes this baseline after
   fabric and client policy are ready.
+- The RDMA promotion readiness gate is
+  `docs/workflows/rdma-fabric-promotion-readiness.yml`; it marks this baseline
+  defined while keeping NFS-RDMA live use blocked until the shared RDMA/FMT2
+  production admission gates pass.
 
-NFSv3 over TCP remains the default for compatibility and rescue workflows.
+NFSv4.2 over TCP with nconnect is the default for LACP-capable hosts.
+NFSv4.1 over TCP is the default for hosts without LACP links. NFSv3 over TCP
+remains a rescue and early bootstrap compatibility profile.
+
 NFSv4 requires centralized AAA, SSSD, and consistent UID/GID mapping from the
 `aaa-domain-client` overlay. NFS-RDMA is opt-in and requires validated RDMA/RoCE
 fabric readiness.
@@ -29,3 +36,5 @@ Primary atoms:
 
 Use `nconnect` or pNFS for NFS-side multi-path behavior where supported. Keep
 `multipath-tools` for block storage paths such as iSCSI, FC, and NVMe-oF.
+Do not assume OpenEuler-style `localaddrs`/`remoteaddrs` NFS multipathing is
+available on Proxmox/Debian clients; validate throughput and failover live.

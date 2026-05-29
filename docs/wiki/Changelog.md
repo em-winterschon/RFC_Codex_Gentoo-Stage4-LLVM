@@ -1,13 +1,170 @@
 # Changelog
 
-## 2026-05-23 - Thor AGX Stabilization
+## 2026-05-23 - Thor AGX Stabilization Evidence Intake
 
-- Added the Thor AGX stabilization runbook with live access path, Ubuntu L4T
-  package guardrails, DNS state, OpenSSH repair notes, inference-service gaps,
-  and post-change validation gates.
-- Added `agx_rfc99_bunnydev` host vars and registered Thor as a
-  `gpu_compute` host in the local-network inventory while keeping FreeIPA/SSSD,
-  QSFP/OVS, and inference-service installs explicitly deferred.
+- Added the historical Thor AGX stabilization record for
+  `agx-rfc99-bunnydev`, including the dpkg/APT repair trail, NVIDIA runtime
+  observations, and active blockers from the first bring-up pass.
+- Preserved that record as historical evidence only: the later
+  `THOR-AGX-INFERENCE-READINESS` document and
+  `agx_rfc99_bunnydev_099034` inventory now supersede Docker-specific runtime
+  state for current desired-state work.
+- Added the RouterOS static DNS entry and NetBox inventory-intake fabric link
+  for the Thor RJ45 management path at `172.16.99.34/24`, with CSS326 `ge7`
+  cabled to `enP2p1s0` for management-plane tracking.
+- Extended the NetBox intake apply path to represent interface cabling and to
+  preserve intentionally connected-but-unassigned endpoints without marking
+  cabled interfaces as virtually connected.
+
+## 2026-05-20 - FMT2 R630 `sec` RDMA Positive-Control Workflow
+
+- Added `sec` and `ter` to the local-network `roce_hosts` inventory with
+  `admin_sun99_forge_099070` as the required FMT2 execution host, because the
+  M70 holds the OpenVPN route and SSH identity required for those hosts.
+- Updated the NVIDIA DOCA/OFED role's preflight discovery tasks to use raw
+  commands so `apply=false` can inspect old Rocky/RHEL-like hosts that only
+  provide Python 3.6, while keeping live package/driver mutation disabled.
+- Ran the M70-hosted `nvidia-doca-ofed.yml` preflight against `sec` with
+  `apply=false`; it detected both ConnectX-4 PCI functions, reported kernel
+  `6.3.8-1.el8.elrepo.x86_64`, and stopped before mutation with
+  `ok=3 changed=0 failed=0`.
+- Captured `kvm-sfo200-sec-9923` as the non-destructive positive-control R630
+  while `pri` remains physically blocked on missing ConnectX inventory.
+- Verified live `sec` evidence: SSH and sudo path works from M70, X710 ports
+  enumerate at 10G with 32 total VFs per PF, ConnectX-4 endpoints enumerate as
+  Mellanox MT27700 `[15b3:1013]`, both ConnectX ports link at 50G, and
+  `rdma link show` reports `mlx5_0` and `mlx5_1` as `ACTIVE`.
+- Captured Arista positive-control evidence: `Et7/1` and `Et7/3` are connected
+  at 50G, LLDP sees `kvm-sfo200-sec-9923.vernetzen.io`, sampled port errors are
+  zero, and `Po713` remains a later LACP/switchdev promotion gate.
+- Added the blocked `fmt2-sec-rdma-positive-control` E2ET manifest and workflow
+  so `sec` can progress through read-only capture, NVIDIA DOCA/OFED preflight,
+  RDMA tooling closeout, and later `sec` to `ter` pairwise smoke without
+  touching `pri`, `ter`, X12AGAIN, or `sec` storage.
+- Documented that the same vendor driver family should cover ConnectX-4 now and
+  BlueField-2 after the datacenter NIC migration, but `sec` is not production
+  admitted until `ofed_info`, ibverbs/perftest tooling, pairwise RDMA smoke,
+  protocol smoke, and one-path-failure gates pass.
+
+## 2026-05-19 - FMT2 R630 HCI Staged Rebuild Planning
+
+- Added the FMT2 R630 HCI staged rebuild runbook for
+  `kvm-sfo200-pri-9922`, `kvm-sfo200-sec-9923`, and
+  `kvm-sfo200-ter-9924`, using `pri` as the first destructive rebuild
+  candidate and preserving `ter` as the storage/provisioning anchor.
+- Added the R630 network fabric policy: X710 `eno1`/`eno2` for host-management
+  LACP, X710 `eno3`/`eno4` for VM front-end LACP/OVS/SR-IOV, and ConnectX-4
+  2x50GbE for RDMA/RoCEv2 storage paths through the Arista 7060.
+- Captured 2026-05-19 R630 fabric evidence: X710 and ConnectX links are up on
+  `sec` and `ter`, RDMA links are active, SR-IOV exposure is inconsistent, and
+  `sec` reports placeholder ConnectX MACs requiring firmware follow-up.
+- Captured that `sec` and `ter` currently lack `ofed_info` and are using
+  in-kernel `mlx5` modules; production RDMA admission now requires the selected
+  vendor OFED/DOCA path and consistent SR-IOV enablement.
+- Corrected the live Arista 7060 management record to `172.18.20.10`, noting
+  that HTTPS/eAPI is reachable, SSH is open from the CheckMK VM but filtered
+  from M70/NASA, and access must use `verwalterin` rather than `root`.
+- Validated read-only Arista CLI access from M70 through CheckMK using the
+  `7060` SSH alias, the `verwalterin.vernetzen.id_rsa` key, and the existing
+  switch `mgmt-acl` permit for `10.200.99.27`; documented that M70 and NASA
+  remain outside the ACL.
+- Extended the gated NVIDIA DOCA/OFED role markers to include ConnectX-4 and
+  `ofed_info -s` validation so FMT2 R630 ConnectX-4 hosts are tracked by the
+  same vendor-driver admission policy.
+- Recorded the `ter` storage policy: existing ZFS pool `dstore` is the only
+  local target for VM images, zvols, migration staging, backups, ISO caches,
+  and provisioning artifacts; the OS RAID1 SATA SSDs are OS-only.
+- Created and documented the `dstore` dataset and libvirt storage-pool layout for
+  `dstore/libvirt/images`, `dstore/libvirt/zvols`, backups, ISO cache, and
+  staging paths.
+- Defined the live `dstore-images` libvirt directory pool on `ter`, validated a
+  disposable KVM domain lifecycle against a QCOW2 disk on `dstore`, and verified
+  `/var/lib/libvirt/images` remained empty.
+- Validated zvol creation/destruction under `dstore/libvirt/zvols`; native
+  libvirt ZFS pool management is deferred because the temporary Rocky libvirt
+  build reports ZFS storage pool support unavailable.
+- Added roadmap and FMT2 inventory-intake notes to prevent future automation
+  from placing VM or backup payloads on `ter`'s OS mirror.
+- Added the R630 IDSDM EFI handoff policy from the archived `sec` Foreman
+  kickstart: IDSDM carries `/boot` and `/boot/efi`, the two small SATA devices
+  carry the OS mirror, and SAS hot-swap bays remain reserved for ZFS payloads.
+
+## 2026-05-19 - K10 Live Root Network Durability
+
+- Added Path B builder inputs for static OpenRC networking in the switched
+  live root: `PATHB_STATIC_INTERFACE`, `PATHB_STATIC_ADDRESS_CIDR`,
+  `PATHB_STATIC_GATEWAY`, and `PATHB_STATIC_DNS`.
+- Updated the K10 stage5 manifest and shell regression coverage so the
+  generated rootfs brings up `net.enp4s0` directly instead of depending on
+  dracut to preserve initramfs network state after switchroot.
+- Patched the active Hasslehoff netboot publisher rootfs and AP7901 outlet 6
+  reboot-validated K10 SSH reachability on `172.16.99.156` with OpenRC
+  `net.enp4s0`, `netmount`, `sshd`, and `local` started.
+- Preserved the pre-patch publisher rollback rootfs at
+  `/var/lib/netboot/path-b/artifacts/gentoo-installer/rollback-20260519T143743Z/rootfs.img`
+  and recorded the active rootfs checksum
+  `23bfe6bb89aa4fae56345f995648ae2321956ba0e3d5e3b235b57159ea402a32`.
+
+## 2026-05-17 - Hasslehoff Backup And ntfy Image Hardening
+
+- Hardened the Hasslehoff scheduled backup wrapper with preflight-only mirror
+  target validation, X12AGAIN/Prinzessin mirror-target rejection, optional
+  restore/readback verification, final manifest re-sync after a successful
+  mirror, and opt-in local retention controls.
+- Replaced the `ntfy` live Docker Hub runtime dependency with a controlled OCI
+  archive preload policy: local image `localhost/rfc1918/ntfy:v2.14.0`,
+  `pull_policy: never`, and required archive plus SHA256 files under
+  `/var/lib/container-services/preload`.
+
+## 2026-05-16 - RFC1918 CA TLS Deployment Planning
+
+- Added gated `rfc1918_ca_trust` and `rfc1918_service_tls` Ansible roles, wired
+  them into install role sequencing, and kept live mutation blocked behind
+  explicit apply variables.
+- Added RouterOS internal-CA certificate import mode for CA plus PKCS#12
+  bundles while preserving the existing self-signed fallback path.
+- Added `scripts/validate-rfc1918-service-tls.sh` for OpenSSL endpoint
+  validation, JSONL audit output, health URL checks, and optional local ntfy
+  notifications.
+- Added the non-secret RFC1918 service TLS certificate matrix for ntfy,
+  rsyslog, Elasticsearch VIP, NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, CheckMK, MCP control plane, RouterOS, Proxmox, and PDU
+  coverage.
+- Added the CA/TLS implementation plan and ITIL/ADR documentation for vault-only
+  secrets, trust-anchor rollout, HAProxy-first leaf deployment, network-device
+  imports, validation, and backout.
+- Extended Ansible Vault documentation with the
+  `vault_service_tls_certificates.<service_id>.*` leaf certificate namespace.
+- Added a shell guard test that validates the matrix structure and blocks
+  committed PEM material.
+
+## 2026-05-14 - M70 PDU Label And EOD Closeout
+
+- Normalized AP7901 outlet 4 inventory to the control-panel label
+  `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
+- Removed the paused validation laptop from active repo inventory, roadmap, and
+  docs until it is re-inventoried with stable IP, power, and switch metadata.
+- Added the 2026-05-13 EOD report and overnight execution plan, prioritizing
+  safe repo-only M70 hardening, Forge continuity restore planning, X12AGAIN
+  preflight expansion, SLURM observability, NetBox DCIM dry-run modeling, and
+  BigNetwork/FMT2 smoke-test prep.
+
+## 2026-05-13 - X12AGAIN Reimage And Coherent Scale Model
+
+- Added host-specific `metal-x12again-workstation-xen-coherent` profile intent
+  for X12AGAIN as a LOX workstation, Xen/QEMU hypervisor, AAA/RDMA/NFS client,
+  gated SLURM worker, Optane NVDIMM host, BlueField2 lab system, and Project
+  Coherent Flash scale-model target.
+- Added the no-mutation X12AGAIN live reimage preflight playbook, local-network
+  reimage-candidate inventory, host E2ET manifest, and docs. Destructive
+  mutation remains blocked until backup, service continuity, emergency console,
+  and human change-window gates are all explicitly true.
+- Added ITIL-style X12AGAIN reimage/change-control docs with hard gates,
+  backout, SLURM admission, BlueField2/RDMA admission, and no production
+  storage mutation policy.
+- Added the Project Coherent Flash SLURM scale-model plan mapping ADR-001
+  through ADR-009 to simulation-only job classes, metrics, and conformance
+  artifacts.
 
 ## 2026-05-13 - SLURM Pilot Live Validation
 
@@ -110,7 +267,8 @@
   present, then re-applied and validated live FreeIPA client enrollment.
 - Extended NetBox intake/apply logic to create real DCIM power cable objects
   between AP7901 outlets and host power ports, then applied and verified
-  `outlet6 -> K10` and `outlet4 -> Chonkers` with pre/post NetBox snapshots.
+  `outlet6 -> K10` and `outlet4 -> M70 automation-admin` with pre/post
+  NetBox snapshots.
 - Added the `secure-firstboot-enrollment` profile, package list, role-service
   atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
   FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
@@ -359,6 +517,28 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added MCP control-plane scaffolding for repo-managed MCP admission policy,
+  candidate registry, risk tiers, read-only defaults, and explicit
+  change-control gates before any mutation-capable MCP server receives
+  credentials.
+- Added the Stage5 `vm-mcp-control-plane` profile package layer, metadata, and
+  render-only `mcp_control_plane` Ansible role. The role writes
+  `/etc/mcp-control-plane/candidate-registry.yml`,
+  `/etc/mcp-control-plane/promotion-policy.yml`, and
+  `/etc/mcp-control-plane/mcp-control-plane.env` without launching third-party
+  MCP services.
+- Added first-batch MCP candidate tracking for Hugging Face, Trac, NetBox,
+  Grafana, Jenkins, Proxmox, Context7, and Kubernetes/OpenShift MCP servers.
+- Added platform-service TODOs for single-node OpenShift and single-node
+  OpenStack VM profiles, including an explicit Gentoo/OpenRC feasibility gate
+  before assuming native service management.
+- Added MCP candidate audit and Trac MCP evaluation documents, including the
+  inspected `nerpatech/trac-mcp-server` commit, destructive tool inventory,
+  read-only wrapper requirement, and smoke-test promotion order.
+- Added a 2026-05-08 Morning SITREP next-step tracker covering NetBox-driven
+  provisioning, base system services, service-role overlays, centralized AAA,
+  Trac control plane, Codeberg mirroring, read-only MCP tests, and FMT2
+  discovery sequencing.
 - Added GitHub project-management scaffolding for the interim NOW() tracker:
   structured issue forms, label catalog, milestone catalog, roadmap-derived
   issue seeding, query-parameter issue URLs, and a dry-run-first local seed
@@ -380,9 +560,6 @@ infrastructure work. It is intentionally higher level than `git log`.
 - Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
   NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
   and K10 `power0` metadata.
-- Added the Alienware `lap-sun99-chonkers.rfc1918.dev` laptop as the second
-  physical Stage5 workstation validation target, with Realtek RTL8111H LOM MAC,
-  CSS326 `ge15`, AP7901 outlet 4, and iPXE/HTTPv4 boot metadata.
 
 ### Changed
 
@@ -393,6 +570,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 ## 2026-05-07
 
 ### Added
+
+- Added the Trac project-management control-plane design, Stage5
+  `vm-trac-service` profile, `trac_server` role, and `trac_mcp_bridge` role
+  scaffolding so Trac can become the authoritative Kanban/ticket/wiki plane
+  while GitHub and Codeberg remain linked Git surfaces.
 
 - Added Stage5 `vm-redfish-emulator` profile scaffolding using OpenStack
   `sushy-tools` as the primary libvirt-backed VM Redfish path and DMTF Redfish

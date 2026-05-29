@@ -80,9 +80,17 @@ devices:
     manufacturer: Arista
     model: DCS-7060CX-32S
     status: planned
-    management_ip: 172.16.40.10
+    management_ip: 172.18.20.10
     notes:
-      - Legacy record uses 172.16.40.10; prefix validation should warn until FMT2 management routing is confirmed.
+      - Legacy record used 172.16.40.10; live FMT2 access on 2026-05-19 reached HTTPS/eAPI at 172.18.20.10:443.
+      - SSH on 22/tcp is restricted by mgmt-acl. Permitted live sources include CheckMK 10.200.99.27 and Prometheus 10.200.99.46; M70 172.16.99.70 and NASA 10.200.99.18 are not permitted.
+      - M70 alias 7060 reaches SSH read-only by ProxyJump through CheckMK using the verwalterin.vernetzen.id_rsa key.
+      - Access user should be verwalterin, not root. Typo alias sw-sfo200-7060cx32s-2010.vernetzezn.io should resolve to this device to avoid root fallback from unmatched SSH config.
+      - Live Management1 state on 2026-05-19 was 172.18.20.10/24 by DHCP with default route through 172.18.20.1.
+      - Provides the 2x50GbE ConnectX-4 RDMA/RoCEv2 fabric for the R630 HCI hosts; snapshot configuration before any MTU/PFC/ECN/LACP change.
+      - Live R630 port map on 2026-05-20 was pri X710 Et3/1-Et3/4, pri ConnectX-facing Et6/1+Et6/3, sec X710 Et4/1-Et4/4, ter X710 Et5/1-Et5/4, sec ConnectX Et7/1+Et7/3, and ter ConnectX Et8/1+Et8/3.
+      - Existing ConnectX switch config uses LACP port-channels Po613, Po713, and Po813 in VLAN 50 or dot1q-tunnel VLAN 50 with MTU 9214, but no explicit QoS/PFC/ECN/WRED policy was found in the running-config include scan.
+      - First-pass RoCEv2 admission should prefer independent VLAN 50 jumbo paths until host OFED, switch QoS, RDMA pair tests, and one-path-failure tests pass.
   - name: gw-sfo200-pri
     site: fmt2
     role: ha-wan-router
@@ -126,6 +134,15 @@ devices:
         mac: 24:6e:96:42:65:d2
       - name: idrac
         mac: 84:7b:eb:f3:a9:2e
+    notes:
+      - First destructive rebuild candidate for Gentoo stage4 OpenStack/RoCE validation.
+      - stage4_profile: metal-fmt2-r630-openstack-roce
+      - Target kernel policy is kernel_strategy gentoo-kernel with =sys-kernel/gentoo-kernel-6.18.18.
+      - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE independent RoCEv2 paths before any ConnectX LACP promotion.
+      - Live 2026-05-20 state is a disposable Rocky 8.10 firmware-maintenance OS booted from a ter-hosted iSCSI LUN. root SSH works, but the normal verwalterin alias rejects the current Forge FMT2 keys.
+      - iDRAC firmware is 2.86.86.86 after the 2026-05-19 update; BIOS is 2.13.0; iDRAC job queue showed completed BIOS setup and reboot jobs.
+      - Live 2026-05-20 discovery showed X710 rNDC ports up with NVM 5.04, firmware 5.0.40043, and 32 VFs per PF.
+      - Live 2026-05-20 discovery did not enumerate a Mellanox/ConnectX device in Linux or iDRAC hardware inventory. Arista Et6/1+Et6/3 still show 50G link on Po613, so resolve the physical slot/card/cabling or inventory mismatch before admitting pri to RDMA.
   - name: kvm-sfo200-sec-9923
     site: fmt2
     role: virtualization-host
@@ -139,6 +156,13 @@ devices:
         mac: 24:6e:96:42:83:b2
       - name: idrac
         mac: 84:7b:eb:d8:f3:c6
+    notes:
+      - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE RDMA/RoCEv2.
+      - Live 2026-05-19 discovery showed X710 ports up at 10G with 32 SR-IOV VFs per port, ConnectX-4 ports up at 50G with RDMA ACTIVE, and ConnectX SR-IOV VFs not exposed.
+      - Live 2026-05-19 discovery showed ofed_info absent and mlx5 modules loaded from the kernel tree; production RDMA admission requires vendor OFED/DOCA driver validation.
+      - ConnectX MACs reported as 00:00:00:00:12:34 and 00:00:00:00:12:35; fix or explain firmware state before using those MACs in IPAM, DHCP, ACL, or switch automation.
+      - Live 2026-05-20 positive-control evidence confirmed Mellanox MT27700 ConnectX-4 [15b3:1013] endpoints at 0000:82:00.0 and 0000:82:00.1, 50G full-duplex link, RDMA ACTIVE on mlx5_0/mlx5_1, Arista LLDP neighbors on Et7/1+Et7/3, and zero sampled Arista port errors.
+      - Live 2026-05-20 production RDMA admission remains blocked because ofed_info and ibverbs/perftest smoke tools are absent; keep the workflow non-destructive until vendor-driver and pairwise sec-to-ter gates pass.
   - name: kvm-sfo200-ter-9924
     site: fmt2
     role: virtualization-host
@@ -152,6 +176,13 @@ devices:
         mac: 24:6e:96:38:0a:d8
       - name: idrac
         mac: 64:00:6a:c3:82:2a
+    notes:
+      - Storage-preserving FMT2 rebuild anchor. Existing ZFS pool dstore is used for VM images, zvols, backups, staging, ISO caches, and provisioning artifacts.
+      - OS RAID1 SATA SSDs are OS-only and must not be used for VM or backup payloads.
+      - Intended NIC policy is eno1+eno2 for host-management LACP, eno3+eno4 for VM front-end LACP/OVS/SR-IOV, and enp130s0f0np0+enp130s0f1np1 for 2x50GbE RDMA/RoCEv2.
+      - Live 2026-05-19 discovery showed X710 ports up at 10G, ConnectX-4 ports up at 50G, and RDMA ACTIVE on mlx5_0/mlx5_1; X710 and ConnectX SR-IOV VFs were not exposed on the temporary Rocky install.
+      - Live 2026-05-19 discovery showed ofed_info absent and mlx5 modules loaded from the kernel tree; production RDMA admission requires vendor OFED/DOCA driver validation.
+      - MLNX_OFED 24.10 source bundle is staged on ter and a dstore-backed isolated buildroot captured the active ELRepo 6.3.8 iSER API mismatch. That builder is diagnostic-only now; the production rebuild path pivots to Gentoo stage4 on pri first.
   - name: kvm-sfo200-nasa-9918
     site: fmt2
     role: virtualization-storage-host

@@ -38,6 +38,9 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/tasks/main.yml" 'base
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_host/templates/base-image.yml.j2" 'resolved_profile_container_base_image'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ghcr.io/em-winterschon/gentoo-stage5-nginx:latest'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'localhost/rfc1918/ntfy:v2.14.0'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'preload:'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'ntfy-v2.14.0-amd64.oci-archive'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'gcc-compat.conf'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'ghcr.io/em-winterschon/gentoo-stage5-rsyslog-collector:latest'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/container-rsyslog-collector.yml" 'sha256:2acfd8f06d7aa3a9524a95bade090793543c228bd62b6bf38e76302324195287'
@@ -72,18 +75,27 @@ assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" '/etc/haproxy/haproxy.cfg'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" 'container_haproxy_tls_dir'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/tasks/main.yml" 'crt_list_entries'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'user haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'group haproxy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'backend_port'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'frontend fe_https'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'ssl crt'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'ssl crt-list'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_haproxy/templates/haproxy.cfg.j2" 'tls_https_route'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'msg-sun99-ntfysys-099096.rfc1918.host'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'listen_http: ":8080"'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'tls:'
 assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'msg-sun99-ntfysys.pem'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'crt-list.txt'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-container-services.yml" 'obs-sun99-esvip.pem'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/usr/sbin/rsyslogd'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" 'pull_policy'
 assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_rsyslog_collector/tasks/main.yml" '/var/spool/rsyslog'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'container_ntfy_pre_commands'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'podman image exists'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'podman load -i'
+assert_file_contains "${ANSIBLE_ROOT}/roles/container_app_ntfy/tasks/main.yml" 'sha256sum -c'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/pathb-container-services/host_vars/vm_container_services.yml" 'pull_policy: never'
 
 ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - << 'PY'
@@ -116,6 +128,7 @@ rendered = template.render(
             "enabled": True,
             "bind": "*:443",
             "cert_path": "/etc/haproxy/tls/msg-sun99-ntfysys.pem",
+            "crt_list": "/etc/haproxy/tls/crt-list.txt",
         }
     },
     resolved_haproxy_service_types_local=[
@@ -124,7 +137,20 @@ rendered = template.render(
             "mode": "tcp",
             "bind": "*:6514",
             "backend_name": "be_syslog_tcp",
+            "tls": {
+                "enabled": True,
+                "cert_path": "/etc/haproxy/tls/log-sun99-rsyslog.pem",
+            },
             "servers": [{"name": "rsyslog-collector", "address": "10.77.0.40", "port": 514}],
+        },
+        {
+            "name": "elasticsearch-test-http",
+            "mode": "http",
+            "bind": "*:9200",
+            "backend_name": "be_elasticsearch_test_http",
+            "tls_https_route": True,
+            "host_acl": "obs-sun99-esvip-099092.rfc1918.host obs-sun99-esvip.rfc1918.host",
+            "servers": [{"name": "elasticsearch-test", "address": "10.9.8.91", "port": 9200}],
         }
     ],
     container_runtime_applications=[
@@ -146,10 +172,13 @@ for expected in ("frontend fe_syslog_tcp", "frontend fe_http", "frontend fe_http
     if expected not in rendered:
         raise SystemExit(f"missing rendered HAProxy section: {expected}")
 for expected in (
-    "bind *:443 ssl crt /etc/haproxy/tls/msg-sun99-ntfysys.pem",
+    "bind *:443 ssl crt-list /etc/haproxy/tls/crt-list.txt",
+    "bind *:6514 ssl crt /etc/haproxy/tls/log-sun99-rsyslog.pem",
     "msg-sun99-ntfysys-099096.rfc1918.host",
     "msg-sun99-ntfysys.rfc1918.host",
+    "obs-sun99-esvip-099092.rfc1918.host obs-sun99-esvip.rfc1918.host",
     "server ntfy 10.77.1.20:8080 check",
+    "server elasticsearch-test 10.9.8.91:9200 check",
 ):
     if expected not in rendered:
         raise SystemExit(f"missing rendered HAProxy ntfy detail: {expected}")
@@ -192,8 +221,13 @@ podman_template = env.from_string(
 podman_rendered = podman_template.render(
     container_runtime_app={
         "name": "ntfy",
-        "image": "docker.io/binwiederhier/ntfy:v2.14.0",
+        "image": "localhost/rfc1918/ntfy:v2.14.0",
         "pull_policy": "never",
+        "pre_commands": [
+            "test -s /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+            "sha256sum -c /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive.sha256",
+            "podman image exists localhost/rfc1918/ntfy:v2.14.0 || podman load -i /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+        ],
         "network": "apps",
         "published_ports": [],
         "volumes": [],
@@ -212,6 +246,13 @@ podman_rendered = podman_template.render(
 
 if "--pull never" not in podman_rendered:
     raise SystemExit("podman wrapper render did not include pull policy")
+for expected in (
+    "test -s /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+    "sha256sum -c /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive.sha256",
+    "podman image exists localhost/rfc1918/ntfy:v2.14.0 || podman load -i /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive",
+):
+    if expected not in podman_rendered:
+        raise SystemExit(f"podman wrapper render missing ntfy preload command: {expected}")
 PY
 
 printf 'PASS: %s\n' "$(basename "$0")"

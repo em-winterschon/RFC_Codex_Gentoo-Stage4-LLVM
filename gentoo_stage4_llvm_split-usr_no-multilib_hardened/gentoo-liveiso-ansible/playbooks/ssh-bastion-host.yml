@@ -1,0 +1,7 @@
+---
+- name: Apply or validate SSH bastion host policy
+  hosts: "{{ ssh_bastion_hosts | default('ssh_bastion_hosts') }}"
+  gather_facts: true
+  become: true
+  roles:
+    - role: ssh_bastion_host

@@ -7,7 +7,7 @@ gentoo_profile_definition:
     USE="${USE} python qemu virt-network -systemd"
     FEATURES="${FEATURES} buildpkg parallel-install merge-sync"
     EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --buildpkg=y --with-bdeps=y --complete-graph=y --binpkg-respect-use=y"
-    PKGDIR="${STAGE5_BINPKG_PKGDIR:-/var/cache/binpkgs/stage4-lox__stage5-virtual-host-redfish-emulator__amd64}"
+    PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-virtual-host-redfish-emulator__amd64"
     PORTAGE_BINPKG_FORMAT="tar"
     BINPKG_COMPRESS="zstd"
     BINPKG_COMPRESS_FLAGS="-2"

@@ -23,7 +23,9 @@ done
 
 for file in "${DOC}" "${WIKI}" "${PLAN}"; do
   assert_file_contains "${file}" 'sched-sun99-slurmctl-099071'
+  assert_file_contains "${file}" 'sched-sun99-slurmwkr-099073'
   assert_file_contains "${file}" '172.16.99.71'
+  assert_file_contains "${file}" '172.16.99.73'
   assert_file_contains "${file}" 'MUNGE'
   assert_file_contains "${file}" 'slurmdbd'
   assert_file_contains "${file}" 'NetBox'
@@ -40,6 +42,9 @@ for file in "${DOC}" "${WIKI}" "${PLAN}"; do
 done
 
 assert_file_contains "${DOC}" 'Do not block SLURM on X12AGAIN reimage'
+assert_file_contains "${DOC}" 'Physical M70 Expansion Recommendation'
+assert_file_contains "${DOC}" 'M70 Atom C3758'
+assert_file_contains "${DOC}" 'primary MAC'
 assert_file_contains "${DOC}" 'first worker'
 assert_file_contains "${DOC}" 'build'
 assert_file_contains "${DOC}" 'validation'

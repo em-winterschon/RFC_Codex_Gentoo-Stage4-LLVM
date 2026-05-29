@@ -10,6 +10,8 @@ PACKAGE_LIST_DIR="${ANSIBLE_ROOT}/profile-package-lists"
 SERVICE_ATOMS="${ANSIBLE_ROOT}/profile-service-atoms/stage5-role-service-atoms.yml"
 INSTALL_SEQUENCE="${ANSIBLE_ROOT}/vars/install_sequences.yml"
 INSTALL_PLAYBOOK="${ANSIBLE_ROOT}/playbooks/install.yml"
+PREFLIGHT_MAIN="${ANSIBLE_ROOT}/roles/preflight/tasks/main.yml"
+PREFLIGHT_LOAD="${ANSIBLE_ROOT}/roles/preflight/tasks/load_profile_definition.yml"
 DOC="${REPO_ROOT}/docs/HPC-WORKLOAD-SCHEDULER-PLAN.md"
 WIKI="${REPO_ROOT}/docs/wiki/HPC-Workload-Scheduler-Plan.md"
 
@@ -113,6 +115,8 @@ assert_file_contains "${SERVICE_ATOMS}" 'tcp/6818'
 assert_file_contains "${SERVICE_ATOMS}" 'tcp/6819'
 assert_file_contains "${INSTALL_SEQUENCE}" 'slurm_cluster'
 assert_file_contains "${INSTALL_PLAYBOOK}" 'slurm_cluster'
+assert_file_contains "${PREFLIGHT_MAIN}" 'resolved_profile_slurm_cluster'
+assert_file_contains "${PREFLIGHT_LOAD}" 'gentoo_profile_definition.slurm_cluster'
 assert_file_contains "${DOC}" 'Repo Scaffold State'
 assert_file_contains "${DOC}" 'vm-slurm-controller'
 assert_file_contains "${DOC}" 'Issue #118'

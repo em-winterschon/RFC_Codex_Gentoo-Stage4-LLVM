@@ -1,0 +1,70 @@
+---
+- name: Resolve MCP control plane settings
+  ansible.builtin.set_fact:
+    mcp_control_plane_enabled: "{{ resolved_profile_mcp_control_plane.enabled | default(mcp_control_plane_default_enabled) | bool }}"
+    resolved_mcp_control_plane:
+      install_root: "{{ resolved_profile_mcp_control_plane.install_root | default(mcp_control_plane_default_install_root) }}"
+      default_mode: "{{ resolved_profile_mcp_control_plane.default_mode | default(mcp_control_plane_default_default_mode) }}"
+      write_gate: "{{ resolved_profile_mcp_control_plane.write_gate | default(mcp_control_plane_default_write_gate) }}"
+      audit_log_path: "{{ resolved_profile_mcp_control_plane.audit_log_path | default(mcp_control_plane_default_audit_log_path) }}"
+      registry_path: "{{ resolved_profile_mcp_control_plane.registry_path | default(mcp_control_plane_default_registry_path) }}"
+      promotion_policy_path: "{{ resolved_profile_mcp_control_plane.promotion_policy_path | default(mcp_control_plane_default_promotion_policy_path) }}"
+      env_path: "{{ resolved_profile_mcp_control_plane.env_path | default(mcp_control_plane_default_env_path) }}"
+      owner: "{{ resolved_profile_mcp_control_plane.owner | default(mcp_control_plane_default_owner) }}"
+      group: "{{ resolved_profile_mcp_control_plane.group | default(mcp_control_plane_default_group) }}"
+      mode: "{{ resolved_profile_mcp_control_plane.mode | default(mcp_control_plane_default_mode) }}"
+      promotion_stages: "{{ resolved_profile_mcp_control_plane.promotion_stages | default(mcp_control_plane_default_promotion_stages) }}"
+      required_evidence: "{{ resolved_profile_mcp_control_plane.required_evidence | default(mcp_control_plane_default_required_evidence) }}"
+      candidates: "{{ resolved_profile_mcp_control_plane.candidates | default(mcp_control_plane_default_candidates) }}"
+
+- name: Add MCP control plane package atoms to the resolved profile
+  ansible.builtin.set_fact:
+    resolved_profile_package_atoms: >-
+      {{
+        (
+          resolved_profile_package_atoms | default([])
+          + ['dev-python/pyyaml', 'dev-python/requests', 'dev-vcs/git', 'net-misc/curl']
+        ) | unique
+      }}
+  when: mcp_control_plane_enabled
+
+- name: Ensure MCP control plane directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ mcp_control_plane_dir }}"
+    state: directory
+    owner: "{{ resolved_mcp_control_plane.owner }}"
+    group: "{{ resolved_mcp_control_plane.group }}"
+    mode: '0750'
+  loop:
+    - "{{ resolved_mcp_control_plane.install_root }}"
+    - "{{ resolved_mcp_control_plane.audit_log_path | dirname }}"
+  loop_control:
+    loop_var: mcp_control_plane_dir
+  when: mcp_control_plane_enabled
+
+- name: Render MCP candidate registry
+  ansible.builtin.template:
+    src: candidate-registry.yml.j2
+    dest: "{{ install_target_root }}{{ resolved_mcp_control_plane.registry_path }}"
+    owner: "{{ resolved_mcp_control_plane.owner }}"
+    group: "{{ resolved_mcp_control_plane.group }}"
+    mode: "{{ resolved_mcp_control_plane.mode }}"
+  when: mcp_control_plane_enabled
+
+- name: Render MCP promotion policy
+  ansible.builtin.template:
+    src: promotion-policy.yml.j2
+    dest: "{{ install_target_root }}{{ resolved_mcp_control_plane.promotion_policy_path }}"
+    owner: "{{ resolved_mcp_control_plane.owner }}"
+    group: "{{ resolved_mcp_control_plane.group }}"
+    mode: "{{ resolved_mcp_control_plane.mode }}"
+  when: mcp_control_plane_enabled
+
+- name: Render MCP control plane environment
+  ansible.builtin.template:
+    src: mcp-control-plane.env.j2
+    dest: "{{ install_target_root }}{{ resolved_mcp_control_plane.env_path }}"
+    owner: "{{ resolved_mcp_control_plane.owner }}"
+    group: "{{ resolved_mcp_control_plane.group }}"
+    mode: "{{ resolved_mcp_control_plane.mode }}"
+  when: mcp_control_plane_enabled

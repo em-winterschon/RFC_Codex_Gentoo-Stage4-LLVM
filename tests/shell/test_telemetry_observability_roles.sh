@@ -13,6 +13,7 @@ assert_file_contains() {
 
 for role_dir in \
   telemetry_node_exporter \
+  telemetry_nut \
   telemetry_podman_exporter \
   telemetry_elasticsearch_exporter \
   telemetry_blackbox_exporter \

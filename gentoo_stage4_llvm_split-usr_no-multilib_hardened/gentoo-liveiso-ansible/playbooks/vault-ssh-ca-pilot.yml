@@ -1,0 +1,7 @@
+---
+- name: Apply or validate Vault SSH CA pilot host trust
+  hosts: "{{ vault_ssh_ca_pilot_hosts | default('vault_ssh_ca_pilot_hosts') }}"
+  gather_facts: true
+  become: true
+  roles:
+    - role: vault_ssh_ca_pilot

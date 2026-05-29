@@ -27,12 +27,23 @@ done
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nvidia_doca_ofed_supported_pci_vendor_ids:'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" '15b3'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'BlueField'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'ConnectX-4'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'ConnectX-5'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nvidia_doca_ofed_required_kernel_modules:'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'mlx5_core'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'mlx5_ib'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nvidia_doca_ofed_vendor_driver_required: true'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'missing ofed_info'
 assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'nvidia_doca_ofed_roce_validation_commands:'
+assert_file_contains "${ROLE_DIR}/defaults/main.yml" 'ofed_info -s'
+if grep -q '{{ item }}' "${ROLE_DIR}/defaults/main.yml"; then
+  printf 'FAIL: nvidia_doca_ofed defaults must not contain unbound Jinja item placeholders\n' >&2
+  exit 1
+fi
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'Preflight-compatible raw command path'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'ansible.builtin.raw: uname -r'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'Detect NVIDIA/Mellanox PCI devices'
+assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'ansible.builtin.raw: >-'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'lspci -Dnn'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'nvidia_doca_ofed_detected_devices'
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'Assert NVIDIA/Mellanox device detection before apply'
@@ -40,6 +51,7 @@ assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'nvidia_doca_ofed_skip_device_
 assert_file_contains "${ROLE_DIR}/tasks/main.yml" 'roce_validation_commands'
 assert_file_contains "${PLAYBOOK}" 'nvidia_doca_ofed'
 assert_file_contains "${DOC}" 'BlueField-2'
+assert_file_contains "${DOC}" 'ConnectX-4'
 assert_file_contains "${DOC}" 'ConnectX-5'
 assert_file_contains "${DOC}" 'lspci -Dnn'
 assert_file_contains "${WIKI}" 'BlueField-2'

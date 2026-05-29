@@ -41,6 +41,12 @@ assert_file_contains "${run_tests}" "test_identity_apply_plan.sh"
 
 python3 -m py_compile "${apply_script}"
 
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "${tmpdir}"' EXIT
+no_global_output="${tmpdir}/identity-apply-no-global.out"
+no_provider_output="${tmpdir}/identity-apply-no-provider.out"
+no_provider_radius_output="${tmpdir}/identity-radius-no-provider.conf"
+
 leak_secret='super-secret-value-must-not-print'
 dry_run="$(
   vault_radius_client_pdu_rfc99_corectrl_ap7901_secret="${leak_secret}" \
@@ -54,23 +60,21 @@ grep -Fq '"vault_radius_client_pdu_rfc99_corectrl_ap7901_secret"' <<< "${dry_run
   fail "dry run missing RADIUS secret variable reference"
 assert_not_contains "${dry_run}" "${leak_secret}"
 
-if python3 "${apply_script}" "${source_file}" --apply --provider freeipa > /tmp/identity-apply-no-global.out 2>&1; then
+if python3 "${apply_script}" "${source_file}" --apply --provider freeipa > "${no_global_output}" 2>&1; then
   fail "apply without global mutation gate unexpectedly passed"
 fi
-grep -Fq 'IDENTITY_SYNC_APPLY=1 is required' /tmp/identity-apply-no-global.out ||
+grep -Fq 'IDENTITY_SYNC_APPLY=1 is required' "${no_global_output}" ||
   fail "missing global apply gate error"
 
 if IDENTITY_SYNC_APPLY=1 \
   python3 "${apply_script}" "${source_file}" --apply --provider freeradius \
-  --freeradius-output /tmp/identity-radius-no-provider.conf \
-  > /tmp/identity-apply-no-provider.out 2>&1; then
+  --freeradius-output "${no_provider_radius_output}" \
+  > "${no_provider_output}" 2>&1; then
   fail "FreeRADIUS apply without provider gate unexpectedly passed"
 fi
-grep -Fq 'IDENTITY_SYNC_APPLY_FREERADIUS=1 is required' /tmp/identity-apply-no-provider.out ||
+grep -Fq 'IDENTITY_SYNC_APPLY_FREERADIUS=1 is required' "${no_provider_output}" ||
   fail "missing FreeRADIUS provider gate error"
 
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
 radius_secret='radius-secret-file-only'
 radius_output="${tmpdir}/clients.conf"
 audit_log="${tmpdir}/identity-sync-audit.jsonl"
@@ -110,6 +114,18 @@ freeipa_stdout="$(
     IDENTITY_SYNC_APPLY_FREEIPA=1 \
     FAKE_IPA_LOG="${fake_log}" \
     vault_identity_codex_admin_ssh_public_keys='ssh-ed25519 AAAATEST codex-admin' \
+    vault_identity_forge1_ssh_public_keys='ssh-ed25519 AAAATEST forge1' \
+    vault_identity_forge2_ssh_public_keys='ssh-ed25519 AAAATEST forge2' \
+    vault_identity_forge3_ssh_public_keys='ssh-ed25519 AAAATEST forge3' \
+    vault_identity_forge4_ssh_public_keys='ssh-ed25519 AAAATEST forge4' \
+    vault_identity_forge5_ssh_public_keys='ssh-ed25519 AAAATEST forge5' \
+    vault_identity_forge6_ssh_public_keys='ssh-ed25519 AAAATEST forge6' \
+    vault_identity_ltcol_forge_ssh_public_keys='ssh-ed25519 AAAATEST ltcol-forge' \
+    vault_identity_toor_ssh_public_keys='ssh-ed25519 AAAATEST toor' \
+    vault_identity_eva_ssh_public_keys='ssh-ed25519 AAAATEST eva' \
+    vault_identity_robin_ssh_public_keys='ssh-ed25519 AAAATEST robin' \
+    vault_identity_verwalterin_ssh_public_keys='ssh-ed25519 AAAATEST verwalterin' \
+    vault_identity_backups_ssh_public_keys='ssh-ed25519 AAAATEST backups' \
     python3 "${apply_script}" "${source_file}" \
     --apply \
     --provider freeipa \
@@ -118,9 +134,17 @@ freeipa_stdout="$(
 )"
 grep -Fq '"applied": true' <<< "${freeipa_stdout}" || fail "FreeIPA apply did not report applied"
 grep -Fq 'idrange-add RFC1918.HOST_low_id_range' "${fake_log}" || fail "FreeIPA fake log missing idrange-add"
+grep -Fq 'idrange-add RFC1918.HOST_legacy_forge_worker_id_range' "${fake_log}" ||
+  fail "FreeIPA fake log missing legacy Forge idrange-add"
 grep -Fq 'group-add linux-admin' "${fake_log}" || fail "FreeIPA fake log missing group-add"
+grep -Fq 'group-add forge-superusers' "${fake_log}" || fail "FreeIPA fake log missing Forge group-add"
 grep -Fq 'user-add codex-admin' "${fake_log}" || fail "FreeIPA fake log missing user-add"
+grep -Fq 'user-add forge1' "${fake_log}" || fail "FreeIPA fake log missing Forge user-add"
+grep -Fq 'user-add ltcol-forge' "${fake_log}" || fail "FreeIPA fake log missing ltcol-forge user-add"
+grep -Fq -- '--noprivate' "${fake_log}" || fail "FreeIPA fake log missing noprivate user-add guard"
 grep -Fq 'group-add-member ci-builder' "${fake_log}" || fail "FreeIPA fake log missing group membership"
+grep -Fq 'group-add-member forge-superusers --users=forge1' "${fake_log}" ||
+  fail "FreeIPA fake log missing Forge superuser membership"
 grep -Fq 'host-add gmktek-k10-stage5.rfc1918.host' "${fake_log}" || fail "FreeIPA fake log missing host-add"
 assert_not_contains "${freeipa_stdout}" 'ssh-ed25519 AAAATEST'
 

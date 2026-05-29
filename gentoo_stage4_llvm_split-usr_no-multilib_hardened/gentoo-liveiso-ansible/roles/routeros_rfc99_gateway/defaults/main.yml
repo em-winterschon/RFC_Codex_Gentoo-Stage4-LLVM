@@ -227,6 +227,7 @@ routeros_rfc99_gateway_winbox_enabled: false
 routeros_rfc99_gateway_winbox_port: 8291
 
 routeros_rfc99_gateway_certificate_name: rfc99-gw-selfsigned
+routeros_rfc99_gateway_certificate_source: self_signed
 routeros_rfc99_gateway_certificate_common_name: "{{ routeros_rfc99_gateway_identity }}.rfc1918.host"
 routeros_rfc99_gateway_certificate_days_valid: 3650
 routeros_rfc99_gateway_certificate_key_size: 4096
@@ -235,6 +236,10 @@ routeros_rfc99_gateway_certificate_subject_alt_names:
   - "IP:172.16.99.1"
   - "IP:10.9.8.1"
   - "IP:10.128.128.1"
+routeros_rfc99_gateway_internal_ca_certificate_name: rfc1918-gw-rfc99-mkccr2004-16g
+routeros_rfc99_gateway_internal_ca_ca_file: rfc1918-private-ca.crt
+routeros_rfc99_gateway_internal_ca_pkcs12_file: rfc1918-gw-rfc99-mkccr2004-16g.p12
+routeros_rfc99_gateway_internal_ca_pkcs12_passphrase: "{{ (vault_service_tls_certificates | default({})).get('routeros_ccr2004_gateway', {}).get('pkcs12_password', '') }}"
 
 routeros_rfc99_gateway_syslog_enabled: true
 routeros_rfc99_gateway_syslog_remote_host: 172.16.99.80

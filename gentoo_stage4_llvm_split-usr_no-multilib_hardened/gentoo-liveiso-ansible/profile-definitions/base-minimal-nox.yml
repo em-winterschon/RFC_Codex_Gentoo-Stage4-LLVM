@@ -4,10 +4,18 @@ gentoo_profile_definition:
     - profile-package-lists/stage5-base-minimal-nox.packages
   make_conf_append: |
     USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    15-base-minimal-nox-scheduler: |
+      app-admin/logrotate -cron
+      app-admin/sudo -sendmail
+      sys-apps/smartmontools -daemon
+    15-base-minimal-nox-rsyslog: |
+      app-admin/rsyslog elasticsearch normalize openssl relp rfc3195 rfc5424hmac snmp ssl usertools uuid xxhash -systemd
   modules_load_files:
     base-minimal-nox.conf: |
       nvme
   openrc_services_enable:
     - chronyd
+    - lm_sensors
     - rsyslog
     - sshd

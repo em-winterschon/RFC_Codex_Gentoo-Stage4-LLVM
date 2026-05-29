@@ -13,6 +13,7 @@ from pathlib import Path
 from rfc1918_mcp_common.audit import write_audit_artifact
 from rfc1918_mcp_common.gates import MutationGate, MutationRejected
 from rfc1918_mcp_common.settings import ServiceSettings
+import forge_memory_mcp
 import netbox_mcp
 
 
@@ -90,6 +91,79 @@ except MutationRejected:
     pass
 else:
     raise AssertionError("NetBox apply did not require mutation gate")
+
+forge_tools = {tool["name"]: tool["mode"] for tool in forge_memory_mcp.TOOL_MANIFEST}
+assert forge_tools["memory_append_event"] == "apply"
+assert forge_tools["memory_get_session_summary"] == "read"
+assert forge_tools["memory_list_recent_sessions"] == "read"
+assert forge_tools["memory_search_artifact_refs"] == "read"
+assert forge_tools["memory_render_eod_context"] == "read"
+assert not any("shell" in name or "exec" in name for name in forge_tools)
+
+with tempfile.TemporaryDirectory() as tmpdir:
+    spool_root = Path(tmpdir) / "spool"
+    audit_dir = Path(tmpdir) / "audit"
+    env = {
+        "MCP_SERVICE_NAME": "forge-memory-mcp",
+        "FORGE_MEMORY_SPOOL_ROOT": str(spool_root),
+        "MCP_AUDIT_DIR": str(audit_dir),
+    }
+    try:
+        forge_memory_mcp.append_event(
+            session_id="session-mcp-001",
+            event_type="checkpoint",
+            intent="mcp facade mutation gate test",
+            actions=["attempt-write"],
+            artifacts=["issue:115"],
+            notes=["blocked write"],
+            env=env,
+            idempotency_key="",
+        )
+    except MutationRejected:
+        pass
+    else:
+        raise AssertionError("Forge memory append did not require mutation gate")
+
+    write_result = forge_memory_mcp.append_event(
+        session_id="session-mcp-001",
+        event_type="checkpoint",
+        intent="mcp facade append",
+        actions=["write-memory-event"],
+        artifacts=["issue:115"],
+        notes=["allowed write"],
+        env={**env, "MCP_ALLOW_MUTATIONS": "true"},
+        idempotency_key="idem-forge-memory-001",
+        audit_comment="append Forge memory event from MCP facade",
+    )
+    assert write_result["tool"] == "memory_append_event"
+    assert write_result["mutation"] is True
+    assert write_result["spool_result"]["event_count"] == 1
+    assert Path(write_result["spool_result"]["event_file"]).exists()
+    assert Path(write_result["audit_artifact"]).exists()
+
+    sessions = forge_memory_mcp.list_recent_sessions(agent_id="forge", limit=5, env=env)
+    assert sessions["tool"] == "memory_list_recent_sessions"
+    assert sessions["mutation"] is False
+    assert sessions["summary"]["session_count"] == 1
+
+    session_summary = forge_memory_mcp.get_session_summary(
+        session_id="session-mcp-001",
+        agent_id="forge",
+        env=env,
+    )
+    assert session_summary["tool"] == "memory_get_session_summary"
+    assert session_summary["session"]["event_count"] == 1
+    assert session_summary["session"]["last_intent"] == "mcp facade append"
+
+    search = forge_memory_mcp.search_artifact_refs("issue:115", agent_id="forge", env=env)
+    assert search["tool"] == "memory_search_artifact_refs"
+    assert search["match_count"] == 1
+    assert search["matches"][0]["session_id"] == "session-mcp-001"
+
+    eod = forge_memory_mcp.render_eod_context(agent_id="forge", env=env, limit=3)
+    assert eod["tool"] == "memory_render_eod_context"
+    assert "session-mcp-001" in eod["markdown"]
+    assert "mcp facade append" in eod["markdown"]
 PY
 
 printf 'PASS: %s\n' "$(basename "$0")"

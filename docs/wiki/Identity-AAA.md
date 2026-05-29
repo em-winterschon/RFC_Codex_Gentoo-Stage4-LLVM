@@ -115,6 +115,79 @@ Current apply scope:
   because the current `radiusd` account uses a FreeIPA sysaccount DN rather than
   a normal IPA user object.
 
+## FreeIPA SSH Key Sync Workflow
+
+The repo now includes a focused FreeIPA SSH key sync workflow for centralizing
+operator SSH keys without copying `authorized_keys` files between hosts:
+
+- `scripts/render_freeipa_ssh_sync_checks.py`
+- `playbooks/freeipa-ssh-key-sync.yml`
+
+The renderer derives non-secret validation commands from
+`identity-source-definitions/local-rfc1918.yml`. It reports the vault variable
+names required for SSH public keys, FreeIPA controller checks such as
+`ipa user-show`, `ipa group-show`, `ipa host-show`, `ipa hostgroup-show`, and
+`ipa hbactest`, plus Linux client checks such as `getent passwd`,
+`sss_ssh_authorizedkeys`, and `sudo -l -U`.
+
+The playbook is dry-run by default. Live mutation requires
+`identity_freeipa_ssh_sync_enabled=true`, which sets both mutation gates for the
+underlying apply tool:
+
+```bash
+IDENTITY_SYNC_APPLY=1
+IDENTITY_SYNC_APPLY_FREEIPA=1
+```
+
+Use vault-backed environment variables for SSH public key values:
+
+```bash
+scripts/with-ansible-vault-env.sh ansible-playbook \
+  -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/freeipa-ssh-key-sync.yml \
+  -e identity_freeipa_ssh_sync_enabled=true \
+  -e identity_freeipa_ssh_sync_validate_live=true
+```
+
+The workflow keeps resolved SSH key material out of the JSON summary and audit
+log. Controller-side validation requires a Kerberos ticket for the FreeIPA admin
+principal; client-side validation should be run from enrolled hosts to prove
+SSSD/NSS/PAM/SSH policy resolution end-to-end.
+
+## Vault SSH CA Pilot
+
+The first short-lived SSH certificate pilot is represented by:
+
+- `roles/vault_ssh_ca_pilot`
+- `playbooks/vault-ssh-ca-pilot.yml`
+
+This is not a replacement for FreeIPA. Vault signs a public key with a short TTL
+and the host trusts the Vault user CA through OpenSSH `TrustedUserCAKeys`.
+FreeIPA and SSSD must still resolve the user principal, and HBAC/sudo policy
+remain authoritative.
+
+The expected initial Vault mount and role are:
+
+- mount: `ssh-client-signer`
+- role: `rfc1918-operator-codex-admin`
+
+The Ansible role is disabled by default and requires both gates before it edits
+`sshd_config`:
+
+```yaml
+vault_ssh_ca_pilot_enabled: true
+vault_ssh_ca_pilot_apply: true
+```
+
+It installs the CA public key at `/etc/ssh/rfc1918_user_ca.pub`, validates
+`sshd_config` with `sshd -t -f`, checks `sshd -T` for the effective
+`trustedusercakeys` value, and validates that the pilot principal such as
+`codex-admin` resolves through NSS/SSSD with `getent passwd`.
+
+Do not place the A6-capable human operator private key on a Forge-readable host.
+The first pilot should use an operator-held key, a non-critical host, and a
+short TTL such as 30 minutes.
+
 ## Live Bootstrap
 
 Because native FreeIPA server packaging is not available in the current Gentoo

@@ -81,6 +81,11 @@ The generated provider inventory report is written to:
 /tmp/hetzner-dns-inventory-report.json
 ```
 
+Operational note: the read-only planner and inventory-report playbooks are
+expected to run successfully under `ansible-playbook --check`. They explicitly
+execute their local artifact-generation steps even in check mode so the JSON
+outputs can still be rendered and reviewed.
+
 Current live provider inventory result:
 
 - zones_readable: `8/8`
@@ -148,6 +153,11 @@ scripts/with-ansible-vault-env.sh ansible-playbook \
   -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml \
   gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/hetzner-dns-apply.yml
 ```
+
+The apply playbook also supports `--check` for read-only diff generation, but
+it intentionally refuses a live apply request when both `--check` and
+`dns_hetzner_cloud_apply_enabled=true` are set. That combination is treated as
+an operator error instead of silently downgrading behavior.
 
 Apply the guarded DNS plan only after review by enabling
 `dns_hetzner_cloud_change_policy.apply=true`:

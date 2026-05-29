@@ -1,0 +1,13 @@
+---
+- name: Deploy Ollama inference service
+  hosts: ollama_servers
+  gather_facts: true
+  become: true
+
+  vars:
+    inference_service_backend: ollama
+    inference_service_name: ollama
+    inference_service_accelerator: nvidia
+
+  roles:
+    - role: inference_service

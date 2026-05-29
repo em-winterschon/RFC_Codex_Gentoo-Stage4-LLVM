@@ -72,6 +72,83 @@ def validate_uid_gid(value: Any, key: str, label: str, result: ValidationResult)
     return value
 
 
+def validate_freeipa_local_idrange(
+    idrange: Any, label: str, result: ValidationResult
+) -> tuple[str, int, int] | None:
+    if not isinstance(idrange, dict):
+        result.errors.append(f"{label} must be a mapping")
+        return None
+
+    name = required_string(idrange, "name", label, result)
+    parsed: dict[str, int] = {}
+    for key in ("base_id", "range_size", "rid_base", "secondary_rid_base"):
+        value = validate_uid_gid(idrange.get(key), key, label, result)
+        if value is not None:
+            parsed[key] = value
+    idrange_type = idrange.get("type", "ipa-local")
+    if idrange_type != "ipa-local":
+        result.errors.append(f"{label}.type must be ipa-local")
+    if name and "base_id" in parsed and "range_size" in parsed:
+        return (name, parsed["base_id"], parsed["base_id"] + parsed["range_size"])
+    return None
+
+
+def collect_freeipa_local_idranges(
+    uid_gid_policy: dict[str, Any], result: ValidationResult
+) -> list[tuple[str, int, int]]:
+    ranges: list[tuple[str, int, int]] = []
+    freeipa_local_idrange = uid_gid_policy.get("freeipa_local_idrange", {}) or {}
+    if freeipa_local_idrange:
+        parsed = validate_freeipa_local_idrange(
+            freeipa_local_idrange,
+            "uid_gid_policy.freeipa_local_idrange",
+            result,
+        )
+        if parsed is not None:
+            ranges.append(parsed)
+
+    additional = uid_gid_policy.get("additional_freeipa_local_idranges", []) or []
+    if not isinstance(additional, list):
+        result.errors.append("uid_gid_policy.additional_freeipa_local_idranges must be a list")
+        return ranges
+
+    seen_names = {name for name, _, _ in ranges}
+    for index, idrange in enumerate(additional):
+        label = f"uid_gid_policy.additional_freeipa_local_idranges[{index}]"
+        parsed = validate_freeipa_local_idrange(idrange, label, result)
+        if parsed is None:
+            continue
+        name, base_id, limit = parsed
+        if name in seen_names:
+            result.errors.append(f"{label}: duplicate FreeIPA local ID range {name}")
+        seen_names.add(name)
+        for other_name, other_base, other_limit in ranges:
+            if base_id < other_limit and other_base < limit:
+                result.errors.append(
+                    f"{label}: overlaps FreeIPA local ID range {other_name} "
+                    f"({other_base}-{other_limit - 1})"
+                )
+        ranges.append(parsed)
+    return ranges
+
+
+def validate_id_in_freeipa_ranges(
+    value: int,
+    key: str,
+    label: str,
+    idranges: list[tuple[str, int, int]],
+    result: ValidationResult,
+) -> None:
+    if not idranges:
+        return
+    if any(base <= value < limit for _, base, limit in idranges):
+        return
+    formatted = ", ".join(f"{name}:{base}-{limit - 1}" for name, base, limit in idranges)
+    result.errors.append(
+        f"{label}: {key} {value} is outside configured FreeIPA local ID ranges " f"({formatted})"
+    )
+
+
 def reject_secret_values(row: dict[str, Any], label: str, result: ValidationResult) -> None:
     forbidden = {
         "password",
@@ -98,6 +175,51 @@ def validate_group_refs(
             result.errors.append(f"{label}: unknown {key} group {group}")
 
 
+def validate_string_list(value: Any, key: str, label: str, result: ValidationResult) -> None:
+    if not isinstance(value, list):
+        result.errors.append(f"{label}: {key} must be a list")
+        return
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            result.errors.append(f"{label}: {key}[{index}] must be a non-empty string")
+
+
+def validate_floating_home(account: dict[str, Any], label: str, result: ValidationResult) -> None:
+    home_directory = account.get("home_directory")
+    if home_directory is not None:
+        if not isinstance(home_directory, str) or not home_directory.startswith("/"):
+            result.errors.append(f"{label}: home_directory must be an absolute path string")
+
+    floating_home = account.get("floating_home")
+    if floating_home is None:
+        return
+    if not isinstance(floating_home, dict):
+        result.errors.append(f"{label}: floating_home must be a mapping")
+        return
+    reject_secret_values(floating_home, f"{label}.floating_home", result)
+    for key in ("provider", "site", "server", "export_path", "mount_path", "protocol", "status"):
+        required_string(floating_home, key, f"{label}.floating_home", result)
+    server_ip = floating_home.get("server_ip")
+    if not isinstance(server_ip, str) or not server_ip.strip():
+        result.errors.append(f"{label}.floating_home: missing required string field server_ip")
+    else:
+        try:
+            ipaddress.ip_address(server_ip)
+        except ValueError:
+            result.errors.append(f"{label}.floating_home: invalid server_ip {server_ip}")
+    for path_key in ("export_path", "mount_path"):
+        value = floating_home.get(path_key)
+        if isinstance(value, str) and value and not value.startswith("/"):
+            result.errors.append(f"{label}.floating_home: {path_key} must be an absolute path")
+    if isinstance(home_directory, str) and isinstance(floating_home.get("mount_path"), str):
+        if floating_home["mount_path"] != home_directory:
+            result.errors.append(f"{label}.floating_home: mount_path must match home_directory")
+    if "nfs_options" in floating_home:
+        validate_string_list(
+            floating_home["nfs_options"], "nfs_options", f"{label}.floating_home", result
+        )
+
+
 def validate_identity_source(source: dict[str, Any], path: Path | None = None) -> ValidationResult:
     result = ValidationResult()
     if path is not None:
@@ -111,34 +233,7 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
     if not isinstance(uid_gid_policy, dict):
         result.errors.append("identity_source_definition.uid_gid_policy must be a mapping")
         uid_gid_policy = {}
-    freeipa_local_idrange = uid_gid_policy.get("freeipa_local_idrange", {}) or {}
-    if freeipa_local_idrange and not isinstance(freeipa_local_idrange, dict):
-        result.errors.append("uid_gid_policy.freeipa_local_idrange must be a mapping")
-        freeipa_local_idrange = {}
-    idrange_base = None
-    idrange_limit = None
-    if freeipa_local_idrange:
-        required_string(
-            freeipa_local_idrange,
-            "name",
-            "uid_gid_policy.freeipa_local_idrange",
-            result,
-        )
-        for key in ("base_id", "range_size", "rid_base", "secondary_rid_base"):
-            validate_uid_gid(
-                freeipa_local_idrange.get(key),
-                key,
-                "uid_gid_policy.freeipa_local_idrange",
-                result,
-            )
-        idrange_type = freeipa_local_idrange.get("type", "ipa-local")
-        if idrange_type != "ipa-local":
-            result.errors.append("uid_gid_policy.freeipa_local_idrange.type must be ipa-local")
-        base_id = freeipa_local_idrange.get("base_id")
-        range_size = freeipa_local_idrange.get("range_size")
-        if isinstance(base_id, int) and isinstance(range_size, int):
-            idrange_base = base_id
-            idrange_limit = base_id + range_size
+    idranges = collect_freeipa_local_idranges(uid_gid_policy, result)
 
     groups = source.get("groups", []) or []
     users = source.get("users", []) or []
@@ -167,15 +262,7 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
                         f"{label}: duplicate gid {gid} also used by {seen_gids[gid]}"
                     )
                 seen_gids[gid] = name or label
-                if (
-                    idrange_base is not None
-                    and idrange_limit is not None
-                    and not (idrange_base <= gid < idrange_limit)
-                ):
-                    result.errors.append(
-                        f"{label}: gid {gid} is outside freeipa_local_idrange "
-                        f"{idrange_base}-{idrange_limit - 1}"
-                    )
+                validate_id_in_freeipa_ranges(gid, "gid", label, idranges, result)
 
     seen_users: set[str] = set()
     seen_uids: dict[int, str] = {}
@@ -202,20 +289,13 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
                         f"{label}: duplicate uid {uid} also used by {seen_uids[uid]}"
                     )
                 seen_uids[uid] = name or label
-                if (
-                    idrange_base is not None
-                    and idrange_limit is not None
-                    and not (idrange_base <= uid < idrange_limit)
-                ):
-                    result.errors.append(
-                        f"{label}: uid {uid} is outside freeipa_local_idrange "
-                        f"{idrange_base}-{idrange_limit - 1}"
-                    )
+                validate_id_in_freeipa_ranges(uid, "uid", label, idranges, result)
             if primary_group and primary_group not in known_groups:
                 result.errors.append(f"{label}: unknown primary_group {primary_group}")
             validate_group_refs(
                 account.get("groups", []) or [], known_groups, "groups", label, result
             )
+            validate_floating_home(account, label, result)
             for var_key in ("password_var", "bind_password_var"):
                 if var_key in account and (
                     not isinstance(account[var_key], str)
@@ -233,7 +313,13 @@ def validate_identity_source(source: dict[str, Any], path: Path | None = None) -
         required_string(host, "netbox_device", label, result)
         validate_group_refs(
             host.get("hostgroups", []) or [],
-            known_groups | {"linux-workstations", "aaa-first-linux-client"},
+            known_groups
+            | {
+                "linux-workstations",
+                "linux-servers",
+                "aaa-first-linux-client",
+                "automation-admin",
+            },
             "hostgroups",
             label,
             result,

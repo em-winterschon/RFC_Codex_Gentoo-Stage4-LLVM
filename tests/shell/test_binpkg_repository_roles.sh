@@ -45,9 +45,13 @@ require_grep 'portage_binrepos' "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml"
 require_grep 'PORTAGE_BINPKG_FORMAT' "${ANSIBLE_ROOT}/roles/portage/templates/make.conf.j2"
 
 require_file "${REPO_ROOT}/scripts/sync-binpkgs-to-repo.sh"
+require_grep 'local-root' "${REPO_ROOT}/scripts/sync-binpkgs-to-repo.sh"
 require_grep 'binpkg-sync-remote' "${REPO_ROOT}/scripts/build-gentoo-rootfs-container.sh"
 require_file "${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-binpkg-repository-vm.sh"
 require_file "${REPO_ROOT}/docs/BINPKG-REPOSITORY.md"
+require_grep 'M70-local NASA NFS' "${REPO_ROOT}/docs/BINPKG-REPOSITORY.md"
+require_grep '--local-root' "${REPO_ROOT}/docs/BINPKG-REPOSITORY.md"
 require_file "${REPO_ROOT}/docs/wiki/Binpkg-Repository.md"
+require_grep 'M70-local NASA NFS' "${REPO_ROOT}/docs/wiki/Binpkg-Repository.md"
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

@@ -1,0 +1,202 @@
+---
+mcp_control_plane_default_enabled: false
+mcp_control_plane_default_install_root: /etc/mcp-control-plane
+mcp_control_plane_default_default_mode: read-only
+mcp_control_plane_default_write_gate: explicit-change-control
+mcp_control_plane_default_audit_log_path: /var/log/mcp-control-plane/audit.log
+mcp_control_plane_default_registry_path: /etc/mcp-control-plane/candidate-registry.yml
+mcp_control_plane_default_promotion_policy_path: /etc/mcp-control-plane/promotion-policy.yml
+mcp_control_plane_default_env_path: /etc/mcp-control-plane/mcp-control-plane.env
+mcp_control_plane_default_owner: root
+mcp_control_plane_default_group: root
+mcp_control_plane_default_mode: "0640"
+
+mcp_control_plane_default_promotion_stages:
+  - discovery
+  - audit
+  - pin
+  - sandbox
+  - smoke-test
+  - vault-backed-auth
+  - audit-logging
+  - gated-writes
+
+mcp_control_plane_default_required_evidence:
+  - source_url
+  - version_pin_or_commit
+  - license_review
+  - auth_scope_review
+  - read_only_smoke_test
+  - rollback_or_disable_path
+
+mcp_control_plane_default_candidates:
+  - id: huggingface
+    name: Hugging Face MCP Server
+    source_url: https://huggingface.co/docs/hub/hf-mcp-server
+    upstream_kind: official-docs
+    capability: model-dataset-space-paper-discovery
+    risk_tier: low
+    promotion_status: candidate
+    default_mode: read-only
+    auth_method: huggingface_token
+    vault_secret_refs:
+      - vault_huggingface_token
+    allowed_operations:
+      - search_models
+      - inspect_models
+      - inspect_datasets
+      - inspect_spaces
+      - inspect_papers
+    blocked_operations:
+      - publish_models
+      - delete_repositories
+      - mutate_org_settings
+  - id: trac
+    name: Trac MCP Server
+    source_url: https://mcpmarket.com/server/trac
+    upstream_kind: mcp-market
+    capability: tickets-wiki-milestones-change-control
+    risk_tier: medium
+    promotion_status: candidate
+    default_mode: read-only
+    auth_method: trac_api_token
+    vault_secret_refs:
+      - vault_trac_mcp_token
+    allowed_operations:
+      - read_tickets
+      - read_wiki
+      - read_milestones
+    blocked_operations:
+      - create_ticket
+      - update_ticket
+      - update_wiki
+      - close_milestone
+  - id: netbox
+    name: NetBox MCP Server
+    source_url: https://github.com/netboxlabs/netbox-mcp-server
+    upstream_kind: upstream-github
+    capability: ipam-dcim-source-of-truth
+    risk_tier: medium
+    promotion_status: candidate
+    default_mode: read-only
+    auth_method: netbox_readonly_token
+    vault_secret_refs:
+      - vault_netbox_mcp_readonly_token
+    allowed_operations:
+      - get_objects
+      - get_object_by_id
+      - get_changelogs
+    blocked_operations:
+      - create_objects
+      - update_objects
+      - delete_objects
+      - import_inventory
+  - id: grafana
+    name: Grafana MCP Server
+    source_url: https://github.com/grafana/mcp-grafana
+    upstream_kind: upstream-github
+    capability: observability-dashboard-and-datasource-query
+    risk_tier: medium
+    promotion_status: candidate
+    default_mode: read-only
+    auth_method: grafana_service_account_token
+    runtime_flags:
+      - --disable-write
+    vault_secret_refs:
+      - vault_grafana_mcp_service_account_token
+    allowed_operations:
+      - search_dashboards
+      - get_dashboard_summary
+      - query_datasources
+      - inspect_alerts
+    blocked_operations:
+      - create_dashboard
+      - update_dashboard
+      - create_incident
+      - mutate_datasource
+  - id: jenkins
+    name: Jenkins MCP Server Plugin
+    source_url: https://github.com/jenkinsci/mcp-server-plugin
+    upstream_kind: upstream-github
+    capability: ci-build-job-context
+    risk_tier: high
+    promotion_status: candidate
+    default_mode: read-only
+    auth_method: jenkins_service_token
+    vault_secret_refs:
+      - vault_jenkins_mcp_readonly_token
+    allowed_operations:
+      - list_jobs
+      - inspect_builds
+      - inspect_logs
+    blocked_operations:
+      - trigger_build
+      - install_plugin
+      - mutate_job
+      - delete_build
+  - id: proxmox
+    name: Proxmox MCP Server
+    source_url: https://github.com/bsahane/mcp-proxmox
+    upstream_kind: community-github
+    capability: virtualization-inventory-and-lifecycle
+    risk_tier: high
+    promotion_status: quarantine
+    default_mode: read-only
+    auth_method: proxmox_audit_token
+    vault_secret_refs:
+      - vault_proxmox_mcp_audit_token
+    allowed_operations:
+      - list_nodes
+      - list_vms
+      - inspect_vm_config
+      - inspect_cluster_status
+    blocked_operations:
+      - create_vm
+      - delete_vm
+      - start_vm
+      - stop_vm
+      - snapshot_vm
+      - mutate_network
+  - id: context7
+    name: Context7 MCP Server
+    source_url: https://github.com/upstash/context7
+    upstream_kind: upstream-github
+    capability: documentation-context-lookup
+    risk_tier: low
+    promotion_status: candidate
+    default_mode: read-only
+    auth_method: optional_context7_api_key
+    vault_secret_refs:
+      - vault_context7_api_key
+    allowed_operations:
+      - lookup_docs
+      - fetch_examples
+    blocked_operations:
+      - read_private_repositories
+      - index_secrets
+  - id: kubernetes-openshift
+    name: Kubernetes and OpenShift MCP Server
+    source_url: https://github.com/containers/kubernetes-mcp-server
+    upstream_kind: upstream-github
+    capability: kubernetes-openshift-cluster-query
+    risk_tier: high
+    promotion_status: deferred
+    default_mode: read-only
+    auth_method: kubeconfig_or_oidc
+    runtime_flags:
+      - --read-only
+      - --disable-destructive
+      - --disable-multi-cluster
+    vault_secret_refs:
+      - vault_kubernetes_mcp_readonly_kubeconfig
+    allowed_operations:
+      - list_resources
+      - inspect_events
+      - inspect_workloads
+      - inspect_routes
+    blocked_operations:
+      - create_resource
+      - update_resource
+      - delete_resource
+      - exec_pod
+      - read_secrets

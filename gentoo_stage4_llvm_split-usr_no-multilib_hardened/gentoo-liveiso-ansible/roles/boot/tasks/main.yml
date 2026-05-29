@@ -239,13 +239,21 @@
     - storage_layout == 'zfs-boot-root-mirror'
 
 - name: Set inherited ZFSBootMenu kernel command line on the root dataset tree
-  ansible.builtin.command: >-
-    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective | quote }} {{ zpool_name }}/ROOT
+  ansible.builtin.command:
+    argv:
+      - zfs
+      - set
+      - "org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective }}"
+      - "{{ zpool_name }}/ROOT"
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Set ZFSBootMenu kernel command line on the selected root dataset
-  ansible.builtin.command: >-
-    zfs set org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective | quote }} {{ zpool_name }}/ROOT/gentoo
+  ansible.builtin.command:
+    argv:
+      - zfs
+      - set
+      - "org.zfsbootmenu:commandline={{ zfsbootmenu_root_commandline_effective }}"
+      - "{{ zpool_name }}/ROOT/gentoo"
   when: boot_strategy == 'zfsbootmenu'
 
 - name: Ensure the ZFSBootMenu EFI directory exists

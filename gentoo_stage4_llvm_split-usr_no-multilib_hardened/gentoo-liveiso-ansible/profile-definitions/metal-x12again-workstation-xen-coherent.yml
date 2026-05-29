@@ -1,0 +1,98 @@
+---
+gentoo_profile_definition:
+  name: metal-x12again-workstation-xen-coherent
+  profile_id: metal-x12again-workstation-xen-coherent
+  description: Host-specific X12AGAIN profile for LOX workstation, Xen/QEMU hypervisor, RDMA storage client, SLURM worker admission, and Project Coherent Flash scale modeling.
+  profile_parents:
+    - hardened-llvm-stage4-merged-usr
+    - vm-workstation-nscde
+    - hypervisor-xen-qemu-libvirt-host
+    - aaa-domain-client
+    - nfs-storage-client
+    - logging-rsyslog-client
+    - telemetry-node-exporter-client
+    - slurm-worker-node
+  package_list_files:
+    - profile-package-lists/stage5-metal-intel-platform.packages
+    - profile-package-lists/stage5-virtual-host-workstation-nscde.packages
+    - profile-package-lists/stage5-metal-host-hypervisor.packages
+    - profile-package-lists/stage5-storage-nfs-client.packages
+    - profile-package-lists/stage5-domain-client.packages
+    - profile-package-lists/stage5-observability-client.packages
+    - profile-package-lists/stage5-observability-metrics-client.packages
+    - profile-package-lists/stage5-slurm-worker-node.packages
+  make_conf_append: |
+    PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-x12again-workstation-xen-coherent__amd64__gpu-universal-xorg-rdma"
+    FEATURES="${FEATURES} buildpkg binpkg-multi-instance"
+    VIDEO_CARDS="amdgpu intel nvidia qxl modesetting fbdev"
+    INPUT_DEVICES="libinput evdev keyboard mouse"
+  kernel_config_fragment_files:
+    - fragments/machine/metal-host.config
+    - fragments/machine/hypervisor-xen.config
+    - fragments/machine/hypervisor-qemu-libvirt.config
+    - fragments/hardware/gpu-universal-xorg.config
+    - fragments/hardware/optane-nvdimm.config
+    - fragments/storage/nfs-client.config
+    - fragments/network/roce-v2-host.config
+    - fragments/storage/rdma-storage-fabric.config
+    - fragments/storage/nvmeof-initiator.config
+  modules_load_files:
+    x12again-workstation-xen-coherent.conf: |
+      acpi_nfit
+      amdgpu
+      ib_uverbs
+      libnvdimm
+      mlx5_core
+      mlx5_ib
+      nd_pmem
+      nvme
+      nvme-fabrics
+      nvme-rdma
+      vfio
+      vfio_iommu_type1
+      vfio_pci
+      xen_gntdev
+      xen_gntalloc
+      zfs
+  roles:
+    - nscde_workstation
+    - workstation_session_stack
+    - nvidia_doca_ofed
+    - slurm_cluster
+  nfs_storage_client:
+    enable_nfs_v3: true
+    enable_nfs_v4: true
+    enable_rdma: false
+    rdma_admission_state: gated-until-roce-e2et-pass
+  slurm_cluster:
+    enabled: true
+    worker_enabled: false
+    admission_state: gated-until-e2et-pass
+    node_features:
+      - workstation
+      - hypervisor
+      - optane-nvdimm
+      - bluefield2
+      - project-coherent-scale
+    rdma_validation_required: true
+  storage_protocols:
+    nfs_v3_default: true
+    nfs_v4_uid_gid_consistency_required: true
+    nfs_tcp_required: true
+    nfs_rdma_gated: true
+    nvme_rdma_gated: true
+    multipath_required: true
+  memory_storage:
+    project_coherent_flash_scale_model:
+      enabled: true
+      no_production_storage_mutation: true
+      slurm_partition: rdma-test
+      evidence_required:
+        - host-e2et-conformance-report
+        - bluefield2-pci-inventory
+        - optane-namespace-inventory
+        - rdma-fabric-validation
+        - rollback-media-confirmed
+  mutation_policy:
+    enabled_by_default: false
+    required_variable: x12again_reimage_apply_required

@@ -63,6 +63,7 @@ for atom in \
   media-libs/vulkan-loader \
   media-video/amdgpu-pro-amf \
   sys-block/ndctl \
+  sys-process/nvtop \
   sys-kernel/linux-firmware \
   x11-drivers/xf86-video-amdgpu \
   x11-drivers/xf86-video-intel \

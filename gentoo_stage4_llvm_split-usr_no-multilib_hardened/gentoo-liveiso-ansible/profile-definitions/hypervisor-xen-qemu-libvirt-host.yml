@@ -1,6 +1,7 @@
 ---
 gentoo_profile_definition:
   package_list_files:
+    - profile-package-lists/stage5-metal-intel-platform.packages
     - profile-package-lists/stage5-metal-host-hypervisor.packages
   make_conf_append: |
     QEMU_SOFTMMU_TARGETS="x86_64 aarch64"

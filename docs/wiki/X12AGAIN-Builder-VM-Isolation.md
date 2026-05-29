@@ -55,6 +55,11 @@ the Path B builder inside the disposable VM:
 
 ```bash
 PATHB_PROFILE_DEFINITION_FILES="profile-definitions/aaa-domain-client.yml profile-definitions/secure-firstboot-enrollment.yml" \
+PATHB_REUSE_INITRAMFS_NETWORK=0 \
+PATHB_STATIC_INTERFACE=enp4s0 \
+PATHB_STATIC_ADDRESS_CIDR=172.16.99.156/24 \
+PATHB_STATIC_GATEWAY=172.16.99.1 \
+PATHB_STATIC_DNS="172.16.99.63 172.16.99.1 9.9.9.9" \
 SSH_AUTHORIZED_KEY_FILE=/root/.ssh/authorized_keys \
 PATHB_INSTANCE_NAME=gmktek-k10-stage5 \
 PATHB_ROOT=/var/lib/netboot/staging/path-b/gmktek-k10-stage5 \

@@ -8,7 +8,12 @@ profiles.
 ## Baseline Layers
 
 - `base-minimal-nox`: non-graphical baseline for SSH, rsyslog, chrony, Portage
-  tooling, diagnostics, and shell operations.
+  tooling, diagnostics, shell operations, and standard UNIX network tools
+  including `ethtool`, `ifconfig`, and `netstat`. It also carries the stable
+  local monitoring set: `lm_sensors`, `htop`, `btop`, `iotop-c`, `lsof`,
+  `psmisc`, `parallel`, `numactl`, `numad`, `time`, `daemontools`,
+  `wait_on_pid`, and `watchpid`. MTA-backed schedulers such as `anacron`
+  are role-specific opt-ins, not part of base-minimal.
 - `base-minimal-xorg-slim`: extends `base-minimal-nox` with Xorg, SLiM, xinit,
   xterm, libinput, and basic font support. Wayland remains explicitly out of
   scope for this layer.
@@ -30,6 +35,10 @@ basic host behavior:
 Container service roles remain separated into the existing container runtime VM
 profile and service-layer image definitions. The role atom registry references
 `vm-container-services` so the runtime dependency chain remains visible.
+
+Keyworded or Guru-only monitoring tools such as `bashtop`, `psinfo`, `rtirq`,
+`pipectl`, and `procenv` are tracked as opt-ins rather than default base atoms
+so stable profile builds do not depend on external overlays.
 
 ## Files
 

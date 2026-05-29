@@ -1,0 +1,7 @@
+---
+- name: Plan and apply gated CheckMK FMT2 recovery and upgrade workflow
+  hosts: checkmk_recovery_targets
+  become: true
+  gather_facts: true
+  roles:
+    - role: checkmk_recovery

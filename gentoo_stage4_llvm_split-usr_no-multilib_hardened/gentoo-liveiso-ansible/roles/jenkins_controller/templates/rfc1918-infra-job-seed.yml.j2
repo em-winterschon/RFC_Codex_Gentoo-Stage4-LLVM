@@ -1,0 +1,7 @@
+---
+# Managed by Ansible. Repo-safe Jenkins seed manifest only; this file does not
+# create jobs by itself and must be consumed by an explicitly reviewed seed job.
+schema: rfc1918.jenkins.job-seed-manifest.v1
+controller_url: {{ resolved_jenkins_controller.url | quote }}
+seed_manifests:
+{{ resolved_jenkins_controller.job_seed_manifests | to_nice_yaml(indent=2) | indent(2, true) }}

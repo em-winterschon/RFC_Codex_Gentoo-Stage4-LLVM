@@ -14,7 +14,7 @@
   - `nb-post-k10-power-chain-20260512T021338Z`
 - Modeled AP7901 power cabling:
   - `outlet6 -> gmktek_nucbox_k10_stage5_candidate:power0`
-  - `outlet4 -> lap_sun99_chonkers:power0`
+  - `outlet4 -> admin_sun99_forge_099070:power0`
 - Verified NetBox intake idempotence after live apply: `created=0`,
   `updated=0`, `existing=303`.
 - Committed and pushed `f30ec88 Validate K10 rebuild and NetBox power-chain intake`.

@@ -9,6 +9,9 @@ generic HTTP/SSE MCP backend slot reserved for later tools.
 ## Service Topology
 
 - Profile: `vm-mcp-control-plane`
+- Inventory host: `vm_mcp_control_plane`
+- Management IP: `172.16.99.68`
+- Proxmox placement: Hasslehoff VMID `1068`
 - Runtime: Podman via the existing container-services roles
 - Front door: HAProxy on ports `80` and `443`
 - Primary hostnames:
@@ -63,6 +66,26 @@ References:
 - Live apply should be gated through the same explicit mutation pattern used for
   RouterOS, NetBox, and AAA apply work.
 
+## Live Readiness Gates
+
+The control plane is inventory-ready when all of these are true:
+
+- `vm_mcp_control_plane` exists in the local-network inventory and NetBox intake.
+- `mcp-control-plane.rfc1918.host` resolves to `172.16.99.68`.
+- `nginx-ui.rfc1918.host` and `mcp-generic.rfc1918.host` are CNAMEs or aliases
+  for the MCP control-plane service.
+- `vault_nginx_ui_*` variables exist in Ansible Vault.
+- `vault_service_tls_certificates.mcp_control_plane.*` contains RFC1918-issued
+  leaf material.
+- HAProxy serves HTTPS with the `mcp_control_plane` certificate.
+- HAProxy request logging remains disabled for `/mcp` routes so `node_secret`
+  query parameters are not routinely written to logs.
+- Nginx-UI Docker socket access remains disabled.
+
+After those gates pass, promote FastMCP backends one at a time. NetBox is the
+first custom MCP target because it is read-heavy, audit-friendly, and already
+has repo-side source-of-truth metadata.
+
 ## FastMCP Service Promotion
 
 Custom infrastructure MCP services should be implemented as FastMCP wrappers
@@ -73,6 +96,35 @@ repo playbooks and validators. Nginx-UI remains on its native `/mcp` endpoint.
 See:
 
 - [FastMCP Infrastructure Control Plane](FastMCP-Infra-Control-Plane)
+
+## MCP Admission Registry And Promotion Policy
+
+The runtime profile above is the service front door; MCP server admission is a
+separate safety gate for which integrations are allowed, how they are audited,
+and whether they are read-only, deferred, quarantined, or explicitly promoted
+for writes.
+
+Promotion flow:
+
+`Discovery -> audit -> pin -> sandbox -> smoke test -> vault-backed auth -> audit logging -> gated writes`
+
+Default mode is read-only. Mutation-capable integrations such as Jenkins,
+Proxmox, Kubernetes/OpenShift, NetBox write tools, and Trac writes require
+change-control promotion before receiving write-capable credentials.
+
+Current candidate set:
+
+- Hugging Face MCP: https://huggingface.co/settings/mcp
+- Trac MCP
+- NetBox MCP
+- Grafana MCP: https://github.com/grafana/mcp-grafana
+- Jenkins MCP: https://github.com/jenkinsci/mcp-server-plugin
+- Proxmox MCP
+- Context7 MCP
+- Kubernetes/OpenShift MCP, deferred until the OpenShift service profile exists
+
+The `mcp_control_plane` role renders `/etc/mcp-control-plane` policy files. It
+does not install or start third-party MCP services.
 
 ## Validation
 

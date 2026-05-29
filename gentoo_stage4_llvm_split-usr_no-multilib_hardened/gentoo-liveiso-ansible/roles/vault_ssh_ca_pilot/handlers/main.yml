@@ -1,0 +1,8 @@
+---
+- name: Restart Vault SSH CA pilot sshd service
+  ansible.builtin.service:
+    name: "{{ vault_ssh_ca_pilot_service_name }}"
+    state: restarted
+  when:
+    - vault_ssh_ca_pilot_restart_sshd | bool
+    - vault_ssh_ca_pilot_live_root | default(false) | bool

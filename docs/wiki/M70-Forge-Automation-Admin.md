@@ -1,0 +1,175 @@
+# M70 Forge Automation Admin
+
+The first M70 node is reserved as `admin-sun99-forge-099070.rfc1918.host`
+(`172.16.99.70`, MAC `00:07:32:78:65:C6`) and uses the
+`metal-forge-automation-admin` Stage5 profile. Its initramfs netboot interface
+is `netboot0` on CSS326 `ge14`; its approved persistent management target is
+`bond0 = netboot0 + enp3s0` on CSS326 `ge14/ge17`. Its remote power path is
+AP7901 outlet 4 on
+`pdu-rfc99-corectrl-099241`. The AP7901 control-panel outlet label is
+`admin-sun99-forge`.
+
+It is the migration target for Forge/Codex, Ansible, vault workflows, GitHub
+CLI, X12AGAIN SoL access through `/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin`,
+and restored `/root`, `/opt`, `/var/lib/ansible`, `/var/lib/codex`,
+`/var/lib/forge-memory`, and `/var/lib/git` continuity data.
+
+Provisioning is tracked as UEFI PXE to iPXE with static DHCP address
+`172.16.99.70`, boot file `m70-forge-ipxe.efi`, and netboot publisher
+`172.16.99.88`.
+
+2026-05-13 live validation used Hasslehoff `/dev/ttyUSB3` for serial console
+and a local SATADOM ESP iPXE chainloader because the firmware did not expose a
+usable UEFI PXE NIC entry. The M70-specific iPXE binary successfully chained the
+published HTTP role and reached SSH at `172.16.99.70`.
+
+On 2026-05-17 the generic USB serial hub was moved from Hasslehoff to M70.
+RouterOS serial consoles and the CyberPower USB UPS now enumerate on M70.
+M70's own external serial console is not currently available through Hasslehoff;
+attach a separate OOB adapter before relying on serial recovery for this host.
+
+| Device | Stable Device | Current TTY |
+| --- | --- | --- |
+| CCR2004 gateway | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` |
+| CRS354 distribution | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` |
+| CRS309 spine | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB4` |
+| CyberPower UPS | USB `0764:0601`, product `CP1500PFCRM2U` | `/dev/hidraw0` |
+
+The follow-up reboot validated the corrected `netboot0` dracut cmdline. The
+persistent OS currently exposes the management NIC as `netboot0`; the approved
+target is to move `172.16.99.70/24` to `bond0` after CSS326 LACP is updated.
+
+## Network Target State
+
+Approved on 2026-05-24:
+
+| Interface | PCI | Driver | MAC | Target Role | Switch Port |
+| --- | --- | --- | --- | --- | --- |
+| `netboot0` | `0000:02:00.0` | `igb` | `00:07:32:78:65:C6` | `bond0` member and initramfs netboot | CSS326 `ge14` |
+| `enp3s0` | `0000:03:00.0` | `igb` | `00:07:32:78:65:C7` | `bond0` member | CSS326 `ge17` |
+| `eno1` | `0000:06:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:C8` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge3` |
+| `eno2` | `0000:06:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:C9` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge4` |
+| `eno3` | `0000:07:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:CA` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge5` |
+| `eno4` | `0000:07:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:CB` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge6` |
+
+Target persistent OpenRC fragment:
+
+```text
+config_bond0="172.16.99.70/24"
+routes_bond0="default via 172.16.99.1"
+slaves_bond0="netboot0 enp3s0"
+mode_bond0="802.3ad"
+lacp_rate_bond0="fast"
+miimon_bond0="100"
+xmit_hash_policy_bond0="layer3+4"
+```
+
+The 2026-05-24 live delta before cutover is: `netboot0` still owns the service
+address and default route, `bond0` is unnumbered and contains `enp3s0 + eno1`,
+and `eno2` no longer has `10.64.64.70/24`. Move CSS326 LACP group 2 from
+`ge17/ge18` to `ge14/ge17` before restarting M70 networking. Do not move the
+`eno1` cable to CCR2004 `ge3` until SSH to `172.16.99.70` is validated through
+the new `bond0`.
+
+Later on 2026-05-13 the M70 stopped answering ARP from X12AGAIN and Hasslehoff
+while CSS326 `ge14` still reported link up and the serial console remained at a
+Linux login prompt. A PDU outlet-4 reboot restored the iPXE chainload and SSH.
+Post-boot evidence showed this is a live-rootfs profile durability problem:
+`netboot0` was correct after reboot, but hostname was still
+`gmktek-k10-stage5`, `dhcpcd` was marked crashed, and `sssd` lacked
+`/etc/sssd/sssd.conf`.
+
+On 2026-05-14 the live enrollment was repaired. The FreeIPA host object existed
+without `krbprincipalname`, so `ipa-getkeytab` failed with `PrincipalName not
+found`; adding the canonical host principal fixed keytab generation. The live
+apply now forces the active OpenRC hostname, removes the stale K10 hosts entry,
+starts SSSD, validates `codex-admin` through NSS/PAM/SSH key lookup, and leaves
+the host with a valid `/etc/krb5.keytab`. After the persistent ZFS root came
+online, the same client apply was re-run and validated `/etc/krb5.keytab`,
+`/etc/sssd/sssd.conf`, SSSD service startup, NSS/PAM lookup, SSSD SSH
+authorized-key lookup, and non-root `codex-admin` SSH on the persistent host.
+
+Also on 2026-05-14 the SATADOM boot path was backed up before disk prep under
+`/root/operator-private/m70/preinstall/`. After confirming the live root was the
+netboot overlay and neither NVMe disk was mounted, `/dev/sda` was wiped and
+rebuilt as a clean 1 GiB `M70IPXE` ESP containing the published
+`m70-forge-ipxe.efi` binary, and both NVMe devices were wiped by clearing
+filesystem signatures plus the head and tail GPT regions.
+
+The active persistent layout is now a mirrored ZFS root named `zroot` across the
+two KIOXIA NVMe devices. `bootfs=zroot/ROOT/gentoo`, iPXE chains the
+`forge-automation-admin-zfs` role, and repeat reboot validation returned
+hostname `admin-sun99-forge-099070`, root source `zroot/ROOT/gentoo`, and a
+healthy pool.
+
+The first live admin baseline installed Ansible, `ansible-vault`, `ipmitool`,
+`nmap`, `tcpdump`, `tmux`, `jq`, `pciutils`, `usbutils`, `gentoolkit`, `eix`,
+Git, `git-lfs`, and the existing static `/usr/local/bin/gh` 2.88.1 binary from
+the current automation host. `git-lfs` is required because restored Forge repos
+use LFS filters. The copied `gh` binary SHA256 is
+`c1be595a7357120e28886922c050fed34ad347c36adf37370ad91d4972a416d5`; `gh auth
+status` validates with the restored Forge token.
+
+The automation-admin profile now includes GNU Emacs 30 or newer, `tree`,
+`bash-completion`, `xfsprogs`, `xfsdump`, `eza`, Git, `git-lfs`, and `tig` as
+baseline tools. The M70 Emacs USE shape is captured with X-enabled Emacs and
+systemd/GTK/Wayland disabled. The live `/etc/eixrc/00-eixrc` customization is
+also profile-owned with `OVERLAY_CACHE_METHOD="assign"` so future
+automation-admin hosts get the same eix overlay cache behavior.
+
+The X12AGAIN BMC wrapper was staged under
+`/root/.ssh/codex.d/ipmi.d/ipmi-prinzessin` on the M70, and `ipmitool chassis
+status` from the M70 reaches the BMC at `172.16.199.108` with normal
+power/fault state.
+
+On 2026-05-14 the latest off-host X12AGAIN `/root` backup snapshot
+`/home/x12again-root/20260513-191801/root` was restored to
+`/srv/restore/x12again-root/20260513-191801/root` on the M70. Only
+continuity-critical paths were merged into active `/root`: `.codex`,
+`.config/superpowers`, `.ssh/vault`, `.ssh/codex.d/tokens`,
+`.ssh/codex.d/ipmi.d`, `operator-private`, the repo snapshot, and selected
+shell/git config. The pre-merge state was preserved at
+`/root/restore-pre-merge-20260514T050816Z`.
+
+Post-merge validation confirms Codex config, vault environment, Forge token,
+operator backup script, and restored repo access. The restored active repo is
+`/root/RFC_Codex_Gentoo-Stage4-LLVM` on branch
+`codex/slurm-pilot-control-plane` at commit `d6c04cd`; `git status` works after
+installing `dev-vcs/git-lfs`. Full `/opt` import is deferred because the latest
+off-host `/opt` snapshot is about 227 GiB and the current M70 pool has about
+223 GiB available.
+
+Current blockers before this can replace X12AGAIN: either add storage or choose
+a selective `/opt` restore plan, and resolve the observed 32 GiB memory report
+against the planned 64 GiB inventory.
+
+## Intel QAT
+
+The M70 Atom C3000 platform exposes Intel QuickAssist at PCI `01:00.0`
+(`8086:19e2`). Live validation on 2026-05-14 showed kernel driver `c3xxx`,
+module `qat_c3xxx`, supporting module `intel_qat`, and in-tree kernel config for
+`CONFIG_CRYPTO_DEV_QAT_C3XXX=m` plus `CONFIG_CRYPTO_DEV_QAT_C3XXXVF=m`.
+
+The profile includes the reusable `stage5-metal-intel-platform` package layer
+for `sys-firmware/intel-microcode` and `sys-kernel/linux-firmware`, and it loads
+`intel_qat` plus `qat_c3xxx`. Application consumers stay gated: OpenSSL,
+HAProxy, Nginx, and OpenZFS must each get benchmark evidence and rollback
+commands before QAT acceleration is enabled in production. OpenZFS+QAT is
+tracked as a separate CI/CD artifact lane because Gentoo does not currently
+treat QAT-enabled ZFS as the stock ebuild path.
+
+Live installation on 2026-05-14 completed `sys-firmware/intel-microcode`,
+`sys-kernel/linux-firmware`, and `sys-apps/iucode_tool`. The required C3000 QAT
+firmware files are present at `/lib/firmware/intel/qat/qat_c3xxx.bin` and
+`/lib/firmware/intel/qat/qat_c3xxx_mmp.bin`.
+
+## Local Monitoring
+
+On 2026-05-15 the M70 local monitoring baseline was installed and validated:
+`lm_sensors`, `htop`, `btop`, `iotop-c`, `lsof`, `psmisc`, `parallel`,
+`numactl`, `numad`, `time`, `anacron`, `daemontools`, `wait_on_pid`, and
+`watchpid`.
+
+Sensor discovery found `coretemp`, `it87`, and `jc42`. DIMM and Super I/O
+thresholds need board-specific `sensors.conf` tuning before their alarm bits are
+usable for production alerting.

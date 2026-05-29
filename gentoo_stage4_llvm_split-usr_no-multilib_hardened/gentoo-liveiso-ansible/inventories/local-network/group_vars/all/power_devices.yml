@@ -1,0 +1,42 @@
+---
+sun99_white_rack_power_devices:
+  primary_ups:
+    role: ups
+    expected_family: apc_network_ups
+    telemetry_preference:
+      - snmp_exporter
+      - apcupsd_client_compat
+    username: "{{ vault_power_devices_sun99_white_rack_primary_ups_username }}"
+    password: "{{ vault_power_devices_sun99_white_rack_primary_ups_password }}"
+    notes:
+      - Identify whether this is the APC SRT1500RMXLA/AP9641 endpoint at 172.16.99.242 or 172.16.99.244 before live automation.
+  secondary_ups:
+    role: ups
+    expected_family: cyberpower_usb_hid
+    telemetry_preference:
+      - nut_usbhid_ups
+      - nut_exporter
+    username: "{{ vault_power_devices_sun99_white_rack_secondary_ups_username }}"
+    password: "{{ vault_power_devices_sun99_white_rack_secondary_ups_password }}"
+    notes:
+      - CyberPower CP1500PFCRM2U has no network card; cable USB to admin-sun99-forge-099070 and validate with NUT.
+  primary_ats:
+    role: automatic_transfer_switch
+    expected_family: apc_network_ats
+    telemetry_preference:
+      - snmp_exporter
+    username: "{{ vault_power_devices_sun99_white_rack_primary_ats_username }}"
+    password: "{{ vault_power_devices_sun99_white_rack_primary_ats_password }}"
+    notes:
+      - Review transfer-event logs and source preference after the 2026-05-17 utility-side outage.
+  primary_pdu:
+    role: power_distribution_unit
+    expected_family: apc_ap7901
+    telemetry_preference:
+      - snmp_exporter
+      - legacy_http_breakglass
+      - serial_rescue
+    username: "{{ vault_power_devices_sun99_white_rack_primary_pdu_username }}"
+    password: "{{ vault_power_devices_sun99_white_rack_primary_pdu_password }}"
+    notes:
+      - AP7901 is legacy TLS-exempt firmware; use SNMP, serial, or plain HTTP only.

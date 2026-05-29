@@ -1,5 +1,12 @@
 # Thor AGX Stabilization
 
+> Historical note: this page captures the 2026-05-23 live stabilization pass.
+> The later Podman/CDI inference baseline in
+> `docs/THOR-AGX-INFERENCE-READINESS.md` and
+> `inventories/local-network/host_vars/agx_rfc99_bunnydev_099034.yml` supersedes
+> Docker-specific runtime state recorded here. Keep this page as evidence, not as
+> the current desired state.
+
 ## Purpose
 
 Track the live stabilization state for `agx-rfc99-bunnydev.rfc1918.host`

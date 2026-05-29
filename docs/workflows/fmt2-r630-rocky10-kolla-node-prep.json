@@ -1,0 +1,115 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "fmt2-r630-rocky10-kolla-node-prep",
+    "description": "Define the Rocky Linux 10 node-prep contract for FMT2 R630 Kolla hosts before any OpenStack deployment or destructive rebuild.",
+    "owners": [
+      "forge",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible root containing FMT2 Kolla inventory and preflight playbooks."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/fmt2-openstack-kolla/hosts.yml",
+      "description": "Inventory containing pri/sec/ter/deployer Kolla host roles."
+    },
+    {
+      "name": "kolla_hosts",
+      "required": true,
+      "default": "kvm_sfo200_pri_9922,kvm_sfo200_sec_9923",
+      "description": "Initial R630 hosts to validate for Rocky Linux 10 Kolla node prep."
+    },
+    {
+      "name": "target_os",
+      "required": true,
+      "default": "Rocky Linux 10",
+      "description": "Required first-pass OpenStack node operating system."
+    },
+    {
+      "name": "syslog_vip",
+      "required": true,
+      "default": "syslog.rfc1918.host",
+      "description": "RFC1918 syslog VIP used for R630 node log shipping."
+    }
+  ],
+  "stages": [
+    {
+      "id": "rocky10-install-contract",
+      "summary": "Record the destructive install target contract before rebuilding pri or sec.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'install Rocky Linux 10 on OS mirror only' 'preserve IDSDM EFI handoff' 'exclude SAS hot-swap bays from OS install' 'keep SOL enabled before and after rebuild' 'do not use ter dstore as an OS target' 'do not wipe ter'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "kolla-network-contract",
+      "summary": "Record the first-pass R630 Kolla network contract.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'create bond0 on eno1+eno2 for management/API' 'create bond1 on eno3+eno4 for Neutron external/provider traffic with no host IP' 'leave ConnectX ports independent for RoCEv2 validation' 'do not promote ConnectX LACP before pairwise RDMA evidence' 'bond0 is network_interface/api_interface/kolla_external_vip_interface' 'bond1 is neutron_external_interface'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "base-services-contract",
+      "summary": "Record base services required before Kolla deployer admission.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'install podman and Kolla host dependencies' 'enable chrony against RFC1918 time sources' 'enroll sssd/FreeIPA when the FreeIPA path is reachable' 'install node_exporter and Check_MK agent' 'ship rsyslog to the RFC1918 syslog VIP ${syslog_vip}' 'trust RFC1918 internal CA' 'validate AAA, NTP, telemetry, and logs before Kolla prechecks'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "read-only-kolla-preflight",
+      "summary": "Run non-destructive Kolla Rocky 10 preflight against pri/sec; failure is expected until hosts are rebuilt to Rocky Linux 10.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/fmt2-kolla-rocky10-preflight.yml",
+        "-l",
+        "${kolla_hosts}"
+      ],
+      "expectedExitCodes": [
+        0,
+        2
+      ]
+    },
+    {
+      "id": "node-prep-closeout-report",
+      "summary": "Print the node-prep closeout criteria that must be true before Kolla bootstrap-servers.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Rocky Linux 10 installed on approved OS mirror devices' 'IDSDM EFI handoff preserved' 'SAS hot-swap bays excluded' 'bond0 and bond1 present with intended addressing' 'podman available' 'chrony synchronized' 'sssd/FreeIPA path validated or explicitly deferred' 'node_exporter and Check_MK agent active' 'rsyslog shipping to RFC1918 syslog VIP' 'RFC1918 internal CA trusted' 'fmt2-kolla-rocky10-preflight passed before kolla-ansible bootstrap-servers'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

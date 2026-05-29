@@ -1,0 +1,31 @@
+#!/sbin/openrc-run
+
+description="NUT UPS node_exporter textfile collector"
+command="/usr/local/sbin/export-nut-textfile"
+command_args="${nut_textfile_collector_ups} ${nut_textfile_collector_output}"
+pidfile="/run/${RC_SVCNAME}.pid"
+command_background=true
+command_user="nut:nut"
+
+depend() {
+  need upsd
+  use node_exporter
+}
+
+start_pre() {
+  checkpath --directory --owner nut:nut --mode 0755 "$(dirname "${nut_textfile_collector_output}")"
+}
+
+start() {
+  ebegin "Starting ${RC_SVCNAME}"
+  start-stop-daemon --start --background --make-pidfile --pidfile "${pidfile}" \
+    --user "${command_user}" --exec /bin/bash -- -c \
+    "while true; do ${command} ${command_args}; sleep ${nut_textfile_collector_interval}; done"
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping ${RC_SVCNAME}"
+  start-stop-daemon --stop --pidfile "${pidfile}"
+  eend $?
+}

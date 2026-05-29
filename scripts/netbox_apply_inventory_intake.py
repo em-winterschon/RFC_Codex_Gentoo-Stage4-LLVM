@@ -360,9 +360,25 @@ def cable_between_terminations(
     return None
 
 
-def termination_cable(termination: dict[str, Any]) -> dict[str, Any] | None:
-    cable = termination.get("cable")
-    return cable if isinstance(cable, dict) and cable.get("id") else None
+def cable_for_termination(
+    client: NetBoxClient,
+    object_type: str,
+    object_id: int,
+) -> dict[str, Any] | None:
+    result = client.request_json("GET", "dcim/cables", query={"limit": "0"})
+    rows = result.get("results", [])
+    if not isinstance(rows, list):
+        return None
+    for row in rows:
+        if isinstance(row, dict) and cable_has_termination(row, object_type, object_id):
+            return row
+    return None
+
+
+def managed_power_intake_cable(cable: dict[str, Any]) -> bool:
+    label = str(cable.get("label") or "")
+    description = str(cable.get("description") or "")
+    return "->" in label and "Power-chain cable tracked from inventory intake." in description
 
 
 def interface_mark_connected(interface: dict[str, Any]) -> bool:
@@ -508,9 +524,7 @@ def primary_ip_update_payload(
     return {"primary_ip4": ip_id} if "." in address else {"primary_ip6": ip_id}
 
 
-def ip_assignment_matches_interface(
-    ip_object: dict[str, Any], interface: dict[str, Any]
-) -> bool:
+def ip_assignment_matches_interface(ip_object: dict[str, Any], interface: dict[str, Any]) -> bool:
     assigned_type = ip_object.get("assigned_object_type")
     if assigned_type in {None, ""}:
         return True
@@ -674,10 +688,24 @@ def ensure_power_cable(
             return updated
         return existing
 
-    occupied_cable = termination_cable(source_outlet) or termination_cable(target_power_port)
-    if occupied_cable:
-        client.existing.append(label)
-        return occupied_cable
+    conflicting_cables = [
+        cable
+        for cable in (
+            cable_for_termination(client, "dcim.poweroutlet", int(source_outlet["id"])),
+            cable_for_termination(client, "dcim.powerport", int(target_power_port["id"])),
+        )
+        if cable
+    ]
+    unique_conflicts = {int(cable["id"]): cable for cable in conflicting_cables}.values()
+    for conflict in unique_conflicts:
+        conflict_label = str(conflict.get("label") or conflict.get("display") or conflict["id"])
+        if not client.update_existing or not managed_power_intake_cable(conflict):
+            raise RuntimeError(
+                "Refusing to replace unmanaged or non-update power cable "
+                f"{conflict_label!r} while creating {lookup_value!r}"
+            )
+        client.request_json("DELETE", f"dcim/cables/{conflict['id']}")
+        client.updated.append(f"dcim/cables:replaced:{conflict_label}")
 
     created = client.request_json("POST", "dcim/cables", payload)
     client.created.append(label)
@@ -702,9 +730,7 @@ def ensure_interface_cable(
 ) -> dict[str, Any]:
     left_name = str(left_interface["name"])
     right_name = str(right_interface["name"])
-    lookup_value = (
-        f"{left_device['name']}:{left_name}->{right_device['name']}:{right_name}"
-    )
+    lookup_value = f"{left_device['name']}:{left_name}->{right_device['name']}:{right_name}"
     payload = {
         "a_terminations": [
             {
@@ -742,7 +768,9 @@ def ensure_interface_cable(
             return updated
         return existing
 
-    occupied_cable = termination_cable(left_interface) or termination_cable(right_interface)
+    occupied_cable = cable_for_termination(
+        client, "dcim.interface", int(left_interface["id"])
+    ) or cable_for_termination(client, "dcim.interface", int(right_interface["id"]))
     if occupied_cable:
         client.existing.append(label)
         return occupied_cable

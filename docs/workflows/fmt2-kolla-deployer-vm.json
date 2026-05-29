@@ -1,0 +1,147 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "fmt2-kolla-deployer-vm",
+    "description": "Define and bootstrap the Rocky Linux 10 Kolla-Ansible deployer VM on kvm-sfo200-ter-9924 dstore storage without touching pri/sec OpenStack nodes.",
+    "owners": [
+      "forge",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ter_host",
+      "required": true,
+      "default": "kvm-sfo200-ter-9924",
+      "description": "FMT2 R630 storage/provisioning anchor that owns dstore and the dstore-images libvirt pool."
+    },
+    {
+      "name": "deployer_vm",
+      "required": true,
+      "default": "ops-fmt2-kolla-deployer-9928",
+      "description": "Rocky Linux 10 deployer VM that will run Kolla-Ansible."
+    },
+    {
+      "name": "deployer_ip",
+      "required": true,
+      "default": "10.200.99.28",
+      "description": "FMT2 management IP reserved for the deployer VM."
+    },
+    {
+      "name": "deployer_storage_dataset",
+      "required": true,
+      "default": "dstore/libvirt/images",
+      "description": "ZFS dataset on ter that backs portable libvirt deployer VM images. Validate with: zfs list dstore/libvirt/images."
+    },
+    {
+      "name": "deployer_storage_path",
+      "required": true,
+      "default": "/srv/libvirt/images",
+      "description": "Mounted path for dstore-images; do not write deployer VM disks to the OS RAID1 mirror."
+    },
+    {
+      "name": "deployer_os",
+      "required": true,
+      "default": "Rocky Linux 10",
+      "description": "First-pass Kolla deployer operating system."
+    },
+    {
+      "name": "kolla_release",
+      "required": true,
+      "default": "2026.1",
+      "description": "Pinned Kolla-Ansible/OpenStack release stream for the FMT2 pilot. The default virtualenv path is /opt/kolla-ansible-2026.1."
+    },
+    {
+      "name": "kolla_ansible_package_spec",
+      "required": true,
+      "default": "kolla-ansible==2026.1.*",
+      "description": "Pinned pip package selector for the deployer virtualenv."
+    }
+  ],
+  "stages": [
+    {
+      "id": "ter-storage-preflight",
+      "summary": "Verify ter dstore storage and libvirt pool are available before any deployer VM disk is created.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "${ter_host}",
+        "sudo virsh pool-info dstore-images && sudo zfs list ${deployer_storage_dataset} && test -d ${deployer_storage_path}"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "deployer-vm-definition",
+      "summary": "Render the intended deployer VM definition and package set without creating the VM.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'deployer_vm=${deployer_vm}' 'deployer_ip=${deployer_ip}' 'host=${ter_host}' 'storage=${deployer_storage_dataset}' 'path=${deployer_storage_path}' 'os=${deployer_os}' 'packages=python3 python3-pip python3-devel python3-venv gcc libffi-devel openssl-devel podman git' 'kolla.container_engine=podman' 'kolla.base_distro=rocky' 'kolla.openstack_release=${kolla_release}' 'kolla.package_spec=${kolla_ansible_package_spec}' 'safety=do not write deployer VM disks to the OS RAID1 mirror'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "deployer-vm-bootstrap",
+      "summary": "After human approval, create or validate the Rocky Linux 10 deployer VM on ter-backed dstore storage.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Approved execution command placeholder: create ${deployer_vm} as Rocky Linux 10 at ${deployer_ip} on ${ter_host}:${deployer_storage_path}. Verify VM disk path stays under ${deployer_storage_path}; verify SSH reaches ${deployer_vm}; verify sudo works; verify podman installs from Rocky 10 repos.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "kolla-ansible-venv-install",
+      "summary": "Install Kolla-Ansible into a pinned virtualenv on the deployer VM.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "${deployer_vm}",
+        "python3 -m venv /opt/kolla-ansible-${kolla_release} && /opt/kolla-ansible-${kolla_release}/bin/pip install --upgrade pip && /opt/kolla-ansible-${kolla_release}/bin/pip install '${kolla_ansible_package_spec}'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "kolla-etc-bootstrap",
+      "summary": "Create /etc/kolla and seed globals.yml/passwords.yml examples from the Kolla-Ansible virtualenv.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "${deployer_vm}",
+        "sudo mkdir -p /etc/kolla && sudo cp -r /opt/kolla-ansible-${kolla_release}/share/kolla-ansible/etc_examples/kolla/* /etc/kolla/ && test -f /etc/kolla/globals.yml && test -f /etc/kolla/passwords.yml"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "kolla_deployer_vm",
+      "value": "ops-fmt2-kolla-deployer-9928"
+    },
+    {
+      "name": "kolla_deployer_ip",
+      "value": "10.200.99.28"
+    },
+    {
+      "name": "kolla",
+      "value": {
+        "container_engine": "podman",
+        "base_distro": "rocky",
+        "openstack_release": "2026.1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+---
+kind: RdmaPromotionReadiness
+schema_version: 1
+workflow_id: rdma-fabric-promotion-readiness
+title: RDMA/RoCEv2 production promotion readiness gate
+issue_links:
+  vendor_ofed_doca_path: 111
+  rdma_storage_client_baseline: 117
+  fmt2_arista_r630_fabric: 130
+mutation_default: blocked
+production_admission_state: blocked
+summary: >-
+  Unified promotion gate for RDMA-002, RDMA-003, and FMT2-007. The host storage
+  client baseline is defined, but production RDMA remains blocked until vendor
+  driver, fabric, pairwise smoke, storage protocol, and failure-injection
+  evidence are captured.
+
+issue_status:
+  "117":
+    id: RDMA-002
+    status: baseline-defined
+    closeable_after_merge: true
+    closeout_reason: >-
+      The host RDMA storage client baseline is now defined by
+      nfs-storage-client, RDMA-STORAGE-FABRIC-PLAN, and this promotion gate.
+      Live protocol promotion moves through #111 and #130.
+  "111":
+    id: RDMA-003
+    status: live-gated
+    closeable_after_merge: false
+    closeout_reason: >-
+      Keep open until selected OFED/DOCA package source, target kernel/header
+      compatibility, ofed_info reporting, rdma-core/perftest tooling, and
+      supported BlueField/ConnectX host apply evidence are captured.
+  "130":
+    id: FMT2-007
+    status: live-gated
+    closeable_after_merge: false
+    closeout_reason: >-
+      Keep open until Arista/R630 LLDP, QoS, rollback, pairwise smoke,
+      one-path-failure, and reboot conformance evidence are captured.
+
+safety_invariants:
+  - do-not-enable-connectx-lacp-before-pairwise-rdma-and-one-path-failure-pass
+  - do-not-admit-in-kernel-mlx5-as-production-rdma-without-vendor-driver-decision
+  - do-not-enable-nfs-rdma-or-nvme-rdma-before-lossless-class-validation
+  - do-not-mutate-arista-without-pre-change-snapshot-and-rollback-commands
+  - keep-rdma-out-of-openstack-scheduling-until-production-admission-passes
+  - use-independent-50gbe-paths-before-lacp-or-switchdev-promotion
+
+production_blockers:
+  - vendor-ofed-doca-not-installed
+  - ofed-info-not-reporting-selected-driver-line
+  - rdma-userspace-perftest-tooling-not-installed
+  - arista-lossless-qos-profile-not-approved
+  - pairwise-rdma-smoke-not-run
+  - storage-protocol-pilots-not-run
+  - one-path-failure-not-run
+  - reboot-conformance-not-run
+  - pri-connectx-enumeration-unresolved
+  - sec-placeholder-connectx-macs-unresolved
+
+promotion_stages:
+  - id: rdma-storage-client-baseline
+    issue: 117
+    state: defined
+    required_before:
+      - nfs-rdma
+      - nvme-rdma
+      - iser
+    evidence_sources:
+      - docs/NFS-STORAGE-CLIENT.md
+      - gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/nfs-storage-client.yml
+      - gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/nfs_storage_client/
+    acceptance:
+      - NFSv3 TCP remains default.
+      - NFSv4.2 requires centralized AAA, SSSD, and UID/GID consistency.
+      - NFS-RDMA is opt-in and blocked until RoCEv2 fabric admission passes.
+      - Multipath tools are present for iSCSI, FC, NVMe-oF, and future block paths.
+
+  - id: vendor-ofed-doca-convergence
+    issue: 111
+    state: live-gated
+    required_before:
+      - rdma-admission
+      - nfs-rdma
+      - nvme-rdma
+      - iser
+    evidence_sources:
+      - gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/nvidia_doca_ofed/
+      - scripts/fmt2-build-mlnx-ofed-rhel-kernel.sh
+      - docs/RDMA-STORAGE-FABRIC-PLAN.md
+    acceptance:
+      - lspci -Dnn detects supported NVIDIA/Mellanox vendor 15b3 endpoints.
+      - Selected OFED/DOCA package source matches target OS and kernel headers.
+      - ofed_info -s reports the selected vendor driver line after apply.
+      - mlx5_core and mlx5_ib are loaded from the accepted driver path.
+      - rdma-core, ibverbs providers, ib_write_bw, ib_read_bw, and ibv_rc_pingpong are installed.
+      - In-kernel mlx5 remains discovery-only unless explicitly accepted by change control.
+
+  - id: fmt2-r630-arista-fabric-admission
+    issue: 130
+    state: live-gated
+    required_before:
+      - switch-mutation
+      - rdma-admission
+    evidence_sources:
+      - docs/fabric-policies/fmt2-r630-arista7060-fabric-policy.yml
+      - docs/RDMA-STORAGE-FABRIC-PLAN.md
+      - gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventory-intake/sites/fmt2.yml
+    acceptance:
+      - Arista running-config snapshot is captured before mutation.
+      - LLDP confirms pri/sec/ter X710 and ConnectX port maps.
+      - RoCEv2 storage class defines MTU, PFC, ECN, WRED, DSCP, and PCP mapping.
+      - Rollback commands are generated and reviewed before apply.
+      - ConnectX LACP stays blocked until pairwise RDMA and one-path-failure pass.
+      - pri ConnectX PCI/iDRAC/LLDP mismatch is repaired before pri RDMA admission.
+      - sec placeholder ConnectX MACs are fixed or explained before IPAM/DHCP/ACL use.
+
+  - id: pairwise-rdma-smoke
+    issue: 130
+    state: live-gated
+    required_before:
+      - storage-protocol-pilots
+      - scheduler-rdma-feature-advertisement
+    commands:
+      - rdma link show
+      - ibv_devinfo
+      - ib_write_bw
+      - ib_read_bw
+      - ibv_rc_pingpong
+    acceptance:
+      - sec-to-ter pairwise RDMA smoke passes on both independent 50GbE paths.
+      - pri participates only after ConnectX replacement or inventory mismatch resolution.
+      - Counter capture shows no port errors, drops, pause storms, or retransmit anomalies.
+
+  - id: storage-protocol-pilots
+    issue: 117
+    state: live-gated
+    required_before:
+      - production-storage-use
+    protocols:
+      - nfs-rdma
+      - nvme-rdma
+      - iser
+      - non-rdma-iscsi-fallback
+    acceptance:
+      - NFS-RDMA mount smoke passes after NFSv3/NFSv4 TCP baseline.
+      - NVMe-RDMA or iSER pilot passes with multipath policy documented.
+      - Non-RDMA fallback remains available for rollback.
+
+  - id: failure-injection-and-reboot-conformance
+    issue: 130
+    state: live-gated
+    required_before:
+      - production-admission
+    acceptance:
+      - one-path-failure test preserves host reachability and storage safety.
+      - reboot-conformance proves RDMA state survives reboot.
+      - telemetry captures link state, RDMA counters, switch counters, and service health.
+      - OpenStack, SLURM, and storage schedulers do not advertise RDMA until this gate passes.
+
+closeout_policy:
+  issue_117:
+    action_after_merge: close
+    reason: completed
+  issue_111:
+    action_after_merge: keep-open
+    next_required_evidence:
+      - selected OFED/DOCA package source
+      - kernel/header compatibility proof
+      - read-only preflight on BlueField-2, ConnectX-4, and ConnectX-5 candidates
+      - first gated apply evidence on non-production host
+  issue_130:
+    action_after_merge: keep-open
+    next_required_evidence:
+      - Arista pre-change snapshot
+      - live LLDP and port-map confirmation
+      - lossless QoS profile and rollback commands
+      - sec-to-ter pairwise RDMA smoke
+      - one-path-failure and reboot-conformance evidence

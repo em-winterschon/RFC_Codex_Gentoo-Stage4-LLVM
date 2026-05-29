@@ -34,6 +34,7 @@ install_role_sequences:
           - network
           - rsyslog_base
           - telemetry_node_exporter
+          - telemetry_nut
           - telemetry_podman_exporter
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
@@ -45,12 +46,19 @@ install_role_sequences:
           - telemetry_grafana
           - binpkg_repo
           - nexus_repo
+          - trac_server
+          - trac_mcp_bridge
+          - forge_memory_object_store
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
           - netbox_connector
+          - mcp_control_plane
           - vm_redfish_emulator
           - zerotier_access
           - nscde_workstation
@@ -106,6 +114,7 @@ install_role_sequences:
           - bootloader
           - rsyslog_base
           - telemetry_node_exporter
+          - telemetry_nut
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
           - telemetry_elasticsearch_exporter
@@ -116,12 +125,19 @@ install_role_sequences:
           - telemetry_grafana
           - binpkg_repo
           - nexus_repo
+          - trac_server
+          - trac_mcp_bridge
+          - forge_memory_object_store
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
           - netbox_connector
+          - mcp_control_plane
           - vm_redfish_emulator
           - zerotier_access
           - nscde_workstation
@@ -178,6 +194,7 @@ install_role_sequences:
           - network
           - rsyslog_base
           - telemetry_node_exporter
+          - telemetry_nut
           - telemetry_podman_exporter
           - telemetry_blackbox_exporter
           - telemetry_snmp_exporter
@@ -189,12 +206,19 @@ install_role_sequences:
           - telemetry_grafana
           - binpkg_repo
           - nexus_repo
+          - trac_server
+          - trac_mcp_bridge
+          - forge_memory_object_store
           - freeipa_controller
           - ipa_client
+          - rfc1918_ca_trust
+          - rfc1918_service_tls
+          - native_haproxy_tls_proxy
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
           - netbox_connector
+          - mcp_control_plane
           - zerotier_access
           - nscde_workstation
           - platform_profile
@@ -257,12 +281,15 @@ install_role_sequences:
           - telemetry_grafana
           - binpkg_repo
           - nexus_repo
+          - trac_server
+          - trac_mcp_bridge
           - freeipa_controller
           - ipa_client
           - freeradius_bridge
           - elasticsearch_cluster
           - kibana_interface
           - netbox_connector
+          - mcp_control_plane
           - zerotier_access
           - nscde_workstation
           - platform_profile
