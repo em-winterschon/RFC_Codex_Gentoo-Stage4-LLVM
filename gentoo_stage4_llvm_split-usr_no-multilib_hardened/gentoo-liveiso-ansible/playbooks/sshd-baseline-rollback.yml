@@ -1,0 +1,46 @@
+---
+- name: Roll back SSHD config from a host-local backup file
+  hosts: "local_management:aaa_domain_clients:install_targets:netboot_publishers:!mikrotik_routeros:!mikrotik_swos:!routeros_rfc99_gateways"
+  gather_facts: false
+  become: true
+  any_errors_fatal: false
+  vars:
+    sshd_baseline_config_path: /etc/ssh/sshd_config
+    sshd_baseline_validate_command: "/usr/bin/sshd -t -f %s"
+    sshd_baseline_service_name: sshd
+  pre_tasks:
+    - name: Gate live SSHD baseline rollback source
+      ansible.builtin.assert:
+        that:
+          - sshd_baseline_rollback_source is defined
+          - sshd_baseline_rollback_source | length > 0
+        fail_msg: "Set sshd_baseline_rollback_source to a host-local backup path."
+  tasks:
+    - name: Restore SSHD config from selected backup with syntax validation
+      ansible.builtin.copy:
+        src: "{{ sshd_baseline_rollback_source }}"
+        dest: "{{ sshd_baseline_config_path }}"
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0644'
+        validate: "{{ sshd_baseline_validate_command }}"
+      notify: Restart sshd
+
+    - name: Verify restored SSHD config syntax
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/sshd
+          - -t
+          - -f
+          - "{{ sshd_baseline_config_path }}"
+      changed_when: false
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - "{{ sshd_baseline_service_name }}"
+          - restart
+      changed_when: true

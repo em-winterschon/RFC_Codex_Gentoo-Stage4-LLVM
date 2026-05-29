@@ -14,7 +14,13 @@
     ipa_client_live_controller_inventory_host: "{{ freeipa_client_controller_inventory_host | default('svc_identity_ipa01') }}"
     ipa_client_live_fqdn: "{{ freeipa_client_fqdn | default(inventory_hostname ~ '.' ~ ipa_client_live_domain) }}"
     ipa_client_live_short_hostname: "{{ freeipa_client_short_hostname | default(ipa_client_live_fqdn.split('.')[0]) }}"
-    ipa_client_live_package_atoms: "{{ freeipa_client_package_atoms | default(['sys-auth/sssd', 'net-fs/samba', 'app-crypt/mit-krb5', 'net-nds/openldap', 'app-misc/ca-certificates']) }}"
+    ipa_client_live_default_package_atoms:
+      - sys-auth/sssd
+      - net-fs/samba
+      - app-crypt/mit-krb5
+      - net-nds/openldap
+      - app-misc/ca-certificates
+    ipa_client_live_package_atoms: "{{ freeipa_client_package_atoms | default(ipa_client_live_default_package_atoms) }}"
     ipa_client_live_package_use_file: /etc/portage/package.use/30-aaa-domain-client-sssd
     ipa_client_live_keytab_tmp: "/tmp/{{ ipa_client_live_fqdn }}.krb5.keytab"
     ipa_client_live_keytab_dest: /etc/krb5.keytab
@@ -109,7 +115,6 @@
       loop:
         - /etc/ipa
         - /etc/sssd
-        - /etc/ssh/sshd_config.d
 
     - name: Write FreeIPA default.conf
       ansible.builtin.copy:
@@ -281,13 +286,13 @@
         insertafter: '^session\\s+include\\s+system-auth'
         line: 'session     optional      pam_mkhomedir.so skel=/etc/skel umask=0077'
 
-    - name: Enable SSSD SSH authorized key lookup
-      ansible.builtin.copy:
-        dest: /etc/ssh/sshd_config.d/60-sssd-authorized-keys.conf
-        mode: '0644'
-        content: |
-          AuthorizedKeysCommand /usr/bin/sss_ssh_authorizedkeys
-          AuthorizedKeysCommandUser nobody
+    - name: Apply canonical SSHD baseline with inline SSSD key lookup
+      ansible.builtin.include_role:
+        name: sshd_baseline
+      vars:
+        sshd_baseline_mode: apply
+        sshd_baseline_apply_required: "{{ ipa_client_live_required }}"
+        sshd_baseline_variant: "{{ freeipa_client_sshd_baseline_variant | default('standard_sssd_no_include') }}"
 
     - name: Add SSSD to default OpenRC runlevel
       ansible.builtin.command:
@@ -304,14 +309,6 @@
         argv:
           - rc-service
           - sssd
-          - restart
-      changed_when: true
-
-    - name: Restart SSHD to load authorized key command
-      ansible.builtin.command:
-        argv:
-          - rc-service
-          - sshd
           - restart
       changed_when: true
 

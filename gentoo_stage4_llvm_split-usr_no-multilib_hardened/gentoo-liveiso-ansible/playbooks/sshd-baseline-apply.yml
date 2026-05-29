@@ -1,0 +1,19 @@
+---
+- name: Apply canonical SSHD baseline after audit eligibility
+  hosts: "local_management:aaa_domain_clients:install_targets:netboot_publishers:!mikrotik_routeros:!mikrotik_swos:!routeros_rfc99_gateways"
+  gather_facts: true
+  become: true
+  any_errors_fatal: false
+  serial: "{{ sshd_baseline_serial | default(10) }}"
+  vars:
+    sshd_baseline_mode: apply
+  pre_tasks:
+    - name: Gate live SSHD baseline apply
+      ansible.builtin.assert:
+        that:
+          - sshd_baseline_apply_required | default(false) | bool
+        fail_msg: >-
+          Set sshd_baseline_apply_required=true and use --limit or Slurm shards
+          for the intended host scope before mutating live SSHD configuration.
+  roles:
+    - role: sshd_baseline

@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+name="Ansible localhost Redis fact cache"
+description="Local ephemeral Redis cache for Ansible facts and rollout state"
+command="/usr/bin/redis-server"
+command_args="{{ ansible_redis_cache_config_path }}"
+command_background=true
+pidfile="{{ ansible_redis_cache_pidfile }}"
+
+start_pre() {
+  checkpath --directory --mode 0750 --owner redis:redis "{{ ansible_redis_cache_dir }}"
+  checkpath --directory --mode 0750 --owner redis:redis "{{ ansible_redis_cache_log_dir }}"
+  checkpath --directory --mode 0755 /run
+}
+
+depend() {
+  need localmount
+  use net
+}

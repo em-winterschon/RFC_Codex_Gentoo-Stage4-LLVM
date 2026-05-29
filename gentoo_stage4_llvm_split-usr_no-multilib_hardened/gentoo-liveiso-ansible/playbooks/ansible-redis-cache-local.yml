@@ -1,0 +1,10 @@
+---
+- name: Configure localhost Redis cache for Ansible facts
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: true
+  vars:
+    ansible_redis_cache_install_package: true
+  roles:
+    - role: ansible_redis_cache

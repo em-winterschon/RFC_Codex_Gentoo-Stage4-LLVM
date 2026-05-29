@@ -66,7 +66,7 @@ render_vpp_cloud_init_append() {
   [[ -f "${VPP_CANARY_NETWORK_CONFIG}" ]] || fail "Missing VPP network config: ${VPP_CANARY_NETWORK_CONFIG}"
 
   {
-    cat <<'EOF'
+    cat << 'EOF'
 package_update: true
 package_upgrade: false
 write_files:
@@ -76,21 +76,21 @@ write_files:
     content: |
 EOF
     sed 's/^/      /' "${VPP_CANARY_AF_PACKET_SCRIPT}"
-    cat <<'EOF'
+    cat << 'EOF'
   - path: /etc/systemd/system/vpp-canary-afpacket.service
     permissions: '0644'
     owner: root:root
     content: |
 EOF
     sed 's/^/      /' "${VPP_CANARY_AF_PACKET_SERVICE}"
-    cat <<'EOF'
+    cat << 'EOF'
   - path: /usr/local/share/vpp-canary/startup.conf
     permissions: '0644'
     owner: root:root
     content: |
 EOF
     sed 's/^/      /' "${VPP_CANARY_STARTUP_CONF}"
-    cat <<'EOF'
+    cat << 'EOF'
 runcmd:
   - |
     set -eux
@@ -124,11 +124,11 @@ prepare_ovs_tap() {
     return 0
   fi
 
-  command -v ip >/dev/null 2>&1 || fail 'ip command is required to prepare the VPP canary tap'
-  command -v ovs-vsctl >/dev/null 2>&1 || fail 'ovs-vsctl is required to attach the VPP canary tap'
+  command -v ip > /dev/null 2>&1 || fail 'ip command is required to prepare the VPP canary tap'
+  command -v ovs-vsctl > /dev/null 2>&1 || fail 'ovs-vsctl is required to attach the VPP canary tap'
   ovs-vsctl br-exists "${VPP_CANARY_OVS_BRIDGE}" || fail "OVS bridge does not exist: ${VPP_CANARY_OVS_BRIDGE}"
 
-  if ! ip link show "${VPP_CANARY_TAP_NAME}" >/dev/null 2>&1; then
+  if ! ip link show "${VPP_CANARY_TAP_NAME}" > /dev/null 2>&1; then
     ip tuntap add dev "${VPP_CANARY_TAP_NAME}" mode tap
   fi
 

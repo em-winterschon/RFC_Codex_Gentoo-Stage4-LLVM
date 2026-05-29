@@ -1,0 +1,107 @@
+---
+- name: Skip unmanaged Ansible Redis cache hosts
+  ansible.builtin.meta: end_host
+  when: not (ansible_redis_cache_manage | bool)
+
+- name: Ensure Portage package.use directory exists for Redis cache
+  ansible.builtin.file:
+    path: "{{ ansible_redis_cache_package_use_file | dirname }}"
+    state: directory
+    mode: '0755'
+  when: ansible_redis_cache_install_package | bool
+
+- name: Write Redis cache package USE override
+  ansible.builtin.copy:
+    dest: "{{ ansible_redis_cache_package_use_file }}"
+    mode: '0644'
+    content: "{{ ansible_redis_cache_package_use_content }}"
+  when:
+    - ansible_redis_cache_install_package | bool
+    - ansible_redis_cache_package_use_content | length > 0
+
+- name: Optionally install Redis package for Ansible cache
+  ansible.builtin.command:
+    argv:
+      - emerge
+      - --verbose
+      - --noreplace
+      - "{{ ansible_redis_cache_package_atom }}"
+  register: ansible_redis_cache_emerge
+  changed_when: "'>>> Emerging' in ansible_redis_cache_emerge.stdout or 'ebuild' in ansible_redis_cache_emerge.stdout"
+  when: ansible_redis_cache_install_package | bool
+
+- name: Ensure Ansible Redis cache directories exist
+  ansible.builtin.file:
+    path: "{{ ansible_redis_cache_dir_item }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: '0750'
+  loop:
+    - "{{ ansible_redis_cache_config_path | dirname }}"
+    - "{{ ansible_redis_cache_dir }}"
+    - "{{ ansible_redis_cache_log_dir }}"
+  loop_control:
+    loop_var: ansible_redis_cache_dir_item
+
+- name: Render localhost-only ephemeral Redis config for Ansible
+  ansible.builtin.template:
+    src: redis-ansible-cache.conf.j2
+    dest: "{{ ansible_redis_cache_config_path }}"
+    owner: root
+    group: redis
+    mode: '0640'
+  notify: Restart Ansible Redis cache
+
+- name: Install OpenRC service for Ansible Redis cache
+  ansible.builtin.template:
+    src: redis-ansible-cache.initd.j2
+    dest: "/etc/init.d/{{ ansible_redis_cache_service_name }}"
+    owner: root
+    group: root
+    mode: '0755'
+  notify: Restart Ansible Redis cache
+
+- name: Enable Ansible Redis cache OpenRC service
+  ansible.builtin.command:
+    argv:
+      - rc-update
+      - add
+      - "{{ ansible_redis_cache_service_name }}"
+      - default
+  register: ansible_redis_cache_rc_update
+  changed_when: "'already installed' not in (ansible_redis_cache_rc_update.stdout ~ ansible_redis_cache_rc_update.stderr)"
+  failed_when:
+    - ansible_redis_cache_rc_update.rc != 0
+    - "'already installed' not in (ansible_redis_cache_rc_update.stdout ~ ansible_redis_cache_rc_update.stderr)"
+
+- name: Flush Redis cache handler before validation
+  ansible.builtin.meta: flush_handlers
+
+- name: Validate Ansible Redis cache responds locally
+  ansible.builtin.command:
+    argv:
+      - redis-cli
+      - -h
+      - 127.0.0.1
+      - -p
+      - "{{ ansible_redis_cache_port | string }}"
+      - PING
+  register: ansible_redis_cache_ping
+  changed_when: false
+  failed_when: ansible_redis_cache_ping.stdout | trim != 'PONG'
+
+- name: Validate Ansible Redis cache has no persistence enabled
+  ansible.builtin.command:
+    argv:
+      - redis-cli
+      - -h
+      - 127.0.0.1
+      - -p
+      - "{{ ansible_redis_cache_port | string }}"
+      - CONFIG
+      - GET
+      - appendonly
+  register: ansible_redis_cache_appendonly
+  changed_when: false
+  failed_when: "'no' not in ansible_redis_cache_appendonly.stdout"

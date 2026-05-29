@@ -1,0 +1,21 @@
+---
+ansible_redis_cache_manage: true
+ansible_redis_cache_install_package: false
+ansible_redis_cache_package_atom: dev-db/redis
+ansible_redis_cache_package_use_file: /etc/portage/package.use/40-ansible-redis-cache
+ansible_redis_cache_package_use_content: |
+  dev-db/redis -jemalloc
+ansible_redis_cache_service_name: redis-ansible-cache
+ansible_redis_cache_config_path: /etc/redis/ansible-cache.conf
+ansible_redis_cache_bind:
+  - 127.0.0.1
+  - "::1"
+ansible_redis_cache_port: 6379
+ansible_redis_cache_database_count: 1
+ansible_redis_cache_timeout: 0
+ansible_redis_cache_tcp_keepalive: 60
+ansible_redis_cache_maxmemory: 512mb
+ansible_redis_cache_maxmemory_policy: volatile-ttl
+ansible_redis_cache_dir: /var/lib/redis-ansible-cache
+ansible_redis_cache_log_dir: /var/log/redis
+ansible_redis_cache_pidfile: /run/redis-ansible-cache.pid
