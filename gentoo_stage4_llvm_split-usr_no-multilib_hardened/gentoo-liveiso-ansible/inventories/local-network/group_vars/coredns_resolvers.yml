@@ -1,0 +1,33 @@
+---
+coredns_resolver_runtime: native
+coredns_resolver_start_service: true
+coredns_resolver_primary_ns: ns1.rfc1918.host
+coredns_resolver_upstreams:
+  - 172.16.99.1
+  - 1.1.1.1
+  - 9.9.9.9
+coredns_resolver_zones:
+  - name: rfc1918.host
+    ttl: 60
+    records:
+      - name: ns1
+        type: A
+        value: 172.16.99.70
+      - name: admin-sun99-forge-099070
+        type: A
+        value: 172.16.99.70
+      - name: forge
+        type: CNAME
+        value: admin-sun99-forge-099070.rfc1918.host.
+      - name: kvm-sfo200-pri-9922
+        type: A
+        value: 10.200.99.22
+      - name: kvm-sfo200-sec-9923
+        type: A
+        value: 10.200.99.23
+      - name: kvm-sfo200-ter-9924
+        type: A
+        value: 10.200.99.24
+      - name: nasa
+        type: A
+        value: 10.200.99.31

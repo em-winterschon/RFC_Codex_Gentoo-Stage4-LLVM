@@ -1,0 +1,67 @@
+---
+- name: fleet-rsyslog-readiness-audit
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Check rsyslog daemon binary
+      ansible.builtin.command:
+        argv: [sh, -lc, "command -v rsyslogd"]
+      register: fleet_rsyslogd
+      changed_when: false
+      failed_when: false
+
+    - name: Check rsyslog service state with available service manager
+      ansible.builtin.shell: |
+        if command -v rc-service >/dev/null 2>&1; then
+          rc-service rsyslog status
+        elif command -v systemctl >/dev/null 2>&1; then
+          systemctl is-active rsyslog.service
+        elif command -v service >/dev/null 2>&1; then
+          service rsyslog status
+        else
+          exit 127
+        fi
+      register: fleet_rsyslog_service
+      changed_when: false
+      failed_when: false
+
+    - name: Check rsyslog Elasticsearch output module
+      ansible.builtin.shell: |
+        for candidate in \
+          /usr/lib/rsyslog/omelasticsearch.so \
+          /usr/lib64/rsyslog/omelasticsearch.so \
+          /lib/rsyslog/omelasticsearch.so \
+          /lib64/rsyslog/omelasticsearch.so
+        do
+          if [ -f "${candidate}" ]; then
+            printf '%s\n' "${candidate}"
+            exit 0
+          fi
+        done
+        found="$(find /usr/lib /usr/lib64 /lib /lib64 -type f -name omelasticsearch.so -print -quit 2>/dev/null || true)"
+        if [ -n "${found}" ]; then
+          printf '%s\n' "${found}"
+          exit 0
+        fi
+        exit 1
+      register: fleet_rsyslog_omelasticsearch
+      changed_when: false
+      failed_when: false
+
+    - name: Check rsyslog version
+      ansible.builtin.command:
+        argv: [rsyslogd, -v]
+      register: fleet_rsyslog_version
+      changed_when: false
+      failed_when: false
+      when: fleet_rsyslogd.rc == 0
+
+    - name: Validate fleet rsyslog readiness
+      ansible.builtin.assert:
+        that:
+          - fleet_rsyslogd.rc == 0
+          - fleet_rsyslog_service.rc == 0
+          - fleet_rsyslog_omelasticsearch.rc == 0
+          - fleet_rsyslog_version is skipped or fleet_rsyslog_version.rc == 0
+        fail_msg: "Host does not meet fleet rsyslog readiness requirements."

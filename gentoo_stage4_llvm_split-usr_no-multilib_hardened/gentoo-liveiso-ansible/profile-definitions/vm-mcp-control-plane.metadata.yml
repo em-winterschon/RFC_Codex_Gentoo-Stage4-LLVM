@@ -1,7 +1,7 @@
 ---
 gentoo_system_profile_metadata:
   id: vm-mcp-control-plane
-  purpose: Stage5 virtual-host profile for MCP-enabled infrastructure control-plane services behind HAProxy.
+  purpose: Stage5 virtual-host profile for MCP-enabled infrastructure services behind HAProxy plus MCP server admission registry and promotion policy.
   profile_taxonomy:
     stage: stage5
     role_class: virtual-host
@@ -10,6 +10,7 @@ gentoo_system_profile_metadata:
       - profile-package-lists/stage5-virtual-host-base.packages
       - profile-package-lists/cloud-init-base.packages
       - profile-package-lists/stage5-virtual-host-container-services.packages
+      - profile-package-lists/stage5-virtual-host-mcp-control-plane.packages
   base_profile:
     intended_overlay_on:
       - llvm-clang-openrc-stage3
@@ -26,6 +27,10 @@ gentoo_system_profile_metadata:
       - app-containers/aardvark-dns
       - net-proxy/haproxy
       - net-firewall/nftables
+      - dev-python/pyyaml
+      - dev-python/requests
+      - net-misc/curl
+      - dev-vcs/git
     upstream_images:
       - name: nginx-ui
         image: docker.io/uozi/nginx-ui:latest
@@ -37,6 +42,10 @@ gentoo_system_profile_metadata:
     - Nginx-UI MCP access is privileged tooling and must remain LAN-only until RBAC and private CA validation are complete.
     - Docker socket mounting is disabled by default; enable it only through a separate mutation-gated change.
     - Node, OpenAI, JWT, and crypto secrets are referenced through Ansible Vault variables only.
+  deployment_notes:
+    - The MCP admission registry implementation is render-only and does not install third-party MCP services.
+    - Default mode is read-only; write-capable integrations require explicit change-control promotion.
+    - Secrets are referenced by Ansible Vault variable name only and must not be rendered into repo-managed docs.
   source_references:
     - https://nginxui.com/guide/mcp
     - https://nginxui.com/guide/config-openai.html

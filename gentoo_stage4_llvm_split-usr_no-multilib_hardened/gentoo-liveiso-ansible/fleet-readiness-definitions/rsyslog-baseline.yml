@@ -1,0 +1,30 @@
+---
+fleet_rsyslog_baseline:
+  version: 1
+  rsyslog_required_on_all_hosts: true
+  required_gentoo_atom: app-admin/rsyslog
+  required_openrc_service: rsyslog
+  required_use_flags:
+    - elasticsearch
+    - normalize
+    - openssl
+    - relp
+    - rfc3195
+    - rfc5424hmac
+    - snmp
+    - ssl
+    - usertools
+    - uuid
+    - xxhash
+  forbidden_use_flags:
+    - systemd
+    - imdocker
+  required_rsyslog_modules:
+    - omfwd
+    - omelasticsearch
+  default_forward_hostname: log-sun99-rsyslog.rfc1918.host
+  default_forward_port: 6514
+  default_forward_protocol: tcp
+  notes:
+    - Fleet hosts must provide local rsyslog service even before central forwarding is enabled.
+    - Collector hosts must be able to emit into Elasticsearch-compatible backends without rebuilding rsyslog.

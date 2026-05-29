@@ -68,7 +68,8 @@ Required persistent files:
 
 - `/etc/hostname`: `admin-sun99-forge-099070`
 - `/etc/conf.d/hostname`: `hostname="admin-sun99-forge-099070"`
-- `/etc/conf.d/net`: static `netboot0` address and default route.
+- `/etc/conf.d/net`: initramfs uses static `netboot0`; persistent target uses
+  `bond0 = netboot0 + enp3s0` for `172.16.99.70/24` and the default route.
 - `/etc/hosts`: local fallback for `admin-sun99-forge-099070.rfc1918.host` and
   `ipa01.rfc1918.host`.
 - `/etc/hostid` and `/etc/zfs/zpool.cache`: copied/generated from the live
@@ -81,7 +82,8 @@ Required OpenRC services:
 - `zfs-import` in `sysinit`
 - `zfs-mount` in `sysinit`
 - `zfs-zed` in `default`
-- `net.netboot0` in `default`
+- `net.netboot0` in `default` for the pre-cutover state
+- `net.bond0` in `default` after the 2026-05-24 approved bond migration
 - `sshd` in `default`
 - `local` in `default`
 
@@ -107,8 +109,71 @@ Expected first M70 results:
 - FQDN: `admin-sun99-forge-099070.rfc1918.host`
 - Root: `zroot/ROOT/gentoo zfs /`
 - Pool health: `all pools are healthy`
-- Management: `netboot0` with `172.16.99.70/24`
+- Management before bond cutover: `netboot0` with `172.16.99.70/24`
+- Management after bond cutover: `bond0` with `172.16.99.70/24`, members
+  `netboot0` and `enp3s0`
 - PTY: `/dev/pts` has `gid=5,mode=620,ptmxmode=666`
+
+## M70 Bond Cutover Runbook
+
+Use this only after CSS326 LACP group 2 is ready on `ge14` plus `ge17`.
+
+Preflight:
+
+```sh
+ip -br addr
+ip route
+cat /proc/net/bonding/bond0
+ethtool -i netboot0
+ethtool -i enp3s0
+ethtool -i eno1
+ethtool -i eno2
+ethtool -i eno3
+ethtool -i eno4
+```
+
+Target `/etc/conf.d/net` fragment:
+
+```sh
+config_bond0="172.16.99.70/24"
+routes_bond0="default via 172.16.99.1"
+dns_servers_bond0="172.16.99.1 9.9.9.9"
+slaves_bond0="netboot0 enp3s0"
+mode_bond0="802.3ad"
+miimon_bond0="100"
+lacp_rate_bond0="fast"
+xmit_hash_policy_bond0="layer3+4"
+
+config_netboot0="null"
+config_enp3s0="null"
+config_eno1="null"
+config_eno2="null"
+config_eno3="null"
+config_eno4="null"
+```
+
+Cutover:
+
+```sh
+cp -a /etc/conf.d/net /root/m70-net-pre-bond0-cutover.conf
+rc-service net.bond0 stop || true
+rc-service net.netboot0 stop
+rc-service net.bond0 start
+ip -br addr show bond0
+ip route get 172.16.99.1
+ssh -o BatchMode=yes root@172.16.99.70 'hostname -f; ip route get 172.16.99.1'
+```
+
+Backout:
+
+```sh
+cp -a /root/m70-net-pre-bond0-cutover.conf /etc/conf.d/net
+rc-service net.bond0 stop || true
+rc-service net.netboot0 start
+ip -br addr show netboot0
+ip route get 172.16.99.1
+ssh -o BatchMode=yes root@172.16.99.70 'hostname -f; ip route get 172.16.99.1'
+```
 
 ## Remaining Acceptance Work
 

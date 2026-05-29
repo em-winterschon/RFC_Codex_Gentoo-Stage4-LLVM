@@ -1,0 +1,16 @@
+[Unit]
+Description=CoreDNS local resolver container
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={{ coredns_resolver_start_script }}
+{% if coredns_resolver_runtime == 'podman' %}
+ExecStop=/usr/bin/podman stop -t 10 {{ coredns_resolver_container_name }}
+{% endif %}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+# Managed by Ansible role ssh_client_policy.
+# Exceptions must appear before broad Host patterns because OpenSSH uses first value wins.
+{% for pattern in ssh_client_policy_bastion_exclude_patterns %}
+Host {{ pattern }}
+  ProxyJump none
+
+{% endfor %}
+{% if ssh_client_policy_bastion_host | length > 0 %}
+Host {{ ssh_client_policy_bastion_host }}
+  ProxyJump none
+
+Host {{ ssh_client_policy_bastion_patterns | join(' ') }}
+  ProxyJump {{ ssh_client_policy_bastion_user }}@{{ ssh_client_policy_bastion_host }}
+{% endif %}

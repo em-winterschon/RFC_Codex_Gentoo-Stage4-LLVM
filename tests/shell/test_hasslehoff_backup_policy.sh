@@ -23,6 +23,10 @@ require_grep() {
   grep -q -- "${pattern}" "${file}" || fail "missing pattern '${pattern}' in ${file}"
 }
 
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+validation_json="${temp_dir}/hasslehoff-backup-policy-validation.json"
+
 require_file "${POLICY}"
 require_file "${VALIDATOR}"
 bash -n "${RUN_TESTS}"
@@ -51,11 +55,11 @@ require_grep 'x12again_allowed' "${VALIDATOR}"
 require_grep 'required_service_classes' "${VALIDATOR}"
 require_grep 'restore_validation' "${VALIDATOR}"
 
-python3 "${VALIDATOR}" "${POLICY}" --format json > /tmp/hasslehoff-backup-policy-validation.json
-grep -q '"ok": true' /tmp/hasslehoff-backup-policy-validation.json || fail "policy validation did not pass"
-grep -q '"vm_lxc_services": 7' /tmp/hasslehoff-backup-policy-validation.json ||
+python3 "${VALIDATOR}" "${POLICY}" --format json > "${validation_json}"
+grep -q '"ok": true' "${validation_json}" || fail "policy validation did not pass"
+grep -q '"vm_lxc_services": 7' "${validation_json}" ||
   fail "unexpected VM/LXC service coverage count"
-grep -q '"external_target_id": "nasa-m70-nfs-relay"' /tmp/hasslehoff-backup-policy-validation.json ||
+grep -q '"external_target_id": "nasa-m70-nfs-relay"' "${validation_json}" ||
   fail "validation summary missing NASA relay target"
 
 require_file "${DOC}"

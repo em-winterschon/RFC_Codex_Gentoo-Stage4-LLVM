@@ -21,6 +21,10 @@ require_grep() {
   grep -q -- "${pattern}" "${file}" || fail "missing pattern '${pattern}' in ${file}"
 }
 
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "${temp_dir}"' EXIT
+power_output="${temp_dir}/sun99-power-recovery-test.out"
+
 require_file "${SCRIPT}"
 bash -n "${SCRIPT}"
 require_grep 'SUN99_POWER_SKIP_LIVE' "${SCRIPT}"
@@ -50,9 +54,9 @@ require_grep 'APC SRT1500RMXLA' "${WIKI}"
 require_grep 'ATS' "${WIKI}"
 require_grep 'Blackbox' "${WIKI}"
 
-SUN99_POWER_SKIP_LIVE=1 bash "${SCRIPT}" > /tmp/sun99-power-recovery-test.out
-grep -q 'summary: failures=0' /tmp/sun99-power-recovery-test.out || {
-  cat /tmp/sun99-power-recovery-test.out >&2
+SUN99_POWER_SKIP_LIVE=1 bash "${SCRIPT}" > "${power_output}"
+grep -q 'summary: failures=0' "${power_output}" || {
+  cat "${power_output}" >&2
   fail "repo-only power recovery validator did not pass"
 }
 

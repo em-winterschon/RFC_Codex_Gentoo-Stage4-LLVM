@@ -1,0 +1,126 @@
+---
+- name: Resolve distcc podman worker service manager
+  ansible.builtin.set_fact:
+    distcc_podman_worker_resolved_service_manager: >-
+      {{
+        ansible_service_mgr
+        if distcc_podman_worker_service_manager == 'auto'
+        else distcc_podman_worker_service_manager
+      }}
+  when: distcc_podman_worker_enabled | bool
+
+- name: Validate distcc podman worker service policy
+  ansible.builtin.assert:
+    that:
+      - distcc_podman_worker_resolved_service_manager in ['openrc', 'systemd']
+      - >-
+        distcc_podman_worker_resolved_service_manager != 'systemd'
+        or distcc_podman_worker_allow_systemd_on_native_hosts | bool
+    fail_msg: >-
+      distcc_podman_worker supports OpenRC and systemd only. systemd is allowed
+      only for native systemd distributions such as Rocky or Debian where an
+      OpenRC service substrate is unavailable.
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_manage_service | bool
+
+- name: Install distcc podman worker host packages
+  ansible.builtin.package:
+    name: "{{ distcc_podman_worker_host_packages }}"
+    state: present
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_install_packages | bool
+
+- name: Ensure distcc podman worker directories exist
+  ansible.builtin.file:
+    path: "{{ distcc_podman_worker_dir.path }}"
+    state: directory
+    owner: "{{ distcc_podman_worker_dir.owner | default('root') }}"
+    group: "{{ distcc_podman_worker_dir.group | default('root') }}"
+    mode: "{{ distcc_podman_worker_dir.mode }}"
+  loop:
+    - path: "{{ distcc_podman_worker_runtime_root }}"
+      mode: "0755"
+    - path: "{{ distcc_podman_worker_config_dir }}"
+      mode: "0755"
+    - path: "{{ distcc_podman_worker_cache_dir }}"
+      mode: "0775"
+    - path: "{{ distcc_podman_worker_log_dir }}"
+      mode: "0775"
+  loop_control:
+    loop_var: distcc_podman_worker_dir
+  when: distcc_podman_worker_enabled | bool
+
+- name: Render distcc podman worker launcher
+  ansible.builtin.template:
+    src: forge-distcc-worker-start.sh.j2
+    dest: "{{ distcc_podman_worker_start_script }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when: distcc_podman_worker_enabled | bool
+
+- name: Render distcc podman worker OpenRC service
+  ansible.builtin.template:
+    src: forge-distcc-worker.openrc.j2
+    dest: /etc/init.d/{{ distcc_podman_worker_service_name }}
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_manage_service | bool
+    - distcc_podman_worker_resolved_service_manager == 'openrc'
+
+- name: Render distcc podman worker systemd service
+  ansible.builtin.template:
+    src: forge-distcc-worker.systemd.j2
+    dest: /etc/systemd/system/{{ distcc_podman_worker_service_name }}.service
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_manage_service | bool
+    - distcc_podman_worker_resolved_service_manager == 'systemd'
+
+- name: Enable and start distcc podman worker with OpenRC
+  block:
+    - name: Ensure distcc podman worker OpenRC runlevel entry exists
+      ansible.builtin.command: >-
+        rc-update add {{ distcc_podman_worker_service_name }}
+        {{ distcc_podman_worker_openrc_runlevel }}
+      register: distcc_podman_worker_rc_update
+      changed_when: "'already installed' not in distcc_podman_worker_rc_update.stdout"
+
+    - name: Restart distcc podman worker OpenRC service
+      ansible.builtin.command: rc-service {{ distcc_podman_worker_service_name }} restart
+      register: distcc_podman_worker_openrc_restart
+      changed_when: distcc_podman_worker_openrc_restart.rc == 0
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_manage_service | bool
+    - distcc_podman_worker_start_service | bool
+    - distcc_podman_worker_resolved_service_manager == 'openrc'
+
+- name: Enable and start distcc podman worker with native systemd
+  ansible.builtin.systemd:
+    name: "{{ distcc_podman_worker_service_name }}.service"
+    enabled: true
+    state: restarted
+    daemon_reload: true
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_manage_service | bool
+    - distcc_podman_worker_start_service | bool
+    - distcc_podman_worker_resolved_service_manager == 'systemd'
+
+- name: Validate distcc podman worker endpoint
+  ansible.builtin.command: >-
+    ss -ltn sport = :{{ distcc_podman_worker_port }}
+  register: distcc_podman_worker_socket
+  changed_when: false
+  when:
+    - distcc_podman_worker_enabled | bool
+    - distcc_podman_worker_start_service | bool

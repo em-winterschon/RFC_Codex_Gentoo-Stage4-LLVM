@@ -1,0 +1,13 @@
+$ORIGIN {{ coredns_zone.name }}.
+$TTL {{ coredns_zone.ttl | default(60) }}
+@ IN SOA {{ coredns_zone.primary_ns | default(coredns_resolver_primary_ns) }}. {{ coredns_zone.hostmaster | default(coredns_resolver_hostmaster) }}. (
+  {{ coredns_zone.serial | default(coredns_resolver_serial) }} ; serial
+  300 ; refresh
+  60 ; retry
+  604800 ; expire
+  60 ; minimum
+)
+@ IN NS {{ coredns_zone.primary_ns | default(coredns_resolver_primary_ns) }}.
+{% for record in coredns_zone.records | default([]) %}
+{{ record.name }} {{ record.ttl | default(coredns_zone.ttl | default(60)) }} IN {{ record.type | upper }} {{ record.value }}
+{% endfor %}

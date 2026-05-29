@@ -283,6 +283,22 @@
             recursive=True
           )
       }}
+    resolved_profile_trac_server: >-
+      {{
+        resolved_profile_trac_server
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.trac_server | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_trac_mcp_bridge: >-
+      {{
+        resolved_profile_trac_mcp_bridge
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.trac_mcp_bridge | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_forge_memory_object_store: >-
       {{
         resolved_profile_forge_memory_object_store
@@ -381,6 +397,14 @@
             recursive=True
           )
       }}
+    resolved_profile_slurm_cluster: >-
+      {{
+        resolved_profile_slurm_cluster
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.slurm_cluster | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_jenkins_controller: >-
       {{
         resolved_profile_jenkins_controller
@@ -394,6 +418,14 @@
         resolved_profile_distcc_farm
         | combine(
             loaded_profile_definition_file.gentoo_profile_definition.distcc_farm | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_mcp_control_plane: >-
+      {{
+        resolved_profile_mcp_control_plane
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.mcp_control_plane | default({}),
             recursive=True
           )
       }}

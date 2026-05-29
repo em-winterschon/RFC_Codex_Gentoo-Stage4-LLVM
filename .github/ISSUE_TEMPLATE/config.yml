@@ -1,11 +1,17 @@
 blank_issues_enabled: false
 contact_links:
   - name: Roadmap task query URL
-    url: https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM/issues/new?template=roadmap_task.yml&labels=type%3Aroadmap-task%2Cstatus%3Aready&milestone=Workstation%20Stage5
+    url: https://github.com/yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM/issues/new?template=roadmap_task.yml&labels=type%3Aroadmap-task%2Cstatus%3Aready&milestone=Workstation%20Stage5
     about: Create a roadmap issue with labels and milestone preselected through query parameters.
   - name: Change control query URL
-    url: https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM/issues/new?template=change_control.yml&labels=type%3Achange-control%2Cstatus%3Aready&milestone=NetBox%2FIPAM%2FDCIM
+    url: https://github.com/yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM/issues/new?template=change_control.yml&labels=type%3Achange-control%2Cstatus%3Aready&milestone=NetBox%2FIPAM%2FDCIM
     about: Create an ITIL-style change-control issue with query-parameter defaults.
   - name: Blocker query URL
-    url: https://github.com/em-winterschon/RFC_Codex_Gentoo-Stage4-LLVM/issues/new?template=blocker.yml&labels=type%3Ablocker%2Cstatus%3Ablocked%2Cpriority%3Acritical
+    url: https://github.com/yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM/issues/new?template=blocker.yml&labels=type%3Ablocker%2Cstatus%3Ablocked%2Cpriority%3Acritical
     about: Create an operational blocker issue.
+  - name: Security disclosure
+    url: https://github.com/yukon-systems/RFC_Codex_Gentoo-Stage4-LLVM/security/policy
+    about: Use the repository security policy for private vulnerability reports when available.
+  - name: YukonSYS standards catalog
+    url: https://github.com/yukon-systems/YukonSYS-Standard-Definitions
+    about: Review the standards catalog before requesting a new template family.

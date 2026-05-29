@@ -538,6 +538,28 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added MCP control-plane scaffolding for repo-managed MCP admission policy,
+  candidate registry, risk tiers, read-only defaults, and explicit
+  change-control gates before any mutation-capable MCP server receives
+  credentials.
+- Added the Stage5 `vm-mcp-control-plane` profile package layer, metadata, and
+  render-only `mcp_control_plane` Ansible role. The role writes
+  `/etc/mcp-control-plane/candidate-registry.yml`,
+  `/etc/mcp-control-plane/promotion-policy.yml`, and
+  `/etc/mcp-control-plane/mcp-control-plane.env` without launching third-party
+  MCP services.
+- Added first-batch MCP candidate tracking for Hugging Face, Trac, NetBox,
+  Grafana, Jenkins, Proxmox, Context7, and Kubernetes/OpenShift MCP servers.
+- Added platform-service TODOs for single-node OpenShift and single-node
+  OpenStack VM profiles, including an explicit Gentoo/OpenRC feasibility gate
+  before assuming native service management.
+- Added MCP candidate audit and Trac MCP evaluation documents, including the
+  inspected `nerpatech/trac-mcp-server` commit, destructive tool inventory,
+  read-only wrapper requirement, and smoke-test promotion order.
+- Added a 2026-05-08 Morning SITREP next-step tracker covering NetBox-driven
+  provisioning, base system services, service-role overlays, centralized AAA,
+  Trac control plane, Codeberg mirroring, read-only MCP tests, and FMT2
+  discovery sequencing.
 - Added GitHub project-management scaffolding for the interim NOW() tracker:
   structured issue forms, label catalog, milestone catalog, roadmap-derived
   issue seeding, query-parameter issue URLs, and a dry-run-first local seed
@@ -569,6 +591,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 ## 2026-05-07
 
 ### Added
+
+- Added the Trac project-management control-plane design, Stage5
+  `vm-trac-service` profile, `trac_server` role, and `trac_mcp_bridge` role
+  scaffolding so Trac can become the authoritative Kanban/ticket/wiki plane
+  while GitHub and Codeberg remain linked Git surfaces.
 
 - Added Stage5 `vm-redfish-emulator` profile scaffolding using OpenStack
   `sushy-tools` as the primary libvirt-backed VM Redfish path and DMTF Redfish

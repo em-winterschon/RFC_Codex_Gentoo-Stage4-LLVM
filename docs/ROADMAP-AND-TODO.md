@@ -281,6 +281,27 @@ Dependency:
 | `MCP-004` | planned | Implement FastMCP infrastructure service wrappers | `MCP-001`, `MCP-002`, `DNS-003`, `AAA-009` | Promotion order is Nginx-UI native validation, then `netbox-mcp`, `proxmox-mcp`, `routeros-mcp`, `trac-mcp`, and `infra-mcp`. Every mutation requires `MCP_ALLOW_MUTATIONS`, vaulted credentials, an idempotency key, and an audit artifact. See `docs/FASTMCP-INFRA-CONTROL-PLANE.md`. |
 | `MCP-005` | scaffolded | Add FastMCP common safety helpers and NetBox wrapper skeleton | `MCP-004` | `scripts/mcp_servers/` now has shared settings, mutation gate, audit artifact helpers, and a NetBox MCP skeleton with read/plan/apply boundaries. Backend NetBox client wiring remains gated follow-up work. |
 
+### Morning SITREP 2026-05-08 Execution
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `MORN-001` | active | Promote NetBox-driven inventory as the provisioning source of truth | NetBox API, DNS report, inventory intake | Removal condition: NetBox export can generate host bootstrap inventory, DNS targets, and service validation targets without manual copy/paste. |
+| `MORN-002` | active | Define common base system services for all hosts, VMs, and containers | Stage5 profile taxonomy | Removal condition: base profile declares rsyslog, node exporter, ntfy alerting, SSSD/AAA client, NTP/chrony, TLS trust, package repo, and health-check policy. |
+| `MORN-003` | pending | Define service-role overlay service contracts | `MORN-002` | Removal condition: each service profile declares packages, ports, SLO checks, HAProxy entries, logs, metrics, backup policy, and dependencies. |
+| `MORN-004` | active | Advance centralized AAA to eliminate SSH key sprawl | FreeIPA/SSSD/RADIUS baseline | Removal condition: non-root SSH auth is centralized, network devices use RADIUS where possible, and TACACS+ is explicitly deferred or scoped. |
+| `MORN-005` | active | Evaluate Trac control-plane rollout | `PM-001`, `MCP-003` | Removal condition: Trac can receive MCP read-only context safely and hold Kanban/change-control state. |
+| `MORN-006` | pending | Plan GitHub-to-Codeberg mirror and repo rename | repository publication policy | Removal condition: mirror sync and rollback plan are documented with vaulted token references. |
+| `MORN-007` | active | Keep MCP tools read-only until promoted | `MCP-001` | Removal condition: control-plane registry, audit, and smoke-test results exist for each candidate before any write-capable credential is issued. |
+| `MORN-008` | pending | Prepare FMT2 discovery once BigNetwork L2 is active | BigNetwork transport | Removal condition: FMT2 devices and prefixes are discovered, evidence-tagged, and staged for NetBox apply. |
+
+### Platform Service Profiles
+
+| ID | Status | Task | Depends On | Notes |
+| --- | --- | --- | --- | --- |
+| `PSP-001` | planned | Add single-node OpenShift VM profile and `openshift-service-profile` | Proxmox service VM factory, NetBox IPAM, storage/network plan | Treat Gentoo/OpenRC as the hypervisor and automation fabric. Use vendor-supported OpenShift/OKD node OS expectations inside the VM unless a supported Gentoo path is proven. Removal condition: profile, VM manifest, DNS/IPAM model, install plan, SLO checks, and backout plan exist. |
+| `PSP-002` | planned | Add single-node OpenStack VM profile and `openstack-service-profile` | Proxmox service VM factory, storage backend plan, identity and TLS policy | Review whether native Gentoo/OpenRC OpenStack service management is maintainable. If not, run OpenStack as an appliance VM while our fabric manages network, storage, DNS, TLS, auth, logs, metrics, and backups. Removal condition: feasibility decision, service inventory, VM profile, and install/backout plan exist. |
+| `PSP-003` | planned | Review Red Hat oriented platform assumptions against Gentoo/OpenRC policy | `PSP-001`, `PSP-002`, package and service research | Document required adaptations for systemd-heavy components, service supervision, SELinux/podman/cri-o expectations, kernel modules, networking, storage classes, TLS, AAA, and observability. Removal condition: design doc decides supported path for each platform. |
+
 ### Agent Analytics And Shared Memory
 
 | ID | Status | Task | Depends On | Notes |

@@ -57,8 +57,10 @@ for profile in \
   vm-observability-prometheus.yml \
   vm-observability-victoriametrics.yml \
   vm-redfish-emulator.yml \
+  vm-trac-service.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
+  vm-mcp-control-plane.yml \
   vm-nexus-repository.yml \
   zerotier-managed-access.yml; do
   test -f "${PROFILE_DIR}/${profile}"
@@ -95,8 +97,10 @@ for metadata in \
   vm-observability-prometheus.metadata.yml \
   vm-observability-victoriametrics.metadata.yml \
   vm-redfish-emulator.metadata.yml \
+  vm-trac-service.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
+  vm-mcp-control-plane.metadata.yml \
   vm-nexus-repository.metadata.yml; do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
@@ -158,11 +162,13 @@ for package_list in \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-kibana-interface.packages \
+  stage5-virtual-host-mcp-control-plane.packages \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
   stage5-virtual-host-observability-victoriametrics.packages \
   stage5-virtual-host-redfish-emulator.packages \
+  stage5-virtual-host-trac-service.packages \
   stage5-virtual-host-workstation-nscde.packages \
   stage5-virtual-host-container-services.packages; do
   test -f "${PACKAGE_LIST_DIR}/${package_list}"

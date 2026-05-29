@@ -32,6 +32,55 @@ network_fabric_devices:
       - Proxmox 8.4 host.
       - Management bridge rides bond0 over CSS326 ge5/ge6.
       - ConnectX-5 ports are reserved for RoCE-v2 and must not join vmbr0.
+  admin_sun99_forge_099070:
+    role: automation-admin
+    management_ip: 172.16.99.70
+    management_interface: bond0
+    management_interface_target: bond0
+    initramfs_netboot_interface: netboot0
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    dns_aliases:
+      - admin-sun99-forge.rfc1918.host
+    manufacturer: M70
+    model: Atom C3758 appliance
+    primary_mac: 00:07:32:78:65:C6
+    connected_switch: sw_mgmt_css326
+    connected_switch_port: ge14
+    management_bond_members:
+      - netboot0
+      - enp3s0
+    ovs_dpdk_reserved_interfaces:
+      - eno1
+      - eno2
+      - eno3
+      - eno4
+    pdu_name: pdu-rfc99-corectrl-099241
+    pdu_outlet: "4"
+    pdu_outlet_label: admin-sun99-forge
+    observed_memory_gib: 32
+    serial_console_status: unavailable-after-usb-serial-hub-move
+    serial_console_note: >-
+      The generic USB serial hub was moved from Hasslehoff to this M70 on
+      2026-05-17 for RouterOS console access and CyberPower UPS telemetry.
+      Attach a separate external OOB adapter before relying on M70 serial
+      console recovery.
+    usb_serial_gateway_enabled: true
+    usb_serial_gateway_observed_at: "2026-05-17T18:59:00Z"
+    serial_baud: 115200
+    netboot_operational_bootstrap: local-esp-ipxe-chainloader
+    status: persistent-zfs-root-boot-validated
+    notes:
+      - First M70 reserved as Forge/Codex automation-admin successor before X12AGAIN reimage.
+      - Desired UEFI PXE-to-iPXE boot uses static DHCP address 172.16.99.70 and boot file m70-forge-ipxe.efi.
+      - 2026-05-14 provisioning rebuilt the SATADOM as a clean M70IPXE ESP with the M70-specific iPXE binary.
+      - 2026-05-14 provisioning created zroot as a mirrored ZFS root on both KIOXIA NVMe devices and repeat-reboot validated persistent root at 172.16.99.70.
+      - 2026-05-15 CSS326 SNMP bridge FDB validated netboot0 on ge14, enp3s0 on ge17, and eno1 on ge18.
+      - 2026-05-15 bond0 LACP over CSS326 ge17/ge18 was activated for unnumbered Forge transfer and VM staging use.
+      - 2026-05-24 approved target moves persistent management to bond0 over netboot0/enp3s0 on CSS326 ge14/ge17.
+      - 2026-05-24 approved target reserves Intel X553 eno1..eno4 for OVS-DPDK, VPP, SR-IOV, and the lightweight Slurm VM path.
+      - 2026-05-24 removed 10.64.64.70/24 from eno2; do not reintroduce persistent host addressing on X553 ports.
+      - Observed memory is 32 GiB despite planned 64 GiB; validate DIMMs before scheduling memory-heavy workloads.
+      - Must validate X12AGAIN SoL through /root/.ssh/codex.d/ipmi.d/ipmi-prinzessin before Prinzessin reimage.
   sw_mgmt_css326:
     role: access-switch
     management_ip: 172.16.99.6
@@ -56,15 +105,15 @@ network_fabric_devices:
       - Static management IP is 172.16.99.6.
       - Address acquisition mode is static.
       - ge5 and ge6 are active LACP members for Hasslehoff bond0.
-      - ge7 is assigned to Thor AGX RJ45 management for agx-rfc99-bunnydev at 172.16.99.34/24.
+      - ge17 and ge18 are active LACP members for M70 Forge bond0.
       - sfp1 and sfp2 currently contain Intel FTLX8571D3BCV-IT 10G-SR MMF optics.
   sw_mgmt_mkcrs354:
     role: distribution-switch
     management_ip: 172.16.99.7
     management_interface: ether49
-    serial_console_host: hasslehoff
+    serial_console_host: admin_sun99_forge_099070
     serial_console: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0
-    serial_console_by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.2.1:1.0-port0
+    serial_console_by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.2.1:1.0-port0
     serial_console_current_tty: /dev/ttyUSB1
     serial_adapter_serial: AB0MRY3W
     serial_baud: 115200
@@ -83,15 +132,15 @@ network_fabric_devices:
       - sfp-sfpplus1 and sfp-sfpplus2 are active LACP members toward CRS309 using 10G-SR over MMF.
       - sfp-sfpplus3 and sfp-sfpplus4 are already bond-qnap members for the QNAP TS435XEU archive server over 10G DAC.
       - QSFP 40G ports are disconnected and reserved for future RoCE-v2 RDMA fabric.
-      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10 and validated with prompt [admin@sw-mgmt-mkcrs354] >.
+      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10, then to the M70 Forge USB hub on 2026-05-17.
   sw_spine_crs309_rfc99:
     role: spine-aggregation-switch
     management_ip: 172.16.99.8
     management_interface: br-spine
-    serial_console_host: hasslehoff
+    serial_console_host: admin_sun99_forge_099070
     serial_console: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0
-    serial_console_by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.2.4:1.0-port0
-    serial_console_current_tty: /dev/ttyUSB2
+    serial_console_by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.2.4:1.0-port0
+    serial_console_current_tty: /dev/ttyUSB4
     serial_adapter_serial: AB0MRY3X
     serial_baud: 115200
     model: CRS309-1G-8S+
@@ -107,7 +156,7 @@ network_fabric_devices:
       - CRS354 LACP is active on CRS309 sfp-sfpplus2 plus sfp-sfpplus3.
       - Hasslehoff QLogic QL41232HOCU LACP target is CRS309 sfp-sfpplus4 plus sfp-sfpplus5.
       - CSS326 10G aggregation target is CRS309 sfp-sfpplus8.
-      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10 and validated with prompt [admin@sw-spine-crs309-rfc99] >.
+      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10, then to the M70 Forge USB hub on 2026-05-17.
   qnap_archive_ts435xeu:
     role: archive-storage
     model: TS435XEU
@@ -116,32 +165,6 @@ network_fabric_devices:
     notes:
       - 1U QNAP archive server.
       - Connected to CRS354 sfp-sfpplus3 plus sfp-sfpplus4 as bond-qnap over 10G DAC.
-  agx_rfc99_bunnydev:
-    role: edge-ai-gpu-host
-    manufacturer: NVIDIA
-    model: Jetson AGX Thor
-    status: active
-    management_ip: 172.16.99.34
-    management_interface: enP2p1s0
-    fqdn: agx-rfc99-bunnydev.rfc1918.host
-    notes:
-      - Thor AGX development host with RJ45 Realtek r8126 management on CSS326 ge7.
-      - RJ45 management is statically configured as 172.16.99.34/24 on enP2p1s0.
-      - QSFP28 data-plane cabling target is CRS354 qsfpplus2 with four 10G lanes for OVS/VM allocation.
-  inf_rfc99_noctosultris_099165:
-    role: inference-gpu-host
-    manufacturer: Supermicro
-    model: X12SPA-TF
-    status: planned
-    management_ip: 172.16.99.165
-    management_interface: pending-live-validate
-    fqdn: inf-rfc99-noctosultris-099165.rfc1918.host
-    bmc_ip: 172.16.199.111
-    notes:
-      - 64-thread Xeon inference host with 4x NVIDIA A4000 and Optane-backed memory configuration.
-      - Management IP moved from legacy 172.16.99.65 notation to 172.16.99.165 to avoid conflict with obs-sun99-vmetrics-099065.
-      - BMC endpoint is reachable on 172.16.199.111 (Supermicro IPMI 2.0, firmware 1.05).
-      - Switch port and cable mapping should be confirmed in NetBox before link-level policy automation is applied.
   rtr_mgmt_ccr2004:
     role: routeros-gateway-candidate
     management_ip: 172.16.99.120
@@ -152,9 +175,9 @@ network_fabric_devices:
     manufacturer: MikroTik
     status: planned
     replaces: gw_rfc99_mkcrs309
-    serial_console_host: hasslehoff
+    serial_console_host: admin_sun99_forge_099070
     serial_console: /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0
-    serial_console_by_path: /dev/serial/by-path/pci-0000:00:14.0-usb-0:11.1:1.0-port0
+    serial_console_by_path: /dev/serial/by-path/pci-0000:00:15.0-usb-0:2.1:1.0-port0
     serial_console_current_tty: /dev/ttyUSB0
     serial_adapter_serial: A9888PID
     serial_baud: 115200
@@ -171,7 +194,7 @@ network_fabric_devices:
       - Admin bootstrap credential is stored only in Ansible Vault.
       - Serial discovery archive is stored outside the repo under /root/operator-private/routeros/ccr2004-16g.
       - Factory default config has 192.168.88.1/24 on ether15 and broad management services enabled; do not expose it to production L2 before hardening.
-      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10 and validated with prompt [admin@gw-rfc99-mkccr2004-16g] >.
+      - Serial console was moved from X12AGAIN to the Hasslehoff generic USB hub on 2026-05-10, then to the M70 Forge USB hub on 2026-05-17.
   ctbsd_rfc99_jailerprime_099099:
     role: retired-freebsd-jail-host
     hypervisor: hasslehoff
@@ -271,6 +294,21 @@ network_fabric_devices:
       - Kibana web interface for full-text infrastructure log search.
       - Initial target is the live CCR2004 SUN99 Elasticsearch VIP until the multi-node Elasticsearch service VIP is promoted.
 
+  inf_rfc99_noctosultris_099165:
+    role: inference-gpu-host
+    manufacturer: Supermicro
+    model: X12SPA-TF
+    status: planned
+    management_ip: 172.16.99.165
+    management_interface: pending-live-validate
+    fqdn: inf-rfc99-noctosultris-099165.rfc1918.host
+    bmc_ip: 172.16.199.111
+    notes:
+      - 64-thread Xeon inference host with 4x NVIDIA A4000 and Optane-backed memory configuration.
+      - Management IP moved from legacy 172.16.99.65 notation to 172.16.99.165 to avoid conflict with obs-sun99-vmetrics-099065.
+      - BMC endpoint is reachable on 172.16.199.111 (Supermicro IPMI 2.0, firmware 1.05).
+      - Switch port and cable mapping should be confirmed in NetBox before link-level policy automation is applied.
+
 network_fabric_links:
   - endpoint_a:
       device: sw_mgmt_css326
@@ -297,13 +335,48 @@ network_fabric_links:
     lag: hasslehoff-bond0
   - endpoint_a:
       device: sw_mgmt_css326
-      interface: ge7
+      interface: ge14
     endpoint_b:
-      device: agx_rfc99_bunnydev
-      interface: enP2p1s0
-    purpose: thor-agx-rj45-management
+      device: admin_sun99_forge_099070
+      interface: netboot0
+    purpose: m70-forge-management-lacp-member-and-initramfs-netboot
+    lag: m70-forge-bond0
     media: 1GBASE-T
-    status: active
+    status: approved-pending-cutover
+    validation:
+      method: css326-snmp-bridge-fdb
+      observed_mac: "00:07:32:78:65:C6"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge17
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: enp3s0
+    purpose: m70-forge-management-lacp-member
+    lag: m70-forge-bond0
+    media: 1GBASE-T
+    status: approved-pending-cutover
+    validation:
+      method: css326-snmp-bridge-fdb-and-link-bounce
+      observed_mac: "00:07:32:78:65:C7"
+      lacp_partner: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
+  - endpoint_a:
+      device: sw_mgmt_css326
+      interface: ge18
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno1
+    purpose: former-m70-forge-transfer-lag-member-release-to-ccr2004-ge3
+    lag: forge-transfer-bond0
+    media: 1GBASE-T
+    status: current-precutover-to-be-removed
+    validation:
+      method: css326-snmp-bridge-fdb
+      observed_mac: "00:07:32:78:65:C8"
+      lacp_partner: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
   - endpoint_a:
       device: sw_mgmt_css326
       interface: ge24
@@ -329,6 +402,38 @@ network_fabric_links:
       interface: sfp-sfpplus2
     purpose: crs354-uplink
     status: superseded-by-crs309-spine-plan
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge3
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno1
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: planned-after-bond0-cutover
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge4
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno2
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: active-unaddressed-host-port
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge5
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno3
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: planned
+  - endpoint_a:
+      device: gw_rfc99_mkccr2004_16g
+      interface: ge6
+    endpoint_b:
+      device: admin_sun99_forge_099070
+      interface: eno4
+    purpose: m70-ovs-dpdk-vpp-sriov-reserved
+    status: planned
   - endpoint_a:
       device: gw_rfc99_mkccr2004_16g
       interface: sfp-sfpplus2
@@ -444,6 +549,50 @@ network_fabric_lags:
       - eno1
       - eno2
     validated: true
+  m70-forge-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge14
+      - ge17
+    host: admin_sun99_forge_099070
+    host_ports:
+      - netboot0
+      - enp3s0
+    status: approved-pending-cutover
+    host_interface: bond0
+    linux_recommendation:
+      lacp_rate: fast
+      miimon: 100
+      xmit_hash_policy: layer3+4
+      management_address: 172.16.99.70/24
+      default_gateway: 172.16.99.1
+    notes:
+      - Approved target moves persistent M70 management from netboot0 to bond0.
+      - Initramfs netboot remains on netboot0 before the persistent OpenRC root starts bond0.
+      - Do not release eno1 for CCR2004/OVS-DPDK until SSH through bond0 is validated.
+  forge-transfer-bond0:
+    mode: 802.3ad
+    switch: sw_mgmt_css326
+    switch_ports:
+      - ge17
+      - ge18
+    host: admin_sun99_forge_099070
+    host_ports:
+      - enp3s0
+      - eno1
+    status: current-precutover-superseded-by-m70-forge-bond0
+    host_interface: bond0
+    address_family: unnumbered
+    validation:
+      m70_bond_mii_status: up
+      m70_partner_key: 2
+      m70_partner_mac: f4:1e:57:89:af:be
+      css326_partner_mac: "8a:87:45:85:5d:5a"
+      observed_at: 2026-05-15
+    notes:
+      - This is the pre-2026-05-24 live bond shape and should be removed during the m70-forge-bond0 cutover.
+      - The approved target is bond0 over netboot0 and enp3s0, with eno1 released for CCR2004/OVS-DPDK.
   crs309-crs354-lag:
     mode: 802.3ad
     switch_a: sw_spine_crs309_rfc99

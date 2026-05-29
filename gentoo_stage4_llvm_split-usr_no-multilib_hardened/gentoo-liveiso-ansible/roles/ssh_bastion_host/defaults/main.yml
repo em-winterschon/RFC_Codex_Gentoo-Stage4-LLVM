@@ -1,0 +1,46 @@
+---
+ssh_bastion_host_enabled: false
+ssh_bastion_host_apply: false
+ssh_bastion_host_install_root: ""
+ssh_bastion_host_backup_dir: /root/ssh-policy-backup
+
+ssh_bastion_host_manage_packages: false
+ssh_bastion_host_packages_default:
+  - openssh-server
+  - sssd
+  - sssd-tools
+ssh_bastion_host_packages_by_os_family:
+  Debian:
+    - openssh-server
+    - sssd
+    - sssd-tools
+  RedHat:
+    - openssh-server
+    - sssd
+    - sssd-tools
+  Gentoo:
+    - net-misc/openssh
+    - sys-auth/sssd
+
+ssh_bastion_host_sshd_config_path: /etc/ssh/sshd_config
+ssh_bastion_host_sshd_config_dir: /etc/ssh/sshd_config.d
+ssh_bastion_host_sshd_dropin_path: /etc/ssh/sshd_config.d/30-yukon-bastion.conf
+ssh_bastion_host_manage_sshd_include: true
+ssh_bastion_host_restart_sshd: true
+ssh_bastion_host_sshd_service_name: sshd
+
+ssh_bastion_host_allow_tcp_forwarding: true
+ssh_bastion_host_gateway_ports: "no"
+ssh_bastion_host_x11_forwarding: false
+ssh_bastion_host_agent_forwarding: false
+ssh_bastion_host_password_authentication: false
+ssh_bastion_host_kbd_interactive_authentication: false
+ssh_bastion_host_pubkey_authentication: true
+ssh_bastion_host_use_pam: true
+ssh_bastion_host_permit_tunnel: false
+ssh_bastion_host_client_alive_interval: 60
+ssh_bastion_host_client_alive_count_max: 3
+ssh_bastion_host_authorized_keys_command: /usr/bin/sss_ssh_authorizedkeys
+ssh_bastion_host_authorized_keys_command_user: nobody
+ssh_bastion_host_allow_groups: []
+ssh_bastion_host_validation_user: verwalterin

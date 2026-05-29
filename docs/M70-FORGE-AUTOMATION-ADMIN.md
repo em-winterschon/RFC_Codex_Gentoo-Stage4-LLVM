@@ -17,9 +17,10 @@ environment.
 | Alias | `admin-sun99-forge.rfc1918.host` |
 | Address | `172.16.99.70/24` |
 | Gateway | `172.16.99.1` |
-| Primary NIC | `eth0` |
+| Persistent management interface | `bond0` |
+| Initramfs/netboot interface | `netboot0` |
 | Primary MAC | `00:07:32:78:65:C6` |
-| Switch port | `sw_mgmt_css326 ge14` |
+| Management bond switch ports | `sw_mgmt_css326 ge14` and `ge17` |
 | PDU outlet | `pdu-rfc99-corectrl-099241 outlet 4` |
 | PDU outlet label | `admin-sun99-forge` |
 | Serial console | Currently unavailable after USB serial hub move; attach separate external OOB before relying on M70 serial recovery |
@@ -45,8 +46,9 @@ M70-specific iPXE binary. That path successfully DHCPs, chains
 
 The follow-up reboot validation also passed with the corrected dracut interface
 name: `bootdev=netboot0`, `ifname=netboot0:00:07:32:78:65:c6`, and static
-`ip=...:netboot0:none`. The persistent OS now exposes the primary management
-interface as `netboot0`.
+`ip=...:netboot0:none`. The initramfs boot path still uses `netboot0`; the
+approved persistent target is to move `172.16.99.70/24` onto `bond0` after the
+root filesystem is online.
 
 On 2026-05-13 a later reachability check found `172.16.99.70` not answering
 ARP from X12AGAIN or Hasslehoff while CSS326 `ge14` still reported link up and
@@ -68,6 +70,68 @@ install was later re-applied with the same playbook after the admin tool
 baseline finished; `/etc/krb5.keytab`, `/etc/sssd/sssd.conf`, NSS/PAM, SSSD
 SSH authorized-key lookup, and `codex-admin` non-root SSH now validate on the
 persistent root.
+
+## Network Target State
+
+On 2026-05-24 the approved M70 networking target was revised:
+
+| Interface | PCI | Driver | MAC | Target Role | Switch Port |
+| --- | --- | --- | --- | --- | --- |
+| `netboot0` | `0000:02:00.0` | `igb` | `00:07:32:78:65:C6` | `bond0` member and initramfs netboot | CSS326 `ge14` |
+| `enp3s0` | `0000:03:00.0` | `igb` | `00:07:32:78:65:C7` | `bond0` member | CSS326 `ge17` |
+| `eno1` | `0000:06:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:C8` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge3` |
+| `eno2` | `0000:06:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:C9` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge4` |
+| `eno3` | `0000:07:00.0` | `ixgbe` before DPDK bind | `00:07:32:78:65:CA` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge5` |
+| `eno4` | `0000:07:00.1` | `ixgbe` before DPDK bind | `00:07:32:78:65:CB` | OVS-DPDK/VPP/SR-IOV reserved | CCR2004 `ge6` |
+
+Live `bond0` settings after the 2026-05-24 cutover:
+
+```text
+config_bond0="172.16.99.70/24"
+routes_bond0="default via 172.16.99.1"
+dns_servers_bond0="172.16.99.1 9.9.9.9"
+slaves_bond0="netboot0 enp3s0"
+mode_bond0="active-backup"
+miimon_bond0="100"
+primary_bond0="netboot0"
+config_netboot0="null"
+config_enp3s0="null"
+config_eno1="null"
+config_eno2="null"
+config_eno3="null"
+config_eno4="null"
+```
+
+The live cutover intentionally used `active-backup` instead of `802.3ad` because
+CSS326 SwOS LACP mutation is not yet a tested automation path. This preserves
+management reachability through `netboot0` while still moving `172.16.99.70/24`
+and the default route onto `bond0`. The 802.3ad target remains deferred until
+CSS326 LACP group membership can be updated and validated for `ge14 + ge17`.
+
+Validation evidence from 2026-05-24:
+
+- SSH to `172.16.99.70` returned after the cutover and the rollback sentinel was
+  written before the 180-second rollback watchdog fired.
+- `bond0` owns `172.16.99.70/24`; default route is `172.16.99.1 dev bond0`.
+- `bond0` mode is `active-backup`; active slave is `netboot0`; backup slave is
+  `enp3s0`; both links are 1G/full.
+- `openvpn.fmt2` was restarted after the OpenRC network bounce; FMT2 routes via
+  `tun-fmt2` validate again.
+- CCR2004 bridge FDB learned `eno1..eno4` as `00:07:32:78:65:C8` on `ge3`,
+  `C9` on `ge4`, `CA` on `ge5`, and `CB` on `ge6` after L2 ARP probes.
+- `eno2` has no `10.64.64.70/24`; `eno1..eno4` remain unnumbered and reserved
+  for OVS-DPDK/VPP/SR-IOV ownership.
+- IPv6 is disabled on `eno1..eno4` via `/etc/sysctl.d/91-m70-reserved-x553.conf`
+  so the host stack does not assign link-local addresses to reserved DPDK ports.
+
+Do not move the current `active-backup` bond to `802.3ad` until CSS326
+`ge14 + ge17` LACP membership has a tested mutation and validation path.
+
+Backout for the current live state is intentionally simple: restore the saved
+`/root/m70-net-pre-bond0-cutover.conf.<timestamp>` to `/etc/conf.d/net`, stop
+`net.bond0`, start `net.netboot0`, and validate SSH to `172.16.99.70`. CSS326
+LACP backout is only required after a future 802.3ad cutover changes switch-side
+LACP membership.
 
 On 2026-05-14 the persistent install completed its first boot path. `/dev/sda`
 was rebuilt as a clean GPT disk with a single 1 GiB FAT32 ESP labeled

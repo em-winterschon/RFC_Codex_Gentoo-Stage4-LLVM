@@ -1,0 +1,25 @@
+---
+mcp_promotion_policy:
+  default_mode: "{{ resolved_mcp_control_plane.default_mode }}"
+  write_gate: "{{ resolved_mcp_control_plane.write_gate }}"
+  promotion_stages:
+{% for stage in resolved_mcp_control_plane.promotion_stages %}
+    - "{{ stage }}"
+{% endfor %}
+  required_evidence:
+{% for item in resolved_mcp_control_plane.required_evidence %}
+    - "{{ item }}"
+{% endfor %}
+  mutation_requirements:
+    - explicit Trac or GitHub issue reference
+    - documented change window and rollback
+    - least-privilege service account
+    - audit log path verified
+    - read-only smoke test already passed
+    - operator approval for each new write scope
+  forbidden_defaults:
+    - personal tokens for infrastructure mutation
+    - wildcard admin tokens
+    - public SaaS fallback without local control
+    - unpinned latest tags for long-running services
+    - secret values in repo-managed files

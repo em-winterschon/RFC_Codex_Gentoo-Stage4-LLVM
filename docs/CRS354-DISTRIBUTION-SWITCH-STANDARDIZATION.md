@@ -55,7 +55,36 @@ and asymmetric receive power, so do not use those optics as the reference pair.
 | `sfp-sfpplus3` | QNAP TS435XEU SFP+ 1 | 10G DAC | existing `bond-qnap` member |
 | `sfp-sfpplus4` | QNAP TS435XEU SFP+ 2 | 10G DAC | existing `bond-qnap` member |
 | `qsfpplus1` | future RoCE-v2 RDMA fabric | 40G QSFP+ | disconnected |
-| `qsfpplus2` | future RoCE-v2 RDMA fabric | 40G QSFP+ | disconnected |
+| `qsfpplus2-1` | Thor AGX `mgbe0_0` | QSFP28 lane at 10G | active `bond-thor-podman` member |
+| `qsfpplus2-2` | Thor AGX `mgbe1_0` | QSFP28 lane at 10G | active `bond-thor-podman` member |
+| `qsfpplus2-3` | Thor AGX `mgbe2_0` | QSFP28 lane at 10G | active `bond-thor-kata` member |
+| `qsfpplus2-4` | Thor AGX `mgbe3_0` | QSFP28 lane at 10G | active `bond-thor-kata` member |
+
+Thor AGX `qsfpplus2` LACP work is tracked separately in
+`docs/THOR-CRS354-LACP-PERF-RUNBOOK.md` because it has a distinct validation
+path: `br-kata0 -> CRS354 -> br-podman0`.
+
+## 2026-05-27 Thor LACP Update
+
+CRS354 management was restored by disabling the broken `mgmt-source-rule` that
+forced `172.16.99.7/32` replies into a management routing table without a
+connected `172.16.99.0/24` route. Management reachability from M70 was then
+validated to TCP ports `22`, `80`, `443`, and `8291`.
+
+Thor AGX `qsfpplus2` LACP was applied:
+
+```text
+bond-thor-podman: qsfpplus2-1,qsfpplus2-2, mode=802.3ad, running
+bond-thor-kata:   qsfpplus2-3,qsfpplus2-4, mode=802.3ad, running
+bridge0 ports:    bond-thor-podman, bond-thor-kata, hw=yes
+```
+
+The same-host Thor hairpin path is not a valid throughput acceptance path.
+ICMP across `br-kata0 -> CRS354 -> br-podman0` passed, but TCP iperf3 did not
+produce a reliable result because the two Thor OVS userspace bridges, two OVS
+bonds, and the same CRS354 L2 domain interact badly for local hairpin traffic.
+Use two distinct traffic endpoints, or a routed/VLAN split, for the next
+performance validation.
 
 The CRS309 side of the distribution LACP is `sfp-sfpplus2` plus
 `sfp-sfpplus3`. The CRS354 side is `sfp-sfpplus1` plus `sfp-sfpplus2`.
