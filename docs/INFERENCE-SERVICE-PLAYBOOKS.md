@@ -72,6 +72,16 @@ Thor AGX now uses Podman plus NVIDIA CDI. The live Thor CDI file is
 `/etc/cdi/nvidia.yaml`, and the validated CDI devices are `nvidia.com/gpu=0`
 and `nvidia.com/gpu=all`.
 
+For approved legacy Docker exception wrappers, expose GPUs with:
+
+```text
+--gpus all
+```
+
+The Docker mapping is compatibility-only. The Ansible apply path remains
+Podman-first and must not unmask or start Docker on Thor without a separate
+operator-approved maintenance window.
+
 ### `amd_rocm`
 
 Expose ROCm devices without SELinux dependency:
@@ -124,6 +134,10 @@ inference_service_accelerator: nvidia
 inference_service_container_engine: podman
 inference_service_manager: systemd
 ```
+
+This is the current Thor stance. The role keeps a template-level Docker NVIDIA
+exception for historical wrapper compatibility, but Thor service deployment uses
+Podman/CDI and renders `--device nvidia.com/gpu=all`.
 
 Start with Ollama and Open WebUI. Defer vLLM and SGLang on Thor until their
 arm64, Jetson/L4T, and CUDA 13 image path is validated.

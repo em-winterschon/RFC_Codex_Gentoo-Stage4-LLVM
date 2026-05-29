@@ -151,6 +151,18 @@ Ubuntu defaults.
 Thor is ready for Podman-first Ollama and Open WebUI service use through the
 management interface.
 
+Historical update `2026-05-25T03:00Z`: active operator approval became available
+for bounded Thor inference playbook work. The rollout remained gated to
+preflight, Ollama first, and Open WebUI only after Ollama was healthy; vLLM and
+SGLang remain deferred until arm64/L4T/CUDA 13 images are validated.
+
+Historical update `2026-05-25T03:17:53Z`: root SSH preflight found
+`docker.service` and `docker.socket` masked and inactive, while older Ollama
+wrapper files still contained Docker `--gpus all`. That state is now superseded
+by Podman/CDI deployment validation, but the wrapper renderer retains a
+compatibility check so any explicitly approved Docker exception uses Docker's
+`--gpus all` flag rather than Podman CDI device selectors.
+
 Recommended inventory stance:
 
 ```yaml
@@ -164,6 +176,11 @@ inference_service_cdi_devices:
 
 Keep Ollama as the first model-serving backend and Open WebUI as the first
 frontend. Use `nvidia.com/gpu=all` for the initial Thor service profile.
+
+The temporary Docker wrapper path is not Thor's current service default. The
+Podman/CDI path continues to use `--device nvidia.com/gpu=all`, and Docker must
+remain inactive unless a separate operator-approved maintenance window changes
+that host policy.
 
 ## Backend Defaults
 

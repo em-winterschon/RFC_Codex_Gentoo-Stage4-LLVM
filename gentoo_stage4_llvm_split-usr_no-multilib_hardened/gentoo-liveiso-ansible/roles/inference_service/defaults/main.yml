@@ -51,6 +51,7 @@ inference_service_package_map:
 inference_service_accelerator_profiles:
   cpu:
     devices: []
+    docker_args: []
     security_opts: []
     extra_args: []
     environment:
@@ -58,6 +59,8 @@ inference_service_accelerator_profiles:
   nvidia:
     devices:
       - nvidia.com/gpu=all
+    docker_args:
+      - --gpus all
     security_opts: []
     extra_args: []
     environment:
@@ -68,6 +71,7 @@ inference_service_accelerator_profiles:
     devices:
       - /dev/kfd
       - /dev/dri
+    docker_args: []
     security_opts: []
     extra_args: []
     environment:
@@ -75,6 +79,7 @@ inference_service_accelerator_profiles:
       HSA_OVERRIDE_GFX_VERSION: ""
   auto:
     devices: []
+    docker_args: []
     security_opts: []
     extra_args: []
     environment:
