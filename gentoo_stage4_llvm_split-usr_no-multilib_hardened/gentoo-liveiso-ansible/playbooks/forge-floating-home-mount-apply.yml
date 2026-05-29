@@ -1,0 +1,80 @@
+---
+- name: forge-floating-home-mount-apply
+  hosts: "{{ forge_floating_home_target_hosts | default('aaa_domain_clients') }}"
+  gather_facts: false
+  become: true
+  vars:
+    forge_floating_home_apply_required: false
+    forge_floating_home_server: 172.16.254.28
+    forge_floating_home_export_prefix: /rfc1918-floating-homes
+    forge_floating_home_mount_options: vers=4.1,proto=tcp,sec=sys,nconnect=4,_netdev,nofail,soft,timeo=50
+    forge_floating_home_install_nfs_utils: true
+    forge_floating_home_nfs_utils_package: net-fs/nfs-utils
+    forge_floating_home_users:
+      - { name: forge1, home: /home/forge1 }
+      - { name: forge2, home: /home/forge2 }
+      - { name: forge3, home: /home/forge3 }
+      - { name: forge4, home: /home/forge4 }
+      - { name: forge5, home: /home/forge5 }
+      - { name: forge6, home: /home/forge6 }
+  pre_tasks:
+    - name: Gate live Forge floating-home mount apply
+      ansible.builtin.assert:
+        that:
+          - forge_floating_home_apply_required | bool
+        fail_msg: >-
+          Set forge_floating_home_apply_required=true and use --limit for the intended
+          hosts before mutating /etc/fstab or live mounts.
+  tasks:
+    - name: Check NFS mount helper availability
+      ansible.builtin.command:
+        argv: [sh, -lc, "command -v mount.nfs && command -v mount.nfs4"]
+      register: forge_floating_home_mount_helpers
+      changed_when: false
+      failed_when: false
+
+    - name: Install NFS client utilities on Gentoo hosts when missing
+      ansible.builtin.command:
+        argv:
+          - emerge
+          - --verbose
+          - --noreplace
+          - "{{ forge_floating_home_nfs_utils_package }}"
+      register: forge_floating_home_nfs_utils_emerge
+      changed_when: "'>>> Emerging' in forge_floating_home_nfs_utils_emerge.stdout or 'ebuild' in forge_floating_home_nfs_utils_emerge.stdout"
+      when:
+        - forge_floating_home_install_nfs_utils | bool
+        - forge_floating_home_mount_helpers.rc != 0
+
+    - name: Ensure Forge floating-home mountpoints exist
+      ansible.builtin.file:
+        path: "{{ forge_home_user.home }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.home }}"
+
+    - name: Document managed Forge QNAP fstab block ownership
+      ansible.builtin.blockinfile:
+        path: /etc/fstab
+        create: true
+        mode: "0644"
+        marker: "# {mark} CODEX FORGE QNAP FLOATING HOMES"
+        block: |
+          # BEGIN CODEX FORGE QNAP FLOATING HOMES
+          # Managed by playbooks/forge-floating-home-mount-apply.yml.
+          # END CODEX FORGE QNAP FLOATING HOMES
+
+    - name: Mount Forge floating homes and persist fstab entries
+      ansible.posix.mount:
+        src: "{{ forge_floating_home_server }}:{{ forge_floating_home_export_prefix }}/{{ forge_home_user.name }}"
+        path: "{{ forge_home_user.home }}"
+        fstype: nfs4
+        opts: "{{ forge_floating_home_mount_options }}"
+        state: mounted
+      loop: "{{ forge_floating_home_users }}"
+      loop_control:
+        loop_var: forge_home_user
+        label: "{{ forge_home_user.home }}"
