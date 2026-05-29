@@ -382,6 +382,7 @@ def apply_freeipa(plan: dict[str, Any], *, ipa_command: str, audit_log: Path | N
                     user["name"],
                     f"--first={user['name']}",
                     "--last=RFC1918",
+                    "--noprivate",
                     f"--uid={user['uid']}",
                     f"--gidnumber={gid}",
                     f"--shell={user['shell']}",

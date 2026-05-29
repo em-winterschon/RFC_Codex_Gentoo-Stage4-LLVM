@@ -16,276 +16,608 @@ identity_source_definition:
       secondary_rid_base: 200200000
       type: ipa-local
     additional_freeipa_local_idranges:
-      - name: RFC1918.HOST_legacy_forge_worker_id_range
-        base_id: 1000
-        range_size: 4121
-        rid_base: 201000000
-        secondary_rid_base: 201010000
-        type: ipa-local
-        description: Preserve legacy Forge worker and SUN99 operator POSIX IDs for NFSv4 home ownership.
+    - name: RFC1918.HOST_legacy_forge_worker_id_range
+      base_id: 1000
+      range_size: 4121
+      rid_base: 201000000
+      secondary_rid_base: 201010000
+      type: ipa-local
+      description: Preserve legacy Forge worker and SUN99 operator POSIX IDs for NFSv4 home ownership.
+    - name: RFC1918.HOST_legacy_system_operator_id_range
+      base_id: 1
+      range_size: 128
+      rid_base: 201020000
+      secondary_rid_base: 201021000
+      type: ipa-local
+      description: Preserve low-numbered SUN99 system operator IDs such as toor and ltcol-forge for NFSv4 ownership.
+    - name: RFC1918.HOST_legacy_robin_operator_id_range
+      base_id: 16000
+      range_size: 1024
+      rid_base: 201030000
+      secondary_rid_base: 201032000
+      type: ipa-local
+      description: Preserve the Robin workstation/operator UID/GID outside the Forge worker range for NFSv4 ownership.
     reserved_ranges:
-      - name: human-users
-        start: 200100
-        end: 200199
-      - name: service-users
-        start: 200500
-        end: 200599
-      - name: role-groups
-        start: 201000
-        end: 201199
+    - name: human-users
+      start: 200100
+      end: 200199
+    - name: service-users
+      start: 200500
+      end: 200599
+    - name: role-groups
+      start: 201000
+      end: 201199
   groups:
-    - name: forge-superusers
-      gid: 1000
-      description: Forge worker sudo/HBAC role group; FreeIPA policy replaces host-local sudoers.
-    - name: forge1
-      gid: 1001
-      description: Primary POSIX group for Forge worker 1.
-    - name: forge2
-      gid: 1002
-      description: Primary POSIX group for Forge worker 2.
-    - name: forge3
-      gid: 1003
-      description: Primary POSIX group for Forge worker 3.
-    - name: forge4
-      gid: 1004
-      description: Primary POSIX group for Forge worker 4.
-    - name: forge5
-      gid: 1005
-      description: Primary POSIX group for Forge worker 5.
-    - name: forge6
-      gid: 1006
-      description: Primary POSIX group for Forge worker 6.
-    - name: verwalterin
-      gid: 4096
-      description: Legacy SUN99 administrative operator group retained for NFS UID/GID continuity.
-    - name: yukon
-      gid: 5120
-      description: Yukon shared operator group retained for NFS UID/GID continuity.
-    - name: linux-admin
-      gid: 201000
-      description: Linux host administrators with sudo and SSH access.
-    - name: ci-builder
-      gid: 201010
-      description: CI and package-build operators.
-    - name: network-admin
-      gid: 201100
-      description: Full-access network infrastructure operators.
-    - name: network-readonly
-      gid: 201110
-      description: Read-only network infrastructure operators.
-    - name: power-admin
-      gid: 201120
-      description: Power infrastructure administrators.
-    - name: power-readonly
-      gid: 201130
-      description: Read-only power infrastructure operators.
+  - name: forge-superusers
+    gid: 1000
+    description: Forge worker sudo/HBAC role group; FreeIPA policy replaces host-local sudoers.
+  - name: forge1
+    gid: 1001
+    description: Primary POSIX group for Forge worker 1.
+  - name: forge2
+    gid: 1002
+    description: Primary POSIX group for Forge worker 2.
+  - name: forge3
+    gid: 1003
+    description: Primary POSIX group for Forge worker 3.
+  - name: forge4
+    gid: 1004
+    description: Primary POSIX group for Forge worker 4.
+  - name: forge5
+    gid: 1005
+    description: Primary POSIX group for Forge worker 5.
+  - name: forge6
+    gid: 1006
+    description: Primary POSIX group for Forge worker 6.
+  - name: verwalterin
+    gid: 4096
+    description: Legacy SUN99 administrative operator group retained for NFS UID/GID continuity.
+  - name: yukon
+    gid: 5120
+    description: Yukon shared operator group retained for NFS UID/GID continuity.
+  - name: linux-admin
+    gid: 201000
+    description: Linux host administrators with sudo and SSH access.
+  - name: ci-builder
+    gid: 201010
+    description: CI and package-build operators.
+  - name: network-admin
+    gid: 201100
+    description: Full-access network infrastructure operators.
+  - name: network-readonly
+    gid: 201110
+    description: Read-only network infrastructure operators.
+  - name: power-admin
+    gid: 201120
+    description: Power infrastructure administrators.
+  - name: power-readonly
+    gid: 201130
+    description: Read-only power infrastructure operators.
+  - name: adm
+    gid: 4
+    description: Legacy local adm group mirrored in FreeIPA for SUN99 operator supplemental membership continuity.
+  - name: tty
+    gid: 5
+    description: Legacy local tty group mirrored in FreeIPA for workstation operator supplemental membership continuity.
+  - name: wheel
+    gid: 10
+    description: Legacy Linux wheel sudo group mirrored in FreeIPA for operator superuser access continuity.
+  - name: dialout
+    gid: 20
+    description: Legacy local dialout group mirrored in FreeIPA for serial and device-console operator access.
+  - name: toor
+    gid: 32
+    description: Primary POSIX group for the toor emergency superuser identity.
+  - name: ltcol-forge
+    gid: 64
+    description: Primary POSIX group for the LtCol Forge system identity.
+  - name: eva
+    gid: 1024
+    description: Primary POSIX group for Eva operator identity.
+  - name: backups
+    gid: 2048
+    description: Primary POSIX group for backup automation identity.
+  - name: robin
+    gid: 16385
+    description: Primary POSIX group for Robin operator identity.
+  - name: whee
+    gid: 201001
+    description: SUN99 compatibility superuser group requested alongside root/wheel memberships.
   users:
-    - name: codex-admin
-      uid: 200100
-      primary_group: linux-admin
-      groups:
-        - ci-builder
-        - network-admin
-        - power-admin
-      shell: /bin/bash
-      ssh_public_key_vars:
-        - vault_identity_codex_admin_ssh_public_keys
-      password_state: vault-managed
-      password_var: vault_identity_codex_admin_initial_password
-      description: Central non-root automation and emergency operator identity.
-    - name: forge1
-      uid: 1001
-      primary_group: forge1
-      groups:
-        - yukon
-        - forge-superusers
-        - verwalterin
-      shell: /bin/bash
-      home_directory: /home/forge1
-      floating_home:
-        provider: qnap_archive_ts435xeu
-        site: sun99
-        server: lagg-10k-nas7f281b-qnap.rfc1918.host
-        server_ip: 172.16.254.28
-        export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge1
-        mount_path: /home/forge1
-        protocol: nfsv4_1_tcp_multipath
-        nfs_options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, nofail, soft, _netdev]
-        status: live-target
-      ssh_public_key_vars:
-        - vault_identity_forge1_ssh_public_keys
-      password_state: ssh-key-only
-      description: Forge worker 1 with QNAP-backed SUN99 floating home.
-    - name: forge2
-      uid: 1002
-      primary_group: forge2
-      groups:
-        - yukon
-        - forge-superusers
-        - verwalterin
-      shell: /bin/bash
-      home_directory: /home/forge2
-      floating_home:
-        provider: qnap_archive_ts435xeu
-        site: sun99
-        server: lagg-10k-nas7f281b-qnap.rfc1918.host
-        server_ip: 172.16.254.28
-        export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge2
-        mount_path: /home/forge2
-        protocol: nfsv4_1_tcp_multipath
-        nfs_options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, nofail, soft, _netdev]
-        status: live-target
-      ssh_public_key_vars:
-        - vault_identity_forge2_ssh_public_keys
-      password_state: ssh-key-only
-      description: Forge worker 2 with QNAP-backed SUN99 floating home.
-    - name: forge3
-      uid: 1003
-      primary_group: forge3
-      groups:
-        - yukon
-        - forge-superusers
-        - verwalterin
-      shell: /bin/bash
-      home_directory: /home/forge3
-      floating_home:
-        provider: qnap_archive_ts435xeu
-        site: sun99
-        server: lagg-10k-nas7f281b-qnap.rfc1918.host
-        server_ip: 172.16.254.28
-        export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge3
-        mount_path: /home/forge3
-        protocol: nfsv4_1_tcp_multipath
-        nfs_options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, nofail, soft, _netdev]
-        status: live-target
-      ssh_public_key_vars:
-        - vault_identity_forge3_ssh_public_keys
-      password_state: ssh-key-only
-      description: Forge worker 3 with QNAP-backed SUN99 floating home.
-    - name: forge4
-      uid: 1004
-      primary_group: forge4
-      groups:
-        - yukon
-        - forge-superusers
-        - verwalterin
-      shell: /bin/bash
-      home_directory: /home/forge4
-      floating_home:
-        provider: qnap_archive_ts435xeu
-        site: sun99
-        server: lagg-10k-nas7f281b-qnap.rfc1918.host
-        server_ip: 172.16.254.28
-        export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge4
-        mount_path: /home/forge4
-        protocol: nfsv4_1_tcp_multipath
-        nfs_options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, nofail, soft, _netdev]
-        status: live-target
-      ssh_public_key_vars:
-        - vault_identity_forge4_ssh_public_keys
-      password_state: ssh-key-only
-      description: Forge worker 4 with QNAP-backed SUN99 floating home.
-    - name: forge5
-      uid: 1005
-      primary_group: forge5
-      groups:
-        - yukon
-        - forge-superusers
-        - verwalterin
-      shell: /bin/bash
-      home_directory: /home/forge5
-      floating_home:
-        provider: qnap_archive_ts435xeu
-        site: sun99
-        server: lagg-10k-nas7f281b-qnap.rfc1918.host
-        server_ip: 172.16.254.28
-        export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge5
-        mount_path: /home/forge5
-        protocol: nfsv4_1_tcp_multipath
-        nfs_options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, nofail, soft, _netdev]
-        status: live-target
-      ssh_public_key_vars:
-        - vault_identity_forge5_ssh_public_keys
-      password_state: ssh-key-only
-      description: Forge worker 5 with QNAP-backed SUN99 floating home.
-    - name: forge6
-      uid: 1006
-      primary_group: forge6
-      groups:
-        - yukon
-        - forge-superusers
-        - verwalterin
-      shell: /bin/bash
-      home_directory: /home/forge6
-      floating_home:
-        provider: qnap_archive_ts435xeu
-        site: sun99
-        server: lagg-10k-nas7f281b-qnap.rfc1918.host
-        server_ip: 172.16.254.28
-        export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge6
-        mount_path: /home/forge6
-        protocol: nfsv4_1_tcp_multipath
-        nfs_options: [vers=4.1, proto=tcp, sec=sys, nconnect=4, nofail, soft, _netdev]
-        status: live-target
-      ssh_public_key_vars:
-        - vault_identity_forge6_ssh_public_keys
-      password_state: ssh-key-only
-      description: Forge worker 6 with QNAP-backed SUN99 floating home.
-    - name: radius-test
-      uid: 200101
-      primary_group: network-readonly
-      groups:
-        - power-readonly
-      shell: /sbin/nologin
-      password_state: vault-managed
-      password_var: vault_identity_radius_test_password
-      description: Redacted RADIUS validation identity for controlled tests.
+  - name: codex-admin
+    uid: 200100
+    primary_group: linux-admin
+    groups:
+    - ci-builder
+    - network-admin
+    - power-admin
+    shell: /bin/bash
+    ssh_public_key_vars:
+    - vault_identity_codex_admin_ssh_public_keys
+    password_state: ssh-key-only
+    password_var: vault_identity_codex_admin_initial_password
+    description: Central non-root automation and emergency operator identity with QNAP NFSv4.2 floating home.
+    home_directory: /home/codex-admin
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/codex-admin
+      mount_path: /home/codex-admin
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+  - name: forge1
+    uid: 1001
+    primary_group: forge1
+    groups:
+    - yukon
+    - forge-superusers
+    - verwalterin
+    shell: /bin/bash
+    home_directory: /home/forge1
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge1
+      mount_path: /home/forge1
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_forge1_ssh_public_keys
+    password_state: ssh-key-only
+    description: Forge worker 1 with QNAP-backed SUN99 NFSv4.2 floating home.
+  - name: forge2
+    uid: 1002
+    primary_group: forge2
+    groups:
+    - yukon
+    - forge-superusers
+    - verwalterin
+    shell: /bin/bash
+    home_directory: /home/forge2
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge2
+      mount_path: /home/forge2
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_forge2_ssh_public_keys
+    password_state: ssh-key-only
+    description: Forge worker 2 with QNAP-backed SUN99 NFSv4.2 floating home.
+  - name: forge3
+    uid: 1003
+    primary_group: forge3
+    groups:
+    - yukon
+    - forge-superusers
+    - verwalterin
+    shell: /bin/bash
+    home_directory: /home/forge3
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge3
+      mount_path: /home/forge3
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_forge3_ssh_public_keys
+    password_state: ssh-key-only
+    description: Forge worker 3 with QNAP-backed SUN99 NFSv4.2 floating home.
+  - name: forge4
+    uid: 1004
+    primary_group: forge4
+    groups:
+    - yukon
+    - forge-superusers
+    - verwalterin
+    shell: /bin/bash
+    home_directory: /home/forge4
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge4
+      mount_path: /home/forge4
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_forge4_ssh_public_keys
+    password_state: ssh-key-only
+    description: Forge worker 4 with QNAP-backed SUN99 NFSv4.2 floating home.
+  - name: forge5
+    uid: 1005
+    primary_group: forge5
+    groups:
+    - yukon
+    - forge-superusers
+    - verwalterin
+    shell: /bin/bash
+    home_directory: /home/forge5
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge5
+      mount_path: /home/forge5
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_forge5_ssh_public_keys
+    password_state: ssh-key-only
+    description: Forge worker 5 with QNAP-backed SUN99 NFSv4.2 floating home.
+  - name: forge6
+    uid: 1006
+    primary_group: forge6
+    groups:
+    - yukon
+    - forge-superusers
+    - verwalterin
+    shell: /bin/bash
+    home_directory: /home/forge6
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/forge6
+      mount_path: /home/forge6
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_forge6_ssh_public_keys
+    password_state: ssh-key-only
+    description: Forge worker 6 with QNAP-backed SUN99 NFSv4.2 floating home.
+  - name: radius-test
+    uid: 200101
+    primary_group: network-readonly
+    groups:
+    - power-readonly
+    shell: /sbin/nologin
+    password_state: vault-managed
+    password_var: vault_identity_radius_test_password
+    description: Redacted RADIUS validation identity for controlled tests.
+  - name: ltcol-forge
+    uid: 64
+    primary_group: ltcol-forge
+    groups:
+    - adm
+    - wheel
+    - dialout
+    - forge-superusers
+    - verwalterin
+    - yukon
+    - whee
+    shell: /usr/bin/bash
+    home_directory: /home/ltcol-forge
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/ltcol-forge
+      mount_path: /home/ltcol-forge
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_ltcol_forge_ssh_public_keys
+    password_state: ssh-key-only
+    description: LtCol Forge system superuser identity migrated from M70 local baseline with QNAP NFSv4.2 floating home.
+  - name: toor
+    uid: 32
+    primary_group: toor
+    groups:
+    - adm
+    - wheel
+    - dialout
+    - forge-superusers
+    - verwalterin
+    - yukon
+    - whee
+    shell: /usr/bin/bash
+    home_directory: /home/toor
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/toor
+      mount_path: /home/toor
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_toor_ssh_public_keys
+    password_state: ssh-key-only
+    description: FreeBSD-style toor emergency superuser identity with LtCol Forge-equivalent group grants and QNAP NFSv4.2 floating home.
+  - name: eva
+    uid: 1024
+    primary_group: eva
+    groups:
+    - adm
+    - tty
+    - wheel
+    - dialout
+    - yukon
+    - whee
+    shell: /bin/bash
+    home_directory: /home/eva
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/eva
+      mount_path: /home/eva
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_eva_ssh_public_keys
+    password_state: ssh-key-only
+    description: Eva operator identity migrated from M70 local baseline with QNAP NFSv4.2 floating home.
+  - name: robin
+    uid: 16385
+    primary_group: robin
+    groups:
+    - adm
+    - tty
+    - wheel
+    - dialout
+    - yukon
+    - whee
+    shell: /bin/bash
+    home_directory: /home/robin
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/robin
+      mount_path: /home/robin
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_robin_ssh_public_keys
+    password_state: ssh-key-only
+    description: Robin operator identity migrated from M70 local baseline with QNAP NFSv4.2 floating home.
+  - name: verwalterin
+    uid: 4096
+    primary_group: verwalterin
+    groups:
+    - wheel
+    - whee
+    shell: /bin/bash
+    home_directory: /home/verwalterin
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/verwalterin
+      mount_path: /home/verwalterin
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_verwalterin_ssh_public_keys
+    password_state: ssh-key-only
+    description: Verwalterin administrative operator identity with QNAP NFSv4.2 floating home.
+  - name: backups
+    uid: 2048
+    primary_group: backups
+    groups:
+    - wheel
+    shell: /bin/sh
+    home_directory: /home/backups
+    floating_home:
+      provider: qnap_archive_ts435xeu
+      site: sun99
+      server: lagg-10k-nas7f281b-qnap.rfc1918.host
+      server_ip: 172.16.254.28
+      export_path: /share/CACHEDEV2_DATA/rfc1918-floating-homes/backups
+      mount_path: /home/backups
+      protocol: nfsv4_2_tcp_multipath
+      nfs_options:
+      - vers=4.2
+      - proto=tcp
+      - sec=sys
+      - nconnect=4
+      - nofail
+      - soft
+      - _netdev
+      status: live-target
+    ssh_public_key_vars:
+    - vault_identity_backups_ssh_public_keys
+    password_state: ssh-key-only
+    description: Backup automation identity migrated from M70 local baseline with QNAP NFSv4.2 floating home.
   service_accounts:
-    - name: radiusd
-      uid: 200500
-      primary_group: network-readonly
-      shell: /sbin/nologin
-      bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=rfc1918,dc=host
-      bind_password_var: vault_identity_radiusd_ldap_bind_password
-      description: FreeRADIUS LDAP bind account for FreeIPA-backed AAA.
+  - name: radiusd
+    uid: 200500
+    primary_group: network-readonly
+    shell: /sbin/nologin
+    bind_dn: uid=radiusd,cn=sysaccounts,cn=etc,dc=rfc1918,dc=host
+    bind_password_var: vault_identity_radiusd_ldap_bind_password
+    description: FreeRADIUS LDAP bind account for FreeIPA-backed AAA.
   host_enrollments:
-    - name: gmktek_nucbox_k10_stage5_candidate
-      fqdn: gmktek-k10-stage5.rfc1918.host
-      netbox_device: gmktek_nucbox_k10_stage5_candidate
-      role: baremetal-workstation-validation
-      hostgroups:
-        - linux-workstations
-        - aaa-first-linux-client
-      enrollment_secret_var: vault_identity_k10_ipa_enrollment_secret
-      status: first-client
-    - name: admin_sun99_forge_099070
-      fqdn: admin-sun99-forge-099070.rfc1918.host
-      netbox_device: admin_sun99_forge_099070
-      role: automation-admin
-      hostgroups:
-        - linux-servers
-        - automation-admin
-      enrollment_secret_var: vault_identity_m70_ipa_enrollment_secret
-      status: first-automation-admin
+  - name: gmktek_nucbox_k10_stage5_candidate
+    fqdn: gmktek-k10-stage5.rfc1918.host
+    netbox_device: gmktek_nucbox_k10_stage5_candidate
+    role: baremetal-workstation-validation
+    hostgroups:
+    - linux-workstations
+    - aaa-first-linux-client
+    enrollment_secret_var: vault_identity_k10_ipa_enrollment_secret
+    status: first-client
+  - name: admin_sun99_forge_099070
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    netbox_device: admin_sun99_forge_099070
+    role: automation-admin
+    hostgroups:
+    - linux-servers
+    - automation-admin
+    enrollment_secret_var: vault_identity_m70_ipa_enrollment_secret
+    status: first-automation-admin
   radius_clients:
-    - name: pdu_rfc99_corectrl_ap7901
-      shortname: pdu-rfc99-corectrl-099241
-      ipaddr: 172.16.99.241
-      netbox_device: pdu_rfc99_corectrl_ap7901
-      device_group: power-devices
-      access_role: power-admin
-      readonly_role: power-readonly
-      nastype: other
-      shared_secret_var: vault_radius_client_pdu_rfc99_corectrl_ap7901_secret
-      break_glass_secret_ref: vault_pdu_rfc99_corectrl_local_admin_password
-      status: first-power-device
+  - name: pdu_rfc99_corectrl_ap7901
+    shortname: pdu-rfc99-corectrl-099241
+    ipaddr: 172.16.99.241
+    netbox_device: pdu_rfc99_corectrl_ap7901
+    device_group: power-devices
+    access_role: power-admin
+    readonly_role: power-readonly
+    nastype: other
+    shared_secret_var: vault_radius_client_pdu_rfc99_corectrl_ap7901_secret
+    break_glass_secret_ref: vault_pdu_rfc99_corectrl_local_admin_password
+    status: first-power-device
   rollout_gates:
-    - name: preserve-break-glass
-      required: true
-      description: Local fallback credentials must remain available before RADIUS enforcement.
-    - name: k10-sssd-login-validated
-      required: true
-      description: K10 must validate non-root SSSD SSH login before widening Linux enrollment.
-    - name: ap7901-radius-readonly-validated
-      required: true
-      description: AP7901 must accept a read-only RADIUS identity before power-admin authorization is enabled.
+  - name: preserve-break-glass
+    required: true
+    description: Local fallback credentials must remain available before RADIUS enforcement.
+  - name: k10-sssd-login-validated
+    required: true
+    description: K10 must validate non-root SSSD SSH login before widening Linux enrollment.
+  - name: ap7901-radius-readonly-validated
+    required: true
+    description: AP7901 must accept a read-only RADIUS identity before power-admin authorization is enabled.
+  local_group_memberships:
+  - name: root
+    gid: 0
+    members:
+    - root
+    - eva
+    - robin
+    - verwalterin
+    - ltcol-forge
+    - toor
+    description: Host-local root group must include designated SUN99 superuser operators.
+  - name: wheel
+    gid: 10
+    members:
+    - root
+    - backups
+    - eva
+    - robin
+    - verwalterin
+    - forge1
+    - forge2
+    - forge3
+    - forge4
+    - forge5
+    - forge6
+    - ltcol-forge
+    - toor
+    description: Host-local wheel group mirrors legacy sudo-capable operator membership.
+  - name: whee
+    gid: 201001
+    members:
+    - eva
+    - robin
+    - verwalterin
+    - ltcol-forge
+    - toor
+    description: Host-local compatibility group requested for SUN99 superuser operators.
