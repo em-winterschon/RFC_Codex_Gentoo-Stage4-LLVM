@@ -19,7 +19,12 @@ gentoo_system_profile_metadata:
   package_pins:
     tracked_atoms:
       - app-admin/rsyslog
-      - www-apps/kibana-bin
+      - net-misc/curl
+    upstream_artifacts:
+      - name: kibana
+        version: "9.3.1"
+        url: https://artifacts.elastic.co/downloads/kibana/kibana-9.3.1-linux-x86_64.tar.gz
+        sha512: abe6628dd58cbd2f878d0d158aa9e93c415cf6a39b5812adb8ac9dcfe6b8ec610fd0e802b75a8398c50b243a732aa53547ae253d6bd1a6f579c51c2ffef0499a
   source_references:
     - https://packages.gentoo.org/packages/app-admin/rsyslog
-    - https://packages.gentoo.org/packages/www-apps/kibana-bin
+    - https://artifacts.elastic.co/downloads/kibana/kibana-9.3.1-linux-x86_64.tar.gz

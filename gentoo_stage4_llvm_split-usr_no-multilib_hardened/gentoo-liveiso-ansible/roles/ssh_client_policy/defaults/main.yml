@@ -1,0 +1,33 @@
+---
+ssh_client_policy_enabled: false
+ssh_client_policy_apply: false
+ssh_client_policy_install_root: ""
+ssh_client_policy_backup_dir: /root/ssh-policy-backup
+
+ssh_client_policy_manage_controlmaster: true
+ssh_client_policy_control_master: auto
+ssh_client_policy_control_persist: 10m
+ssh_client_policy_control_path: "%d/.ssh/controlmasters/%C"
+ssh_client_policy_server_alive_interval: 60
+ssh_client_policy_server_alive_count_max: 3
+
+ssh_client_policy_manage_bastion_routing: false
+ssh_client_policy_bastion_host: ""
+ssh_client_policy_bastion_user: verwalterin
+ssh_client_policy_bastion_patterns:
+  - "*.rfc1918.host"
+  - "172.16.*"
+  - "10.*"
+  - "192.168.*"
+ssh_client_policy_bastion_exclude_patterns:
+  - "github.com"
+  - "*.github.com"
+  - "github-yukon-forge"
+  - "github-yukon-fcp"
+  - "zx-git"
+
+ssh_client_policy_manage_host_aliases: false
+ssh_client_policy_host_aliases: []
+
+ssh_client_policy_user_homes: []
+ssh_client_policy_validation_target: localhost

@@ -1,9 +1,9 @@
 ---
 profile_rsyslog:
   forward_enabled: true
-  forward_hostname: log-vip.example.internal
+  forward_hostname: log-sun99-rsyslog.rfc1918.host
   forward_protocol: tcp
-  forward_port: 514
+  forward_port: 6514
 
 profile_telemetry:
   grafana:
@@ -12,11 +12,18 @@ profile_telemetry:
     admin_user: admin
     admin_password: changeme
     datasources:
+      - name: VictoriaMetrics
+        uid: VictoriaMetrics
+        type: prometheus
+        access: proxy
+        url: http://10.66.30.42:8428
+        isDefault: true
       - name: Prometheus
+        uid: Prometheus
         type: prometheus
         access: proxy
         url: http://10.66.30.40:9090
-        isDefault: true
+        isDefault: false
       - name: Elasticsearch-Logs
         type: elasticsearch
         access: proxy
@@ -32,3 +39,41 @@ profile_telemetry:
         jsonData:
           index: "apm-*"
           timeField: "@timestamp"
+    dashboards:
+      - name: stage5-observability-overview
+        content:
+          title: Stage5 Observability Overview
+          uid: stage5-observability-overview
+          schemaVersion: 39
+          version: 1
+          refresh: 30s
+          time:
+            from: now-6h
+            to: now
+          panels:
+            - title: Scrape Availability
+              type: stat
+              datasource:
+                type: prometheus
+                uid: VictoriaMetrics
+              targets:
+                - expr: avg(up)
+                  refId: A
+              gridPos:
+                h: 8
+                w: 8
+                x: 0
+                y: 0
+            - title: Node Memory Available
+              type: timeseries
+              datasource:
+                type: prometheus
+                uid: VictoriaMetrics
+              targets:
+                - expr: node_memory_MemAvailable_bytes
+                  refId: A
+              gridPos:
+                h: 8
+                w: 16
+                x: 8
+                y: 0

@@ -30,6 +30,11 @@ DEFAULT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("export-hide-sensitive", "/export hide-sensitive"),
 )
 
+SENSITIVE_EXPORT_COMMAND: tuple[str, str] = (
+    "export-show-sensitive",
+    "/export show-sensitive",
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -70,6 +75,14 @@ def parse_args() -> argparse.Namespace:
         "--allow-failures",
         action="store_true",
         help="Write partial snapshots and exit zero even when one command fails",
+    )
+    parser.add_argument(
+        "--include-sensitive-export",
+        action="store_true",
+        help=(
+            "Also collect /export show-sensitive for encrypted config backup workflows. "
+            "Use only with off-repo operator-private output directories."
+        ),
     )
     return parser.parse_args()
 
@@ -146,7 +159,10 @@ def main() -> int:
         print(f"empty password env var: {args.password_env}", file=sys.stderr)
         return 2
 
-    commands = list(DEFAULT_COMMANDS) + parse_extra_commands(args.commands)
+    commands = list(DEFAULT_COMMANDS)
+    if args.include_sensitive_export:
+        commands.append(SENSITIVE_EXPORT_COMMAND)
+    commands += parse_extra_commands(args.commands)
     ssh_options = [
         "StrictHostKeyChecking=no",
         "UserKnownHostsFile=/root/.ssh/known_hosts",

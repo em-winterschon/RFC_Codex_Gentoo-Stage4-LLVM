@@ -1,0 +1,14 @@
+#!/sbin/openrc-run
+
+description="Stage5 secure first-boot FreeIPA enrollment"
+command="/usr/local/sbin/stage5-firstboot-enroll"
+command_background="no"
+output_log="/var/log/stage5-firstboot-enroll.log"
+error_log="/var/log/stage5-firstboot-enroll.err"
+
+depend() {
+  need net
+  use dns chronyd
+  before sssd
+  after localmount
+}

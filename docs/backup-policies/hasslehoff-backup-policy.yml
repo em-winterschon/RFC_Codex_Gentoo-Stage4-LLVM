@@ -1,0 +1,106 @@
+---
+policy_id: rfc1918.hasslehoff.backup-policy.v1
+status: planned
+owner: forge
+external_target_id: nasa-m70-nfs-relay
+external_target:
+  id: nasa-m70-nfs-relay
+  role: durable-off-host-backup-relay
+  relay_host: admin-sun99-forge-099070.rfc1918.host
+  relay_mount: /mnt/nasa/hasslehoff
+  mirror_path: /mnt/nasa/hasslehoff/config-bundles
+  transport: rsync-over-ssh-to-m70-plus-m70-local-nfs
+  upstream_storage_host: kvm-sfo200-nasa-9918.vernetzen.io
+  upstream_storage_ip: 10.200.99.18
+  upstream_transport: openvpn-tun-fmt2
+  x12again_allowed: false
+notification:
+  provider: ntfy
+  ntfy_topic: forge-ops
+  failure_required: true
+  success_required: true
+schedule_policy:
+  timezone: UTC
+  config_state:
+    class_id: hasslehoff-config-state
+    cadence: daily-before-automation-window
+    trigger_script: scripts/backup-hasslehoff-scheduled.sh
+    mirror_verify: true
+    restore_validation:
+      - manifest_readback
+      - sha256_readback
+  vm_lxc:
+    cadence: daily-for-critical-services
+    full_coverage_cadence: weekly
+    throttle_required: true
+    preferred_tooling:
+      - vzdump
+      - proxmox-backup-server
+restore_validation:
+  minimum:
+    - manifest_readback
+    - sha256_readback
+  vm_lxc_required:
+    - disposable_restore
+    - offline_image_inspection
+retention_policy:
+  local_days: 7
+  external_daily_days: 30
+  external_weekly_weeks: 12
+  deletion_requires_explicit_apply: true
+vm_lxc_coverage:
+  - service_class: netbox
+    priority: critical
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+  - service_class: freeipa
+    priority: critical
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+  - service_class: observability
+    priority: high
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+  - service_class: syslog-search
+    priority: high
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+  - service_class: netboot-publisher
+    priority: high
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+  - service_class: container-services
+    priority: high
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+  - service_class: workstation-validation
+    priority: normal
+    backup_method: vzdump-or-proxmox-backup-server
+    cadence: daily
+    restore_validation:
+      - disposable_restore
+      - offline_image_inspection
+readiness_gates:
+  - external target remains reachable without X12AGAIN
+  - target free space is checked before VM or LXC backup runs
+  - raw backup artifacts stay outside git
+  - secrets remain in Ansible Vault or backup-tool repositories
+  - restore validation evidence is generated before marking coverage complete

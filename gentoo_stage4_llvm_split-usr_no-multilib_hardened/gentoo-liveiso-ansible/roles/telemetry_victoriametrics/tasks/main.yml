@@ -1,0 +1,124 @@
+---
+- name: Resolve VictoriaMetrics telemetry settings
+  ansible.builtin.set_fact:
+    telemetry_victoriametrics_enabled: >-
+      {{
+        resolved_profile_telemetry.victoriametrics.enabled
+        | default(telemetry_victoriametrics_default_enabled)
+        | bool
+      }}
+    resolved_victoriametrics_telemetry: >-
+      {{
+        {
+          'version': resolved_profile_telemetry.victoriametrics.version | default(telemetry_victoriametrics_default_version),
+          'architecture': resolved_profile_telemetry.victoriametrics.architecture | default(telemetry_victoriametrics_default_architecture),
+          'download_enabled': resolved_profile_telemetry.victoriametrics.download_enabled | default(telemetry_victoriametrics_default_download_enabled),
+          'download_url': resolved_profile_telemetry.victoriametrics.download_url | default(telemetry_victoriametrics_default_download_url),
+          'download_checksum': resolved_profile_telemetry.victoriametrics.download_checksum | default(telemetry_victoriametrics_default_download_checksum),
+          'install_root': resolved_profile_telemetry.victoriametrics.install_root | default(telemetry_victoriametrics_default_install_root),
+          'binary_name': resolved_profile_telemetry.victoriametrics.binary_name | default(telemetry_victoriametrics_default_binary_name),
+          'service_user': resolved_profile_telemetry.victoriametrics.service_user | default(telemetry_victoriametrics_default_service_user),
+          'service_group': resolved_profile_telemetry.victoriametrics.service_group | default(telemetry_victoriametrics_default_service_group),
+          'data_path': resolved_profile_telemetry.victoriametrics.data_path | default(telemetry_victoriametrics_default_data_path),
+          'retention_period': resolved_profile_telemetry.victoriametrics.retention_period | default(telemetry_victoriametrics_default_retention_period),
+          'http_listen_addr': resolved_profile_telemetry.victoriametrics.http_listen_addr | default(telemetry_victoriametrics_default_http_listen_addr),
+          'graphite_listen_addr': resolved_profile_telemetry.victoriametrics.graphite_listen_addr | default(telemetry_victoriametrics_default_graphite_listen_addr),
+          'influx_listen_addr': resolved_profile_telemetry.victoriametrics.influx_listen_addr | default(telemetry_victoriametrics_default_influx_listen_addr),
+          'opentsdb_listen_addr': resolved_profile_telemetry.victoriametrics.opentsdb_listen_addr | default(telemetry_victoriametrics_default_opentsdb_listen_addr),
+          'extra_args': resolved_profile_telemetry.victoriametrics.extra_args | default(telemetry_victoriametrics_default_extra_args)
+        }
+      }}
+
+- name: Resolve VictoriaMetrics release URL
+  ansible.builtin.set_fact:
+    resolved_victoriametrics_download_url: >-
+      {{
+        resolved_victoriametrics_telemetry.download_url
+        if (resolved_victoriametrics_telemetry.download_url | length) > 0
+        else 'https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v'
+          ~ resolved_victoriametrics_telemetry.version
+          ~ '/victoria-metrics-linux-'
+          ~ resolved_victoriametrics_telemetry.architecture
+          ~ '-v'
+          ~ resolved_victoriametrics_telemetry.version
+          ~ '.tar.gz'
+      }}
+  when: telemetry_victoriametrics_enabled
+
+- name: Ensure VictoriaMetrics service group exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('getent group ' ~ resolved_victoriametrics_telemetry.service_group ~ ' >/dev/null || groupadd --system ' ~ resolved_victoriametrics_telemetry.service_group) | quote }}
+  changed_when: true
+  when: telemetry_victoriametrics_enabled
+
+- name: Ensure VictoriaMetrics service user exists in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('id -u ' ~ resolved_victoriametrics_telemetry.service_user ~ ' >/dev/null 2>&1 || useradd --system --home-dir ' ~ resolved_victoriametrics_telemetry.data_path ~ ' --shell /sbin/nologin --gid ' ~ resolved_victoriametrics_telemetry.service_group ~ ' ' ~ resolved_victoriametrics_telemetry.service_user) | quote }}
+  changed_when: true
+  when: telemetry_victoriametrics_enabled
+
+- name: Ensure VictoriaMetrics directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ victoriametrics_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_victoriametrics_telemetry.install_root }}"
+    - "{{ resolved_victoriametrics_telemetry.data_path }}"
+    - /var/cache/victoriametrics
+    - /etc/conf.d
+    - /etc/init.d
+  loop_control:
+    loop_var: victoriametrics_dir
+  when: telemetry_victoriametrics_enabled
+
+- name: Download pinned VictoriaMetrics release
+  ansible.builtin.get_url:
+    url: "{{ resolved_victoriametrics_download_url }}"
+    dest: "{{ install_target_root }}/var/cache/victoriametrics/victoria-metrics-linux-{{ resolved_victoriametrics_telemetry.architecture }}-v{{ resolved_victoriametrics_telemetry.version }}.tar.gz"
+    mode: '0644'
+    checksum: "{{ resolved_victoriametrics_telemetry.download_checksum | default(omit, true) }}"
+  when:
+    - telemetry_victoriametrics_enabled
+    - resolved_victoriametrics_telemetry.download_enabled | bool
+
+- name: Extract pinned VictoriaMetrics release
+  ansible.builtin.unarchive:
+    src: "{{ install_target_root }}/var/cache/victoriametrics/victoria-metrics-linux-{{ resolved_victoriametrics_telemetry.architecture }}-v{{ resolved_victoriametrics_telemetry.version }}.tar.gz"
+    dest: "{{ install_target_root }}{{ resolved_victoriametrics_telemetry.install_root }}"
+    remote_src: true
+    creates: "{{ install_target_root }}{{ resolved_victoriametrics_telemetry.install_root }}/{{ resolved_victoriametrics_telemetry.binary_name }}"
+  when:
+    - telemetry_victoriametrics_enabled
+    - resolved_victoriametrics_telemetry.download_enabled | bool
+
+- name: Render VictoriaMetrics OpenRC configuration
+  ansible.builtin.template:
+    src: victoriametrics.confd.j2
+    dest: "{{ install_target_root }}/etc/conf.d/victoriametrics"
+    mode: '0644'
+  when: telemetry_victoriametrics_enabled
+
+- name: Render VictoriaMetrics OpenRC service
+  ansible.builtin.template:
+    src: victoriametrics.initd.j2
+    dest: "{{ install_target_root }}/etc/init.d/victoriametrics"
+    mode: '0755'
+  when: telemetry_victoriametrics_enabled
+
+- name: Assign VictoriaMetrics runtime ownership in target
+  ansible.builtin.command: >-
+    {{ liveiso_work_dir }}/chroot-runner.sh
+    {{ ('chown -R ' ~ resolved_victoriametrics_telemetry.service_user ~ ':' ~ resolved_victoriametrics_telemetry.service_group ~ ' ' ~ resolved_victoriametrics_telemetry.install_root ~ ' ' ~ resolved_victoriametrics_telemetry.data_path) | quote }}
+  changed_when: true
+  when: telemetry_victoriametrics_enabled
+
+- name: Enable VictoriaMetrics service
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (resolved_profile_openrc_services_enable | default([]) + ['victoriametrics']) | unique
+      }}
+  when: telemetry_victoriametrics_enabled

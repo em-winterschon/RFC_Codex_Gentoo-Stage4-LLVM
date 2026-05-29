@@ -1,0 +1,68 @@
+---
+- name: Resolve Nginx-UI container application profile
+  ansible.builtin.set_fact:
+    container_nginx_ui_profile: "{{ resolved_profile_container_app_profiles.nginx_ui | default({}) }}"
+    container_services_enabled: "{{ resolved_profile_container_services.enabled | default(false) | bool }}"
+
+- name: Ensure Nginx-UI persistent directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nginx_ui_persistent_dir }}"
+    state: directory
+    mode: '0750'
+  loop:
+    - "{{ container_nginx_ui_profile.config_dir | default(container_nginx_ui_config_dir) }}"
+    - "{{ resolved_profile_container_services.runtime_root | default('/var/lib/container-services') }}/data/nginx-ui/etc-nginx"
+    - "{{ resolved_profile_container_services.runtime_root | default('/var/lib/container-services') }}/data/nginx-ui/www"
+  loop_control:
+    loop_var: nginx_ui_persistent_dir
+  when:
+    - container_services_enabled
+    - container_nginx_ui_profile.enabled | default(false) | bool
+
+- name: Build Nginx-UI runtime volumes
+  ansible.builtin.set_fact:
+    container_nginx_ui_runtime_volumes: >-
+      {{
+        [
+          (container_nginx_ui_profile.config_dir | default(container_nginx_ui_config_dir)) + ':/etc/nginx-ui',
+          (resolved_profile_container_services.runtime_root | default('/var/lib/container-services')) + '/data/nginx-ui/etc-nginx:/etc/nginx',
+          (resolved_profile_container_services.runtime_root | default('/var/lib/container-services')) + '/data/nginx-ui/www:/var/www'
+        ]
+        + (
+          ['/var/run/docker.sock:/var/run/docker.sock']
+          if (container_nginx_ui_profile.docker_socket_enabled | default(false) | bool)
+          else []
+        )
+      }}
+  when:
+    - container_services_enabled
+    - container_nginx_ui_profile.enabled | default(false) | bool
+
+- name: Register Nginx-UI runtime application
+  ansible.builtin.set_fact:
+    container_runtime_applications: >-
+      {{
+        (container_runtime_applications | default([]))
+        + [
+            {
+              'name': 'nginx-ui',
+              'description': 'Nginx-UI MCP-enabled infrastructure control-plane UI',
+              'image': container_nginx_ui_profile.image,
+              'pull_policy': container_nginx_ui_profile.pull_policy | default('missing'),
+              'network': container_nginx_ui_profile.network | default('apps'),
+              'ip_address': container_nginx_ui_profile.ip_address | default(''),
+              'backend_port': container_nginx_ui_profile.backend_port | default(80),
+              'hostnames': container_nginx_ui_profile.hostnames | default(['nginx-ui.local']),
+              'published_ports': container_nginx_ui_profile.published_ports | default([]),
+              'cap_add': container_nginx_ui_profile.cap_add | default([]),
+              'environment': container_nginx_ui_profile.env | default({}),
+              'tmpfs': container_nginx_ui_profile.tmpfs | default(['/tmp:rw,noexec,nosuid,size=64m', '/run:rw,noexec,nosuid,size=16m']),
+              'volumes': container_nginx_ui_runtime_volumes,
+              'command': container_nginx_ui_profile.command | default([]),
+              'enabled': true
+            }
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_nginx_ui_profile.enabled | default(false) | bool

@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+description="VictoriaMetrics single-node time-series database"
+command="${victoriametrics_command:-{{ resolved_victoriametrics_telemetry.install_root }}/{{ resolved_victoriametrics_telemetry.binary_name }}}"
+command_args="${victoriametrics_args}"
+command_user="${victoriametrics_user:-{{ resolved_victoriametrics_telemetry.service_user }}}:${victoriametrics_group:-{{ resolved_victoriametrics_telemetry.service_group }}}"
+pidfile="/run/victoriametrics.pid"
+directory="${victoriametrics_data_path:-{{ resolved_victoriametrics_telemetry.data_path }}}"
+output_log="/var/log/victoriametrics.log"
+error_log="/var/log/victoriametrics.err"
+start_stop_daemon_args="--background --make-pidfile"
+
+depend() {
+  need net
+  after firewall nfsmount
+}
+
+start_pre() {
+  checkpath -d -o "${command_user}" -m 0755 "${directory}"
+  checkpath -f -o "${command_user}" -m 0644 "${output_log}"
+  checkpath -f -o "${command_user}" -m 0644 "${error_log}"
+}

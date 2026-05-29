@@ -1,0 +1,51 @@
+---
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-sun99-rsyslog.rfc1918.host
+  forward_protocol: tcp
+  forward_port: 6514
+
+profile_telemetry:
+  victoriametrics:
+    enabled: true
+    version: "1.142.0"
+    architecture: amd64
+    download_checksum: sha256:878e09069184d4cc86297e1f0574f2a78f5ebfce87dd1d32b286abf13aad4f85
+    data_path: /srv/metrics/victoriametrics
+    retention_period: 12
+    http_listen_addr: "0.0.0.0:8428"
+    graphite_listen_addr: "0.0.0.0:2003"
+  collectd:
+    enabled: true
+    hostname: vm-observability-victoriametrics
+    network_listen: true
+    network_listen_host: "0.0.0.0"
+    network_listen_port: 25826
+    write_graphite:
+      enabled: true
+      host: 127.0.0.1
+      port: 2003
+      prefix: collectd.
+    write_prometheus:
+      enabled: true
+      host: "0.0.0.0"
+      port: 9103
+
+profile_nfs_storage_client:
+  enabled: true
+  protocol_default: nfsv3_tcp
+  enable_nfsv3: true
+  enable_nfsv4: true
+  enable_rdma: false
+  enable_multipath: false
+  mounts:
+    - src: metrics-nfs.example.internal:/exports/metrics/victoriametrics
+      path: /srv/metrics/victoriametrics
+      fstype: nfs
+      options:
+        - vers=3
+        - proto=tcp
+        - hard
+        - timeo=600
+        - retrans=2
+        - _netdev

@@ -1,0 +1,16 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-tang-nbde-server.packages
+  openrc_services_available:
+    - tangd
+  tang_nbde_server:
+    enabled: false
+    mutation_required: true
+    listen_url: http://0.0.0.0:7500
+    state_dir: /var/lib/tang
+    advertisement_path: /adv
+    security_model:
+      supported_for_firstboot: optional-hardening
+      required_client_policy: tpm2+tang
+      forbidden_policy: tang-only

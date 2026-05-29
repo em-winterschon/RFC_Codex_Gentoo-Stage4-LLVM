@@ -1,0 +1,7 @@
+---
+- name: Validate FMT2 Kolla Rocky 10 host gates
+  hosts: fmt2_openstack_kolla
+  gather_facts: false
+  serial: 1
+  roles:
+    - role: fmt2_kolla_rocky10_preflight

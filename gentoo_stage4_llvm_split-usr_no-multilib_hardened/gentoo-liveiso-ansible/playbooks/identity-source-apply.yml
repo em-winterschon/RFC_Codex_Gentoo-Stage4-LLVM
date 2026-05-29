@@ -1,0 +1,89 @@
+---
+- name: Apply identity source-of-truth definitions
+  hosts: "{{ identity_source_apply_hosts | default('localhost') }}"
+  gather_facts: false
+  vars:
+    identity_source_apply_local_repo_root: "{{ playbook_dir }}/../../.."
+    identity_source_apply_local_source: "{{ playbook_dir }}/../identity-source-definitions/local-rfc1918.yml"
+    identity_source_apply_enabled: false
+    identity_source_apply_provider: all
+    identity_source_apply_format: json
+    identity_source_apply_freeipa_command: ipa
+    identity_source_apply_freeradius_output: /etc/raddb/clients.d/rfc1918-generated.conf
+    identity_source_apply_audit_log: ""
+    identity_source_apply_freeipa_kinit_enabled: "{{ identity_source_apply_provider in ['all', 'freeipa'] }}"
+    identity_source_apply_freeipa_kinit_env_file: /root/stage5-identity/bootstrap.env
+  tasks:
+    - name: Stage identity sync tooling and run selected provider
+      block:
+        - name: Create remote identity apply staging directory
+          ansible.builtin.tempfile:
+            state: directory
+            suffix: identity-source-apply
+          register: identity_source_apply_tempdir
+
+        - name: Stage identity sync scripts
+          ansible.builtin.copy:
+            src: "{{ identity_source_apply_local_repo_root }}/scripts/{{ item }}"
+            dest: "{{ identity_source_apply_tempdir.path }}/{{ item }}"
+            mode: "0755"
+          loop:
+            - apply_identity_sync_plan.py
+            - render_identity_sync_plan.py
+            - validate_identity_source.py
+
+        - name: Stage identity source definition
+          ansible.builtin.copy:
+            src: "{{ identity_source_apply_local_source }}"
+            dest: "{{ identity_source_apply_tempdir.path }}/identity-source.yml"
+            mode: "0644"
+
+        - name: Build remote identity apply argv
+          ansible.builtin.set_fact:
+            identity_source_apply_argv: >-
+              {{
+                [
+                  'python3',
+                  identity_source_apply_tempdir.path + '/apply_identity_sync_plan.py',
+                  identity_source_apply_tempdir.path + '/identity-source.yml',
+                  '--provider', identity_source_apply_provider,
+                  '--format', identity_source_apply_format,
+                  '--freeipa-command', identity_source_apply_freeipa_command,
+                  '--freeradius-output', identity_source_apply_freeradius_output
+                ]
+                + (['--apply'] if identity_source_apply_enabled | bool else [])
+                + (['--audit-log', identity_source_apply_audit_log] if identity_source_apply_audit_log | length > 0 else [])
+              }}
+
+        - name: Acquire FreeIPA admin Kerberos ticket for gated live mutations
+          ansible.builtin.shell: |
+            set -euo pipefail
+            source "{{ identity_source_apply_freeipa_kinit_env_file }}"
+            printf '%s\n' "${IPA_ADMIN_PASSWORD}" | kinit admin
+          args:
+            executable: /bin/bash
+          changed_when: false
+          no_log: true
+          when:
+            - identity_source_apply_enabled | bool
+            - identity_source_apply_freeipa_kinit_enabled | bool
+
+        - name: Plan or apply identity source-of-truth sync
+          ansible.builtin.command:
+            argv: "{{ identity_source_apply_argv }}"
+          environment: "{{ identity_source_apply_environment | default({}) }}"
+          register: identity_source_apply_result
+          changed_when: identity_source_apply_enabled | bool
+          no_log: "{{ identity_source_apply_enabled | bool }}"
+
+        - name: Report identity source-of-truth dry-run output
+          ansible.builtin.debug:
+            var: identity_source_apply_result.stdout
+          when: not identity_source_apply_enabled | bool
+
+      always:
+        - name: Remove remote identity apply staging directory
+          ansible.builtin.file:
+            path: "{{ identity_source_apply_tempdir.path | default('') }}"
+            state: absent
+          when: identity_source_apply_tempdir.path is defined

@@ -1,0 +1,135 @@
+---
+- name: Run FMT2 Kolla Rocky 10 read-only preflight
+  when: fmt2_kolla_preflight_enabled | bool
+  block:
+    - name: Read os-release without requiring target Python
+      ansible.builtin.raw: cat /etc/os-release
+      register: fmt2_kolla_os_release
+      changed_when: false
+
+    - name: Read CPU virtualization flags without requiring target Python
+      ansible.builtin.raw: >-
+        /bin/bash -lc "grep -m1 -E '(^flags|^Features).* (vmx|svm) '
+        /proc/cpuinfo || true"
+      register: fmt2_kolla_cpu_virtualization_flags
+      changed_when: false
+      failed_when: false
+
+    - name: Read interface presence without requiring target Python
+      ansible.builtin.raw: >-
+        /bin/bash -lc 'for iface in
+        {{ ((fmt2_kolla_required_interfaces + ([fmt2_kolla_management_bond_interface] if fmt2_kolla_require_management_bond | bool else [])) + (fmt2_kolla_required_rdma_interfaces if fmt2_kolla_require_rdma_interfaces | bool else [])) | join(" ") }};
+        do if [ -d "/sys/class/net/${iface}" ]; then echo "present ${iface}";
+        else echo "missing ${iface}"; fi; done'
+      register: fmt2_kolla_interface_presence
+      changed_when: false
+
+    - name: Read block device model inventory without requiring target Python
+      ansible.builtin.raw: >-
+        /bin/bash -lc "lsblk -dn -o NAME,MODEL,SIZE,TYPE 2>/dev/null || true"
+      register: fmt2_kolla_lsblk_models
+      changed_when: false
+      failed_when: false
+
+    - name: Read Podman command availability without requiring target Python
+      ansible.builtin.raw: >-
+        /bin/bash -lc "command -v {{ fmt2_kolla_container_engine }} || true"
+      register: fmt2_kolla_container_engine_path
+      changed_when: false
+      failed_when: false
+
+    - name: Derive ansible_distribution compatibility values from os-release
+      ansible.builtin.set_fact:
+        ansible_distribution: >-
+          {{ 'Rocky' if (((fmt2_kolla_os_release.stdout_lines | select('match', '^ID=') | list | first | default('ID=unknown')) | regex_replace('^ID="?([^"]+)"?$', '\1')) == 'rocky') else 'unknown' }}
+        ansible_distribution_major_version: >-
+          {{ (fmt2_kolla_os_release.stdout_lines | select('match', '^VERSION_ID=') | list | first | default('unknown') | regex_replace('^VERSION_ID="?([0-9]+).*$','\1')) }}
+
+    - name: Publish FMT2 Kolla preflight facts
+      ansible.builtin.debug:
+        msg:
+          apply_required: "{{ fmt2_kolla_preflight_apply }}"
+          expected_os: "{{ fmt2_kolla_target_os_name }} {{ fmt2_kolla_target_os_major }}"
+          ansible_distribution: "{{ ansible_distribution }}"
+          ansible_distribution_major_version: "{{ ansible_distribution_major_version }}"
+          kolla_container_engine: "{{ fmt2_kolla_container_engine }}"
+          kolla_base_distro: "{{ fmt2_kolla_base_distro }}"
+          openstack_release: "{{ fmt2_kolla_openstack_release }}"
+          interface_presence: "{{ fmt2_kolla_interface_presence.stdout_lines }}"
+          required_interfaces: "{{ fmt2_kolla_required_interfaces }}"
+          required_rdma_interfaces: "{{ fmt2_kolla_required_rdma_interfaces }}"
+          sol_requirement: "SOL remains enabled"
+          sol_evidence_state: "{{ fmt2_kolla_sol_evidence_state }}"
+          candidate_os_devices: "{{ fmt2_kolla_candidate_os_devices }}"
+          allowed_os_media_patterns: "{{ fmt2_kolla_allowed_os_media_patterns }}"
+          disallowed_storage_patterns: "{{ fmt2_kolla_disallowed_storage_patterns }}"
+          detected_block_devices: "{{ fmt2_kolla_lsblk_models.stdout_lines }}"
+          container_engine_path: "{{ fmt2_kolla_container_engine_path.stdout | trim }}"
+
+    - name: Assert Rocky Linux 10 host OS
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Rocky"
+          - ansible_distribution_major_version | string == fmt2_kolla_target_os_major | string
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because host OS is
+          {{ ansible_distribution }} {{ ansible_distribution_major_version }},
+          not {{ fmt2_kolla_target_os_name }} {{ fmt2_kolla_target_os_major }}.
+
+    - name: Assert CPU virtualization flags are exposed
+      ansible.builtin.assert:
+        that:
+          - fmt2_kolla_cpu_virtualization_flags.stdout | trim | length > 0
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because CPU virtualization flags were not
+          detected in /proc/cpuinfo.
+
+    - name: Assert required NIC interfaces are present
+      ansible.builtin.assert:
+        that:
+          - "'missing' not in fmt2_kolla_interface_presence.stdout"
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because one or more required interfaces
+          are missing: {{ fmt2_kolla_interface_presence.stdout_lines }}.
+
+    - name: Assert Podman container engine is installed when required
+      ansible.builtin.assert:
+        that:
+          - (not (fmt2_kolla_require_container_engine | bool)) or (fmt2_kolla_container_engine_path.stdout | trim | length > 0)
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because required container engine
+          {{ fmt2_kolla_container_engine }} was not found in PATH.
+
+    - name: Assert SOL evidence is enabled
+      ansible.builtin.assert:
+        that:
+          - (not (fmt2_kolla_required_sol | bool)) or (fmt2_kolla_skip_sol_assert | bool) or (fmt2_kolla_sol_evidence_state == "enabled")
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because SOL remains enabled evidence is
+          required before firmware, OS, or Kolla maintenance.
+
+    - name: Assert candidate OS devices were explicitly selected
+      ansible.builtin.assert:
+        that:
+          - (not (fmt2_kolla_storage_selection_required | bool)) or (fmt2_kolla_candidate_os_devices | length > 0)
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because candidate OS devices are not
+          explicitly defined. Define fmt2_kolla_candidate_os_devices before any
+          rebuild gate so SAS hot-swap media cannot be selected accidentally.
+
+    - name: Assert candidate OS devices do not include disallowed storage media
+      ansible.builtin.assert:
+        that:
+          - >-
+            fmt2_kolla_candidate_os_devices
+            | select('search', fmt2_kolla_disallowed_storage_patterns | join('|'))
+            | list
+            | length == 0
+        fail_msg: >-
+          Refusing FMT2 Kolla preflight because candidate OS devices include
+          storage reserved for data pools or Optane cache:
+          {{ fmt2_kolla_candidate_os_devices }}.
+
+    - name: Stop before mutation because this role is read-only
+      ansible.builtin.meta: end_host
+      when: not (fmt2_kolla_preflight_apply | bool)

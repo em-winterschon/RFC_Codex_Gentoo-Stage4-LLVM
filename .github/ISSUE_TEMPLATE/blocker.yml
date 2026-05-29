@@ -1,0 +1,53 @@
+name: Blocker
+description: Track an operational blocker that prevents current work from progressing.
+title: "[BLOCKER] "
+labels:
+  - type:blocker
+  - status:blocked
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - critical
+        - high
+        - medium
+        - low
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What is blocked and what failure mode is visible.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, commands, screenshots, API failures, or physical observations.
+    validations:
+      required: true
+  - type: textarea
+    id: suspected_cause
+    attributes:
+      label: Suspected cause
+      description: Current best explanation and competing hypotheses.
+    validations:
+      required: false
+  - type: textarea
+    id: next_action
+    attributes:
+      label: Next action
+      description: The next concrete unblock attempt and who owns it.
+    validations:
+      required: true
+  - type: textarea
+    id: removal_condition
+    attributes:
+      label: Removal condition
+      description: What proves the blocker is gone.
+    validations:
+      required: true

@@ -28,9 +28,9 @@ gentoo_profile_definition:
   rsyslog:
     enabled: true
     forward_enabled: true
-    forward_hostname: log-vip.example.internal
+    forward_hostname: log-sun99-rsyslog.rfc1918.host
     forward_protocol: tcp
-    forward_port: 514
+    forward_port: 6514
   haproxy_service_types:
     - name: elasticsearch-http
       bind: "*:9200"

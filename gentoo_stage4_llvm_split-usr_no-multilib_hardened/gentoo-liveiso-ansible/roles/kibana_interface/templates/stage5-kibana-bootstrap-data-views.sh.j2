@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+kibana_url="${KIBANA_URL:-http://127.0.0.1:{{ resolved_kibana.server_port }}}"
+
+wait_for_kibana() {
+  local tries="${KIBANA_WAIT_TRIES:-60}"
+  local delay="${KIBANA_WAIT_DELAY:-5}"
+  local attempt level
+
+  for attempt in $(seq 1 "${tries}"); do
+    level="$(
+      curl -fsS "${kibana_url}/api/status" \
+        | python3 -c 'import json,sys; print(json.load(sys.stdin).get("status",{}).get("overall",{}).get("level",""))' \
+        2>/dev/null || true
+    )"
+    [[ "${level}" == "available" ]] && return 0
+    sleep "${delay}"
+  done
+
+  return 1
+}
+
+wait_for_kibana
+
+{% for data_view in resolved_kibana.data_views %}
+curl -fsS -X POST "${kibana_url}/api/data_views/data_view" \
+  -H 'kbn-xsrf: stage5-kibana-bootstrap' \
+  -H 'Content-Type: application/json' \
+  -d {{ {
+    "data_view": {
+      "id": data_view.id | default(data_view.title),
+      "title": data_view.title,
+      "name": data_view.name | default(data_view.title),
+      "timeFieldName": data_view.time_field | default("@timestamp")
+    },
+    "override": True
+  } | to_json | quote }}
+
+{% if data_view.default | default(true) | bool %}
+curl -fsS -X POST "${kibana_url}/api/data_views/default" \
+  -H 'kbn-xsrf: stage5-kibana-bootstrap' \
+  -H 'Content-Type: application/json' \
+  -d {{ {"data_view_id": data_view.id | default(data_view.title), "force": True} | to_json | quote }}
+{% endif %}
+{% endfor %}

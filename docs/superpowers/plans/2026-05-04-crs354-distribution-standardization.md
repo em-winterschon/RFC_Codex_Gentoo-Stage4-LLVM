@@ -146,7 +146,8 @@ Expected: `"ok": true`.
 
 - [ ] **Step 1: Back out CRS354 LACP if needed**
 
-Use serial `/dev/ttyUSB1` and run:
+Use CRS354 serial through Hasslehoff
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` and run:
 
 ```routeros
 /interface bridge port remove [find where interface="bond-crs309"]

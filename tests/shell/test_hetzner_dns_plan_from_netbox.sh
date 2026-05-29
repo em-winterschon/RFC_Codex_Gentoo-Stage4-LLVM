@@ -27,6 +27,7 @@ run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
 assert_file_contains "${PLANNER}" "generate_dns_plan"
 assert_file_contains "${dns_vars}" "dns_hetzner_cloud_zone_groups"
 assert_file_contains "${plan_playbook}" "plan-hetzner-dns-from-netbox.py"
+assert_file_contains "${plan_playbook}" "check_mode: false"
 assert_file_contains "${docs}" "hetzner-dns-plan-from-netbox.yml"
 assert_file_contains "${run_tests}" "test_hetzner_dns_plan_from_netbox.sh"
 

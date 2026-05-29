@@ -1,0 +1,13 @@
+---
+- name: Deploy Open WebUI inference frontend
+  hosts: open_webui_servers
+  gather_facts: true
+  become: true
+
+  vars:
+    inference_service_backend: open-webui
+    inference_service_name: open-webui
+    inference_service_accelerator: cpu
+
+  roles:
+    - role: inference_service

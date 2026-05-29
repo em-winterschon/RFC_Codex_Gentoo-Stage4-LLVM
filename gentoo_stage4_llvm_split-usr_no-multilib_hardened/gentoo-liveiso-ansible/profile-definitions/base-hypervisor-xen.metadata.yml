@@ -1,0 +1,30 @@
+---
+gentoo_system_profile_metadata:
+  id: base-hypervisor-xen
+  purpose: Bare-metal Xen hypervisor baseline on top of base-minimal-nox.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-hypervisor
+    role_name: base-hypervisor-xen
+    extends:
+      - base-minimal-nox
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-hypervisor-common.packages
+      - profile-package-lists/stage5-base-hypervisor-xen.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    gentoo_tree_exact_atoms:
+      - =app-emulation/xen-4.19.3
+      - =app-emulation/xen-tools-4.19.3
+      - =net-misc/openvswitch-3.3.8
+      - =sys-apps/nvme-cli-2.16
+      - =sys-block/ndctl-77-r2
+    support_packages:
+      - sys-cluster/rdma-core
+      - sys-fs/zfs
+  openrc_services:
+    - openvswitch
+    - xenconsoled
+    - xendomains
+    - xenstored

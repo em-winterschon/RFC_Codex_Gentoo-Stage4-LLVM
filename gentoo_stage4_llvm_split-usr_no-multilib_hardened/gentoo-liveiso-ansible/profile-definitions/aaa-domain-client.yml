@@ -7,7 +7,9 @@ gentoo_profile_definition:
       dev-libs/cyrus-sasl kerberos
       net-dns/bind gssapi
       net-libs/ngtcp2 gnutls
+      net-fs/samba winbind
       net-nds/openldap experimental sasl
+      sys-auth/sssd samba
   aaa_policy_files:
     - aaa-policy-definitions/site-baseline.yml
   openrc_services_enable:

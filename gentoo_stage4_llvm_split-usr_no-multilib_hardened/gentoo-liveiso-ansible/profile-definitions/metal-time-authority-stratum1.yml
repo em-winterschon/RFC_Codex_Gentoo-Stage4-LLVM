@@ -1,0 +1,59 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-metal-host-time-authority-stratum1.packages
+  make_conf_append: |
+    USE="${USE} gps ntp pps usb"
+  modules_load_files:
+    time-authority-stratum1.conf: |
+      i2c-dev
+      pps-gpio
+      pps_ldisc
+      ptp
+      ptp_ocp
+  openrc_services_enable:
+    - chronyd
+    - gpsd
+    - sshd
+    - rsyslog
+  kernel_requirements:
+    symbols:
+      - CONFIG_NTP_PPS
+      - CONFIG_PPS
+      - CONFIG_PPS_CLIENT_GPIO
+      - CONFIG_PPS_CLIENT_LDISC
+      - CONFIG_PTP_1588_CLOCK
+      - CONFIG_SERIAL_8250
+      - CONFIG_SERIAL_8250_CONSOLE
+  time_authority:
+    role: stratum1-ntp-authority
+    platform: raspberry-pi-cm4
+    primary_gnss:
+      device: u-blox-max-m8q-gpio-hat
+      data_path: uart
+      pps_path: gpio
+      reference_repo: /opt/repos/remote/yukon/SysOps-NTP-MaxQ__RPi-GPS-PPS-StratumOne
+    secondary_gnss:
+      device: usb-gps
+      data_path: usb-serial
+      pps_path: optional-usb-pps
+    ptp:
+      mode: gated-grandmaster-candidate
+      validation_required:
+        - ethtool -T must report hardware transmit timestamping.
+        - ptp4l must remain disabled until timestamp-capable NIC validation passes.
+      reference_repo: /opt/repos/remote/yukon/SysOps-OCP-NTP-StratumN__Time-Card
+    chrony:
+      local_stratum_fallback: disabled
+      require_gnss_fix_for_normal_state: true
+      require_pps_lock_for_stratum1_state: true
+    monitoring:
+      exporter: chrony_exporter
+      required_checks:
+        - chronyc tracking
+        - chronyc sources -v
+        - chronyc sourcestats -v
+        - gpspipe or cgps GNSS fix state
+        - PPS device visibility
+        - ethtool timestamp capability

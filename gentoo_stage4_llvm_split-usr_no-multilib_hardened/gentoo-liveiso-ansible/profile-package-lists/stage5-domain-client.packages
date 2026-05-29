@@ -1,4 +1,5 @@
 sys-auth/sssd
+net-fs/samba
 app-crypt/mit-krb5
 net-nds/openldap
 app-misc/ca-certificates

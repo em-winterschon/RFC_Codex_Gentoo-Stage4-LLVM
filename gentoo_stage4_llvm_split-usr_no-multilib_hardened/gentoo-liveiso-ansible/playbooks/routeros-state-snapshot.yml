@@ -5,21 +5,52 @@
   vars:
     routeros_snapshot_root: /root/operator-private/routeros/state-snapshots
     routeros_snapshot_script: "{{ playbook_dir }}/../../../scripts/collect-mikrotik-routeros-state.py"
+    routeros_serial_snapshot_script: "{{ playbook_dir }}/../../../scripts/collect-mikrotik-routeros-serial-state.py"
     routeros_snapshot_skip_when_no_host: true
     routeros_snapshot_timeout_seconds: 20
+    routeros_snapshot_include_sensitive_export: false
 
   tasks:
-    - name: Determine whether RouterOS SSH snapshot should run
+    - name: Determine RouterOS snapshot transport
+      ansible.builtin.set_fact:
+        routeros_snapshot_transport_effective: >-
+          {{
+            routeros_state_snapshot_transport | default(
+              'serial' if routeros_transport | default('ssh') == 'serial' else 'ssh'
+            )
+          }}
+
+    - name: Determine RouterOS snapshot transport availability
+      ansible.builtin.set_fact:
+        routeros_snapshot_ssh_available: >-
+          {{
+            ansible_host is defined
+            and ansible_host != inventory_hostname
+            and ansible_user is defined
+            and ansible_password is defined
+            and (ansible_password | string | length) > 0
+          }}
+        routeros_snapshot_serial_available: >-
+          {{
+            routeros_serial_console is defined
+            and ansible_user is defined
+            and ansible_password is defined
+            and (ansible_password | string | length) > 0
+          }}
+
+    - name: Determine whether RouterOS snapshot should run
       ansible.builtin.set_fact:
         routeros_snapshot_enabled_effective: >-
           {{
             routeros_state_snapshot_enabled | default(
-              ansible_host is defined
-              and ansible_host != inventory_hostname
-              and ansible_user is defined
-              and ansible_password is defined
-              and (ansible_password | string | length) > 0
-              and routeros_management_state | default('') != 'serial-discovered'
+              (
+                routeros_snapshot_transport_effective == 'ssh'
+                and routeros_snapshot_ssh_available
+              )
+              or (
+                routeros_snapshot_transport_effective == 'serial'
+                and routeros_snapshot_serial_available
+              )
             )
           }}
 
@@ -31,6 +62,37 @@
       ansible.builtin.set_fact:
         routeros_snapshot_output_dir: "{{ routeros_snapshot_root }}/{{ inventory_hostname }}/{{ routeros_snapshot_stamp }}"
 
+    - name: Build RouterOS SSH snapshot command arguments
+      ansible.builtin.set_fact:
+        routeros_snapshot_ssh_command_argv: >-
+          {{
+            [
+              routeros_snapshot_script,
+              '--host', ansible_host | default(''),
+              '--username', ansible_user,
+              '--output-dir', routeros_snapshot_output_dir,
+              '--timeout', routeros_snapshot_timeout_seconds | string,
+              '--allow-failures'
+            ]
+            + (['--include-sensitive-export'] if routeros_snapshot_include_sensitive_export | bool else [])
+          }}
+
+    - name: Build RouterOS serial snapshot command arguments
+      ansible.builtin.set_fact:
+        routeros_snapshot_serial_command_argv: >-
+          {{
+            [
+              routeros_serial_snapshot_script,
+              '--port', routeros_serial_console | default(''),
+              '--baud', routeros_serial_baud | default(115200) | string,
+              '--username', ansible_user,
+              '--output-dir', routeros_snapshot_output_dir,
+              '--timeout', routeros_snapshot_timeout_seconds | string,
+              '--allow-failures'
+            ]
+            + (['--include-sensitive-export'] if routeros_snapshot_include_sensitive_export | bool else [])
+          }}
+
     - name: Ensure RouterOS snapshot output directory exists
       ansible.builtin.file:
         path: "{{ routeros_snapshot_output_dir }}"
@@ -41,27 +103,31 @@
 
     - name: Collect RouterOS state over SSH
       ansible.builtin.command:
-        argv:
-          - "{{ routeros_snapshot_script }}"
-          - --host
-          - "{{ ansible_host }}"
-          - --username
-          - "{{ ansible_user }}"
-          - --output-dir
-          - "{{ routeros_snapshot_output_dir }}"
-          - --timeout
-          - "{{ routeros_snapshot_timeout_seconds | string }}"
-          - --allow-failures
+        argv: "{{ routeros_snapshot_ssh_command_argv }}"
       environment:
         ROUTEROS_PASSWORD: "{{ ansible_password | default('') }}"
       delegate_to: localhost
       no_log: "{{ ansible_password is defined }}"
       changed_when: false
-      when: routeros_snapshot_enabled_effective | bool
+      when:
+        - routeros_snapshot_enabled_effective | bool
+        - routeros_snapshot_transport_effective == 'ssh'
+
+    - name: Collect RouterOS state over serial
+      ansible.builtin.command:
+        argv: "{{ routeros_snapshot_serial_command_argv }}"
+      environment:
+        ROUTEROS_PASSWORD: "{{ ansible_password | default('') }}"
+      delegate_to: localhost
+      no_log: "{{ ansible_password is defined }}"
+      changed_when: false
+      when:
+        - routeros_snapshot_enabled_effective | bool
+        - routeros_snapshot_transport_effective == 'serial'
 
     - name: Report RouterOS snapshot path
       ansible.builtin.debug:
-        msg: "RouterOS snapshot captured at {{ routeros_snapshot_output_dir }}"
+        msg: "RouterOS {{ routeros_snapshot_transport_effective }} snapshot captured at {{ routeros_snapshot_output_dir }}"
       when: routeros_snapshot_enabled_effective | bool
 
     - name: Report skipped RouterOS snapshot
@@ -69,5 +135,6 @@
         msg: >-
           RouterOS snapshot skipped for {{ inventory_hostname }};
           enabled={{ routeros_snapshot_enabled_effective }};
-          reason={{ routeros_state_snapshot_reason | default('missing SSH host/password, serial-discovered management, or explicit inventory gate') }}.
+          transport={{ routeros_snapshot_transport_effective }};
+          reason={{ routeros_state_snapshot_reason | default('missing transport host/console/password or explicit inventory gate') }}.
       when: not routeros_snapshot_enabled_effective | bool

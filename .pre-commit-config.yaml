@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.11
+  python: python3
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -13,10 +13,12 @@ repos:
       - id: check-shebang-scripts-are-executable
         exclude: ^gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/roles/.*/templates/.*\.j2$
 
-  - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.11.0
+  - repo: local
     hooks:
       - id: shellcheck
+        name: ShellCheck
+        entry: shellcheck
+        language: system
         files: \.sh$
         args: [--severity=error]
 
@@ -37,3 +39,18 @@ repos:
     rev: 25.11.0
     hooks:
       - id: black
+
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v25.9.0
+    hooks:
+      - id: ansible-lint
+        files: ^gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/
+        args: [--offline, gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/install.yml]
+
+  - repo: local
+    hooks:
+      - id: lint-portage-profiles
+        name: lint-portage-profiles
+        entry: python3 scripts/lint_portage_profiles.py
+        language: system
+        files: ^(gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/profile-definitions/|gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/.*/group_vars/install_targets\.yml|scripts/lint_portage_profiles\.py)

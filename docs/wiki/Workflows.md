@@ -2,7 +2,7 @@
 
 ## Operator Workflow Families
 
-This repository currently has six main workflow families:
+This repository currently has seven main workflow families:
 
 - host validation and CI
 - Path A VM build and launch
@@ -10,6 +10,7 @@ This repository currently has six main workflow families:
 - Path B iPXE asset publication and fleet bootstrapping
 - Path B RouterOS CHR lab configuration
 - notification and approval visibility
+- private ntfy infrastructure deployment
 
 ## 1. Validate the Repository
 
@@ -53,6 +54,12 @@ QEMU_NETWORK_MODE=alias \
 bash gentoo-virt-qemu/qemu-launch-stage3-vm.sh
 ```
 
+Current operator guidance:
+
+- alias mode is the validated standard workflow for the current LiveISO host
+- it preserves simple host recovery semantics while still allowing staged imaging and target-disk boot validation
+- tap/bridge remain supported implementation paths, but are not required for the standard validation loop
+
 ## 4. Watch Long-Running Install Control Flow
 
 Start the sequence:
@@ -86,6 +93,17 @@ High-level order:
 6. shut down installer-QCOW boot
 7. relaunch with `QEMU_BOOT_SOURCE=target-disks`
 8. verify installed target boot, SSH, and ZFS state
+
+Current validated kernel/ZFS path for this workflow:
+
+- `kernel_strategy: gentoo-kernel`
+- Gentoo-native `sys-fs/zfs`
+- Gentoo-native `sys-fs/zfs-kmod`
+- kernel fragment disabling:
+  - `CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS`
+  - `CONFIG_DYNAMIC_FTRACE_WITH_ARGS`
+
+This path replaced the earlier `gentoo-kernel-bin` validation path for ZFS warning triage.
 
 Machine-readable version:
 
@@ -216,7 +234,21 @@ Machine-readable version:
 
 - `docs/workflows/codex-approval-watcher-service.json`
 
-## 11. Release and Merge Discipline
+## 11. Private ntfy Server Deployment
+
+Deploy a standalone ntfy server on a dedicated Gentoo/OpenRC host:
+
+```bash
+ansible-playbook -i gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/examples/hosts.yml \
+  gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/playbooks/ntfy-server.yml \
+  -l ntfy_primary
+```
+
+Machine-readable version:
+
+- `docs/workflows/ntfy-server-deployment.json`
+
+## 12. Release and Merge Discipline
 
 Operational rule:
 
@@ -231,7 +263,7 @@ Recommended GitHub protection:
 - require up-to-date branches before merge
 - restrict direct pushes to `main`
 
-## 12. Expected Return Codes
+## 13. Expected Return Codes
 
 Normal success:
 
@@ -245,7 +277,7 @@ Failure conditions should be surfaced at one of these layers:
 - SSH readiness checks
 - workflow JSONL final stats
 
-## 13. Artifacts Worth Watching
+## 14. Artifacts Worth Watching
 
 - `/tmp/ansible-control-flow/*.jsonl`
 - `/opt/gentoo-virt-qemu/stage3/state/*.serial.log`

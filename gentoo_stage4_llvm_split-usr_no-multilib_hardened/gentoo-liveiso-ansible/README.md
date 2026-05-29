@@ -109,6 +109,20 @@ vim inventories/examples/group_vars/install_targets.yml
 ansible-playbook playbooks/install.yml -l target_system_remote
 ```
 
+### Deploy a private ntfy server
+
+Use the dedicated `ntfy_servers` inventory group for a standalone notification
+endpoint. This is intentionally separate from the imaging workflow so private
+operator messaging can live on an infrastructure host that is not itself being
+reimaged.
+
+```bash
+./scripts/bootstrap-liveiso.sh
+vim inventories/examples/hosts.yml
+vim inventories/examples/group_vars/ntfy_servers.yml
+ansible-playbook -i inventories/examples/hosts.yml playbooks/ntfy-server.yml -l ntfy_primary
+```
+
 ### QEMU alias-mode execution against the installer VM
 
 Use the dedicated alias-mode inventory when the installer VM is launched with
@@ -121,6 +135,24 @@ port.
 vim inventories/qemu-alias/group_vars/install_targets.yml
 ansible-playbook -i inventories/qemu-alias/hosts.yml playbooks/install.yml -l target_system_remote
 ```
+
+The qemu-alias validation inventory is also the current test bed for ZFS/kernel
+compatibility debugging. It now demonstrates:
+
+- source-built `sys-kernel/gentoo-kernel` rather than `gentoo-kernel-bin`
+- package atom overrides for exact kernel and ZFS versions
+- `package.accept_keywords` fragments for newer `~amd64` OpenZFS builds
+- `/etc/kernel/config.d/*.config` snippets for targeted kernel config changes
+
+Relevant inventory keys:
+
+- `kernel_package_atom_override`
+- `zfs_package_atom`
+- `zfs_kmod_package_atom`
+- `portage_package_use_files`
+- `portage_package_accept_keywords_files`
+- `kernel_config_fragment_files`
+- the default `llvm-clang-hardened-portage.yml` profile definition
 
 ### Path B: iPXE asset publication for fleet bootstrapping
 
@@ -468,6 +500,7 @@ Machine-readable workflow definitions live under:
 
 - `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-vm-install-and-boot.json`
 - `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/stage4-destination-install-sequences.json`
+- `/root/RFC_Codex_Gentoo-Stage4-LLVM/docs/workflows/ntfy-server-deployment.json`
 
 Those manifests document the repeatable operator sequence for:
 
@@ -477,6 +510,7 @@ Those manifests document the repeatable operator sequence for:
 - control-flow pipeline watching
 - boot-role repair iterations
 - target-disk boot validation
+- private ntfy server deployment and health validation
 
 ## ntfy notifications
 
@@ -528,6 +562,63 @@ The action plugin can be used inside playbooks for explicit controller-side mess
     state: notice
     attrs:
       tags: [hammer_and_wrench]
+```
+
+### Package pins and kernel config fragments
+
+The installer supports package pinning and distribution-kernel config snippets
+without requiring a full custom savedconfig kernel.
+
+Package atom overrides:
+
+```yaml
+kernel_package_atom_override: =sys-kernel/gentoo-kernel-6.1.163
+zfs_package_atom: =sys-fs/zfs-2.4.1
+zfs_kmod_package_atom: =sys-fs/zfs-kmod-2.4.1
+```
+
+Package accept-keywords fragments:
+
+```yaml
+portage_package_accept_keywords_files:
+  zfs-testing: |
+    =sys-fs/zfs-2.4.1 ~amd64
+    =sys-fs/zfs-kmod-2.4.1 ~amd64
+```
+
+Kernel config fragments merged by `sys-kernel/gentoo-kernel`:
+
+```yaml
+kernel_config_fragment_files:
+  90-zfs-ftrace.config: |
+    # CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS is not set
+    # CONFIG_DYNAMIC_FTRACE_WITH_ARGS is not set
+```
+
+These snippets are written to:
+
+- `/etc/portage/package.accept_keywords/*`
+- `/etc/kernel/config.d/*.config`
+
+## Private ntfy server deployment
+
+This subtree now also carries a dedicated private ntfy server role and playbook:
+
+- `playbooks/ntfy-server.yml`
+- `roles/ntfy_server`
+- `inventories/examples/group_vars/ntfy_servers.yml`
+
+The role is OpenRC-oriented and supports:
+
+- `ntfy_server_install_method: binary` (default, upstream release tarball)
+- `ntfy_server_install_method: package` (override for distros with a packaged ntfy)
+- declarative `auth-users` and `auth-access` policy in `server.yml`
+- a repo-managed OpenRC `init.d` and `conf.d`
+
+Run a syntax check before touching a live host:
+
+```bash
+ansible-playbook -i inventories/examples/hosts.yml playbooks/ntfy-server.yml --syntax-check
 ```
 
 ### Translated modular roles
@@ -682,18 +773,33 @@ If you want to carry house policy as data instead of editing the roles, set
 
 - `repository_enable`
 - `make_conf_append`
+- `env_files`
+- `package_env_files`
 - `package_use_files`
+- `package_accept_keywords_files`
+- `package_license_files`
 - `package_mask_files`
 - `package_unmask_files`
 - `package_mask_symlinks`
-- `package_accept_keywords_files`
-- `env_files`
-- `package_env_files`
+- `portage_config_files`
+- `patch_files`
+- `kernel_strategy`
+- `kernel_package_atom_override`
+- `kernel_config_fragment_files`
+- `kernel_config`
+- `kernel_config_requirements`
+- `kernel_requirements`
 - `package_atoms`
 - `package_list_files`
 - `modules_load_files`
 - `openrc_services_enable`
+- `openrc_services_available`
 - `cloud_init`
+- `roles`
+- `service_ports`
+- `mutation_policy`
+- `boot_storage_policy`
+- `rdma_fabric`
 - `jenkins_controller`
 - `distcc_farm`
 
@@ -712,6 +818,8 @@ The repo uses a layered profile language:
 
 Current Stage 5 role classes:
 
+- `baremetal-base`
+- `baremetal-hypervisor`
 - `metal-host`
 - `virtual-host`
 - `service-container`
@@ -723,11 +831,15 @@ For scalability, Stage 5 package sets should live in external flat files under
 `profile-package-lists/` and be referenced through `package_list_files` instead
 of embedding long `package_atoms` lists inline.
 
+Service-level atoms that bind package lists, OpenRC services, kernel modules,
+and protocol surfaces are tracked under `profile-service-atoms/`.
+
 The included Stage 4 presets:
 
 - `profile-definitions/hardened-llvm-stage4.yml`
 - `profile-definitions/hardened-llvm-stage4-split-usr.yml`
 - `profile-definitions/hardened-llvm-stage4-merged-usr.yml`
+- `profile-definitions/llvm-clang-hardened-portage.yml`
 
 The compatibility alias `hardened-llvm-stage4.yml` retains the split-usr
 baseline. The explicit split-usr and merged-usr variants make usr-layout
@@ -740,19 +852,41 @@ The Stage 4 policy adds:
 - installs extra `package.use` fragments for LLVM and elogind replacements
 - installs `package.mask` fragments including the `without-systemd` mask link
 
+The LLVM/Clang Portage baseline preset:
+
+- keeps the default compiler, linker, and binutils-facing variables on LLVM
+- appends hardening and ThinLTO settings to the generated `make.conf`
+- writes `/etc/portage/env/gcc-compat.conf`
+- constrains GCC fallback to explicit `package.env` atoms such as `sys-devel/gcc`
+  and `sys-libs/glibc`
+- documents validated exact-version pin sets in:
+  `profile-definitions/llvm-clang-hardened-portage.metadata.yml`
+
+This LLVM/Clang Portage baseline is now enabled by default in the shipped
+example, qemu-alias, and vm-stage4 inventories. Override `profile_definition_files`
+explicitly only if you want to replace that default policy.
+
 Example:
 
 ```yaml
 profile_definition_files:
-  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-split-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 ```
 
 ## Gentoo system profiles
 
-The repo now carries a reusable LLVM/Clang Portage baseline plus three stackable
-system-profile overlays plus modular cloud-init overlays:
+The repo now carries a reusable LLVM/Clang Portage baseline, explicit base role
+overlays, virtual-machine overlays, and modular cloud-init overlays:
 
 - `profile-definitions/llvm-clang-hardened-portage.yml`
+- `profile-definitions/base-minimal-nox.yml`
+- `profile-definitions/base-minimal-xorg-slim.yml`
+- `profile-definitions/base-hypervisor-xen.yml`
+- `profile-definitions/base-hypervisor-qemu-libvirt.yml`
+- `profile-definitions/base-hypervisor-xen-qemu-libvirt.yml`
+- `profile-definitions/virt-minimal.yml`
+- `profile-definitions/virt-xorg.yml`
 - `profile-definitions/cloud-init-baremetal.yml`
 - `profile-definitions/cloud-init-vm.yml`
 - `profile-definitions/hypervisor-xen-qemu-libvirt-host.yml`

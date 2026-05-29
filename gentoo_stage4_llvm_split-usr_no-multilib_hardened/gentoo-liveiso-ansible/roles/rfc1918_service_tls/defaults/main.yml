@@ -1,0 +1,8 @@
+---
+rfc1918_service_tls_enabled: false
+rfc1918_service_tls_apply: false
+rfc1918_service_tls_service_ids: []
+rfc1918_service_tls_matrix: "{{ service_tls_certificate_matrix | default({}) }}"
+rfc1918_service_tls_secret_namespace: "{{ service_tls_certificate_policy.secret_namespace | default('vault_service_tls_certificates') }}"
+rfc1918_service_tls_install_root: "{{ install_target_root | default('') }}"
+rfc1918_service_tls_reload_live_services: true

@@ -1,0 +1,29 @@
+---
+forge_memory_object_store_default_enabled: false
+forge_memory_object_store_default_provider: external-s3-compatible
+forge_memory_object_store_default_endpoint_url: https://s3.internal.example.invalid
+forge_memory_object_store_default_region: rfc1918
+forge_memory_object_store_default_bucket: forge-memory
+forge_memory_object_store_default_prefix: forge-memory/v1
+forge_memory_object_store_default_spool_root: /var/lib/forge-memory/spool
+forge_memory_object_store_default_data_root: /srv/forge-memory-object-store
+forge_memory_object_store_default_config_dir: /etc/forge-memory
+forge_memory_object_store_default_log_root: /var/log/forge-memory
+forge_memory_object_store_default_audit_log_prefix: forge-memory/v1/audit
+forge_memory_object_store_default_service_user: forge-memory
+forge_memory_object_store_default_service_group: forge-memory
+forge_memory_object_store_default_runlevel: default
+forge_memory_object_store_default_object_lock_enabled: true
+forge_memory_object_store_default_versioning_enabled: true
+forge_memory_object_store_default_sse_algorithm: AES256
+forge_memory_object_store_default_lifecycle_retention_days: 365
+forge_memory_object_store_default_noncurrent_retention_days: 90
+forge_memory_object_store_default_agent_namespace_template: agents/{agent_id}/sessions/{session_id}
+forge_memory_object_store_default_allowed_write_operations:
+  - PutObject
+  - PutObjectTagging
+  - PutObjectLegalHold
+forge_memory_object_store_default_allowed_read_operations:
+  - GetObject
+  - ListBucket
+  - GetObjectTagging

@@ -1,0 +1,133 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-storage-nfs-client.packages
+  package_use_files:
+    40-storage-nfs-client: |
+      net-fs/nfs-utils kerberos nfsv4 nfsv41
+      net-nds/openldap sasl
+      sys-auth/sssd sudo
+  package_accept_keywords_files:
+    40-storage-nfs-client: |
+      # Keep empty by default; pin NFS/RDMA storage exceptions per-host.
+  kernel_config:
+    storage_nfs_client:
+      CONFIG_NFS_FS: y
+      CONFIG_NFS_V3: y
+      CONFIG_NFS_V4: y
+      CONFIG_NFS_V4_1: y
+      CONFIG_NFS_V4_2: y
+      CONFIG_ROOT_NFS: y
+      CONFIG_NFS_SWAP: y
+      CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN: rfc1918.host
+      CONFIG_SUNRPC: y
+      CONFIG_SUNRPC_GSS: y
+      CONFIG_SUNRPC_XPRT_RDMA: m
+      CONFIG_RPCRDMA: m
+      CONFIG_INFINIBAND: m
+      CONFIG_INFINIBAND_ADDR_TRANS: y
+      CONFIG_RDMA_RXE: m
+      CONFIG_BLK_DEV_DM: y
+      CONFIG_DM_MULTIPATH: m
+  openrc_services_enable:
+    - rpcbind
+    - nfsmount
+  storage_protocols:
+    supported:
+      - nfsv4_2_tcp
+      - nfsv4_2_tcp_multipath
+      - nfsv4_1_tcp
+      - nfsv3_tcp_rescue
+      - nfsv4_tcp_rbac_uid_gid
+      - nfs_tcp
+      - nfs_rdma
+      - nfs_multipath
+    default: nfsv4_2_tcp
+    lacp_default: nfsv4_2_tcp_multipath
+    non_lacp_default: nfsv4_1_tcp
+    baremetal_vm_default: true
+    container_default: false
+    identity_overlay_dependency: aaa-domain-client
+    notes:
+      - NFSv4.2 over TCP with nconnect is the normal default for LACP-capable hosts.
+      - NFSv4.1 over TCP is the normal default for hosts without LACP links.
+      - NFSv3 over TCP remains a compatibility profile for early bring-up and rescue workflows.
+      - NFSv4 requires centralized AAA, SSSD, and stable UID/GID maps from aaa-domain-client.
+      - Floating home directories require FreeIPA UID/GID parity before enablement.
+      - NFS-RDMA is opt-in because it requires a validated RDMA fabric, NIC driver, and matching kernel modules.
+      - NFS multipath is modeled as client policy with nconnect/pNFS where supported; block multipath remains multipath-tools.
+  nfs_storage_client:
+    enabled: true
+    protocol_default: nfsv4_2_tcp
+    non_lacp_protocol_default: nfsv4_1_tcp
+    lacp_protocol_default: nfsv4_2_tcp_multipath
+    require_aaa_for_nfsv4: true
+    identity_profile_dependency: aaa-domain-client
+    enable_nfsv3: true
+    enable_nfsv4: true
+    enable_rdma: false
+    enable_multipath: false
+    nconnect: 4
+    idmap_domain: rfc1918.host
+    fstab_safety_options:
+      - nofail
+      - soft
+    mount_defaults:
+      nfsv3_tcp_rescue:
+        options:
+          - vers=3
+          - proto=tcp
+          - hard
+          - timeo=600
+          - retrans=2
+          - _netdev
+          - nofail
+          - soft
+      nfsv4_1_tcp:
+        options:
+          - vers=4.1
+          - proto=tcp
+          - hard
+          - sec=sys
+          - _netdev
+          - nofail
+          - soft
+      nfsv4_2_tcp:
+        options:
+          - vers=4.2
+          - proto=tcp
+          - hard
+          - sec=sys
+          - nconnect=4
+          - _netdev
+          - nofail
+          - soft
+      nfsv4_2_tcp_multipath:
+        options:
+          - vers=4.2
+          - proto=tcp
+          - hard
+          - sec=sys
+          - nconnect=8
+          - _netdev
+          - nofail
+          - soft
+      nfsv4_krb5:
+        options:
+          - vers=4.2
+          - proto=tcp
+          - sec=krb5p
+          - nconnect=4
+          - _netdev
+          - nofail
+          - soft
+      nfs_rdma:
+        options:
+          - vers=4.2
+          - proto=rdma
+          - port=20049
+          - hard
+          - sec=sys
+          - _netdev
+          - nofail
+          - soft

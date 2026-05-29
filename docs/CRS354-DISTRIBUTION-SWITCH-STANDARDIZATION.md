@@ -2,8 +2,8 @@
 
 ## Current Evidence
 
-Live CRS354 discovery was captured from serial console `/dev/ttyUSB1` and
-archived outside the repo:
+Live CRS354 discovery was captured from serial console and archived outside the
+repo:
 
 ```text
 /root/operator-private/routeros/crs354/20260504T194533Z
@@ -55,7 +55,36 @@ and asymmetric receive power, so do not use those optics as the reference pair.
 | `sfp-sfpplus3` | QNAP TS435XEU SFP+ 1 | 10G DAC | existing `bond-qnap` member |
 | `sfp-sfpplus4` | QNAP TS435XEU SFP+ 2 | 10G DAC | existing `bond-qnap` member |
 | `qsfpplus1` | future RoCE-v2 RDMA fabric | 40G QSFP+ | disconnected |
-| `qsfpplus2` | future RoCE-v2 RDMA fabric | 40G QSFP+ | disconnected |
+| `qsfpplus2-1` | Thor AGX `mgbe0_0` | QSFP28 lane at 10G | active `bond-thor-podman` member |
+| `qsfpplus2-2` | Thor AGX `mgbe1_0` | QSFP28 lane at 10G | active `bond-thor-podman` member |
+| `qsfpplus2-3` | Thor AGX `mgbe2_0` | QSFP28 lane at 10G | active `bond-thor-kata` member |
+| `qsfpplus2-4` | Thor AGX `mgbe3_0` | QSFP28 lane at 10G | active `bond-thor-kata` member |
+
+Thor AGX `qsfpplus2` LACP work is tracked separately in
+`docs/THOR-CRS354-LACP-PERF-RUNBOOK.md` because it has a distinct validation
+path: `br-kata0 -> CRS354 -> br-podman0`.
+
+## 2026-05-27 Thor LACP Update
+
+CRS354 management was restored by disabling the broken `mgmt-source-rule` that
+forced `172.16.99.7/32` replies into a management routing table without a
+connected `172.16.99.0/24` route. Management reachability from M70 was then
+validated to TCP ports `22`, `80`, `443`, and `8291`.
+
+Thor AGX `qsfpplus2` LACP was applied:
+
+```text
+bond-thor-podman: qsfpplus2-1,qsfpplus2-2, mode=802.3ad, running
+bond-thor-kata:   qsfpplus2-3,qsfpplus2-4, mode=802.3ad, running
+bridge0 ports:    bond-thor-podman, bond-thor-kata, hw=yes
+```
+
+The same-host Thor hairpin path is not a valid throughput acceptance path.
+ICMP across `br-kata0 -> CRS354 -> br-podman0` passed, but TCP iperf3 did not
+produce a reliable result because the two Thor OVS userspace bridges, two OVS
+bonds, and the same CRS354 L2 domain interact badly for local hairpin traffic.
+Use two distinct traffic endpoints, or a routed/VLAN split, for the next
+performance validation.
 
 The CRS309 side of the distribution LACP is `sfp-sfpplus2` plus
 `sfp-sfpplus3`. The CRS354 side is `sfp-sfpplus1` plus `sfp-sfpplus2`.
@@ -88,8 +117,12 @@ Validated state:
 
 ## Planned RouterOS Change
 
-Do not import these commands without serial `/dev/ttyUSB1` attached and a fresh
-pre-change export copied off-device.
+Do not import these commands without the Hasslehoff CRS354 serial path attached
+and a fresh pre-change export copied off-device.
+
+Current serial source of truth is
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`; `/dev/ttyUSB1`
+is only the observed current tty assignment.
 
 CRS354:
 
@@ -136,7 +169,8 @@ Expected CRS354 state:
 
 ## Backout
 
-Use serial `/dev/ttyUSB1`:
+Use CRS354 serial through Hasslehoff
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0`:
 
 ```routeros
 /interface bridge port remove [find where interface="bond-crs309"]
@@ -146,7 +180,8 @@ Use serial `/dev/ttyUSB1`:
 /ip route enable [find where comment="main-default-opnsense"]
 ```
 
-If CRS309-side LACP was already imported, use CRS309 serial `/dev/ttyUSB0`:
+If CRS309-side LACP was already imported, use CRS309 serial through Hasslehoff
+`/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0`:
 
 ```routeros
 /interface bridge port remove [find where interface="bond-crs354"]

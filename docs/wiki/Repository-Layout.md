@@ -9,6 +9,7 @@ RFC_Codex_Gentoo-Stage4-LLVM
 │   └── workflows/
 ├── docs/
 │   └── workflows/
+│       ├── ntfy-server-deployment.json
 ├── gentoo-virt-qemu/
 ├── gentoo_stage4_llvm_split-usr_no-multilib_hardened/
 │   ├── gentoo-liveiso-ansible/
@@ -57,6 +58,7 @@ gentoo-liveiso-ansible
 │   ├── examples/
 │   │   ├── group_vars/install_targets.yml
 │   │   ├── group_vars/netboot_publishers.yml
+│   │   ├── group_vars/ntfy_servers.yml
 │   │   ├── group_vars/routeros_pathb.yml
 │   │   └── hosts.yml
 │   ├── qemu-alias/
@@ -68,12 +70,15 @@ gentoo-liveiso-ansible
 ├── playbooks/
 │   ├── install.yml
 │   ├── netboot-path-b.yml
+│   ├── ntfy-server.yml
 │   ├── routeros-path-b.yml
 │   └── tasks/run_install_stage.yml
 ├── profile-definitions/
 │   ├── hardened-llvm-stage4.yml
 │   ├── hardened-llvm-stage4-split-usr.yml
-│   └── hardened-llvm-stage4-merged-usr.yml
+│   ├── hardened-llvm-stage4-merged-usr.yml
+│   ├── llvm-clang-hardened-portage.metadata.yml
+│   └── llvm-clang-hardened-portage.yml
 ├── roles/
 │   ├── preflight/
 │   ├── liveiso_prepare/
@@ -90,6 +95,7 @@ gentoo-liveiso-ansible
 │   ├── boot/
 │   ├── bootloader/
 │   ├── network/
+│   ├── ntfy_server/
 │   ├── services/
 │   └── finalize/
 ├── scripts/
@@ -116,6 +122,8 @@ gentoo-liveiso-ansible
   top-level Path A installer playbook
 - `playbooks/netboot-path-b.yml`
   top-level Path B iPXE asset publication playbook
+- `playbooks/ntfy-server.yml`
+  standalone private ntfy server deployment playbook
 - `playbooks/routeros-path-b.yml`
   top-level RouterOS CHR role entry point for the Path B lab
 - `playbooks/tasks/run_install_stage.yml`
@@ -127,6 +135,8 @@ gentoo-liveiso-ansible
   general examples for local and remote Path A LiveISO targets plus local Path B publishers
 - `inventories/examples/group_vars/netboot_publishers.yml`
   example Path B iPXE asset publication settings
+- `inventories/examples/group_vars/ntfy_servers.yml`
+  example private ntfy server configuration, auth policy, and listen/base URL settings
 - `inventories/examples/group_vars/routeros_pathb.yml`
   example RouterOS CHR variables for the isolated Path B lab
 - `inventories/qemu-alias/hosts.yml`
@@ -168,6 +178,8 @@ gentoo-liveiso-ansible
   compatibility wrapper around boot orchestration
 - `network`
   OpenRC and network service configuration
+- `ntfy_server`
+  dedicated private ntfy server deployment, config rendering, and OpenRC service management
 - `services`
   data-driven OpenRC service deployment
 - `finalize`
@@ -245,6 +257,7 @@ tests/shell
 ├── test_generate_cloud_init_seed.sh
 ├── test_install_codex_approval_watcher_service.sh
 ├── test_ntfy_tools.sh
+├── test_ntfy_server_role.sh
 ├── test_qemu_launch_cloudinit_vm.sh
 ├── test_qemu_launch_minimal_vm.sh
 ├── test_qemu_launch_stage3_vm.sh

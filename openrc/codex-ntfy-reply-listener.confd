@@ -1,0 +1,14 @@
+# Configuration for codex-ntfy-reply-listener
+
+codex_ntfy_reply_listener_description="Codex ntfy reply listener"
+codex_ntfy_reply_listener_user="root"
+codex_ntfy_reply_listener_group="root"
+codex_ntfy_reply_listener_repo_root="/root/RFC_Codex_Gentoo-Stage4-LLVM"
+codex_ntfy_reply_listener_env_file="/root/.codex/ntfy-pub-subs.export.sh"
+codex_ntfy_reply_listener_state_file="/root/.codex/ntfy-reply-listener-state.json"
+codex_ntfy_reply_listener_queue_dir="/root/.codex/ntfy-replies"
+codex_ntfy_reply_listener_output_log="/var/log/codex-ntfy-reply-listener.log"
+codex_ntfy_reply_listener_error_log="/var/log/codex-ntfy-reply-listener.err.log"
+codex_ntfy_reply_listener_retry="TERM/30/KILL/5"
+codex_ntfy_reply_listener_respawn_delay="5"
+codex_ntfy_reply_listener_respawn_max="0"

@@ -1,0 +1,12 @@
+#!/sbin/openrc-run
+description="RFC99 netboot TFTP publisher"
+command="{{ netboot_tftp_python_interpreter }}"
+command_args="{{ netboot_tftp_server_script_path }} --root {{ netboot_publish_root }} --address {{ netboot_tftp_listen_address }} --port {{ netboot_tftp_listen_port }}"
+command_background="yes"
+pidfile="/run/{{ netboot_tftp_service_name }}.pid"
+output_log="{{ netboot_tftp_log_path }}"
+error_log="{{ netboot_tftp_log_path }}"
+
+depend() {
+  need net
+}

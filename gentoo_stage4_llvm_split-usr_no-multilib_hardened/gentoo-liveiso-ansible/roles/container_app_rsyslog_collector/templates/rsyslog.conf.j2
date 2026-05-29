@@ -14,8 +14,8 @@ template(name="stage5-json" type="list") {
   constant(value="\"@timestamp\":\"") property(name="timereported" dateFormat="rfc3339")
   constant(value="\",\"host\":\"") property(name="hostname")
   constant(value="\",\"program\":\"") property(name="programname")
-  constant(value="\",\"message\":") property(name="msg" format="json")
-  constant(value="}")
+  constant(value="\",\"message\":\"") property(name="msg" format="json")
+  constant(value="\"}")
 }
 
 {% if rsyslog_elasticsearch_enabled | bool %}

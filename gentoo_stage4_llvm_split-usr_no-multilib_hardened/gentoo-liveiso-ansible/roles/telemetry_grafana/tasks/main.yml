@@ -16,7 +16,8 @@
           'root_url': resolved_profile_telemetry.grafana.root_url | default(telemetry_grafana_default_root_url),
           'admin_user': resolved_profile_telemetry.grafana.admin_user | default(telemetry_grafana_default_admin_user),
           'admin_password': resolved_profile_telemetry.grafana.admin_password | default(telemetry_grafana_default_admin_password),
-          'datasources': resolved_profile_telemetry.grafana.datasources | default(telemetry_grafana_default_datasources)
+          'datasources': resolved_profile_telemetry.grafana.datasources | default(telemetry_grafana_default_datasources),
+          'dashboards': resolved_profile_telemetry.grafana.dashboards | default(telemetry_grafana_default_dashboards)
         }
       }}
 
@@ -29,6 +30,11 @@
     - /etc/grafana
     - /etc/grafana/provisioning
     - /etc/grafana/provisioning/datasources
+    - /etc/grafana/provisioning/dashboards
+    - /var/lib/grafana
+    - /var/lib/grafana/dashboards
+    - /var/lib/grafana/plugins
+    - /var/log/grafana
     - /etc/conf.d
   loop_control:
     loop_var: grafana_dir
@@ -53,6 +59,28 @@
         } | to_nice_yaml(indent=2, sort_keys=False)
       }}
   when: telemetry_grafana_enabled
+
+- name: Render Grafana dashboard provider
+  ansible.builtin.template:
+    src: dashboards.yml.j2
+    dest: "{{ install_target_root }}/etc/grafana/provisioning/dashboards/stage5-dashboards.yml"
+    mode: '0644'
+  when:
+    - telemetry_grafana_enabled
+    - resolved_grafana_telemetry.dashboards | length > 0
+
+- name: Render Grafana dashboards
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/var/lib/grafana/dashboards/{{ grafana_dashboard.name }}.json"
+    mode: '0644'
+    content: "{{ grafana_dashboard.content | to_nice_json }}"
+  loop: "{{ resolved_grafana_telemetry.dashboards }}"
+  loop_control:
+    loop_var: grafana_dashboard
+    label: "{{ grafana_dashboard.name }}"
+  when:
+    - telemetry_grafana_enabled
+    - resolved_grafana_telemetry.dashboards | length > 0
 
 - name: Render Grafana OpenRC configuration
   ansible.builtin.template:

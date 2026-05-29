@@ -1,0 +1,31 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-slurm-controller
+  purpose: Stage5 SLURM controller VM for deterministic build, validation, GPU-test, and RDMA-test scheduling.
+  profile_taxonomy:
+    stage: stage5
+    role_class: scheduler-controller
+    role_name: slurm-controller
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-virt-minimal.packages
+      - profile-package-lists/stage5-virtual-host-slurm-controller.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-hardened-portage
+      - virt-minimal
+      - aaa-domain-client
+      - nfs-storage-client
+  package_pins:
+    tracked_atoms:
+      - sys-cluster/slurm
+      - sys-auth/munge
+      - dev-db/mariadb
+      - sys-process/numactl
+  service_segments:
+    - scheduler-control
+    - build-fabric
+    - validation-fabric
+  source_references:
+    - https://packages.gentoo.org/packages/sys-cluster/slurm
+    - https://slurm.schedmd.com/

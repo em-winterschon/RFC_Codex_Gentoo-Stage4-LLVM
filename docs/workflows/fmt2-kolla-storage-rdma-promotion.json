@@ -1,0 +1,157 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "fmt2-kolla-storage-rdma-promotion",
+    "description": "Gate FMT2 Kolla storage and RDMA promotion after API, Nova, Neutron, and observability baselines pass.",
+    "owners": [
+      "forge",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "deployer_vm",
+      "required": true,
+      "default": "ops-fmt2-kolla-deployer-9928",
+      "description": "Rocky Linux 10 Kolla deployer VM."
+    },
+    {
+      "name": "sec_host",
+      "required": true,
+      "default": "kvm-sfo200-sec-9923",
+      "description": "Current positive-control R630 with live ConnectX links."
+    },
+    {
+      "name": "ter_host",
+      "required": true,
+      "default": "kvm-sfo200-ter-9924",
+      "description": "Storage/provisioning anchor and pairwise RDMA peer."
+    },
+    {
+      "name": "pri_host",
+      "required": true,
+      "default": "kvm-sfo200-pri-9922",
+      "description": "Primary Kolla controller candidate; RDMA promotion waits for ConnectX repair."
+    }
+  ],
+  "stages": [
+    {
+      "id": "api-baseline-gate",
+      "summary": "Require API/control plane baseline with Cinder disabled before any storage service promotion.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "${deployer_vm}",
+        "source /etc/kolla/admin-openrc.sh && openstack endpoint list && openstack service list && openstack hypervisor list && openstack network agent list && printf '%s\\n' 'Cinder remains disabled before promotion' 'API/control plane baseline with Cinder disabled' 'keep RDMA out of OpenStack scheduling until later gates pass'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "glance-image-smoke",
+      "summary": "Run Glance image import/export smoke before attaching persistent block storage.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "${deployer_vm}",
+        "source /etc/kolla/admin-openrc.sh && printf '%s\\n' 'Glance image import/export smoke: upload tiny test image, download it, compare checksum, then remove only the test artifact.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "nova-ephemeral-smoke",
+      "summary": "Run Nova ephemeral instance smoke after Glance succeeds.",
+      "cwd": "/root",
+      "command": [
+        "ssh",
+        "${deployer_vm}",
+        "source /etc/kolla/admin-openrc.sh && printf '%s\\n' 'Nova ephemeral instance smoke: create rfc1918.smoke.tiny, boot cirros or equivalent tiny image, confirm ACTIVE, then delete.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "nfs-backend-smoke",
+      "summary": "Validate NFSv3/NFSv4 backend reachability from NASA or ter before enabling Cinder.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'NFS backend smoke' 'NFSv3/NFSv4 backend smoke from NASA or ter' 'validate mount, write, fsync, read, delete, and unmount from the intended Kolla node path before any Cinder backend is enabled.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "cinder-nfs-pilot",
+      "summary": "Promote Cinder NFS only after API, Glance, Nova, and NFS smoke gates pass.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Cinder NFS backend pilot' 'enable Cinder only for the NFS backend pilot after successful NFS backend smoke' 'create one test volume, attach to one test instance, write/read, detach, delete volume, and keep backend disabled if any step fails.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "pairwise-rocev2-rdma-smoke",
+      "summary": "Run pairwise RDMA smoke over independent ConnectX paths before any RDMA storage backend promotion.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Pairwise RoCEv2 RDMA smoke between sec and ter, then pri after ConnectX repair' 'do not use ConnectX LACP before pairwise RDMA evidence' 'keep independent 50GbE links with protocol-layer multipath until one-path-failure evidence is clean.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "nvmeof-iser-pilot",
+      "summary": "Promote NVMe-oF or iSER only after pairwise RoCEv2 smoke passes.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'NVMe-oF promotion gate' 'NVMe-oF or iSER backend pilot' 'validate discovery, connect, multipath, fio smoke, disconnect, and rollback before scheduling OpenStack storage workloads onto RDMA backends.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "nfs-rdma-pilot",
+      "summary": "Promote NFS-RDMA only after standard NFS and pairwise RDMA gates pass.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'NFS-RDMA promotion gate' 'NFS-RDMA backend pilot' 'validate mount over RDMA, write/read/fsync, server/client counters, unmount, fallback, and rollback before production scheduling.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "one-path-failure-reboot-conformance",
+      "summary": "Run one-path-failure and reboot conformance before marking storage/RDMA promoted.",
+      "cwd": "/root",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'one-path-failure' 'reboot conformance' 'disable one independent 50GbE path, verify protocol-layer multipath/failover behavior, restore path, reboot participating nodes, and re-run API/Nova/storage/RDMA smoke before promotion.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

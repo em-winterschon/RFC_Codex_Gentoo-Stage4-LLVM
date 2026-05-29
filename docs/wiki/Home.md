@@ -62,6 +62,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Configurations and Examples](Configurations-and-Examples)
 - [CI Builder Farm](CI-Builder-Farm)
 - [Binpkg Repository](Binpkg-Repository)
+- [Bootloader References](Bootloader-References)
 - [Workstation NsCDE](Workstation-NsCDE)
 - [GMKtek K10 Stage5 Validation](GMKtek-K10-Stage5-Validation)
 - [Container Building](Container-Building)
@@ -69,6 +70,7 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
 - [Identity AAA](Identity-AAA)
 - [Hetzner DNS Automation](Hetzner-DNS-Automation)
 - [FMT2 Infra Upgrade Planning](FMT2-Infra-Upgrade-Planning)
+- [FMT2 R630 HCI Staged Rebuild](FMT2-R630-HCI-Staged-Rebuild)
 - [FMT2 CheckMK Transport](FMT2-CheckMK-Transport)
 - [BigNetwork FMT2 Smoke-Test](BigNetwork-FMT2-Smoke-Test)
 - [Telemetry Observability](Telemetry-Observability)
@@ -118,6 +120,18 @@ It exists to turn the Gentoo install process into a repeatable, inspectable pipe
    - render iPXE bootstrap, menu, role, host, and manifest assets
    - publish them through DHCP/TFTP plus iPXE HTTP or UEFI HTTP + iPXE
    - boot into the Gentoo provisioning environment and then invoke the same installer workflow
+
+## Current Recommended Validation Path
+
+For the current LiveISO host, the validated standard workflow is:
+
+- QEMU alias-mode networking
+- staged Ansible install execution
+- target-disk reboot validation
+- Gentoo-native `sys-fs/zfs` + `sys-fs/zfs-kmod`
+- `gentoo-kernel` with the validated ZFS/ftrace mitigation fragment
+
+Tap/bridge remains a later enhancement, not the required default path.
 
 ## Reference Documents
 

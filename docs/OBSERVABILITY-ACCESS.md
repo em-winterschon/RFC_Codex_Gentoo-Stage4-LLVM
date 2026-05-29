@@ -82,7 +82,7 @@ The example cluster wiring uses:
 - `=app-misc/elasticsearch-9.3.1` as the native Gentoo-compatible Elasticsearch pin
 - `stage5-observability` as the cluster name
 - `elastic-vip.example.internal` as the client-facing Elasticsearch VIP
-- `log-vip.example.internal` as the syslog shipping target
+- `log-sun99-rsyslog.rfc1918.host` as the syslog shipping target
 
 The Path B single-node test profile uses:
 
@@ -92,7 +92,8 @@ The Path B single-node test profile uses:
 - `action.auto_create_index: stage5-*` for rsyslog bulk ingestion
 - a `stage5-syslog*` index template with one shard and zero replicas for
   single-node lab health
-- HAProxy test VIP `10.9.8.92:9200`, backed by the test node
+- SUN99 Elasticsearch VIP `172.16.99.92:9200`, backed by HAProxy and the test node
+- SUN99 rsyslog VIP `172.16.99.93:6514`, backed by HAProxy and the collector
 - explicit `ES_JAVA_HOME=/opt/openjdk-bin-21.0.10_p7`
 - `localmount` ordering for ZFS-backed Elasticsearch paths
 
@@ -114,11 +115,37 @@ registered.
 The `container-haproxy-elasticsearch-test-vip` overlay adds a Path B test
 frontend for Elasticsearch:
 
-- host-side VIP command: resolve the default Path B interface with
-  `ip -o route get 10.9.8.1`, then add `10.9.8.92/32` to that interface
-- Podman published port: `10.9.8.92:9200:9200/tcp`
+- Podman published port: `9200:9200/tcp`
 - HAProxy frontend: `*:9200`
 - backend: `10.9.8.91:9200`
+
+The CCR2004 gateway role renders and has a scoped live apply for a SUN99-facing
+Elasticsearch/search VIP without moving HAProxy into RouterOS containers:
+
+- RouterOS service VIP: `172.16.99.92/32` on `br-lan`
+- DNS: `obs-sun99-esvip-099092.rfc1918.host`
+- CNAME: `obs-sun99-esvip.rfc1918.host`
+- RouterOS DNAT: `172.16.99.92:9200` to
+  `svc-container-services-safe-move-01` at `172.16.99.89:9200`
+- RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:9200`
+  so same-subnet clients receive symmetric replies from the VIP path
+- Dedicated rsyslog service VIP: `172.16.99.93/32` on `br-lan`
+- Dedicated rsyslog DNS: `log-sun99-rsyslog-099093.rfc1918.host`
+- Dedicated rsyslog CNAME: `log-sun99-rsyslog.rfc1918.host`
+- RouterOS DNAT: `172.16.99.93:6514` to
+  `svc-container-services-safe-move-01` at `172.16.99.89:6514`
+- RouterOS hairpin SRCNAT: `172.16.99.0/24` clients to `172.16.99.89:6514`
+  so syslog traffic does not depend on Elasticsearch/search VIP changes
+- the former CCR2004 backend route exceptions through X12AGAIN were removed on
+  `2026-05-10`; `10.9.8.91` is now directly reachable on VLAN1098 from
+  Hasslehoff VM `1091`
+- container-services VM-local `/32` route pins are no longer required; live
+  validation on `2026-05-10` confirmed `172.16.99.89` can reach the Path B
+  Elasticsearch backend through the normal CCR2004 gateway at `172.16.99.1`
+
+RouterOS `7.22.3` and the `arm64` container package are cached under
+`/opt/routeros/mikrotik-official` for future lab work, but production
+observability ingress stays on the Stage4 HAProxy container-service role.
 
 Additional HAProxy service-type definitions now exist for Jenkins, FreeIPA /
 FreeRADIUS, Prometheus, Alertmanager, Grafana, Kibana, Elasticsearch,
@@ -135,8 +162,32 @@ checks through a modular task block, with per-check `target`, `port`,
 Example:
 
 ```bash
-scripts/service_validator.py --target 10.9.8.92 --port 9200 --protocol tcp --service-name elasticsearch-test --json
+scripts/service_validator.py --target 172.16.99.92 --port 9200 --protocol tcp --service-name elasticsearch-test --json
 ```
+
+`scripts/syslog_elasticsearch_validator.py` performs the deeper logging check:
+it emits a unique RFC5424-style syslog marker, then queries Elasticsearch for
+that marker in the configured index pattern and field. This catches receiver,
+template, `omelasticsearch`, HAProxy, and Elasticsearch indexing regressions
+that plain port checks cannot see.
+
+Example:
+
+```bash
+scripts/syslog_elasticsearch_validator.py \
+  --syslog-target 172.16.99.93 \
+  --syslog-port 6514 \
+  --syslog-protocol tcp \
+  --elasticsearch-url http://172.16.99.92:9200 \
+  --index-pattern 'stage5-syslog*' \
+  --field message \
+  --json
+```
+
+The `service_readiness` role supports this as
+`type: syslog_elasticsearch`; the SUN99 container-services inventory now runs
+`rsyslog-elasticsearch-ingest` and `rsyslog-service-vip-ingest` during
+`post_boot` validation.
 
 Serial console helper mapping:
 
@@ -144,14 +195,20 @@ Serial console helper mapping:
 scripts/watch-vm-serial.sh --vm elasticsearch-test
 ```
 
-Live Path B validation on `10.9.8.89` currently confirms:
+Live SUN99 container-services validation on `172.16.99.89` currently confirms:
 
 - `rsyslog-collector`, `nginx`, and `haproxy` start from generated Podman
   wrappers.
-- direct nginx ingress on `10.9.8.89:8080` returns HTTP `200`.
-- HAProxy routes default HTTP traffic to nginx on `10.9.8.89:80`.
-- rsyslog collector receives TCP messages on `10.9.8.89:514`.
-- HAProxy exposes the Elasticsearch test VIP on `10.9.8.92:9200`.
+- direct nginx ingress on `172.16.99.89:8080` returns HTTP `200`.
+- HAProxy routes default HTTP traffic to nginx on `172.16.99.89:80`.
+- rsyslog collector receives TCP messages on `172.16.99.89:514`.
+- HAProxy forwards syslog TCP from `172.16.99.89:6514` to the collector.
+- HAProxy exposes Elasticsearch through the SUN99 VIP on `172.16.99.92:9200`.
+- CCR2004 exposes dedicated syslog ingress through
+  `log-sun99-rsyslog.rfc1918.host` / `172.16.99.93:6514`.
+- rsyslog collector forwards TCP syslog into Elasticsearch through the
+  `172.16.99.92:9200` HAProxy VIP; a unique `forge-rsyslog-es-smoke-*` marker was
+  searchable in `stage5-syslog.message`.
 - ntfy is live on Hasslehoff VM `1089` behind HAProxy at
   `172.16.99.96:80`, with service names
   `msg-sun99-ntfysys-099096.rfc1918.host` and
@@ -163,8 +220,28 @@ Live Elasticsearch validation on `10.9.8.91` currently confirms:
 - Elasticsearch `9.3.1` responds on HTTP.
 - cluster health is `green`.
 - `elasticsearch_exporter` serves metrics on `tcp/9114`.
-- a test document can be written to and read back from `stage5-syslog`,
-  validating the index settings required by rsyslog `omelasticsearch`.
+- test documents and rsyslog-ingested documents can be written to and read back
+  from `stage5-syslog`, validating the index settings required by rsyslog
+  `omelasticsearch`.
+
+Live Kibana validation on `172.16.99.67` currently confirms:
+
+- Hasslehoff VM `1067`, `obs-sun99-kibana-099067`, boots as a Stage4/OpenRC VM.
+- Kibana `9.3.1` is installed from the verified Elastic upstream tarball because
+  Gentoo `www-apps/kibana-bin-7.17.25` is incompatible with Elasticsearch
+  `9.3.1`.
+- `/api/status` returns HTTP `200` with overall level `available`.
+- Kibana now uses the CCR2004 SUN99 Elasticsearch VIP
+  `http://172.16.99.92:9200`.
+- CCR2004 provides SUN99 VIP `obs-sun99-esvip-099092.rfc1918.host` /
+  `172.16.99.92` with DNAT to the container-services HAProxy listener,
+  providing the planned non-Path-B client front door.
+- the default Kibana data view is `stage5-syslog*` with `@timestamp`.
+- OpenRC exports `TZ=UTC`; without that, Kibana's bundled Node runtime reports
+  `Etc/Unknown` and Moment Timezone terminates the process.
+- X12AGAIN still carries temporary Path-B transit/SNAT for the Elasticsearch
+  backend path; do not retire it until VLAN `1098` and the backend route are
+  moved fully onto the physical CCR2004/spine fabric.
 
 If an existing test index was created before the zero-replica template was
 installed, apply the rendered helper and update the existing index settings:
@@ -176,10 +253,14 @@ curl -XPUT http://127.0.0.1:9200/stage5-syslog/_settings \
   -d '{"index":{"number_of_replicas":0}}'
 ```
 
-The `10.9.8.92:9200` HAProxy VIP is defined, but live exposure still depends
-on redeploying the container-services host into an installed Podman-ready
-state. The current host context at `10.9.8.89` is not a reliable installed
-container host for this validation pass.
+The live rsyslog-to-Elasticsearch validation found and corrected one collector
+template issue: `message` must be quoted in the rendered JSON while
+`property(name="msg" format="json")` handles escaping. Without that correction,
+`omelasticsearch` rejects bulk requests before they reach Elasticsearch.
+
+Live validation on `2026-05-10` confirmed that a unique TCP syslog marker sent
+to `172.16.99.89:514` is searchable in `stage5-syslog.message` through
+`http://172.16.99.92:9200`.
 
 ## NetBox
 
@@ -198,9 +279,8 @@ The current overlay is opt-in. It is not forced onto every example host yet.
 
 ## Remaining Work
 
-1. Reapply the container-services profile with `container-haproxy-elasticsearch-test-vip`.
-2. Validate `10.9.8.92:9200` with `service_validator.py` after HAProxy is live.
-3. Complete a live rsyslog container-to-Elasticsearch forwarding run through
-   the HAProxy VIP.
-4. Validate the native Gentoo `kibana-bin` service behavior on a fresh VM.
-5. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.
+1. Promote the live Kibana upstream-tarball workflow into a full Ansible apply
+   path.
+2. Move the remaining Path-B backend dependency off X12AGAIN once VLAN `1098`
+   and the Elasticsearch backend path are owned by the CCR2004/spine fabric.
+3. Extend `netbox_connector` from snapshots into push or reconciliation workflows if desired.

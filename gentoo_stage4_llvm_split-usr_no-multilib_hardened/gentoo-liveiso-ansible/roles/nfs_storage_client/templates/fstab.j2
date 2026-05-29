@@ -1,0 +1,10 @@
+{% for mount in resolved_nfs_storage_client.mounts %}
+{% set safety_options = resolved_nfs_storage_client.fstab_safety_options | default(['nofail', 'soft']) %}
+{% set default_options = ['vers=4.2', 'proto=tcp', 'sec=sys', 'nconnect=' ~ resolved_nfs_storage_client.nconnect, '_netdev'] %}
+{% if mount.options is string %}
+{{ mount.src }} {{ mount.path }} {{ mount.fstype | default('nfs') }} {{ mount.options }},{{ safety_options | join(',') }} {{ mount.dump | default(0) }} {{ mount.passno | default(0) }}
+{% else %}
+{% set option_list = mount.options | default(default_options) %}
+{{ mount.src }} {{ mount.path }} {{ mount.fstype | default('nfs') }} {{ (option_list + safety_options) | unique | join(',') }} {{ mount.dump | default(0) }} {{ mount.passno | default(0) }}
+{% endif %}
+{% endfor %}

@@ -1,0 +1,4 @@
+# Managed by gentoo-liveiso-ansible.
+nut_textfile_collector_interval={{ resolved_nut_monitoring.collector_interval_seconds | quote }}
+nut_textfile_collector_ups={{ (resolved_nut_monitoring.device_name ~ '@localhost') | quote }}
+nut_textfile_collector_output={{ resolved_nut_monitoring.textfile_output | quote }}

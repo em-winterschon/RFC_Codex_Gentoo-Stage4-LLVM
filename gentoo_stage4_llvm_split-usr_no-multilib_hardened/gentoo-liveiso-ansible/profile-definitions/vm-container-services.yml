@@ -64,8 +64,13 @@ gentoo_profile_definition:
   container_app_profiles:
     ntfy:
       enabled: true
-      image: docker.io/binwiederhier/ntfy:v2.14.0
-      pull_policy: missing
+      image: localhost/rfc1918/ntfy:v2.14.0
+      upstream_image: docker.io/binwiederhier/ntfy:v2.14.0
+      pull_policy: never
+      preload:
+        required: true
+        archive_path: /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive
+        sha256_file: /var/lib/container-services/preload/ntfy-v2.14.0-amd64.oci-archive.sha256
       network: apps
       ip_address: 10.77.1.20
       backend_port: 8080
@@ -136,6 +141,10 @@ gentoo_profile_definition:
         bind: "*:443"
         container_dir: /etc/haproxy/tls
         cert_path: /etc/haproxy/tls/msg-sun99-ntfysys.pem
+        crt_list: /etc/haproxy/tls/crt-list.txt
+        crt_list_entries:
+          - /etc/haproxy/tls/msg-sun99-ntfysys.pem
+          - /etc/haproxy/tls/obs-sun99-esvip.pem
         certificate_authority: rfc1918_private_ca
         certificate_source: vault-or-runtime
         cert_sans:

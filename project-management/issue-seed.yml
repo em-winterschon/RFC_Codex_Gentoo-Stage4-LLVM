@@ -1,0 +1,79 @@
+settings:
+  project_title: RFC Codex Infrastructure Roadmap
+  roadmap_source: docs/ROADMAP-AND-TODO.md
+  exclude_statuses:
+    - completed
+  prefix_milestones:
+    AAA: Identity/RBAC/AAA
+    CI: Builder Farm
+    CP: Critical Path
+    DNS: DNS Automation
+    FMT2: FMT2 Recovery
+    LLM: LLM/RAG Services
+    LOG: Logging/Search
+    MT: Critical Path
+    OBS: Observability
+    PNR: NetBox/IPAM/DCIM
+    REPO: Repository Proxy
+    ST: Container Services
+    WS: Workstation Stage5
+  prefix_areas:
+    AAA: identity-aaa
+    CI: builder-farm
+    CP: critical-path
+    DNS: dns-automation
+    FMT2: fmt2-recovery
+    LLM: llm-rag-services
+    LOG: logging-search
+    MT: critical-path
+    OBS: observability
+    PNR: netbox-ipam-dcim
+    REPO: repository-proxy
+    ST: container-services
+    WS: workstation
+issues:
+  - id: PM-001
+    title: Bootstrap GitHub Issues, milestones, and project board from the roadmap
+    milestone: MCP/Trac Control Plane
+    labels:
+      - type:roadmap-task
+      - area:mcp-trac-control-plane
+      - status:active
+      - priority:high
+    body: |
+      Create the repo-native issue templates, milestone catalog, label catalog,
+      and dry-run-first GitHub seeding workflow used while Trac and custom MCP
+      integrations are evaluated.
+
+      Removal condition: labels, milestones, seeded issues, and project board
+      are reproducible from repo data without using GitHub Actions.
+  - id: PM-002
+    title: Enable GitHub Projects v2 board creation scope
+    milestone: MCP/Trac Control Plane
+    labels:
+      - type:blocker
+      - area:mcp-trac-control-plane
+      - status:blocked
+      - priority:high
+    body: |
+      GitHub issue, label, and milestone seeding works with the current Forge
+      token. GitHub Projects v2 board creation is blocked because the token is
+      missing `project` / `read:project` scope.
+
+      Removal condition: a token with GitHub Projects v2 scope is available to
+      the local seed workflow and `scripts/github_project_seed.py --apply
+      --create-project` creates or confirms the project board.
+  - id: MCP-001
+    title: Evaluate self-hosted MCP runtime and safe Trac integration
+    milestone: MCP/Trac Control Plane
+    labels:
+      - type:roadmap-task
+      - area:mcp-trac-control-plane
+      - status:ready
+      - priority:normal
+    body: |
+      Keep Trac and MCP integration in design/evaluation while current project
+      tracking uses GitHub Issues and milestones.
+
+      Removal condition: self-hosted MCP runtime and Trac wrapper design are
+      accepted with explicit read/write tool allowlists and audit controls.

@@ -151,5 +151,6 @@ python3 scripts/netbox_apply_inventory_intake.py \
 ```
 
 The first live structured intake pass created the missing Proxmox and Stage4
-service cluster records plus the `rsyslog-ingest-vip` and `elasticsearch-vip`
+service cluster records plus the `log-sun99-rsyslog-099093` and
+`elasticsearch-vip`
 IP records. A second apply pass completed with `0` creates and `0` updates.

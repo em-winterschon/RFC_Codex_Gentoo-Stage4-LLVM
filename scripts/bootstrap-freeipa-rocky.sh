@@ -7,6 +7,8 @@ IPA_FQDN="${IPA_FQDN:-ipa01.rfc1918.host}"
 IPA_REALM="${IPA_REALM:-RFC1918.HOST}"
 IPA_DOMAIN="${IPA_DOMAIN:-rfc1918.host}"
 IPA_IP="${IPA_IP:-172.16.99.63}"
+IPA_IDSTART="${IPA_IDSTART:-200000}"
+IPA_IDMAX="${IPA_IDMAX:-399999}"
 IDENTITY_SECRET_FILE="${IDENTITY_SECRET_FILE:-/root/operator-private/identity/ipa01.env}"
 
 mkdir -p "$(dirname "${IDENTITY_SECRET_FILE}")"
@@ -31,13 +33,17 @@ ssh -o BatchMode=yes -o ConnectTimeout=20 "${ssh_target}" sudo bash -s -- \
   "${IPA_FQDN}" \
   "${IPA_REALM}" \
   "${IPA_DOMAIN}" \
-  "${IPA_IP}" << 'REMOTE'
+  "${IPA_IP}" \
+  "${IPA_IDSTART}" \
+  "${IPA_IDMAX}" << 'REMOTE'
 set -euo pipefail
 
 ipa_fqdn="$1"
 ipa_realm="$2"
 ipa_domain="$3"
 ipa_ip="$4"
+ipa_idstart="$5"
+ipa_idmax="$6"
 
 # shellcheck source=/dev/null
 source /root/stage5-identity/bootstrap.env
@@ -63,6 +69,8 @@ if ! command -v ipa >/dev/null 2>&1 || ! ipa server-find >/dev/null 2>&1; then
     --domain "${ipa_domain}" \
     --hostname "${ipa_fqdn}" \
     --ip-address "${ipa_ip}" \
+    --idstart "${ipa_idstart}" \
+    --idmax "${ipa_idmax}" \
     --no-ntp \
     --setup-kra \
     --ds-password "${IPA_DS_PASSWORD}" \
