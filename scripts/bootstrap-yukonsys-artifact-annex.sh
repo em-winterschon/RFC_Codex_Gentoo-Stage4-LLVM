@@ -13,7 +13,7 @@ REMOTE_PATH="/mnt/nasa/forge/git-annex/YukonSYS-Artifact-Annex"
 REPO_PATH="/opt/org-repos/yukon.systems/YukonSYS-Artifact-Annex"
 
 usage() {
-  cat <<'USAGE'
+  cat << 'USAGE'
 Usage: bootstrap-yukonsys-artifact-annex.sh [options]
 
 Options:
@@ -53,70 +53,70 @@ run() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --repo)
-      REPO_PATH="${2:?missing --repo value}"
-      shift 2
-      ;;
-    --remote-path)
-      REMOTE_PATH="${2:?missing --remote-path value}"
-      shift 2
-      ;;
-    --remote-name)
-      REMOTE_NAME="${2:?missing --remote-name value}"
-      shift 2
-      ;;
-    --gpg-key)
-      GPG_KEY="${2:?missing --gpg-key value}"
-      shift 2
-      ;;
-    --backend)
-      BACKEND="${2:?missing --backend value}"
-      shift 2
-      ;;
-    --remote-encryption)
-      REMOTE_ENCRYPTION="${2:?missing --remote-encryption value}"
-      shift 2
-      ;;
-    --remote-mac)
-      REMOTE_MAC="${2:?missing --remote-mac value}"
-      shift 2
-      ;;
-    --numcopies)
-      NUMCOPIES="${2:?missing --numcopies value}"
-      shift 2
-      ;;
-    --dry-run)
-      DRY_RUN=1
-      shift
-      ;;
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    *)
-      die "unknown argument: $1"
-      ;;
+  --repo)
+    REPO_PATH="${2:?missing --repo value}"
+    shift 2
+    ;;
+  --remote-path)
+    REMOTE_PATH="${2:?missing --remote-path value}"
+    shift 2
+    ;;
+  --remote-name)
+    REMOTE_NAME="${2:?missing --remote-name value}"
+    shift 2
+    ;;
+  --gpg-key)
+    GPG_KEY="${2:?missing --gpg-key value}"
+    shift 2
+    ;;
+  --backend)
+    BACKEND="${2:?missing --backend value}"
+    shift 2
+    ;;
+  --remote-encryption)
+    REMOTE_ENCRYPTION="${2:?missing --remote-encryption value}"
+    shift 2
+    ;;
+  --remote-mac)
+    REMOTE_MAC="${2:?missing --remote-mac value}"
+    shift 2
+    ;;
+  --numcopies)
+    NUMCOPIES="${2:?missing --numcopies value}"
+    shift 2
+    ;;
+  --dry-run)
+    DRY_RUN=1
+    shift
+    ;;
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  *)
+    die "unknown argument: $1"
+    ;;
   esac
 done
 
 case "${BACKEND}" in
-  SHA256E) ;;
-  SHA1 | SHA1E | MD5 | MD5E | WORM | URL)
-    die "forbidden Git-Annex backend: ${BACKEND}"
-    ;;
-  *)
-    die "unsupported YukonSYS artifact-plane backend: ${BACKEND}; use SHA256E"
-    ;;
+SHA256E) ;;
+SHA1 | SHA1E | MD5 | MD5E | WORM | URL)
+  die "forbidden Git-Annex backend: ${BACKEND}"
+  ;;
+*)
+  die "unsupported YukonSYS artifact-plane backend: ${BACKEND}; use SHA256E"
+  ;;
 esac
 
 case "${REMOTE_ENCRYPTION}" in
-  hybrid | pubkey | sharedpubkey | none) ;;
-  shared)
-    die "remote encryption=shared stores a shared cipher in git; use hybrid"
-    ;;
-  *)
-    die "unsupported remote encryption mode: ${REMOTE_ENCRYPTION}"
-    ;;
+hybrid | pubkey | sharedpubkey | none) ;;
+shared)
+  die "remote encryption=shared stores a shared cipher in git; use hybrid"
+  ;;
+*)
+  die "unsupported remote encryption mode: ${REMOTE_ENCRYPTION}"
+  ;;
 esac
 
 if [[ "${REMOTE_ENCRYPTION}" != "none" && -z "${GPG_KEY}" ]]; then
@@ -128,9 +128,9 @@ if [[ "${NUMCOPIES}" -lt 2 ]]; then
 fi
 
 if [[ "${DRY_RUN}" == 0 ]]; then
-  command -v git >/dev/null 2>&1 || die "git is required"
-  command -v git-annex >/dev/null 2>&1 || command -v git-annex-shell >/dev/null 2>&1 || true
-  git annex version >/dev/null 2>&1 || die "git-annex is required"
+  command -v git > /dev/null 2>&1 || die "git is required"
+  command -v git-annex > /dev/null 2>&1 || command -v git-annex-shell > /dev/null 2>&1 || true
+  git annex version > /dev/null 2>&1 || die "git-annex is required"
 fi
 
 run mkdir -p "${REPO_PATH}"

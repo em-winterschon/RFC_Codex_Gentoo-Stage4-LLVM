@@ -79,13 +79,13 @@ assert_file_contains "${plan}" 'forge6'
 
 bash -n "${script}"
 dry_run_output="$("${script}" --dry-run --repo /tmp/yukonsys-artifact-annex-test --remote-path /mnt/nasa/forge/git-annex/YukonSYS-Artifact-Annex --gpg-key TESTKEY 2>&1)"
-grep -Fq -- 'git annex init "forge-artifact-plane"' <<<"${dry_run_output}" || fail "dry-run missing git annex init"
-grep -Fq -- 'git config annex.backend SHA256E' <<<"${dry_run_output}" || fail "dry-run missing SHA256E config"
-grep -Fq -- 'git config annex.numcopies 2' <<<"${dry_run_output}" || fail "dry-run missing numcopies config"
-grep -Fq -- 'type=directory' <<<"${dry_run_output}" || fail "dry-run missing directory special remote"
-grep -Fq -- 'encryption=hybrid' <<<"${dry_run_output}" || fail "dry-run missing hybrid encryption"
-grep -Fq -- 'mac=HMACSHA256' <<<"${dry_run_output}" || fail "dry-run missing HMACSHA256"
-if grep -Fq -- 'Docker' <<<"${dry_run_output}"; then
+grep -Fq -- 'git annex init "forge-artifact-plane"' <<< "${dry_run_output}" || fail "dry-run missing git annex init"
+grep -Fq -- 'git config annex.backend SHA256E' <<< "${dry_run_output}" || fail "dry-run missing SHA256E config"
+grep -Fq -- 'git config annex.numcopies 2' <<< "${dry_run_output}" || fail "dry-run missing numcopies config"
+grep -Fq -- 'type=directory' <<< "${dry_run_output}" || fail "dry-run missing directory special remote"
+grep -Fq -- 'encryption=hybrid' <<< "${dry_run_output}" || fail "dry-run missing hybrid encryption"
+grep -Fq -- 'mac=HMACSHA256' <<< "${dry_run_output}" || fail "dry-run missing HMACSHA256"
+if grep -Fq -- 'Docker' <<< "${dry_run_output}"; then
   fail "dry-run referenced Docker"
 fi
 
