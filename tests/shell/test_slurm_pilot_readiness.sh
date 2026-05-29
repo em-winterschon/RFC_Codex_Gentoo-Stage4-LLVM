@@ -6,6 +6,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 DOC="${REPO_ROOT}/docs/SLURM-PILOT-BRINGUP.md"
 WIKI="${REPO_ROOT}/docs/wiki/SLURM-Pilot-Bringup.md"
+GAP_DOC="${REPO_ROOT}/docs/SLURM-PILOT-GAP-ANALYSIS-2026-05-25.md"
+GAP_WIKI="${REPO_ROOT}/docs/wiki/SLURM-Pilot-Gap-Analysis-2026-05-25.md"
+WIKI_HOME="${REPO_ROOT}/docs/wiki/Home.md"
+WIKI_SIDEBAR="${REPO_ROOT}/docs/wiki/_Sidebar.md"
+WIKI_README="${REPO_ROOT}/docs/wiki/README.md"
 PLAN="${REPO_ROOT}/docs/superpowers/plans/2026-05-13-slurm-pilot-control-plane.md"
 WORKFLOW="${REPO_ROOT}/docs/workflows/stage5-slurm-pilot-bringup.json"
 LOCAL_INVENTORY="${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/hosts.yml"
@@ -17,7 +22,7 @@ assert_file_contains() {
   grep -q -- "${pattern}" "${file}"
 }
 
-for file in "${DOC}" "${WIKI}" "${PLAN}" "${WORKFLOW}" "${LOCAL_INVENTORY}" "${INVENTORY_INTAKE}"; do
+for file in "${DOC}" "${WIKI}" "${GAP_DOC}" "${GAP_WIKI}" "${WIKI_HOME}" "${WIKI_SIDEBAR}" "${WIKI_README}" "${PLAN}" "${WORKFLOW}" "${LOCAL_INVENTORY}" "${INVENTORY_INTAKE}"; do
   test -f "${file}"
 done
 
@@ -51,6 +56,18 @@ assert_file_contains "${DOC}" 'validation'
 assert_file_contains "${DOC}" 'gpu-test'
 assert_file_contains "${DOC}" 'rdma-test'
 assert_file_contains "${DOC}" 'Backout'
+assert_file_contains "${DOC}" 'SLURM-PILOT-GAP-ANALYSIS-2026-05-25'
+
+assert_file_contains "${GAP_DOC}" 'No live SLURM apply'
+assert_file_contains "${GAP_DOC}" 'getent ahostsv4 sched-sun99-slurmctl-099071.rfc1918.host'
+assert_file_contains "${GAP_DOC}" 'dcim/devices:sched_sun99_slurmctl_099071'
+assert_file_contains "${GAP_DOC}" 'ipam/ip-addresses:172.16.99.72/24'
+assert_file_contains "${GAP_DOC}" 'slurm_pilot_live_apply_required=true'
+assert_file_contains "${GAP_DOC}" 'M70 canary must not be admitted as a SLURM worker'
+assert_file_contains "${GAP_WIKI}" 'SLURM Pilot Gap Analysis 2026-05-25'
+assert_file_contains "${WIKI_HOME}" 'SLURM Pilot Gap Analysis 2026-05-25'
+assert_file_contains "${WIKI_SIDEBAR}" 'SLURM Pilot Gap Analysis 2026-05-25'
+assert_file_contains "${WIKI_README}" 'SLURM-Pilot-Gap-Analysis-2026-05-25.md'
 
 assert_file_contains "${LOCAL_INVENTORY}" 'slurm_controllers:'
 assert_file_contains "${LOCAL_INVENTORY}" 'slurm_workers:'

@@ -15,11 +15,15 @@ META_DATA_PATH="${META_DATA_PATH:-${SEED_DIR}/meta-data}"
 USER_DATA_PATH="${USER_DATA_PATH:-${SEED_DIR}/user-data}"
 NETWORK_CONFIG_PATH="${NETWORK_CONFIG_PATH:-${SEED_DIR}/network-config}"
 CREATE_NETWORK_CONFIG="${CREATE_NETWORK_CONFIG:-1}"
+CLOUD_INIT_NETWORK_CONFIG_FILE="${CLOUD_INIT_NETWORK_CONFIG_FILE-}"
 CLOUD_INIT_USERNAME="${CLOUD_INIT_USERNAME:-root}"
 CLOUD_INIT_LOCK_PASSWD="${CLOUD_INIT_LOCK_PASSWD:-1}"
 CLOUD_INIT_PASSWORD_HASH="${CLOUD_INIT_PASSWORD_HASH-}"
+CLOUD_INIT_USER_DATA_APPEND_FILE="${CLOUD_INIT_USER_DATA_APPEND_FILE-}"
+CLOUD_INIT_USER_DATA_APPEND_TEXT="${CLOUD_INIT_USER_DATA_APPEND_TEXT-}"
 SSH_AUTHORIZED_KEY="${SSH_AUTHORIZED_KEY-}"
 SSH_AUTHORIZED_KEY_FILE="${SSH_AUTHORIZED_KEY_FILE-}"
+SSH_AUTHORIZED_KEYS_FILE="${SSH_AUTHORIZED_KEYS_FILE-}"
 MKISOFS_BIN="${MKISOFS_BIN:-/usr/bin/mkisofs}"
 XORRISO_BIN="${XORRISO_BIN:-/usr/bin/xorriso}"
 CLOUD_INIT_SEED_DRY_RUN="${CLOUD_INIT_SEED_DRY_RUN:-0}"
@@ -38,11 +42,17 @@ ensure_seed_dir() {
   mkdir -p "${SEED_DIR}" "${SEED_BASE_DIR}"
 }
 
-resolve_ssh_authorized_key() {
+resolve_ssh_authorized_keys() {
   local candidate
 
   if [[ -n "${SSH_AUTHORIZED_KEY}" ]]; then
-    printf '%s' "${SSH_AUTHORIZED_KEY}"
+    printf '%s\n' "${SSH_AUTHORIZED_KEY}"
+    return 0
+  fi
+
+  if [[ -n "${SSH_AUTHORIZED_KEYS_FILE}" ]]; then
+    [[ -f "${SSH_AUTHORIZED_KEYS_FILE}" ]] || fail "SSH_AUTHORIZED_KEYS_FILE does not exist: ${SSH_AUTHORIZED_KEYS_FILE}"
+    awk 'NF > 0 && $1 !~ /^#/ { print }' "${SSH_AUTHORIZED_KEYS_FILE}"
     return 0
   fi
 
@@ -70,9 +80,9 @@ EOF
 }
 
 render_user_data() {
-  local ssh_key lock_passwd_literal
+  local ssh_key ssh_keys lock_passwd_literal
 
-  ssh_key="$(resolve_ssh_authorized_key)"
+  ssh_keys="$(resolve_ssh_authorized_keys)"
   lock_passwd_literal='true'
   if [[ "${CLOUD_INIT_LOCK_PASSWD}" == '0' ]]; then
     lock_passwd_literal='false'
@@ -94,7 +104,10 @@ render_user_data() {
       printf '    sudo: ALL=(ALL) NOPASSWD:ALL\n'
     fi
     printf '    ssh_authorized_keys:\n'
-    printf '      - %s\n' "${ssh_key}"
+    while IFS= read -r ssh_key; do
+      [[ -n "${ssh_key}" ]] || continue
+      printf '      - %s\n' "${ssh_key}"
+    done <<< "${ssh_keys}"
     if [[ -n "${CLOUD_INIT_PASSWORD_HASH}" ]]; then
       printf 'chpasswd:\n'
       printf '  expire: false\n'
@@ -106,9 +119,26 @@ render_user_data() {
     printf "  devices: ['/']\n"
     printf 'resize_rootfs: true\n'
   } > "${USER_DATA_PATH}"
+
+  if [[ -n "${CLOUD_INIT_USER_DATA_APPEND_FILE}" ]]; then
+    [[ -f "${CLOUD_INIT_USER_DATA_APPEND_FILE}" ]] || fail "CLOUD_INIT_USER_DATA_APPEND_FILE does not exist: ${CLOUD_INIT_USER_DATA_APPEND_FILE}"
+    printf '\n' >> "${USER_DATA_PATH}"
+    cat "${CLOUD_INIT_USER_DATA_APPEND_FILE}" >> "${USER_DATA_PATH}"
+    printf '\n' >> "${USER_DATA_PATH}"
+  fi
+
+  if [[ -n "${CLOUD_INIT_USER_DATA_APPEND_TEXT}" ]]; then
+    printf '\n%s\n' "${CLOUD_INIT_USER_DATA_APPEND_TEXT}" >> "${USER_DATA_PATH}"
+  fi
 }
 
 render_network_config() {
+  if [[ -n "${CLOUD_INIT_NETWORK_CONFIG_FILE}" ]]; then
+    [[ -f "${CLOUD_INIT_NETWORK_CONFIG_FILE}" ]] || fail "CLOUD_INIT_NETWORK_CONFIG_FILE does not exist: ${CLOUD_INIT_NETWORK_CONFIG_FILE}"
+    cp "${CLOUD_INIT_NETWORK_CONFIG_FILE}" "${NETWORK_CONFIG_PATH}"
+    return 0
+  fi
+
   if [[ "${CREATE_NETWORK_CONFIG}" != '1' ]]; then
     rm -f "${NETWORK_CONFIG_PATH}"
     return 0

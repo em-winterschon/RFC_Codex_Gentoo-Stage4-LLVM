@@ -1,0 +1,58 @@
+---
+gentoo_profile_definition:
+  metadata:
+    profile_id: documentation-diagram-renderer
+    description: >-
+      Documentation and architecture rendering stack for Forge-resident hosts.
+      Provides local PlantUML, Graphviz, and GD support so EOD reports,
+      architecture notes, and change-control process diagrams can render
+      without using external diagram services.
+  package_atoms:
+    - dev-java/openjdk-bin
+    - media-gfx/graphviz
+    - media-gfx/plantuml
+    - media-libs/gd
+  package_use_files:
+    35-documentation-diagram-renderer: |
+      # PlantUML activity diagrams require Graphviz dot for local PNG/SVG
+      # rendering. Graphviz depends on GD with fontconfig/truetype/png support
+      # for consistent headless output on Forge hosts.
+      media-libs/gd fontconfig jpeg png truetype zlib
+      media-libs/freetype harfbuzz png
+      media-gfx/graphviz cairo nls
+  env_files:
+    diagram-render-native-cc.conf: |
+      # Several documentation-rendering dependencies use configure-time
+      # compiler probes that compile from stdin or otherwise bypass normal
+      # distcc-safe compilation. Keep this stack native until the wrapper can
+      # safely bypass those probes.
+      FEATURES="${FEATURES} -distcc"
+      PATH="/usr/local/sbin:/usr/local/bin:/usr/bin:/opt/bin:/usr/lib/llvm/21/bin"
+  package_env_files:
+    35-documentation-diagram-render-native-cc: |
+      dev-java/openjdk-bin diagram-render-native-cc.conf
+      dev-libs/fribidi diagram-render-native-cc.conf
+      media-gfx/graphviz diagram-render-native-cc.conf
+      media-gfx/plantuml diagram-render-native-cc.conf
+      media-gfx/graphite2 diagram-render-native-cc.conf
+      media-libs/freetype diagram-render-native-cc.conf
+      media-libs/gd diagram-render-native-cc.conf
+      media-libs/harfbuzz diagram-render-native-cc.conf
+      media-libs/libpng diagram-render-native-cc.conf
+      x11-libs/cairo diagram-render-native-cc.conf
+      x11-libs/pango diagram-render-native-cc.conf
+  patch_files:
+    media-libs/harfbuzz/harfbuzz-12.3.2-clang21-varc-extra-semi.patch: |
+      --- a/src/OT/Var/VARC/VARC.cc
+      +++ b/src/OT/Var/VARC/VARC.cc
+      @@ -5,6 +5,10 @@
+       #include "../../../hb-ot-layout-common.hh"
+       #include "../../../hb-ot-layout-gdef-table.hh"
+
+      +// hb.hh promotes -Wextra-semi-stmt to an error. VARC generated macro
+      +// expansion emits harmless empty statements with clang 21.
+      +#pragma GCC diagnostic ignored "-Wextra-semi-stmt"
+      +
+       namespace OT {
+
+       //namespace Var {

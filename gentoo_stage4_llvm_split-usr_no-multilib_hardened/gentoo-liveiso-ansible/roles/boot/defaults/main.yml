@@ -22,9 +22,10 @@ zfsbootmenu_efi_commandline: >-
   console=ttyS0,115200
 zfsbootmenu_root_commandline: >-
   {{
-    (install_kernel_cmdline | default('ro console=tty0 console=ttyS0,115200'))
-    | split
+    (
+      install_kernel_cmdline | default('ro console=tty0 console=ttyS0,115200')
+    ).split()
+    | reject('match', '^root=')
     | list
     | join(' ')
-    | trim
   }}

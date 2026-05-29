@@ -19,7 +19,6 @@ gentoo_system_profile_metadata:
       - sys-firmware/intel-microcode
       - sys-kernel/linux-firmware
       - sys-devel/distcc
-      - dev-util/ccache
       - sys-devel/gcc
       - llvm-core/clang
       - llvm-core/lld

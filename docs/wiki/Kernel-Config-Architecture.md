@@ -12,6 +12,8 @@ Primary files:
   and basic networking.
 - `fragments/hardware/optane-nvdimm.config` is a hardware subprofile, not a
   generic workstation requirement.
+- `fragments/hardware/intel-qat-c3000.config` is the Intel C3000 QAT hardware
+  subprofile for M70/C3758 hosts.
 
 Optane policy:
 
@@ -20,6 +22,14 @@ Optane policy:
 - Normal workstation roles should not inherit NVDIMM support.
 - Storage nodes and Coherence/data-tiering nodes can request the Optane overlay
   when inventory proves the hardware exists.
+
+QAT policy:
+
+- M70/C3758 hosts should request `intel-qat-c3000`.
+- The kernel profile enables `qat_c3xxx`, C3000 VF support, SR-IOV readiness,
+  and QAT VFIO support.
+- Stock Gentoo repos currently need an overlay/source path before OpenSSL or
+  OpenZFS userspace QAT acceleration can be compiled as default policy.
 
 CPU tuning policy:
 

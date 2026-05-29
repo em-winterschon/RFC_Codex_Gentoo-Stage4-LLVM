@@ -143,6 +143,14 @@
             recursive=True
           )
       }}
+    resolved_profile_udev_rules_files: >-
+      {{
+        resolved_profile_udev_rules_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.udev_rules_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_local_user_accounts: >-
       {{
         resolved_profile_local_user_accounts

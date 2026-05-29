@@ -112,6 +112,8 @@ test_netboot_assets_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml" "ip=172.16.99.82::172.16.99.1:255.255.255.0:lab-sun99-x1gen8-099082:eth0:none"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml" "rd.hostname=lab-sun99-x1gen8-099082"
   assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/group_vars/netboot_publishers.yml" "hostname=lab-sun99-x1gen8-099082"
+  assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/m70_canary.yml" "netboot_role: localdisk"
+  assert_file_contains "${ANSIBLE_ROOT}/inventories/local-network/host_vars/m70_canary.yml" "netboot_status: local-zfsbootmenu-validation"
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/k10-stage5-workstation.yml" "http://172.16.99.88:8080/g/rootfs.img"
   assert_file_contains "${ANSIBLE_ROOT}/netboot-image-manifests/thinkpad-x1gen8-workstation.yml" "http://172.16.99.88:8080/g/rootfs.img"
   assert_file_contains "${REPO_ROOT}/docs/workflows/stage4-netboot-path-b.json" "\"name\": \"stage4-netboot-path-b\""

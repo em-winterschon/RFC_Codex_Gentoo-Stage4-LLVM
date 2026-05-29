@@ -44,7 +44,7 @@ test_portage_override_paths_exist() {
   assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" "/etc/portage/env"
   assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" "/etc/portage/package.env"
   assert_file_contains "${ANSIBLE_ROOT}/roles/portage/tasks/main.yml" "/etc/portage/package.accept_keywords"
-  assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" "/etc/kernel/config.d"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/kernel_config/tasks/main.yml" "/etc/kernel/config.d"
   assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" "zfs_package_atom"
   assert_file_contains "${ANSIBLE_ROOT}/roles/system_packages/tasks/main.yml" "zfs_kmod_package_atom"
 }
@@ -62,7 +62,7 @@ test_boot_commandline_templates_do_not_regress_console_typo() {
   assert_file_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "console=tty0"
   assert_file_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "install_kernel_cmdline | default('ro console=tty0 console=ttyS0,115200')"
   assert_file_not_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "root=[^"
-  assert_file_not_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "reject('match', '^root=')"
+  assert_file_contains "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "reject('match', '^root=')"
   assert_file_contains "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" "console=tty0"
   assert_file_not_contains_token "${ANSIBLE_ROOT}/roles/boot/defaults/main.yml" "sole=tty0"
   assert_file_not_contains_token "${ANSIBLE_ROOT}/roles/chroot_base/tasks/main.yml" "sole=tty0"

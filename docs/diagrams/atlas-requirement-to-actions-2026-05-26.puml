@@ -1,0 +1,62 @@
+@startuml
+title Atlas Core Functional Task Processing - Requirement to Actions
+skinparam shadowing false
+skinparam backgroundColor #ffffff
+skinparam activity {
+  BackgroundColor #f7f7f7
+  BorderColor #444444
+  FontColor #111111
+}
+skinparam ArrowColor #333333
+
+start
+:Receive operator requirement;
+:Classify request type:
+documentation, live host validation,
+repo publication, package build,
+or coordination;
+:Load local context first:
+repo docs, git state, host aliases,
+FCP notes, and live service state;
+
+if (Live host or package work?) then (yes)
+  :Use SSH config aliases only;
+  :Check source-of-truth expectations
+against NetBox/repo inventory;
+  if (Portage atom or dependency tree involved?) then (yes)
+    :Inspect package visibility and current
+Portage policy;
+    :Prefer binary package or remote distcc
+compile capacity when available;
+    :Run emerge with explicit MAKEOPTS,
+FEATURES, and DISTCC_HOSTS only when needed;
+    if (Build failure?) then (yes)
+      :Read build log and isolate root cause;
+      :Patch durable inventory or policy
+instead of retrying blindly;
+      :Rerun the minimum package operation;
+    else (no)
+      :Record package and version outcome;
+    endif
+  else (no)
+    :Run scoped live validation commands;
+  endif
+else (no)
+  :Inspect docs, tests, and previous commits;
+endif
+
+:Design minimal repo change that captures
+the observable action and result;
+:Write docs, diagrams, inventory, or tests;
+:Run focused verification;
+if (Verification passes?) then (yes)
+  :Commit with scoped message;
+  :Push branch;
+  :Open or update PR;
+  :Report evidence and residual concerns;
+else (no)
+  :Report failure with command output summary;
+  :Do not claim completion;
+endif
+stop
+@enduml

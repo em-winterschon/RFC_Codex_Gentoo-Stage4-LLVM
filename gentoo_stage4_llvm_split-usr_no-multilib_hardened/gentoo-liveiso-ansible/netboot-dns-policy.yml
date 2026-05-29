@@ -1,0 +1,20 @@
+---
+netboot_dns_policy:
+  description: RFC99 approved DNS resolvers for netboot kernel cmdlines and manifests.
+  approved_nameservers:
+    - address: 172.16.99.1
+      role: rfc99-routeros-primary
+      tcp_required: true
+      udp_required: true
+      live_queries:
+        - svc-netbox-stage4.rfc1918.host
+        - quad9.net
+    - address: 9.9.9.9
+      role: public-fallback
+      tcp_required: true
+      udp_required: true
+      live_queries:
+        - quad9.net
+  denied_nameservers:
+    - address: 172.16.99.63
+      reason: FreeIPA identity controller; DNS service is not enabled on TCP/UDP 53.

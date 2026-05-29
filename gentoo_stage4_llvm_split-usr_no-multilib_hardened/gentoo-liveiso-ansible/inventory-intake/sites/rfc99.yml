@@ -40,6 +40,8 @@ devices:
     model: CRS309-1G-8S+IN
     status: planned
     management_ip: 172.16.99.1
+    management_interface: ether1
+    fqdn: gw-rfc99-mkcrs309.rfc1918.host
     serial_console: /dev/ttyUSB2
     interfaces:
       - name: ether1
@@ -169,6 +171,7 @@ devices:
     model: BGW320-500
     status: active
     management_ip: 192.168.1.254
+    management_interface: lan
     fqdn: gw-xgs-pon-att5ge.rfc1918.io
     interfaces:
       - name: lan

@@ -41,6 +41,7 @@ QEMU_BOOT_STRICT="${QEMU_BOOT_STRICT:-1}"
 QEMU_BOOTDISK_ID="${QEMU_BOOTDISK_ID:-bootdisk}"
 QEMU_BOOTDISK_MODEL="${QEMU_BOOTDISK_MODEL:-virtio-blk-pci}"
 QEMU_BOOTDISK_BOOTINDEX="${QEMU_BOOTDISK_BOOTINDEX:-1}"
+ATTACH_HOST_DISKS="${ATTACH_HOST_DISKS:-1}"
 QEMU_LAUNCH_DRY_RUN="${QEMU_LAUNCH_DRY_RUN:-0}"
 QEMU_DAEMONIZE="${QEMU_DAEMONIZE:-1}"
 QEMU_DISPLAY_MODE="${QEMU_DISPLAY_MODE:-none}"
@@ -49,6 +50,11 @@ QEMU_SERIAL_FILE="${QEMU_SERIAL_FILE:-${STATE_DIR}/${INSTANCE_NAME}.serial.log}"
 QEMU_NETDEV_ID="${QEMU_NETDEV_ID:-net0}"
 QEMU_NETDEV_BACKEND="${QEMU_NETDEV_BACKEND:-user,hostfwd=tcp:${SSH_FORWARD_HOST}:${SSH_FORWARD_PORT}-:22}"
 QEMU_NETDEV_MODEL="${QEMU_NETDEV_MODEL:-virtio-net-pci}"
+QEMU_NETDEV_MAC="${QEMU_NETDEV_MAC-}"
+QEMU_SECOND_NETDEV_ID="${QEMU_SECOND_NETDEV_ID:-net1}"
+QEMU_SECOND_NETDEV_BACKEND="${QEMU_SECOND_NETDEV_BACKEND-}"
+QEMU_SECOND_NETDEV_MODEL="${QEMU_SECOND_NETDEV_MODEL:-virtio-net-pci}"
+QEMU_SECOND_NETDEV_MAC="${QEMU_SECOND_NETDEV_MAC-}"
 QEMU_ENABLE_VSOCK="${QEMU_ENABLE_VSOCK:-0}"
 QEMU_VSOCK_MODEL="${QEMU_VSOCK_MODEL:-vhost-vsock-pci}"
 QEMU_VSOCK_CID="${QEMU_VSOCK_CID:-3}"
@@ -71,7 +77,7 @@ fail() {
 }
 
 network_backend_name() {
-  printf '%s' "${QEMU_NETDEV_BACKEND%%,*}"
+  printf '%s' "${1%%,*}"
 }
 
 display_mode_name() {
@@ -128,17 +134,23 @@ require_host_disk_ready() {
 }
 
 validate_host_disks() {
+  if [[ "${ATTACH_HOST_DISKS}" != '1' ]]; then
+    return 0
+  fi
+
   require_host_disk_ready "${BPOOL_DISK0}" 'BPOOL_DISK0'
   require_host_disk_ready "${BPOOL_DISK1}" 'BPOOL_DISK1'
   require_host_disk_ready "${RPOOL_DISK0}" 'RPOOL_DISK0'
   require_host_disk_ready "${RPOOL_DISK1}" 'RPOOL_DISK1'
 }
 
-validate_net_backend() {
-  local backend help_output
+validate_one_net_backend() {
+  local backend_spec label backend help_output
 
-  backend="$(network_backend_name)"
-  [[ -n "${backend}" ]] || fail 'QEMU_NETDEV_BACKEND is empty'
+  backend_spec="$1"
+  label="$2"
+  backend="$(network_backend_name "${backend_spec}")"
+  [[ -n "${backend}" ]] || fail "${label} is empty"
 
   help_output="${QEMU_NETDEV_HELP_OUTPUT}"
   if [[ -z "${help_output}" ]]; then
@@ -147,10 +159,18 @@ validate_net_backend() {
 
   if [[ "${help_output}" != *"${backend}"* ]]; then
     if [[ "${backend}" == 'user' ]]; then
-      fail "QEMU net backend '${backend}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=slirp or set QEMU_NETDEV_BACKEND to a supported backend"
+      fail "QEMU net backend '${backend}' is not available in ${QEMU_BIN}; rebuild QEMU with USE=slirp or set ${label} to a supported backend"
     fi
 
-    fail "QEMU net backend '${backend}' is not available in ${QEMU_BIN}; inspect '${QEMU_BIN} -netdev help' and set QEMU_NETDEV_BACKEND to a supported backend"
+    fail "QEMU net backend '${backend}' is not available in ${QEMU_BIN}; inspect '${QEMU_BIN} -netdev help' and set ${label} to a supported backend"
+  fi
+}
+
+validate_net_backend() {
+  validate_one_net_backend "${QEMU_NETDEV_BACKEND}" 'QEMU_NETDEV_BACKEND'
+
+  if [[ -n "${QEMU_SECOND_NETDEV_BACKEND}" ]]; then
+    validate_one_net_backend "${QEMU_SECOND_NETDEV_BACKEND}" 'QEMU_SECOND_NETDEV_BACKEND'
   fi
 }
 
@@ -365,6 +385,32 @@ append_host_disk() {
   )
 }
 
+append_host_disk_args() {
+  if [[ "${ATTACH_HOST_DISKS}" != '1' ]]; then
+    return 0
+  fi
+
+  append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
+  append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
+  append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
+  append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
+}
+
+append_netdev_args() {
+  local backend="$1"
+  local netdev_id="$2"
+  local model="$3"
+  local mac="$4"
+  local device_arg
+
+  QEMU_CMD+=(-netdev "${backend},id=${netdev_id}")
+  device_arg="${model},netdev=${netdev_id}"
+  if [[ -n "${mac}" ]]; then
+    device_arg="${device_arg},mac=${mac}"
+  fi
+  QEMU_CMD+=(-device "${device_arg}")
+}
+
 append_vsock_args() {
   if [[ "${QEMU_ENABLE_VSOCK}" == '1' ]]; then
     QEMU_CMD+=(-device "${QEMU_VSOCK_MODEL},guest-cid=${QEMU_VSOCK_CID}")
@@ -425,15 +471,11 @@ build_qemu_cmd() {
     -device 'ide-cd,drive=seed,bus=ahci.0'
   )
 
-  append_host_disk 'bpool0' "${BPOOL_DISK0}" '1' 'bpool-0'
-  append_host_disk 'bpool1' "${BPOOL_DISK1}" '2' 'bpool-1'
-  append_host_disk 'rpool0' "${RPOOL_DISK0}" '3' 'rpool-0'
-  append_host_disk 'rpool1' "${RPOOL_DISK1}" '4' 'rpool-1'
-
-  QEMU_CMD+=(
-    -netdev "${QEMU_NETDEV_BACKEND},id=${QEMU_NETDEV_ID}"
-    -device "${QEMU_NETDEV_MODEL},netdev=${QEMU_NETDEV_ID}"
-  )
+  append_host_disk_args
+  append_netdev_args "${QEMU_NETDEV_BACKEND}" "${QEMU_NETDEV_ID}" "${QEMU_NETDEV_MODEL}" "${QEMU_NETDEV_MAC}"
+  if [[ -n "${QEMU_SECOND_NETDEV_BACKEND}" ]]; then
+    append_netdev_args "${QEMU_SECOND_NETDEV_BACKEND}" "${QEMU_SECOND_NETDEV_ID}" "${QEMU_SECOND_NETDEV_MODEL}" "${QEMU_SECOND_NETDEV_MAC}"
+  fi
 
   append_vsock_args
   append_boot_args

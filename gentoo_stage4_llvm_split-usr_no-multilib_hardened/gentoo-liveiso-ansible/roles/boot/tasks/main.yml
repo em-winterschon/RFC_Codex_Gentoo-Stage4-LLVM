@@ -205,7 +205,7 @@
     kernel_version="{{ boot_kernel_version.stdout | trim }}"
     cp -Lf "{{ install_target_root }}/usr/lib/modules/${kernel_version}/vmlinuz" "{{ install_target_root }}/boot/vmlinuz-${kernel_version}"
     {{ liveiso_work_dir }}/chroot-runner.sh {{ ('depmod -a ' + (boot_kernel_version.stdout | trim)) | quote }}
-    {{ liveiso_work_dir }}/chroot-runner.sh {{ ('dracut --force /boot/initramfs-' + (boot_kernel_version.stdout | trim) + '.img ' + (boot_kernel_version.stdout | trim)) | quote }}
+    {{ liveiso_work_dir }}/chroot-runner.sh {{ ('dracut --force --no-hostonly --early-microcode /boot/initramfs-' + (boot_kernel_version.stdout | trim) + '.img ' + (boot_kernel_version.stdout | trim)) | quote }}
   args:
     executable: /bin/bash
   when: boot_strategy == 'zfsbootmenu'
@@ -328,6 +328,31 @@
     remote_src: true
     mode: '0755'
   when: boot_strategy == 'zfsbootmenu'
+
+- name: Mirror ZFSBootMenu EFI files to additional ESPs
+  ansible.builtin.shell: |
+    set -euo pipefail
+    source_dir="{{ install_target_root }}/efi/"
+    target_dir="$(mktemp -d "{{ liveiso_work_dir }}/esp-mirror.XXXXXX")"
+    cleanup() {
+      if mountpoint -q "${target_dir}"; then
+        umount "${target_dir}"
+      fi
+      rmdir "${target_dir}" || true
+    }
+    trap cleanup EXIT
+
+    mount "{{ additional_esp_partition }}" "${target_dir}"
+    rsync -a --delete "${source_dir}" "${target_dir}/"
+    sync
+  args:
+    executable: /bin/bash
+  loop: "{{ esp_partitions[1:] }}"
+  loop_control:
+    loop_var: additional_esp_partition
+  when:
+    - boot_strategy == 'zfsbootmenu'
+    - esp_partitions | length > 1
 
 - name: Create ZFSBootMenu boot entry
   ansible.builtin.command: >-

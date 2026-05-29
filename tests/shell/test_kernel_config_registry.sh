@@ -38,6 +38,7 @@ for fragment in \
   fragments/machine/hypervisor-qemu-libvirt.config \
   fragments/machine/hypervisor-xen.config \
   fragments/hardware/optane-nvdimm.config \
+  fragments/hardware/intel-qat-c3000.config \
   fragments/hardware/gpu-universal-xorg.config \
   fragments/storage/nfs-client.config \
   fragments/storage/rdma-storage-fabric.config \
@@ -50,6 +51,7 @@ done
 
 BASE="${ANSIBLE_ROOT}/kernel-config/fragments/base/basic-minimal.config"
 OPTANE="${ANSIBLE_ROOT}/kernel-config/fragments/hardware/optane-nvdimm.config"
+QAT_C3000="${ANSIBLE_ROOT}/kernel-config/fragments/hardware/intel-qat-c3000.config"
 
 require_grep '^CONFIG_DEVTMPFS=y$' "${BASE}"
 require_grep '^CONFIG_EFI_STUB=y$' "${BASE}"
@@ -61,7 +63,14 @@ require_grep '^CONFIG_ACPI_NFIT=m$' "${OPTANE}"
 require_grep '^CONFIG_LIBNVDIMM=m$' "${OPTANE}"
 require_grep '^CONFIG_DEV_DAX_PMEM=m$' "${OPTANE}"
 
+require_grep '^CONFIG_CRYPTO_DEV_QAT=m$' "${QAT_C3000}"
+require_grep '^CONFIG_CRYPTO_DEV_QAT_C3XXX=m$' "${QAT_C3000}"
+require_grep '^CONFIG_CRYPTO_DEV_QAT_C3XXXVF=m$' "${QAT_C3000}"
+require_grep '^CONFIG_QAT_VFIO_PCI=m$' "${QAT_C3000}"
+
 require_grep 'optane-nvdimm:' "${REGISTRY}"
+require_grep 'intel-qat-c3000:' "${REGISTRY}"
+require_grep 'fragments/hardware/intel-qat-c3000.config' "${REGISTRY}"
 require_grep 'x12again' "${REGISTRY}"
 require_grep 'prinzessin' "${REGISTRY}"
 require_grep 'coherence-ce-node:' "${REGISTRY}"
@@ -76,6 +85,7 @@ require_grep 'source_provenance:' "${CPU_PROFILES}"
 require_grep '/tmp/docs/cpu-arch/RFC1918-CPU-Architectures.md' "${DOC}"
 require_grep 'Path-B' "${DOC}"
 require_grep 'Optane NVDIMM' "${DOC}"
+require_grep 'Intel C3000 QAT' "${DOC}"
 require_grep 'cpuid2cpuflags' "${DOC}"
 require_grep 'kernel-profile-map.yml' "${WIKI_DOC}"
 

@@ -54,6 +54,7 @@ builder:
     - app-crypt/age
     - net-misc/curl
     - app-misc/jq
+    - sys-apps/gptfdisk
   installer_prerequisites:
     - sys-apps/gptfdisk
     - boot_create_efi_nvram_entry: false

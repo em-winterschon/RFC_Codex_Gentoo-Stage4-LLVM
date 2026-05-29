@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+apply_fabric() {
+{% for bridge in openrc_ovs_fabric.bridges | default([]) %}
+  ovs-vsctl --may-exist add-br {{ bridge.name | quote }}
+  ip link set {{ bridge.name | quote }} up
+{% for bond in bridge.bonds | default([]) %}
+{% for member in bond.interfaces | default([]) %}
+  ip link set {{ member | quote }} up
+{% endfor %}
+  ovs-vsctl --may-exist add-bond {{ bridge.name | quote }} {{ bond.name | quote }}{% for member in bond.interfaces | default([]) %} {{ member | quote }}{% endfor %} \
+    -- set Port {{ bond.name | quote }} lacp={{ bond.lacp | default('active') | quote }} bond_mode={{ bond.bond_mode | default('balance-tcp') | quote }}{% for option in (bond.other_config | default({})) | dict2items %} other_config:{{ option.key }}={{ option.value | quote }}{% endfor %}
+{% endfor %}
+{% endfor %}
+}
+
+teardown_fabric() {
+{% for bridge in openrc_ovs_fabric.bridges | default([]) %}
+  if ovs-vsctl br-exists {{ bridge.name | quote }}; then
+    ovs-vsctl del-br {{ bridge.name | quote }}
+  fi
+{% endfor %}
+}
+
+case "${1:-apply}" in
+  apply)
+    apply_fabric
+    ;;
+  teardown)
+    teardown_fabric
+    ;;
+  *)
+    echo "usage: $0 {apply|teardown}" >&2
+    exit 2
+    ;;
+esac

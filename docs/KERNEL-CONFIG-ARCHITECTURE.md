@@ -63,6 +63,23 @@ NVIDIA/Nouveau fallback, QXL, virtio GPU, EFI framebuffer, and DRM/KMS. Userspac
 package policy still decides proprietary NVIDIA, CUDA, AMDGPU-PRO, ROCm, and
 Intel media/runtime packages.
 
+Intel C3000 QAT is also a hardware subprofile. Use it for M70 and other Intel
+Atom C3758 hosts where inventory proves the QuickAssist device is present. The
+`intel-qat-c3000` fragment includes:
+
+- `CONFIG_CRYPTO_DEV_QAT`
+- `CONFIG_CRYPTO_DEV_QAT_C3XXX`
+- `CONFIG_CRYPTO_DEV_QAT_C3XXXVF`
+- `CONFIG_QAT_VFIO_PCI`
+- `CONFIG_PCI_IOV`
+
+The M70 runtime profile should load `qat_c3xxx`. Stock Gentoo repos checked on
+the canary currently do not provide `qatlib`, `qatengine`, an OpenSSL QAT
+provider, or QAT USE flags for `dev-libs/openssl`, `sys-fs/zfs`, or
+`sys-fs/zfs-kmod`. The kernel and module policy should land first; OpenSSL and
+OpenZFS userspace acceleration should follow through an explicit overlay/source
+build path with validation before becoming default package policy.
+
 ## Service And Storage Overlays
 
 | Overlay | Fragments | Notes |

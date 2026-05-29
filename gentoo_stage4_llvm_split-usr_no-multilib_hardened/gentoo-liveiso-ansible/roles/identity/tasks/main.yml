@@ -1,4 +1,42 @@
 ---
+- name: Validate controller root authorized_keys source
+  ansible.builtin.stat:
+    path: "{{ install_root_authorized_keys_source_file }}"
+  delegate_to: localhost
+  become: false
+  register: install_root_authorized_keys_source_stat
+  when: install_root_authorized_keys_seed_enabled | bool
+
+- name: Assert controller root authorized_keys source is readable
+  ansible.builtin.assert:
+    that:
+      - install_root_authorized_keys_source_stat.stat.exists
+      - install_root_authorized_keys_source_stat.stat.isreg
+      - install_root_authorized_keys_source_stat.stat.size | int > 0
+    fail_msg: >-
+      install_root_authorized_keys_seed_enabled is true, but
+      install_root_authorized_keys_source_file={{ install_root_authorized_keys_source_file }}
+      is missing, not a regular file, or empty.
+  when: install_root_authorized_keys_seed_enabled | bool
+
+- name: Ensure target root SSH directory exists
+  ansible.builtin.file:
+    path: "{{ install_target_root }}/root/.ssh"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  when: install_root_authorized_keys_seed_enabled | bool
+
+- name: Seed target root authorized_keys from controller source
+  ansible.builtin.copy:
+    src: "{{ install_root_authorized_keys_source_file }}"
+    dest: "{{ install_target_root }}/root/.ssh/authorized_keys"
+    owner: root
+    group: root
+    mode: '0600'
+  when: install_root_authorized_keys_seed_enabled | bool
+
 - name: Ensure cloud-init config directories exist when requested
   ansible.builtin.file:
     path: "{{ install_target_root }}/{{ identity_dir }}"

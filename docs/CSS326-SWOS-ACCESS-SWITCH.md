@@ -124,3 +124,21 @@ CSS326 changes should be avoided until a tested writer exists. If a SwOS
 configuration change breaks management, use the local web UI from the management
 subnet or the physical reset process, then restore from the latest
 operator-private `backup.swb`.
+
+
+## M70 Canary Cabling Addendum
+
+The M70 canary validation lane records the post-2026-05-21 CSS326 copper
+assignments used for the canary persistent Gentoo root and later SLURM/VPP
+workload validation:
+
+- CSS326 `ge15` carries CRS354 management after the CRS354 move away from the
+  previous `ge24` attachment.
+- CSS326 `ge19` maps to M70 canary `netboot0` for iPXE, rescue, and primary
+  management.
+- CSS326 `ge20` maps to M70 canary `enp3s0` as the post-boot management backup.
+- CSS326 `ge21` through `ge24` map to M70 canary `eno1` through `eno4` for the
+  future OVS workload LACP validation lane.
+
+Do not mutate SwOS LACP membership from automation until a tested SwOS writer
+exists and a separate coordinated change window approves the port policy.

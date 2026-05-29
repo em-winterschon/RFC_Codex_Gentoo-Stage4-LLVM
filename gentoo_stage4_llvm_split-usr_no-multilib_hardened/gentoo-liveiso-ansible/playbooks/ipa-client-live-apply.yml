@@ -37,6 +37,7 @@
 
     - name: Check root SSH break-glass is active
       ansible.builtin.command: id -u
+      check_mode: false
       changed_when: false
       register: ipa_client_live_root_id
 

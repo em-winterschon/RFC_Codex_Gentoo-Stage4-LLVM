@@ -25,6 +25,12 @@ netboot_tftp_log_path: /var/log/netboot-tftp.log
 netboot_operator_notes_url: "{{ netboot_public_base_url }}/README.txt"
 netboot_host_map_extra: []
 netboot_roles_extra: {}
+netboot_dns_validation_enabled: true
+netboot_dns_validation_live: false
+netboot_dns_validator_script: "{{ playbook_dir }}/../../../scripts/validate_netboot_dns.py"
+netboot_dns_policy_path: "{{ playbook_dir }}/../netboot-dns-policy.yml"
+netboot_dns_validation_paths:
+  - "{{ playbook_dir }}/../netboot-image-manifests"
 netboot_boot_type_enum:
   - static
   - dhcp

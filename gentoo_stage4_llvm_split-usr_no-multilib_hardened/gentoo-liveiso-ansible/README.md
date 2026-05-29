@@ -411,7 +411,7 @@ These roles render:
 
 - a Jenkins controller launcher plus JCasC manifest
 - distcc client and worker manifests
-- managed `DISTCC_HOSTS` policy in `make.conf`
+- managed `DISTCC_HOSTS` policy in `make.conf` with local fallback disabled
 - OpenRC-managed `jenkins-controller` and `distccd-farm` services
 
 The intended first fabric is a dedicated builder LAN carried to a switch and
@@ -753,7 +753,7 @@ flows are present:
 - basic chroot setup
 - package installation for ZFS + dracut + dist-kernel strategy
 - prebuilt ZFSBootMenu EFI deployment
-- OpenRC service enablement for ZFS, NetworkManager, and sshd
+- OpenRC service enablement for ZFS, netifrc/Open vSwitch, and sshd
 - modular wrapper roles for `zfs`, `kernel`, `bootloader`, and `finalize`
 
 The pieces most likely to need local policy refinement are:
@@ -792,6 +792,7 @@ If you want to carry house policy as data instead of editing the roles, set
 - `package_atoms`
 - `package_list_files`
 - `modules_load_files`
+- `udev_rules_files`
 - `openrc_services_enable`
 - `openrc_services_available`
 - `cloud_init`
@@ -987,7 +988,7 @@ Example host records are included under:
 Each profile also has a matching `*.metadata.yml` file that records package pinning,
 kernel-module expectations, and any vendor-managed components that are outside the
 Gentoo tree.
-- per-interface network policy beyond enabling NetworkManager
+- advanced per-interface network policy beyond the managed netifrc/Open vSwitch renderer
 
 ## Suggested next steps
 

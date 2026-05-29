@@ -7,6 +7,9 @@ X12AGAIN reimage. The pilot creates a controller at
 `sched-sun99-slurmctl-099071.rfc1918.host` (`172.16.99.71`) and validates one
 first worker before any wider scheduler rollout.
 
+Current repo-side gap analysis:
+`docs/SLURM-PILOT-GAP-ANALYSIS-2026-05-25.md`.
+
 ## Principle
 
 Do not block SLURM on X12AGAIN reimage.

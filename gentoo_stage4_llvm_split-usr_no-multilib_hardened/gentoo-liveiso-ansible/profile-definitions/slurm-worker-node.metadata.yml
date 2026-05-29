@@ -21,7 +21,6 @@ gentoo_system_profile_metadata:
       - sys-auth/munge
       - sys-cluster/rdma-core
       - sys-devel/distcc
-      - dev-util/ccache
   service_segments:
     - scheduler-worker
     - build-fabric

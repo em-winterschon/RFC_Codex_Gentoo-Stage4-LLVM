@@ -1,0 +1,49 @@
+@startuml
+title CCP - Documentation Diagram Rendering Workflow
+skinparam shadowing false
+skinparam backgroundColor #ffffff
+skinparam activity {
+  BackgroundColor #f7f7f7
+  BorderColor #444444
+  FontColor #111111
+}
+skinparam ArrowColor #333333
+
+|Operator|
+start
+:Request documentation, architecture,
+or EOD workflow visualization;
+
+|Atlas / Forge|
+:Classify whether the change affects
+architecture, network, boot, identity,
+package policy, or live operations;
+
+if (CCP annotation required?) then (yes)
+  :Add a structured CCP table
+  with scope, approval class,
+  rollback, validation, and owner;
+  :Add or update PlantUML source
+  under docs/diagrams/;
+else (no)
+  :Use normal prose or table-only
+  documentation;
+endif
+
+|Forge Host|
+:Render PlantUML locally with
+PlantUML + Graphviz dot;
+:Emit PNG for wiki-first viewing
+and SVG for scalable inspection;
+
+|Repository|
+:Commit .puml, .png, .svg,
+Markdown references, and tests;
+:Keep docs/wiki as the wiki source;
+
+|Review|
+:Open or update PR;
+:Reviewer confirms docs, rendered
+assets, and validation evidence;
+stop
+@enduml

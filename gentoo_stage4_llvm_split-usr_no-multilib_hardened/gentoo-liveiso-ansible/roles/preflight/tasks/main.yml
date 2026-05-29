@@ -78,6 +78,7 @@
     resolved_profile_package_list_files: "{{ profile_package_list_files | default([]) }}"
     resolved_profile_openrc_services_enable: "{{ profile_openrc_services_enable | default([]) }}"
     resolved_profile_modules_load_files: "{{ profile_modules_load_files | default({}) }}"
+    resolved_profile_udev_rules_files: "{{ profile_udev_rules_files | default({}) }}"
     resolved_profile_local_user_accounts: "{{ profile_local_user_accounts | default([]) }}"
     resolved_profile_cloud_init: "{{ profile_cloud_init | default({}) }}"
     resolved_profile_aaa_policy_files: "{{ profile_aaa_policy_files | default([]) }}"

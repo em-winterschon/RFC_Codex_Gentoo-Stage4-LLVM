@@ -1,0 +1,35 @@
+# Managed by gentoo-liveiso-ansible
+
+modules="ifenslave"
+
+{% for interface in openrc_netifrc.interfaces | default([]) %}
+{% if interface.type | default('ethernet') == 'bond' %}
+config_{{ interface.name }}="{{ interface.addresses | default([]) | join(' ') }}"
+{% if interface.routes | default([]) | length > 0 %}
+routes_{{ interface.name }}="{{ interface.routes | join(' ') }}"
+{% endif %}
+{% if interface.dns_servers | default([]) | length > 0 %}
+dns_servers_{{ interface.name }}="{{ interface.dns_servers | join(' ') }}"
+{% endif %}
+{% if interface.dns_domain | default('') | length > 0 %}
+dns_domain_{{ interface.name }}="{{ interface.dns_domain }}"
+{% endif %}
+slaves_{{ interface.name }}="{{ interface.slaves | default([]) | join(' ') }}"
+mode_{{ interface.name }}="{{ interface.mode | default('active-backup') }}"
+miimon_{{ interface.name }}="{{ interface.miimon | default(100) }}"
+{% if interface.primary | default('') | length > 0 %}
+primary_{{ interface.name }}="{{ interface.primary }}"
+{% endif %}
+rc_net_{{ interface.name }}_need="!net.*"
+
+{% else %}
+config_{{ interface.name }}="{{ interface.addresses | default([]) | join(' ') }}"
+{% if interface.routes | default([]) | length > 0 %}
+routes_{{ interface.name }}="{{ interface.routes | join(' ') }}"
+{% endif %}
+{% if interface.dns_servers | default([]) | length > 0 %}
+dns_servers_{{ interface.name }}="{{ interface.dns_servers | join(' ') }}"
+{% endif %}
+
+{% endif %}
+{% endfor %}

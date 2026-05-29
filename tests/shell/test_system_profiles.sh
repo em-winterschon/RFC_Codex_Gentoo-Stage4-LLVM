@@ -24,6 +24,7 @@ for profile in \
   base-minimal-xorg-slim.yml \
   cloud-init-baremetal.yml \
   cloud-init-vm.yml \
+  documentation-diagram-renderer.yml \
   container-elastic-apm.yml \
   container-ipmi-exporter.yml \
   container-rsyslog-collector.yml \
@@ -188,6 +189,15 @@ assert_file_contains "${PREFLIGHT_ROLE}" 'resolved_portage_patch_files'
 assert_file_contains "${PORTAGE_ROLE}" '/etc/portage/patches'
 assert_file_contains "${PROFILE_DIR}/vm-kibana-interface.yml" 'install_method: upstream_tarball'
 assert_file_contains "${PACKAGE_LIST_DIR}/stage5-virtual-host-kibana-interface.packages" '^net-misc/curl$'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'media-gfx/plantuml'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'media-gfx/graphviz'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'media-libs/gd fontconfig jpeg png truetype zlib'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'media-libs/freetype harfbuzz png'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'diagram-render-native-cc.conf'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'dev-libs/fribidi diagram-render-native-cc.conf'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" 'harfbuzz-12.3.2-clang21-varc-extra-semi.patch'
+assert_file_contains "${PROFILE_DIR}/documentation-diagram-renderer.yml" '#pragma GCC diagnostic ignored "-Wextra-semi-stmt"'
+assert_file_contains "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/inventories/local-network/host_vars/m70_canary.yml" 'documentation-diagram-renderer.yml'
 
 test -f "${REPO_ROOT}/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/aaa-policy-definitions/site-baseline.yml"
 

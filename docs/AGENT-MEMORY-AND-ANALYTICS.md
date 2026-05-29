@@ -254,6 +254,52 @@ an idempotency key, and an audit artifact. Read methods operate from the local
 spool path selected by `FORGE_MEMORY_SPOOL_ROOT`, defaulting to
 `/var/lib/forge-memory/spool`.
 
+## M70 Codex Skill Budget Workaround
+
+On 2026-05-21, M70 showed this Codex startup warning with all Forge skills and
+plugins enabled:
+
+```text
+Warning: Exceeded skills context budget of 2%.
+```
+
+The local root cause is Codex's skill metadata renderer budget, not the model
+itself. The upstream renderer currently allocates 2% of the configured model
+context window to skill descriptions. With `gpt-5.5` at the cached 272k-token
+context window, the metadata budget is about 5,440 tokens, which is too small
+for the installed 56-skill Forge profile.
+
+Do not fix this by disabling skills. M70 keeps the plugins enabled and uses a
+local model-catalog override to give the skill metadata renderer a larger
+budget while keeping normal compaction below the real model context window:
+
+```toml
+model = "gpt-5.5"
+model_catalog_json = "/root/.codex/models_catalog_local_skillbudget.json"
+model_context_window = 400000
+model_auto_compact_token_limit = 240000
+```
+
+The override file is generated from `/root/.codex/models_cache.json` and changes
+only the local `gpt-5.5.max_context_window` entry to `1000000`. This does not
+increase the true model context. It only prevents unnecessary truncation of
+local skill descriptions, while `model_auto_compact_token_limit = 240000` keeps
+conversation compaction comfortably below the actual 272k-token model window.
+
+Fresh-process verification on M70:
+
+```bash
+codex debug prompt-input 'fresh-skill-budget-check'
+```
+
+Expected result:
+
+```text
+skill_mentions=56
+warning_count=0
+skills_text_len=25885
+```
+
 ## Open Decisions
 
 - Select the S3-compatible backend: MinIO, Garage, Ceph RGW, or another
