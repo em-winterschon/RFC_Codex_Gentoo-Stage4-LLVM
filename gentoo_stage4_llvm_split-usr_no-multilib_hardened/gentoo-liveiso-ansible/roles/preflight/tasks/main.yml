@@ -112,6 +112,7 @@
     resolved_profile_slurm_cluster: "{{ profile_slurm_cluster | default({}) }}"
     resolved_profile_jenkins_controller: "{{ profile_jenkins_controller | default({}) }}"
     resolved_profile_distcc_farm: "{{ profile_distcc_farm | default({}) }}"
+    resolved_profile_mcp_control_plane: "{{ profile_mcp_control_plane | default({}) }}"
 
 - name: Load selected profile definition files
   ansible.builtin.include_tasks: load_profile_definition.yml
@@ -293,6 +294,11 @@
       {{
         resolved_profile_distcc_farm
         | combine(profile_distcc_farm | default({}), recursive=True)
+      }}
+    resolved_profile_mcp_control_plane: >-
+      {{
+        resolved_profile_mcp_control_plane
+        | combine(profile_mcp_control_plane | default({}), recursive=True)
       }}
     resolved_portage_config_files: >-
       {{

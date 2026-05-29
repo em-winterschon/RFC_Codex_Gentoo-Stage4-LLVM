@@ -99,6 +99,70 @@ See:
 - [FastMCP Infrastructure Control Plane Design](superpowers/specs/2026-05-12-fastmcp-infra-control-plane-design.md)
 - [FastMCP Infrastructure Control Plane Implementation Plan](superpowers/plans/2026-05-12-fastmcp-infra-control-plane.md)
 
+## MCP Admission Registry And Promotion Policy
+
+The runtime profile above is the service front door; MCP server admission is a
+separate repo-managed safety gate for Forge/Codex and future automation agents.
+It prevents ad hoc installation of powerful tools by requiring source review,
+version pinning, vault-backed auth, smoke tests, and explicit write gates before
+any mutation-capable server receives live credentials.
+
+Promotion flow:
+
+`Discovery -> audit -> pin -> sandbox -> smoke test -> vault-backed auth -> audit logging -> gated writes`
+
+Default mode is read-only. Mutation-capable MCP servers remain blocked until a
+change-control entry defines scope, backout, audit logging, and least-privilege
+credentials.
+
+### First-Batch Candidate Registry
+
+| ID | Source | Risk | Default | Promotion Status | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `huggingface` | https://huggingface.co/docs/hub/hf-mcp-server | low | read-only | candidate | Model, dataset, Space, and paper discovery. Operator client settings live at https://huggingface.co/settings/mcp. |
+| `trac` | https://mcpmarket.com/server/trac | medium | read-only | candidate | Ticket, milestone, wiki, and change-control integration; write tools require a wrapper gate. |
+| `netbox` | https://github.com/netboxlabs/netbox-mcp-server | medium | read-only | candidate | Official NetBox Labs server is read-only and fits IPAM/DCIM lookup first. |
+| `grafana` | https://github.com/grafana/mcp-grafana | medium | read-only | candidate | Must run with write-disabled mode and a scoped service-account token. |
+| `jenkins` | https://github.com/jenkinsci/mcp-server-plugin | high | read-only | candidate | CI data is useful; build/job mutations require a separate promotion. |
+| `proxmox` | https://github.com/bsahane/mcp-proxmox | high | read-only | quarantine | VM lifecycle tools are dangerous; inventory-only smoke test first. |
+| `context7` | https://github.com/upstash/context7 | low | read-only | candidate | Documentation freshness tool; pin package/image versions. |
+| `kubernetes-openshift` | https://github.com/containers/kubernetes-mcp-server | high | read-only | deferred | Useful once OpenShift exists; keep cluster mutations disabled. |
+
+### Rendered Policy Files
+
+The `mcp_control_plane` Ansible role renders these policy artifacts on the MCP
+control-plane host:
+
+- `/etc/mcp-control-plane/candidate-registry.yml`
+- `/etc/mcp-control-plane/promotion-policy.yml`
+- `/etc/mcp-control-plane/mcp-control-plane.env`
+
+The role does not install or launch third-party MCP servers. It creates the
+machine-readable registry and policy that later service wrappers and Trac tasks
+can consume.
+
+### Credential Rules
+
+- Store secrets only in Ansible Vault.
+- Use read-only tokens unless a change-control entry explicitly requires more.
+- Prefer service accounts over personal accounts.
+- Keep external SaaS tokens scoped by source system and purpose.
+- Do not copy MCP client config files containing tokens into the repo.
+
+### OpenShift And OpenStack TODO
+
+OpenShift and OpenStack are tracked as platform-service profiles, not as MCP
+servers. Build VM roles for single-node OpenShift and single-node OpenStack,
+review Gentoo/OpenRC feasibility before assuming native service management, and
+treat unsupported platform components as appliance VMs managed by our fabric for
+network, storage, DNS, TLS, auth, logs, metrics, and backups.
+
+### Operating Rule
+
+No MCP server that can mutate infrastructure should be connected to live
+credentials until it has a registry entry, pinned source, smoke-test evidence,
+audit path, and explicit promotion state.
+
 ## Validation
 
 Run:

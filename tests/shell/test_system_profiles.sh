@@ -59,6 +59,7 @@ for profile in \
   vm-redfish-emulator.yml \
   vm-workstation-nscde.yml \
   vm-kibana-interface.yml \
+  vm-mcp-control-plane.yml \
   vm-nexus-repository.yml \
   zerotier-managed-access.yml; do
   test -f "${PROFILE_DIR}/${profile}"
@@ -97,6 +98,7 @@ for metadata in \
   vm-redfish-emulator.metadata.yml \
   vm-workstation-nscde.metadata.yml \
   vm-kibana-interface.metadata.yml \
+  vm-mcp-control-plane.metadata.yml \
   vm-nexus-repository.metadata.yml; do
   test -f "${PROFILE_DIR}/${metadata}"
   assert_file_contains "${PROFILE_DIR}/${metadata}" '^gentoo_system_profile_metadata:'
@@ -158,6 +160,7 @@ for package_list in \
   stage5-virtual-host-identity-controller.packages \
   stage5-virtual-host-jenkins-controller.packages \
   stage5-virtual-host-kibana-interface.packages \
+  stage5-virtual-host-mcp-control-plane.packages \
   stage5-virtual-host-nexus-repository.packages \
   stage5-virtual-host-observability-grafana.packages \
   stage5-virtual-host-observability-prometheus.packages \
