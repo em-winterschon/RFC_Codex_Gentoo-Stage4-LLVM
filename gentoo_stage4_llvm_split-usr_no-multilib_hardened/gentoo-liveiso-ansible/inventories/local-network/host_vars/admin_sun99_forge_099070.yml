@@ -132,14 +132,17 @@ local_inventory_observed:
         enabled_runlevel: default
         config_file: /etc/conf.d/net
   notes:
+    - This local_inventory_observed section is historical evidence captured on 2026-05-15, before the 2026-05-24 cutover.
+    - Current live network state is recorded under m70_network_target.live_state_as_of_2026_05_24.
     - CSS326 bridge FDB maps M70 MAC 00:07:32:78:65:C6 to ge14, C7 to ge17, and C8 to ge18.
-    - bond0 is intentionally left unnumbered until a dedicated staging VLAN or VM bridge is explicitly assigned.
+    - The old bond0 was intentionally left unnumbered until the 2026-05-24 management cutover.
     - M70 is the temporary FMT2/SFO200 OpenVPN compatibility transport as of 2026-05-15; remove after a cleaner BigNetwork or router replacement path is validated.
 
 m70_network_target:
   approved_at: "2026-05-24T16:24:11Z"
+  live_cutover_at: "2026-05-24T17:27:32Z"
   coordinator: LTC Forge
-  status: approved-pending-gated-cutover
+  status: live-temporary-active-backup
   service_address: 172.16.99.70/24
   gateway: 172.16.99.1
   initramfs_netboot_interface: netboot0
@@ -147,10 +150,12 @@ m70_network_target:
   persistent_management_service: net.bond0
   openrc_network_config: /etc/conf.d/net
   bond0:
-    mode: 802.3ad
-    lacp_rate: fast
+    live_mode: active-backup
+    desired_future_mode: 802.3ad
+    desired_future_lacp_rate: fast
+    desired_future_xmit_hash_policy: layer3+4
     miimon: 100
-    xmit_hash_policy: layer3+4
+    primary: netboot0
     members:
       - name: netboot0
         pci_address: "0000:02:00.0"
@@ -159,6 +164,7 @@ m70_network_target:
         mac_address: "00:07:32:78:65:C6"
         switch: sw_mgmt_css326
         switch_port: ge14
+        live_role: active-slave
       - name: enp3s0
         pci_address: "0000:03:00.0"
         driver: igb
@@ -166,22 +172,42 @@ m70_network_target:
         mac_address: "00:07:32:78:65:C7"
         switch: sw_mgmt_css326
         switch_port: ge17
+        live_role: backup-slave
     notes:
       - The initramfs still names and uses netboot0 for iPXE/ZFS-root bootstrapping.
-      - The persistent root should move 172.16.99.70/24 and the default route from netboot0 to bond0 during the gated cutover.
-      - CSS326 LACP group 2 must move from ge17/ge18 to ge14/ge17 before restarting M70 networking.
+      - The persistent root now owns 172.16.99.70/24 and the default route on bond0.
+      - Active-backup was selected live because CSS326 SwOS LACP mutation is not yet tested automation.
+      - Future 802.3ad requires CSS326 LACP group membership on ge14/ge17 before changing M70 bond mode.
     openrc_fragment:
       - config_bond0="172.16.99.70/24"
       - routes_bond0="default via 172.16.99.1"
+      - dns_servers_bond0="172.16.99.1 9.9.9.9"
       - slaves_bond0="netboot0 enp3s0"
-      - mode_bond0="802.3ad"
-      - lacp_rate_bond0="fast"
+      - mode_bond0="active-backup"
       - miimon_bond0="100"
-      - xmit_hash_policy_bond0="layer3+4"
-  current_live_delta_as_of_2026_05_24:
-    netboot0: owns 172.16.99.70/24 and the default route.
-    bond0: currently contains enp3s0 plus eno1 and is unnumbered.
+      - primary_bond0="netboot0"
+      - config_netboot0="null"
+      - config_enp3s0="null"
+      - config_eno1="null"
+      - config_eno2="null"
+      - config_eno3="null"
+      - config_eno4="null"
+  live_state_as_of_2026_05_24:
+    bond0: owns 172.16.99.70/24 and default route via 172.16.99.1.
+    active_slave: netboot0
+    backup_slave: enp3s0
+    openvpn_fmt2: restarted after network bounce; FMT2 routes restored through tun-fmt2.
+    net_netboot0_runlevel: removed from default runlevel after cutover; service was not stopped live.
     eno2: 10.64.64.70/24 was removed live; do not persist host addressing on eno2.
+  reserved_port_host_stack_policy:
+    ipv4_addresses: none
+    ipv6_link_local: disabled
+    sysctl_file: /etc/sysctl.d/91-m70-reserved-x553.conf
+    sysctl_keys:
+      - net.ipv6.conf.eno1.disable_ipv6=1
+      - net.ipv6.conf.eno2.disable_ipv6=1
+      - net.ipv6.conf.eno3.disable_ipv6=1
+      - net.ipv6.conf.eno4.disable_ipv6=1
   reserved_ovs_dpdk_sriov_ports:
     - name: eno1
       pci_address: "0000:06:00.0"
@@ -191,7 +217,7 @@ m70_network_target:
       target_driver: vfio-pci
       target_switch: gw_rfc99_mkccr2004_16g
       target_switch_port: ge3
-      cutover_note: Move cable from CSS326 ge18 to CCR2004 ge3 after bond0 no longer uses eno1.
+      live_validation: CCR2004 bridge FDB learned C8 on ge3 after L2 probe.
     - name: eno2
       pci_address: "0000:06:00.1"
       driver_before_binding: ixgbe
@@ -200,7 +226,7 @@ m70_network_target:
       target_driver: vfio-pci
       target_switch: gw_rfc99_mkccr2004_16g
       target_switch_port: ge4
-      cutover_note: 10.64.64.70/24 was removed; keep unnumbered for OVS-DPDK/VPP.
+      live_validation: CCR2004 bridge FDB learned C9 on ge4 after L2 probe; no host IPv4 address remains.
     - name: eno3
       pci_address: "0000:07:00.0"
       driver_before_binding: ixgbe
@@ -209,6 +235,7 @@ m70_network_target:
       target_driver: vfio-pci
       target_switch: gw_rfc99_mkccr2004_16g
       target_switch_port: ge5
+      live_validation: CCR2004 bridge FDB learned CA on ge5 after L2 probe.
     - name: eno4
       pci_address: "0000:07:00.1"
       driver_before_binding: ixgbe
@@ -217,10 +244,12 @@ m70_network_target:
       target_driver: vfio-pci
       target_switch: gw_rfc99_mkccr2004_16g
       target_switch_port: ge6
+      live_validation: CCR2004 bridge FDB learned CB on ge6 after L2 probe.
   backout:
-    - Restore CSS326 LACP group 2 to ge17/ge18.
-    - Restore /etc/conf.d/net with config_netboot0 and routes_netboot0 for 172.16.99.70/24.
-    - Restart net.netboot0, then validate SSH to 172.16.99.70 before stopping net.bond0.
+    - Restore /root/m70-net-pre-bond0-cutover.conf.<timestamp> to /etc/conf.d/net.
+    - Stop net.bond0 and start net.netboot0.
+    - Validate SSH to 172.16.99.70 before changing or stopping any other network service.
+    - CSS326 LACP backout is only required after a future 802.3ad switch-side LACP mutation.
   usb_serial_console_gateway:
     captured_at: "2026-05-17T18:59:00Z"
     status: active

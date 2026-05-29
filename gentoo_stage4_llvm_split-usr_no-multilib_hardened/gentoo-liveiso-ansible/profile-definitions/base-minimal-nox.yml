@@ -9,6 +9,8 @@ gentoo_profile_definition:
       app-admin/logrotate -cron
       app-admin/sudo -sendmail
       sys-apps/smartmontools -daemon
+    15-base-minimal-nox-rsyslog: |
+      app-admin/rsyslog elasticsearch normalize openssl relp rfc3195 rfc5424hmac snmp ssl usertools uuid xxhash -systemd
   modules_load_files:
     base-minimal-nox.conf: |
       nvme

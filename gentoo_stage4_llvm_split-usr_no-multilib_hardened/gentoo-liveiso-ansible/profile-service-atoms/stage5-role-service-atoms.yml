@@ -29,6 +29,10 @@ role_service_atoms:
         protocol_ports:
           - udp/514
           - tcp/514
+          - tcp/6514
+        required_rsyslog_modules:
+          - omfwd
+          - omelasticsearch
       - id: time-sync
         package_atoms:
           - net-misc/chrony
