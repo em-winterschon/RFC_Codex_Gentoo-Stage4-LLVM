@@ -15,6 +15,17 @@ dns_hetzner_cloud_required_domains:
 dns_hetzner_cloud_inventory_managed_domains:
   - rfc1918.host
 
+dns_hetzner_cloud_audit_domains:
+  - rfc1918.host
+  - rfc1918.dev
+  - rfc1918.ai
+  - rfc1918.io
+  - rfc1918.sh
+  - rfc1918.systems
+  - rfc1918.org
+  - vernetzen.io
+  - yukon.systems
+
 dns_hetzner_cloud_token_groups:
   - name: rfc1918
     token_name: "{{ vault_hetzner_dns_rfc1918_token_name | default('') }}"

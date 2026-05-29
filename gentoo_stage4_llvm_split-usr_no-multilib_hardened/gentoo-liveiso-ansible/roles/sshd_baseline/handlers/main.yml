@@ -1,0 +1,9 @@
+---
+- name: Restart sshd
+  ansible.builtin.command:
+    argv:
+      - rc-service
+      - "{{ sshd_baseline_service_name }}"
+      - restart
+  changed_when: true
+  when: sshd_baseline_restart_service | default(true) | bool
