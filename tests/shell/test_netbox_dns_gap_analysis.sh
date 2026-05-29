@@ -213,6 +213,62 @@ assert "fixture-secret" not in serialized
 assert "api_token" not in serialized
 PY
 
+python3 - "${GAP_SCRIPT}" << 'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("netbox_dns_gap_analysis", Path(sys.argv[1]))
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(module)
+
+payloads = {
+    "/zones?page=1&per_page=100": {
+        "zones": [{"id": "zone-rfc1918", "name": "rfc1918.host"}],
+        "meta": {"pagination": {"page": 1, "next_page": 2}},
+    },
+    "/zones?page=2&per_page=100": {
+        "zones": [{"id": "zone-dev", "name": "rfc1918.dev"}],
+        "meta": {"pagination": {"page": 2, "last_page": 2}},
+    },
+    "/zones/zone-rfc1918/rrsets?page=1&per_page=100": {
+        "rrsets": [
+            {"id": "first", "name": "first", "type": "A", "records": [{"value": "192.0.2.1"}]}
+        ],
+        "pagination": {"page": 1, "next_page": 2},
+    },
+    "/zones/zone-rfc1918/rrsets?page=2&per_page=100": {
+        "rrsets": [
+            {"id": "second", "name": "second", "type": "A", "records": [{"value": "192.0.2.2"}]}
+        ],
+        "pagination": {"page": 2, "last_page": 2},
+    },
+}
+calls = []
+
+
+def fake_fetch(api_endpoint, token, path):
+    calls.append(path)
+    return payloads[path]
+
+
+module.fetch_hcloud_json = fake_fetch
+zone_payloads = module.fetch_paginated_hcloud_payloads("https://api.example", "secret", "/zones")
+zones = []
+for payload in zone_payloads:
+    zones.extend(module.extract_list(payload, ("zones", "results"), "zones"))
+records = module.fetch_zone_records("https://api.example", "secret", "zone-rfc1918")
+assert [zone["name"] for zone in zones] == ["rfc1918.host", "rfc1918.dev"], calls
+assert [record["name"] for record in records] == ["first", "second"], calls
+assert calls == [
+    "/zones?page=1&per_page=100",
+    "/zones?page=2&per_page=100",
+    "/zones/zone-rfc1918/rrsets?page=1&per_page=100",
+    "/zones/zone-rfc1918/rrsets?page=2&per_page=100",
+], calls
+PY
+
 if command -v ansible-playbook > /dev/null 2>&1; then
   tmp_inventory="$(mktemp --suffix=.yml)"
   trap 'rm -rf "${tmpdir}" "${tmp_inventory}"' EXIT

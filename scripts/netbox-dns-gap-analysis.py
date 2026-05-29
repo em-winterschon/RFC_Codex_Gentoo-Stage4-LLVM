@@ -414,6 +414,61 @@ def fetch_hcloud_json(api_endpoint: str, token: str, path: str) -> dict[str, Any
     return request_json(f"{api_endpoint.rstrip('/')}{path}", headers)
 
 
+def append_query(path: str, params: dict[str, str]) -> str:
+    parsed = parse.urlsplit(path)
+    query = dict(parse.parse_qsl(parsed.query, keep_blank_values=True))
+    query.update(params)
+    return parse.urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parse.urlencode(query),
+            parsed.fragment,
+        )
+    )
+
+
+def pagination_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    pagination = payload.get("pagination")
+    if isinstance(pagination, dict):
+        return pagination
+    meta = payload.get("meta")
+    if isinstance(meta, dict) and isinstance(meta.get("pagination"), dict):
+        return meta["pagination"]
+    return {}
+
+
+def next_page_number(pagination: dict[str, Any], current_page: int) -> int | None:
+    next_page = pagination.get("next_page")
+    if isinstance(next_page, int):
+        return next_page
+    if isinstance(next_page, str) and next_page.isdigit():
+        return int(next_page)
+    last_page = pagination.get("last_page")
+    if isinstance(last_page, str) and last_page.isdigit():
+        last_page = int(last_page)
+    if isinstance(last_page, int) and current_page < last_page:
+        return current_page + 1
+    return None
+
+
+def fetch_paginated_hcloud_payloads(
+    api_endpoint: str, token: str, path: str
+) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        page_path = append_query(path, {"page": str(page), "per_page": "100"})
+        payload = fetch_hcloud_json(api_endpoint, token, page_path)
+        payloads.append(payload)
+        next_page = next_page_number(pagination_payload(payload), page)
+        if next_page is None:
+            break
+        page = next_page
+    return payloads
+
+
 def fixture_group(fixture: dict[str, Any], token_group_name: str) -> dict[str, Any] | None:
     for group in fixture.get("token_groups", []):
         if isinstance(group, dict) and group.get("name") == token_group_name:
@@ -455,7 +510,6 @@ def record_fqdn(record_name: str, zone_name: str) -> str:
 
 
 def fetch_zone_records(api_endpoint: str, token: str, zone_id: str) -> list[dict[str, Any]]:
-    base_url = api_endpoint.rstrip("/")
     urls = [
         f"/zones/{parse.quote(zone_id, safe='')}/rrsets",
         f"/records?{parse.urlencode({'zone_id': zone_id})}",
@@ -464,7 +518,10 @@ def fetch_zone_records(api_endpoint: str, token: str, zone_id: str) -> list[dict
     last_error: RuntimeError | None = None
     for path in urls:
         try:
-            return extract_records(fetch_hcloud_json(base_url, token, path), "records")
+            rows: list[dict[str, Any]] = []
+            for payload in fetch_paginated_hcloud_payloads(api_endpoint, token, path):
+                rows.extend(extract_records(payload, "records"))
+            return rows
         except RuntimeError as exc:
             last_error = exc
     raise last_error or RuntimeError(f"could not fetch records for zone id {zone_id}")
@@ -497,11 +554,13 @@ def build_hetzner_records(
             provider_zones = (
                 fixture_zones(fixture, group_name)
                 if fixture is not None
-                else extract_list(
-                    fetch_hcloud_json(api_endpoint, group["api_token"], "/zones"),
-                    ("zones", "results"),
-                    "zones",
-                )
+                else [
+                    zone
+                    for payload in fetch_paginated_hcloud_payloads(
+                        api_endpoint, group["api_token"], "/zones"
+                    )
+                    for zone in extract_list(payload, ("zones", "results"), "zones")
+                ]
             )
         except RuntimeError as exc:
             errors.append(
