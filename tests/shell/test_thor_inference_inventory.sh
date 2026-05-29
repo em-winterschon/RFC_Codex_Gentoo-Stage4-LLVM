@@ -16,7 +16,7 @@ thor_vars="${ANSIBLE_ROOT}/inventories/local-network/host_vars/agx_rfc99_bunnyde
 [[ -f "${inventory}" ]] || fail "missing local-network inventory"
 [[ -f "${thor_vars}" ]] || fail "missing Thor host_vars"
 
-ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - << 'PY'
+ANSIBLE_ROOT="${ANSIBLE_ROOT}" python3 - << 'PYTHON'
 import os
 from pathlib import Path
 
@@ -47,9 +47,12 @@ if not isinstance(host, dict):
 expected_host_fields = {
     "ansible_host": "172.16.99.34",
     "ansible_user": "root",
-    "local_network_role": "inference-jetson-thor",
+    "local_network_role": "inference-gpu-host",
     "fqdn": "agx-rfc99-bunnydev.rfc1918.host",
     "observed_service_ip": "172.16.99.34",
+    "inference_service_container_engine": "podman",
+    "inference_service_accelerator": "nvidia",
+    "inference_service_manager": "systemd",
 }
 for key, expected in expected_host_fields.items():
     if host.get(key) != expected:
@@ -67,17 +70,30 @@ if "agx_rfc99_bunnydev_099034" in sglang_servers:
 expected_vars = {
     "inference_service_architecture": "arm64",
     "inference_service_accelerator": "nvidia",
-    "inference_service_container_engine": "docker",
-    "inference_service_allow_docker_exception": True,
+    "inference_service_container_engine": "podman",
     "inference_service_manager": "systemd",
 }
 for key, expected in expected_vars.items():
     if host_vars.get(key) != expected:
         raise SystemExit(f"Thor host_vars {key} must be {expected!r}")
 
+if host_vars.get("inference_service_allow_docker_exception") is not None:
+    raise SystemExit("Thor host_vars must not enable Docker exception deployment")
+
+if host_vars.get("inference_service_cdi_devices") != ["nvidia.com/gpu=all"]:
+    raise SystemExit("Thor host_vars must pin NVIDIA CDI device nvidia.com/gpu=all")
+
 blocked = set(host_vars.get("inference_service_deferred_backends", []))
 if blocked != {"vllm", "sglang"}:
     raise SystemExit("Thor deferred backend list must be exactly vllm and sglang")
-PY
+
+live_audit = host_vars.get("inference_service_live_audit", {})
+if live_audit.get("podman_present") is not True:
+    raise SystemExit("Thor live audit must record Podman present")
+if live_audit.get("docker_active") is not False:
+    raise SystemExit("Thor live audit must record Docker inactive")
+if "nvidia.com/gpu=all" not in live_audit.get("nvidia_cdi", {}).get("devices", []):
+    raise SystemExit("Thor live audit must record NVIDIA CDI devices")
+PYTHON
 
 printf 'PASS: %s\n' "$(basename "${BASH_SOURCE[0]}")"

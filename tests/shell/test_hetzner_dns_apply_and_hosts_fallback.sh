@@ -83,11 +83,11 @@ devices:
     role: container-services-staging
     management_ip: 172.16.99.89
     fqdn: svc-container-services-safe-move-01.rfc1918.host
-  - name: fixture_out_of_zone_host
+  - name: fixture_unmanaged_workstation
     site: local-rfc1918-lab
-    role: dns-fixture
+    role: workstation-validation
     management_ip: 172.16.99.157
-    fqdn: fixture-out-of-zone-host.rfc1918.dev
+    fqdn: fixture-unmanaged-workstation.rfc1918.dev
 service_vips:
   - name: identity-ldap-radius
     site: local-rfc1918-lab
@@ -147,7 +147,7 @@ assert records[("msg-sun99-ntfysys.rfc1918.host", "CNAME")]["values"] == [
 ]
 assert records[("netbox-http.rfc1918.host", "A")]["values"] == ["172.16.99.62"]
 skipped = {(row["fqdn"], row["reason"]) for row in plan["skipped"]}
-assert ("fixture-out-of-zone-host.rfc1918.dev", "no_matching_zone") in skipped
+assert ("fixture-unmanaged-workstation.rfc1918.dev", "no_matching_zone") in skipped
 assert "172.16.99.63 ipa01.rfc1918.host ipa01 identity-ldap-radius.rfc1918.host identity-ldap-radius" in hosts
 assert "172.16.99.96 msg-sun99-ntfysys-099096.rfc1918.host" in hosts
 assert "msg-sun99-ntfysys.rfc1918.host" in hosts

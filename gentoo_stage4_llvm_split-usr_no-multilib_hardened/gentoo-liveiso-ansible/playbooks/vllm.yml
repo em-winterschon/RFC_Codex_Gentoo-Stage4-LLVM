@@ -7,6 +7,7 @@
   vars:
     inference_service_backend: vllm
     inference_service_name: vllm
+    inference_service_accelerator: nvidia
 
   roles:
     - role: inference_service

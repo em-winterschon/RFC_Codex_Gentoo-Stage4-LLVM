@@ -1,0 +1,38 @@
+# CODEOWNERS is evaluated by GitHub from .github/, repository root, then docs/.
+# Keep this file in .github/ so repository-control rules take precedence.
+#
+# Current valid write/admin collaborators for this private repository:
+# - @RobinWinters
+# - @yukon-forge
+# - @em-winterschon
+#
+# Replace user ownership with visible write-enabled @yukon-systems/* teams once
+# those teams exist with write access to this repository.
+
+# Default ownership for all repository changes.
+* @RobinWinters @yukon-forge
+
+# Repository controls and ownership rules protect themselves.
+/.github/ @RobinWinters @yukon-forge
+/.github/CODEOWNERS @RobinWinters @yukon-forge
+
+# GitHub issue, milestone, project, and wiki publication control surfaces.
+/project-management/ @RobinWinters @yukon-forge
+/docs/GITHUB-PROJECT-MANAGEMENT.md @RobinWinters @yukon-forge
+/docs/ROADMAP-AND-TODO.md @RobinWinters @yukon-forge
+/scripts/github_project_seed.py @RobinWinters @yukon-forge
+/scripts/publish-wiki.sh @RobinWinters @yukon-forge
+
+# Wiki source and status-report mirrors.
+/docs/wiki/ @RobinWinters @yukon-forge
+/docs/EOD-STATUS-*.md @RobinWinters @yukon-forge
+/docs/SITREP-*.md @RobinWinters @yukon-forge
+
+# Infrastructure automation and validation.
+/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible/ @RobinWinters @yukon-forge
+/scripts/ @RobinWinters @yukon-forge
+/tests/ @RobinWinters @yukon-forge
+
+# Agent continuity and execution plans.
+/AGENTS.md @RobinWinters @yukon-forge
+/docs/superpowers/ @RobinWinters @yukon-forge

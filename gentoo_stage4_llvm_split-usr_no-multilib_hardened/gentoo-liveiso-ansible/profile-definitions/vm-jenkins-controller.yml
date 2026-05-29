@@ -33,6 +33,40 @@ gentoo_profile_definition:
         description: Container image and GHCR publication pipelines.
       - name: binpkgs
         description: Binpkg rebuild and package-host publication pipelines.
+    job_seed_manifests:
+      - id: rfc1918-infra-control-plane
+        description: Repo-safe seed contract for CA packages, SLURM builds, DistCC, Nexus publication, and DNS propagation.
+        source_workflow: docs/workflows/rfc1918-infra-control-plane.json
+        issue_refs:
+          - 216
+          - 217
+          - 218
+          - 220
+        jobs:
+          - name: stage4-stage5-build-via-slurm
+            folder: stage4
+            scheduler: slurm
+            slurm_submit_wrapper: scripts/slurm-submit-ansible-playbook.sh
+            distcc_manifest: /var/lib/jenkins/builder-farm/builder-farm.json
+            command: scripts/run-container-base-build-pathb.sh --dry-run
+          - name: rfc99-atlasforge-ca-certs-gentoo
+            folder: binpkgs
+            package_atom: app-misc/rfc99-atlasforge-ca-certs
+            repository: rfc99-atlasforge-gentoo
+            publish_target: nexus://rfc99-gentoo-overlay
+            command: scripts/build-rfc1918-ca-packages.sh --format gentoo --dry-run
+          - name: rfc99-atlasforge-ca-certs-rpm
+            folder: binpkgs
+            package_name: rfc99-atlasforge-ca-certs
+            repository: rfc99-atlasforge-rpm
+            publish_target: nexus://rfc99-yum-hosted
+            command: scripts/build-rfc1918-ca-packages.sh --format rpm --dry-run
+          - name: netbox-dns-propagation-plan
+            folder: stage4
+            source_of_truth: netbox
+            public_dns: hetzner
+            local_dns: coredns
+            command: ansible-playbook -i inventories/local-network/hosts.yml playbooks/hetzner-dns-plan-from-netbox.yml --check
   distcc_farm:
     enabled: true
     client_enabled: true

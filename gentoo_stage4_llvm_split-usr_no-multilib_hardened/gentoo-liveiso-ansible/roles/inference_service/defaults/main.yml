@@ -4,7 +4,6 @@ inference_service_state: started
 inference_service_enable_on_boot: true
 inference_service_manager: auto
 inference_service_container_engine: podman
-inference_service_allow_docker_exception: false
 inference_service_backend: ""
 inference_service_name: ""
 inference_service_config_dir: /etc/inference-services
@@ -21,21 +20,38 @@ inference_service_accelerator: auto
 inference_service_package_map:
   Debian:
     - podman
+    - buildah
+    - crun
+    - conmon
+    - netavark
+    - aardvark-dns
+    - passt
     - uidmap
     - slirp4netns
     - fuse-overlayfs
   RedHat:
     - podman
+    - buildah
+    - crun
+    - conmon
+    - netavark
+    - aardvark-dns
     - shadow-utils
     - slirp4netns
     - fuse-overlayfs
   Gentoo:
     - app-containers/podman
+    - app-containers/buildah
+    - app-containers/crun
+    - app-containers/conmon
+    - app-containers/netavark
+    - app-containers/aardvark-dns
     - sys-apps/shadow
 
 inference_service_accelerator_profiles:
   cpu:
     devices: []
+    docker_args: []
     security_opts: []
     extra_args: []
     environment:
@@ -43,6 +59,8 @@ inference_service_accelerator_profiles:
   nvidia:
     devices:
       - nvidia.com/gpu=all
+    docker_args:
+      - --gpus all
     security_opts: []
     extra_args: []
     environment:
@@ -53,6 +71,7 @@ inference_service_accelerator_profiles:
     devices:
       - /dev/kfd
       - /dev/dri
+    docker_args: []
     security_opts: []
     extra_args: []
     environment:
@@ -60,6 +79,7 @@ inference_service_accelerator_profiles:
       HSA_OVERRIDE_GFX_VERSION: ""
   auto:
     devices: []
+    docker_args: []
     security_opts: []
     extra_args: []
     environment:

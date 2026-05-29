@@ -1,6 +1,6 @@
 # Inference Service Playbooks
 
-Audit timestamp: `2026-05-24T03:15:49Z`
+Audit timestamp: `2026-05-25T20:56:00-07:00`
 
 ## Scope
 
@@ -50,9 +50,8 @@ Do not require SELinux. For RedHat-family hosts where SELinux is active, the
 role may set compatible labels or use a documented opt-in, but the baseline must
 work without making SELinux a prerequisite.
 
-Use Podman by default. Allow a host-level container engine override for
-transition hosts where the NVIDIA runtime is already Docker-only and Podman CDI
-has not been validated.
+Use Podman for all inference service playbooks. Container handling must remain
+OCI-compatible and must not depend on Docker engine behavior.
 
 ## Accelerator Profiles
 
@@ -69,10 +68,19 @@ For Podman/CDI-capable hosts, expose GPUs with:
 --device nvidia.com/gpu=all
 ```
 
-Do not assume this is already valid on Jetson/L4T hosts. Thor AGX currently has
-Docker and NVIDIA Container Toolkit active, but Podman is absent. Treat
-Jetson/L4T as a host-prep exception until Podman plus NVIDIA CDI is validated or
-a temporary Docker engine override is approved.
+Thor AGX now uses Podman plus NVIDIA CDI. The live Thor CDI file is
+`/etc/cdi/nvidia.yaml`, and the validated CDI devices are `nvidia.com/gpu=0`
+and `nvidia.com/gpu=all`.
+
+For approved legacy Docker exception wrappers, expose GPUs with:
+
+```text
+--gpus all
+```
+
+The Docker mapping is compatibility-only. The Ansible apply path remains
+Podman-first and must not unmask or start Docker on Thor without a separate
+operator-approved maintenance window.
 
 ### `amd_rocm`
 
@@ -118,36 +126,35 @@ in the playbooks.
 
 ### Thor AGX
 
-Use Thor as an Ubuntu/L4T exception host:
+Use Thor as an Ubuntu/L4T Podman host:
 
 ```yaml
 inference_service_architecture: arm64
-inference_service_accelerator_profile: nvidia
-inference_service_container_engine: docker  # temporary until Podman/CDI is validated
-inference_service_allow_docker_exception: true
+inference_service_accelerator: nvidia
+inference_service_container_engine: podman
+inference_service_manager: systemd
 ```
 
-This is not a recommendation to standardize on Docker. It records current live
-state so automation can avoid breaking existing NVIDIA runtime assumptions.
-Prefer an approved Podman/CDI prep step before making Podman mandatory on Thor.
+This is the current Thor stance. The role keeps a template-level Docker NVIDIA
+exception for historical wrapper compatibility, but Thor service deployment uses
+Podman/CDI and renders `--device nvidia.com/gpu=all`.
 
 Start with Ollama and Open WebUI. Defer vLLM and SGLang on Thor until their
 arm64, Jetson/L4T, and CUDA 13 image path is validated.
 
-2026-05-25 execution update:
+2026-05-25/26 execution update:
 
 - Thor is modeled as `agx_rfc99_bunnydev_099034` in the local-network
   inventory.
 - The active inventory uses `inference_service_accelerator: nvidia`,
-  `inference_service_container_engine: docker`,
-  `inference_service_allow_docker_exception: true`, and
-  `inference_service_manager: systemd`.
-- Docker/NVIDIA wrappers render `--gpus all` for the Docker exception path.
+  `inference_service_container_engine: podman`, `inference_service_manager:
+  systemd`, and NVIDIA CDI device `nvidia.com/gpu=all`.
+- Docker/NVIDIA wrappers render `--gpus all` only for explicit legacy Docker
+  exception rendering; this does not authorize Docker deployment on Thor.
 - Check mode skips service enable/start because planned systemd unit files are
-  not present until a real apply.
-- Ollama and Open WebUI artifacts were deployed stopped and disabled on Thor.
-- Runtime start remains blocked by masked Docker service/socket and missing
-  Podman.
+  not present on the target until a real apply.
+- Ollama and Open WebUI are the first validated Thor services; vLLM and SGLang
+  remain deferred.
 
 ## Acceptance Gates
 

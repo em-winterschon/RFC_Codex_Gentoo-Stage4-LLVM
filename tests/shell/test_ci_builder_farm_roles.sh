@@ -18,6 +18,8 @@ for role_dir in \
   test -f "${ANSIBLE_ROOT}/roles/${role_dir}/tasks/main.yml"
 done
 
+test -f "${ANSIBLE_ROOT}/roles/jenkins_controller/templates/rfc1918-infra-job-seed.yml.j2"
+
 for profile in \
   vm-jenkins-controller.yml \
   metal-builder-farm-node.yml; do
@@ -43,6 +45,9 @@ assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/metal-builder-farm-nod
 assert_file_contains "${ANSIBLE_ROOT}/profile-package-lists/stage5-metal-intel-platform.packages" 'sys-firmware/intel-microcode'
 
 assert_file_contains "${ANSIBLE_ROOT}/playbooks/install.yml" 'jenkins_controller'
+assert_file_contains "${ANSIBLE_ROOT}/roles/jenkins_controller/tasks/main.yml" 'Render Jenkins RFC1918 infrastructure job seed manifest'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-jenkins-controller.yml" 'job_seed_manifests:'
+assert_file_contains "${ANSIBLE_ROOT}/profile-definitions/vm-jenkins-controller.yml" 'rfc1918-infra-control-plane'
 assert_file_contains "${ANSIBLE_ROOT}/vars/install_sequences.yml" 'distcc_farm'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" 'ci_controllers:'
 assert_file_contains "${ANSIBLE_ROOT}/inventories/examples/hosts.yml" 'builder_farm_nodes:'

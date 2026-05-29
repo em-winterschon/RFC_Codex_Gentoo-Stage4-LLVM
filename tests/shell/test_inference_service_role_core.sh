@@ -28,14 +28,26 @@ require_file "${ROLE_DIR}/templates/inference-service.env.j2"
 require_file "${ROLE_DIR}/templates/inference-service.systemd.j2"
 require_file "${ROLE_DIR}/templates/inference-service.openrc.j2"
 
+require_absent() {
+  local pattern=$1
+  local file=$2
+  if grep -q -- "${pattern}" "${file}"; then
+    fail "unexpected pattern '${pattern}' in ${file}"
+  fi
+}
+
 require_grep 'inference_service_package_map:' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'inference_service_backend:' "${ROLE_DIR}/defaults/main.yml"
-require_grep 'inference_service_allow_docker_exception:' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'Debian:' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'RedHat:' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'Gentoo:' "${ROLE_DIR}/defaults/main.yml"
+require_grep 'netavark' "${ROLE_DIR}/defaults/main.yml"
+require_grep 'aardvark-dns' "${ROLE_DIR}/defaults/main.yml"
+require_grep 'crun' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'inference_service_accelerator_profiles:' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'nvidia.com/gpu=all' "${ROLE_DIR}/defaults/main.yml"
+require_grep 'docker_args:' "${ROLE_DIR}/defaults/main.yml"
+require_grep '--gpus all' "${ROLE_DIR}/defaults/main.yml"
 require_grep '/dev/kfd' "${ROLE_DIR}/defaults/main.yml"
 require_grep '/dev/dri' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'ollama' "${ROLE_DIR}/defaults/main.yml"
@@ -50,7 +62,6 @@ require_grep '/var/log/inference-services' "${ROLE_DIR}/defaults/main.yml"
 require_grep 'ansible.builtin.package:' "${ROLE_DIR}/tasks/main.yml"
 require_grep 'ansible_service_mgr' "${ROLE_DIR}/tasks/main.yml"
 require_grep "selectattr('name', 'equalto', inference_service_backend)" "${ROLE_DIR}/tasks/main.yml"
-require_grep 'inference_service_allow_docker_exception' "${ROLE_DIR}/tasks/main.yml"
 require_grep 'not ansible_check_mode' "${ROLE_DIR}/tasks/main.yml"
 require_grep 'inference-service-run.sh.j2' "${ROLE_DIR}/tasks/main.yml"
 require_grep 'inference-service.env.j2' "${ROLE_DIR}/tasks/main.yml"
@@ -63,7 +74,6 @@ require_grep 'inference_service_log_root' "${ROLE_DIR}/tasks/main.yml"
 
 require_grep 'inference_service_container_engine' "${ROLE_DIR}/templates/inference-service-run.sh.j2"
 require_grep "inference_service_container_engine == 'podman'" "${ROLE_DIR}/templates/inference-service-run.sh.j2"
-require_grep '--gpus all' "${ROLE_DIR}/templates/inference-service-run.sh.j2"
 require_grep '--pull' "${ROLE_DIR}/templates/inference-service-run.sh.j2"
 require_grep '--env-file' "${ROLE_DIR}/templates/inference-service-run.sh.j2"
 require_grep '--device' "${ROLE_DIR}/templates/inference-service-run.sh.j2"
@@ -71,5 +81,9 @@ require_grep 'INFERENCE_SERVICE_NAME=' "${ROLE_DIR}/templates/inference-service.
 require_grep 'ExecStart={{ inference_service_libexec_dir }}/run-' "${ROLE_DIR}/templates/inference-service.systemd.j2"
 require_grep 'command="{{ inference_service_libexec_dir }}/run-' "${ROLE_DIR}/templates/inference-service.openrc.j2"
 require_grep '#!/sbin/openrc-run' "${ROLE_DIR}/templates/inference-service.openrc.j2"
+
+require_absent "inference_service_container_engine == 'docker'" "${ROLE_DIR}/tasks/main.yml"
+require_absent 'inference_service_allow_docker_exception' "${ROLE_DIR}/defaults/main.yml"
+require_absent 'inference_service_allow_docker_exception' "${ROLE_DIR}/tasks/main.yml"
 
 printf 'PASS: %s\n' "$(basename "$0")"

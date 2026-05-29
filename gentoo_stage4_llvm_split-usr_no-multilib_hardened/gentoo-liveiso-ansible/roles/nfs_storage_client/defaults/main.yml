@@ -1,6 +1,8 @@
 ---
 nfs_storage_client_default_enabled: false
-nfs_storage_client_protocol_default: nfsv3_tcp
+nfs_storage_client_protocol_default: nfsv4_2_tcp
+nfs_storage_client_non_lacp_protocol_default: nfsv4_1_tcp
+nfs_storage_client_lacp_protocol_default: nfsv4_2_tcp_multipath
 nfs_storage_client_idmap_domain: rfc1918.host
 nfs_storage_client_require_aaa_for_nfsv4: true
 nfs_storage_client_enable_nfsv3: true
@@ -9,6 +11,9 @@ nfs_storage_client_enable_rdma: false
 nfs_storage_client_enable_multipath: false
 nfs_storage_client_rdma_port: 20049
 nfs_storage_client_nconnect: 4
+nfs_storage_client_fstab_safety_options:
+  - nofail
+  - soft
 nfs_storage_client_exports: []
 nfs_storage_client_mounts: []
 nfs_storage_client_openrc_services:
