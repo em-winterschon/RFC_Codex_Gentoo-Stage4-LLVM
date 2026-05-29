@@ -109,6 +109,7 @@
     resolved_profile_container_service_segments: "{{ profile_container_service_segments | default([]) }}"
     resolved_profile_site_security_profile: "{{ profile_site_security_profile | default({}) }}"
     resolved_profile_memory_storage: "{{ profile_memory_storage | default({}) }}"
+    resolved_profile_slurm_cluster: "{{ profile_slurm_cluster | default({}) }}"
     resolved_profile_jenkins_controller: "{{ profile_jenkins_controller | default({}) }}"
     resolved_profile_distcc_farm: "{{ profile_distcc_farm | default({}) }}"
 
@@ -277,6 +278,11 @@
       {{
         resolved_profile_memory_storage
         | combine(profile_memory_storage | default({}), recursive=True)
+      }}
+    resolved_profile_slurm_cluster: >-
+      {{
+        resolved_profile_slurm_cluster
+        | combine(profile_slurm_cluster | default({}), recursive=True)
       }}
     resolved_profile_jenkins_controller: >-
       {{
