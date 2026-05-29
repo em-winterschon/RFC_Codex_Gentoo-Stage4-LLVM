@@ -1,0 +1,71 @@
+#!/bin/sh
+set -eu
+
+log() {
+  printf '[stage5-firstboot-enroll] %s\n' "$*"
+}
+
+die() {
+  log "ERROR: $*" >&2
+  exit 1
+}
+
+enabled="${STAGE5_FIRSTBOOT_ENROLLMENT_ENABLED:-no}"
+[ "${enabled}" = "yes" ] || die "secure first-boot enrollment is disabled"
+
+bundle_url="${STAGE5_FIRSTBOOT_BUNDLE_URL:-}"
+age_identity="${STAGE5_FIRSTBOOT_AGE_IDENTITY:-/etc/stage5-firstboot/age.identity}"
+expected_fqdn="${STAGE5_FIRSTBOOT_EXPECTED_FQDN:-}"
+state_dir="${STAGE5_FIRSTBOOT_STATE_DIR:-/var/lib/stage5-firstboot}"
+validator="${STAGE5_FIRSTBOOT_VALIDATOR:-/usr/local/sbin/validate_secure_firstboot_bundle.py}"
+enroll_command="${STAGE5_FIRSTBOOT_ENROLL_COMMAND:-}"
+remove_after_success="${STAGE5_FIRSTBOOT_REMOVE_BUNDLE_AFTER_SUCCESS:-yes}"
+
+[ -n "${bundle_url}" ] || die "missing STAGE5_FIRSTBOOT_BUNDLE_URL"
+[ -n "${expected_fqdn}" ] || die "missing STAGE5_FIRSTBOOT_EXPECTED_FQDN"
+[ -n "${enroll_command}" ] || die "missing STAGE5_FIRSTBOOT_ENROLL_COMMAND"
+[ -r "${age_identity}" ] || die "missing age identity ${age_identity}"
+[ -x "${validator}" ] || die "missing bundle validator ${validator}"
+
+mkdir -p "${state_dir}"
+chmod 0700 "${state_dir}"
+
+encrypted_bundle="${state_dir}/enrollment-bundle.json.age"
+plaintext_bundle="${state_dir}/enrollment-bundle.json"
+completed_marker="${state_dir}/enrollment-complete"
+
+if [ -e "${completed_marker}" ] && [ -s /etc/krb5.keytab ]; then
+  log "enrollment already completed and /etc/krb5.keytab exists"
+  exit 0
+fi
+
+umask 077
+curl --fail --show-error --silent --location --output "${encrypted_bundle}" "${bundle_url}"
+age --decrypt --identity "${age_identity}" --output "${plaintext_bundle}" "${encrypted_bundle}"
+"${validator}" "${plaintext_bundle}" --expected-fqdn "${expected_fqdn}"
+
+STAGE5_ENROLL_FQDN="$(jq -r '.fqdn' "${plaintext_bundle}")"
+STAGE5_ENROLL_REALM="$(jq -r '.realm' "${plaintext_bundle}")"
+STAGE5_ENROLL_DOMAIN="$(jq -r '.domain' "${plaintext_bundle}")"
+STAGE5_ENROLL_IPA_SERVER="$(jq -r '.ipa_server' "${plaintext_bundle}")"
+STAGE5_ENROLL_OTP="$(jq -r '.enrollment.otp' "${plaintext_bundle}")"
+export STAGE5_ENROLL_FQDN STAGE5_ENROLL_REALM STAGE5_ENROLL_DOMAIN STAGE5_ENROLL_IPA_SERVER STAGE5_ENROLL_OTP
+
+sh -eu -c "${enroll_command}"
+
+[ -s /etc/krb5.keytab ] || die "enrollment command completed without creating /etc/krb5.keytab"
+
+if command -v rc-service >/dev/null 2>&1; then
+  rc-service sssd restart
+fi
+
+touch "${completed_marker}"
+chmod 0600 "${completed_marker}"
+
+if [ "${remove_after_success}" = "yes" ]; then
+  rm -f "${encrypted_bundle}" "${plaintext_bundle}"
+else
+  rm -f "${plaintext_bundle}"
+fi
+
+log "secure first-boot enrollment completed"

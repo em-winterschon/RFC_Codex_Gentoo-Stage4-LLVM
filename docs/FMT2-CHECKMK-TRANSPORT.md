@@ -21,9 +21,22 @@ Minimum evidence to confirm before Check_MK integration:
 - Check_MK API endpoint and agent-download path are reachable
 - return routing from FMT2 to RFC99/SUN99 works for management checks
 
+## Active Temporary Path
+
+Temporary path: M70 now runs a legacy static-key OpenVPN compatibility transport
+for the FMT2/SFO200 OPNsense endpoint.
+
+Use `docs/FMT2-OPENVPN-COMPAT-TRANSPORT.md` for live state, validation, and
+backout. This path is active because BigNetwork route propagation succeeded but
+Edge Lite forwarding/return behavior still blocked end-to-end traffic.
+
+The active transport is good enough for discovery, NetBox evidence collection,
+and Check_MK reachability tests. It is not the desired steady state.
+
 ## Preferred Path
 
-Primary path: enable the BigNetwork SDN route to the FMT2 SDN device.
+Primary steady-state path: enable the BigNetwork SDN route to the FMT2 SDN
+device, or replace the legacy SFO200 router path with managed RouterOS.
 
 Rationale:
 
@@ -53,8 +66,8 @@ The repo now includes:
 
 ## Fallback Path
 
-Fallback path: run a compatibility OpenVPN endpoint in a dedicated VyOS VM or
-small Linux VM on Proxmox.
+Fallback path: run a compatibility OpenVPN endpoint in a dedicated VyOS VM,
+small Linux VM on Proxmox, or temporary M70-hosted OpenVPN service.
 
 Do not use RouterOS as the compatibility OpenVPN endpoint unless no other path is
 available. RouterOS should carry routes/firewall state for the tunnel, not be the

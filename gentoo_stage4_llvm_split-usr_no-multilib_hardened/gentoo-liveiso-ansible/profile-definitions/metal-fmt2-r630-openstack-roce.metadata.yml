@@ -1,0 +1,73 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-fmt2-r630-openstack-roce
+  purpose: >-
+    Host-specific FMT2 Dell R630 profile for the first OpenStack-capable
+    Gentoo stage4 QEMU/libvirt hypervisor, with Intel X710 front-end network
+    separation and Mellanox ConnectX-4 RoCEv2 storage fabric admission gates.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-hypervisor
+    role_name: fmt2-r630-openstack-roce
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-metal-intel-platform.packages
+      - profile-package-lists/stage5-base-hypervisor-common.packages
+      - profile-package-lists/stage5-base-hypervisor-qemu-libvirt.packages
+      - profile-package-lists/stage5-storage-nfs-client.packages
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-observability-client.packages
+      - profile-package-lists/stage5-observability-metrics-client.packages
+  base_profile:
+    intended_overlay_on:
+      - hardened-llvm-stage4-merged-usr
+      - base-hypervisor-qemu-libvirt
+      - aaa-domain-client
+      - nfs-storage-client
+      - logging-rsyslog-client
+      - telemetry-node-exporter-client
+  kernel:
+    strategy: gentoo-kernel
+    selected_atom: =sys-kernel/gentoo-kernel-6.18.18
+    reason: >-
+      This atom is already validated in the repo's stage4 history and avoids
+      spending production time on a Rocky 8.9 ELRepo 6.3.8 MLNX_OFED iSER API
+      mismatch.
+  hardware:
+    platform: Dell PowerEdge R630
+    data_switch: Arista DCS-7060CX-32S
+    frontend_nic: Intel X710
+    rdma_nic: Mellanox ConnectX-4
+    boot_storage: IDSDM EFI handoff to SATA OS mirror
+    payload_storage: SAS bays reserved for local ZFS pools and not OS install targets
+  package_pins:
+    exact_atoms:
+      - =sys-kernel/gentoo-kernel-6.18.18
+      - =app-emulation/qemu-10.2.0-r1
+      - =app-emulation/libvirt-12.0.0
+      - =net-misc/openvswitch-3.3.8
+      - =sys-apps/nvme-cli-2.16
+      - =sys-block/ndctl-77-r2
+    unpinned_support_packages:
+      - sys-cluster/rdma-core
+      - sys-firmware/intel-microcode
+      - sys-kernel/linux-firmware
+  kernel_modules:
+    - ib_iser
+    - ib_uverbs
+    - mlx5_core
+    - mlx5_ib
+    - nvme-fabrics
+    - nvme-rdma
+    - openvswitch
+    - qede
+    - rpcrdma
+    - zfs
+  acceptance_gates:
+    - iDRAC boot path and rollback path recorded before wiping pri
+    - IDSDM EFI boot and SATA OS mirror target selection verified before installer apply
+    - SAS hot-swap bays excluded from operating-system installer target set
+    - Gentoo stage4 boots with OpenRC, AAA, rsyslog, observability, ZFS, libvirt, and OVS
+    - ofed_info reports the selected vendor OFED line before production RDMA admission
+    - ConnectX-4 links pass pairwise RDMA tests and one-path-failure tests
+    - Arista DCS-7060CX-32S config snapshot and rollback plan exist before switch mutation

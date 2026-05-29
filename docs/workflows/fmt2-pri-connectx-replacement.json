@@ -1,0 +1,134 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "fmt2-pri-connectx-replacement",
+    "description": "Replace or reseat the missing ConnectX adapter on kvm-sfo200-pri-9922 and reopen RDMA admission only after host, iDRAC, and Arista evidence passes.",
+    "owners": [
+      "forge",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible root containing host E2ET definitions and playbooks."
+    },
+    {
+      "name": "pri_host",
+      "required": true,
+      "default": "kvm-sfo200-pri-9922",
+      "description": "FMT2 R630 host requiring ConnectX replacement."
+    },
+    {
+      "name": "arista_host",
+      "required": true,
+      "default": "sw-sfo200-7060cx32s-2010",
+      "description": "Arista 7060 switch with pri ConnectX-facing ports Et6/1 and Et6/3."
+    },
+    {
+      "name": "e2et_manifest",
+      "required": true,
+      "default": "host-e2et-definitions/fmt2-pri-rdma-admission.yml",
+      "description": "Blocked admission manifest that must move from blocked to passing after replacement."
+    }
+  ],
+  "stages": [
+    {
+      "id": "pre-change-freeze",
+      "summary": "Freeze pri RDMA admission and confirm the replacement is a physical/topology maintenance action.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Gate: pri remains non-RDMA until ConnectX enumerates in Linux and iDRAC, Arista LLDP sees Et6/1+Et6/3 neighbors, vendor OFED/DOCA reports, and RDMA E2ET passes.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "pre-swap-evidence-capture",
+      "summary": "Capture host PCI inventory, DMI slots, iDRAC hardware inventory, Arista interface state, LLDP, counters, and config snapshot before opening the chassis.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Capture before swap: lspci -Dnn; lspci -tvnn; dmidecode -t slot; iDRAC hwinventory; show interfaces status Et6/1,Et6/3; show lldp neighbors Et6/1,Et6/3 detail; show running-config interfaces Et6/1,Et6/3,Po613.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "power-off-maintenance-window",
+      "summary": "Power off pri through iDRAC or OS shutdown, then verify power state before datacenter hands remove or replace the adapter.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Operator gate: power off pri and verify iDRAC chassis power is off before physical replacement. Do not touch sec, ter, or X12AGAIN.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "physical-replacement",
+      "summary": "Replace or reseat the ConnectX adapter, record model, PSID, serial, port MACs, optics or DAC identifiers, riser, and slot.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Datacenter hands: install known-good ConnectX adapter in the intended pri PCIe slot, cable both ports back to Arista Et6/1 and Et6/3, and record FRU metadata for NetBox.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "post-swap-host-inventory",
+      "summary": "Boot pri and validate Linux plus iDRAC can enumerate the replacement ConnectX adapter.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Post-swap required evidence: lspci -Dnn shows 15b3 Mellanox endpoint; dmidecode Slot 1 is In Use; iDRAC hardware inventory shows the adapter; Linux names both ConnectX ports.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "post-swap-arista-validation",
+      "summary": "Validate Arista sees both pri ConnectX ports and that no unintended loop, LACP, VLAN, or LLDP behavior appeared.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Post-swap switch evidence: Et6/1 and Et6/3 link as expected, LLDP sees pri neighbors, counters are clean, Po613 remains blocked unless intentionally configured, and no topology loop or ARP flood appears.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "rdma-admission-e2et",
+      "summary": "Render the pri RDMA E2ET conformance report; it must remain blocked until every hard gate is updated with post-swap passing evidence.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "playbooks/host-e2et-conformance-report.yml",
+        "-e",
+        "host_e2et_manifest=${e2et_manifest}",
+        "-e",
+        "host_e2et_fail_on_blocked=true"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    }
+  ]
+}

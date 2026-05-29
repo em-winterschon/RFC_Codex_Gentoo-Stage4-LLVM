@@ -1,0 +1,10 @@
+#!/sbin/openrc-run
+# Managed by Ansible: roles/ntfy_server/templates/ntfy.initd.j2
+
+description="ntfy pub-sub notification server"
+supervisor="supervise-daemon"
+
+depend() {
+  need net
+  use dns logger
+}

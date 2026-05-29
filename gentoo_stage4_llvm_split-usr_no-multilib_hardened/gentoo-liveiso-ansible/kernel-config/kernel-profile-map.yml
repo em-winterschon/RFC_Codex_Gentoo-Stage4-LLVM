@@ -1,0 +1,126 @@
+---
+kernel_config_registry_version: 1
+
+policy:
+  source_of_truth: repo-kernel-config-registry
+  base_profile: basic-minimal
+  fragment_format: linux-kconfig-fragment
+  render_status: planned
+  live_build_impact: none
+  verification_required:
+    - merge selected fragments against the exact kernel source tree
+    - fail on unknown or stale Kconfig symbols
+    - record selected kernel package atom
+    - record final config hash in host E2ET conformance output
+    - preserve Path-B netboot gzip SquashFS compatibility until all targets migrate
+
+baselines:
+  basic-minimal:
+    fragment: fragments/base/basic-minimal.config
+    applies_to:
+      - metal
+      - virtual
+      - rescue-netboot
+      - path-b
+    purpose: UEFI, initramfs, SquashFS/gzip, serial console, SSH-rootfs, basic networking, and module compatibility.
+
+machine_roles:
+  metal-base:
+    extends:
+      - basic-minimal
+    fragments:
+      - fragments/machine/metal-host.config
+  virtual-guest:
+    extends:
+      - basic-minimal
+    fragments:
+      - fragments/machine/virtual-guest.config
+  base-hypervisor-qemu-libvirt:
+    extends:
+      - metal-base
+    fragments:
+      - fragments/machine/hypervisor-qemu-libvirt.config
+  base-hypervisor-xen:
+    extends:
+      - metal-base
+    fragments:
+      - fragments/machine/hypervisor-xen.config
+  base-hypervisor-xen-qemu-libvirt:
+    extends:
+      - base-hypervisor-qemu-libvirt
+      - base-hypervisor-xen
+
+hardware_subprofiles:
+  optane-nvdimm:
+    fragments:
+      - fragments/hardware/optane-nvdimm.config
+    allowed_roles:
+      - workstation-exception
+      - storage-node
+      - coherence-ce-node
+    host_overrides:
+      - hostname_aliases:
+          - x12again
+          - prinzessin
+        reason: Workstation exception; this host has Intel Optane Series 200 NVDIMMs and must layer NVDIMM support over the workstation role.
+    notes:
+      - Keep Optane/NVDIMM support out of the default workstation profile.
+      - Prefer this overlay for storage and coherence nodes participating in data-tiering operations.
+  gpu-universal-xorg:
+    fragments:
+      - fragments/hardware/gpu-universal-xorg.config
+    allowed_roles:
+      - workstation
+      - gpu-compute
+      - hypervisor-gpu-passthrough
+    notes:
+      - Supports monitor-output drivers for Intel, AMD, NVIDIA, QXL, virtio GPU, and EFI framebuffer.
+      - Userspace package policy still decides proprietary NVIDIA/CUDA and AMDGPU-PRO components.
+
+service_overlays:
+  nfs-storage-client:
+    fragments:
+      - fragments/storage/nfs-client.config
+    applies_to:
+      - metal
+      - virtual
+    container_default: false
+  rdma-storage-fabric:
+    fragments:
+      - fragments/network/roce-v2-host.config
+      - fragments/storage/rdma-storage-fabric.config
+      - fragments/storage/nvmeof-initiator.config
+    applies_to:
+      - metal
+      - virtual
+  coherence-ce-node:
+    fragments:
+      - fragments/storage/rdma-storage-fabric.config
+      - fragments/storage/nvmeof-initiator.config
+      - fragments/hardware/optane-nvdimm.config
+    requires:
+      - RDMA-capable NIC inventory
+      - NVDIMM or NVMe tiering media inventory
+      - service package atoms for Coherence-CE
+  storage-node:
+    fragments:
+      - fragments/storage/zfs-host.config
+      - fragments/storage/rdma-storage-fabric.config
+      - fragments/storage/nvmeof-initiator.config
+      - fragments/hardware/optane-nvdimm.config
+    requires:
+      - disk topology inventory
+      - multipath policy
+      - persistent NFS or block-export service definition
+  observability-bmc-client:
+    fragments:
+      - fragments/observability/redfish-ipmi.config
+    applies_to:
+      - metal
+      - virtual
+
+known_gaps:
+  - Existing profile YAML uses both `kernel_config` and `kernel_config_requirements`; those should be migrated to this registry.
+  - Inventory `kernel_config_fragment_files` already exists, but it does not yet reference the normalized fragment paths here.
+  - Path-B netboot artifact generation has kernel/package defaults in scripts and does not yet consume this map.
+  - A renderer/validator is still required before these fragments mutate live kernel builds.

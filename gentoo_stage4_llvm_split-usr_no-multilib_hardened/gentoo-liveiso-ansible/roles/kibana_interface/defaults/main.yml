@@ -1,5 +1,13 @@
 ---
 kibana_default_enabled: false
+kibana_default_install_method: upstream_tarball
+kibana_default_version: "9.3.1"
+kibana_default_tarball_url: https://artifacts.elastic.co/downloads/kibana/kibana-9.3.1-linux-x86_64.tar.gz
+kibana_default_tarball_sha512: abe6628dd58cbd2f878d0d158aa9e93c415cf6a39b5812adb8ac9dcfe6b8ec610fd0e802b75a8398c50b243a732aa53547ae253d6bd1a6f579c51c2ffef0499a
+kibana_default_install_root: /opt/kibana
+kibana_default_service_user: kibana
+kibana_default_timezone: UTC
+kibana_default_node_options: --max-old-space-size=2048
 kibana_default_server_name: kibana.example.invalid
 kibana_default_server_host: 0.0.0.0
 kibana_default_server_port: 5601
@@ -7,3 +15,4 @@ kibana_default_base_path: ""
 kibana_default_public_base_url: ""
 kibana_default_elasticsearch_hosts:
   - http://127.0.0.1:9200
+kibana_default_data_views: []

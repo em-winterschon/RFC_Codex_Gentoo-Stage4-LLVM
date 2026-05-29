@@ -5,9 +5,10 @@ set base-url {{ netboot_public_base_url }}
 {% if netboot_role.key == 'localdisk' %}
 sanboot --no-describe --drive 0x80
 {% else %}
+imgfree
 set initrd-name {{ netboot_role.value.initrd_boot_name | default(netboot_initramfs_boot_name) }}
 kernel --name vmlinuz {{ netboot_role.value.kernel_url }} initrd=initrd.magic {{ netboot_local_console }}{% if netboot_enable_serial_console | bool %} {{ netboot_serial_console }}{% endif %} {{ netboot_role.value.extra_cmdline }}
 initrd --name ${initrd-name} {{ netboot_role.value.initrd_url }}
 imgstat
-boot
+boot || shell
 {% endif %}

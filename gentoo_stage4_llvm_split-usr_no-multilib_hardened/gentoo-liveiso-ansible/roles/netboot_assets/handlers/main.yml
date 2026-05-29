@@ -1,0 +1,6 @@
+---
+- name: Restart netboot tftp
+  ansible.builtin.service:
+    name: "{{ netboot_tftp_service_name }}"
+    state: restarted
+  when: netboot_tftp_service_enabled | bool

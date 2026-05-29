@@ -1,0 +1,18 @@
+# Managed by Ansible role ssh_client_policy.
+{% for alias in ssh_client_policy_host_aliases %}
+Host {{ alias.name }}
+  HostName {{ alias.hostname }}
+{% if alias.user is defined %}
+  User {{ alias.user }}
+{% endif %}
+{% if alias.port is defined %}
+  Port {{ alias.port }}
+{% endif %}
+{% if alias.identity_file is defined %}
+  IdentityFile {{ alias.identity_file }}
+{% endif %}
+{% if alias.proxyjump is defined %}
+  ProxyJump {{ alias.proxyjump }}
+{% endif %}
+
+{% endfor %}

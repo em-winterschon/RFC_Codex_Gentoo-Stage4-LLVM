@@ -1,0 +1,86 @@
+---
+profile_definition_files:
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
+  - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/cloud-init-vm.yml"
+  - "{{ playbook_dir }}/../profile-definitions/logging-rsyslog-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/telemetry-node-exporter-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/aaa-domain-client.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-guest-application-server.yml"
+  - "{{ playbook_dir }}/../profile-definitions/observability-native-haproxy-tls-proxy.yml"
+  - "{{ playbook_dir }}/../profile-definitions/vm-observability-prometheus.yml"
+
+install_networkmanager: true
+install_openssh: true
+install_hostname: obs-sun99-prometheus-099064
+
+profile_cloud_init:
+  enabled: true
+  instance_id: obs-sun99-prometheus-099064
+  local_hostname: obs-sun99-prometheus-099064
+  disable_root: false
+  ssh_pwauth: false
+
+profile_rsyslog:
+  forward_enabled: true
+  forward_hostname: log-sun99-rsyslog.rfc1918.host
+  forward_protocol: tcp
+  forward_port: 6514
+
+profile_native_haproxy_tls_proxy:
+  frontends:
+    - name: prometheus
+      bind: "*:443"
+      mode: http
+      cert_path: /etc/ssl/rfc1918/obs-sun99-prometheus.crt
+      key_path: /etc/ssl/rfc1918/private/obs-sun99-prometheus.key
+      pem_path: /etc/haproxy/tls/obs-sun99-prometheus.pem
+      backend_name: be_prometheus
+      servers:
+        - name: prometheus
+          address: 127.0.0.1
+          port: 9090
+
+profile_telemetry:
+  prometheus:
+    external_url: https://obs-sun99-prometheus.rfc1918.host/
+    retention_time: 30d
+    scrape_interval: 30s
+    evaluation_interval: 30s
+    external_labels:
+      site: sun99
+      environment: stage5
+      role: observability-prometheus
+    remote_write:
+      - url: http://obs-sun99-vmetrics-099065.rfc1918.host:8428/api/v1/write
+        queue_config:
+          max_samples_per_send: 10000
+          capacity: 20000
+          max_shards: 8
+    scrape_configs:
+      - job_name: sun99-observability-node
+        static_configs:
+          - targets:
+              - obs-sun99-prometheus-099064.rfc1918.host:9100
+              - obs-sun99-vmetrics-099065.rfc1918.host:9100
+              - obs-sun99-grafana-099066.rfc1918.host:9100
+            labels:
+              telemetry_domain: host
+      - job_name: sun99-victoriametrics
+        static_configs:
+          - targets:
+              - obs-sun99-vmetrics-099065.rfc1918.host:8428
+            labels:
+              telemetry_domain: metrics-store
+      - job_name: sun99-collectd-aggregator
+        static_configs:
+          - targets:
+              - obs-sun99-vmetrics-099065.rfc1918.host:9103
+            labels:
+              telemetry_domain: collectd
+      - job_name: sun99-grafana
+        static_configs:
+          - targets:
+              - obs-sun99-grafana-099066.rfc1918.host:3000
+            labels:
+              telemetry_domain: dashboard

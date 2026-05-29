@@ -39,6 +39,29 @@
     - container_services_enabled
     - container_ntfy_profile.enabled | default(false) | bool
 
+- name: Initialize ntfy runtime pre-commands
+  ansible.builtin.set_fact:
+    container_ntfy_pre_commands: "{{ container_ntfy_profile.pre_commands | default([]) }}"
+  when:
+    - container_services_enabled
+    - container_ntfy_profile.enabled | default(false) | bool
+
+- name: Add ntfy controlled archive preload commands
+  ansible.builtin.set_fact:
+    container_ntfy_pre_commands: >-
+      {{
+        container_ntfy_pre_commands
+        + [
+            'test -s ' + (container_ntfy_profile.preload.archive_path | quote),
+            'sha256sum -c ' + (container_ntfy_profile.preload.sha256_file | quote),
+            'podman image exists ' + (container_ntfy_profile.image | quote) + ' || podman load -i ' + (container_ntfy_profile.preload.archive_path | quote)
+          ]
+      }}
+  when:
+    - container_services_enabled
+    - container_ntfy_profile.enabled | default(false) | bool
+    - container_ntfy_profile.preload.required | default(false) | bool
+
 - name: Register ntfy runtime application
   ansible.builtin.set_fact:
     container_runtime_applications: >-
@@ -57,6 +80,7 @@
               'published_ports': container_ntfy_profile.published_ports | default(['80:80/tcp']),
               'cap_add': container_ntfy_profile.cap_add | default([]),
               'environment': container_ntfy_profile.env | default({}),
+              'pre_commands': container_ntfy_pre_commands | default([]),
               'volumes': [
                 container_ntfy_config_dir + '/server.yml:/etc/ntfy/server.yml:ro',
                 (resolved_profile_container_services.runtime_root | default('/var/lib/container-services')) + '/data/ntfy:/var/cache/ntfy'

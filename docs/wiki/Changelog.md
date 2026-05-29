@@ -1,7 +1,555 @@
 # Changelog
 
+## 2026-05-20 - FMT2 R630 `sec` RDMA Positive-Control Workflow
+
+- Added `sec` and `ter` to the local-network `roce_hosts` inventory with
+  `admin_sun99_forge_099070` as the required FMT2 execution host, because the
+  M70 holds the OpenVPN route and SSH identity required for those hosts.
+- Updated the NVIDIA DOCA/OFED role's preflight discovery tasks to use raw
+  commands so `apply=false` can inspect old Rocky/RHEL-like hosts that only
+  provide Python 3.6, while keeping live package/driver mutation disabled.
+- Ran the M70-hosted `nvidia-doca-ofed.yml` preflight against `sec` with
+  `apply=false`; it detected both ConnectX-4 PCI functions, reported kernel
+  `6.3.8-1.el8.elrepo.x86_64`, and stopped before mutation with
+  `ok=3 changed=0 failed=0`.
+- Captured `kvm-sfo200-sec-9923` as the non-destructive positive-control R630
+  while `pri` remains physically blocked on missing ConnectX inventory.
+- Verified live `sec` evidence: SSH and sudo path works from M70, X710 ports
+  enumerate at 10G with 32 total VFs per PF, ConnectX-4 endpoints enumerate as
+  Mellanox MT27700 `[15b3:1013]`, both ConnectX ports link at 50G, and
+  `rdma link show` reports `mlx5_0` and `mlx5_1` as `ACTIVE`.
+- Captured Arista positive-control evidence: `Et7/1` and `Et7/3` are connected
+  at 50G, LLDP sees `kvm-sfo200-sec-9923.vernetzen.io`, sampled port errors are
+  zero, and `Po713` remains a later LACP/switchdev promotion gate.
+- Added the blocked `fmt2-sec-rdma-positive-control` E2ET manifest and workflow
+  so `sec` can progress through read-only capture, NVIDIA DOCA/OFED preflight,
+  RDMA tooling closeout, and later `sec` to `ter` pairwise smoke without
+  touching `pri`, `ter`, X12AGAIN, or `sec` storage.
+- Documented that the same vendor driver family should cover ConnectX-4 now and
+  BlueField-2 after the datacenter NIC migration, but `sec` is not production
+  admitted until `ofed_info`, ibverbs/perftest tooling, pairwise RDMA smoke,
+  protocol smoke, and one-path-failure gates pass.
+
+## 2026-05-19 - FMT2 R630 HCI Staged Rebuild Planning
+
+- Added the FMT2 R630 HCI staged rebuild runbook for
+  `kvm-sfo200-pri-9922`, `kvm-sfo200-sec-9923`, and
+  `kvm-sfo200-ter-9924`, using `pri` as the first destructive rebuild
+  candidate and preserving `ter` as the storage/provisioning anchor.
+- Added the R630 network fabric policy: X710 `eno1`/`eno2` for host-management
+  LACP, X710 `eno3`/`eno4` for VM front-end LACP/OVS/SR-IOV, and ConnectX-4
+  2x50GbE for RDMA/RoCEv2 storage paths through the Arista 7060.
+- Captured 2026-05-19 R630 fabric evidence: X710 and ConnectX links are up on
+  `sec` and `ter`, RDMA links are active, SR-IOV exposure is inconsistent, and
+  `sec` reports placeholder ConnectX MACs requiring firmware follow-up.
+- Captured that `sec` and `ter` currently lack `ofed_info` and are using
+  in-kernel `mlx5` modules; production RDMA admission now requires the selected
+  vendor OFED/DOCA path and consistent SR-IOV enablement.
+- Corrected the live Arista 7060 management record to `172.18.20.10`, noting
+  that HTTPS/eAPI is reachable, SSH is open from the CheckMK VM but filtered
+  from M70/NASA, and access must use `verwalterin` rather than `root`.
+- Validated read-only Arista CLI access from M70 through CheckMK using the
+  `7060` SSH alias, the `verwalterin.vernetzen.id_rsa` key, and the existing
+  switch `mgmt-acl` permit for `10.200.99.27`; documented that M70 and NASA
+  remain outside the ACL.
+- Extended the gated NVIDIA DOCA/OFED role markers to include ConnectX-4 and
+  `ofed_info -s` validation so FMT2 R630 ConnectX-4 hosts are tracked by the
+  same vendor-driver admission policy.
+- Recorded the `ter` storage policy: existing ZFS pool `dstore` is the only
+  local target for VM images, zvols, migration staging, backups, ISO caches,
+  and provisioning artifacts; the OS RAID1 SATA SSDs are OS-only.
+- Created and documented the `dstore` dataset and libvirt storage-pool layout for
+  `dstore/libvirt/images`, `dstore/libvirt/zvols`, backups, ISO cache, and
+  staging paths.
+- Defined the live `dstore-images` libvirt directory pool on `ter`, validated a
+  disposable KVM domain lifecycle against a QCOW2 disk on `dstore`, and verified
+  `/var/lib/libvirt/images` remained empty.
+- Validated zvol creation/destruction under `dstore/libvirt/zvols`; native
+  libvirt ZFS pool management is deferred because the temporary Rocky libvirt
+  build reports ZFS storage pool support unavailable.
+- Added roadmap and FMT2 inventory-intake notes to prevent future automation
+  from placing VM or backup payloads on `ter`'s OS mirror.
+- Added the R630 IDSDM EFI handoff policy from the archived `sec` Foreman
+  kickstart: IDSDM carries `/boot` and `/boot/efi`, the two small SATA devices
+  carry the OS mirror, and SAS hot-swap bays remain reserved for ZFS payloads.
+
+## 2026-05-19 - K10 Live Root Network Durability
+
+- Added Path B builder inputs for static OpenRC networking in the switched
+  live root: `PATHB_STATIC_INTERFACE`, `PATHB_STATIC_ADDRESS_CIDR`,
+  `PATHB_STATIC_GATEWAY`, and `PATHB_STATIC_DNS`.
+- Updated the K10 stage5 manifest and shell regression coverage so the
+  generated rootfs brings up `net.enp4s0` directly instead of depending on
+  dracut to preserve initramfs network state after switchroot.
+- Patched the active Hasslehoff netboot publisher rootfs and AP7901 outlet 6
+  reboot-validated K10 SSH reachability on `172.16.99.156` with OpenRC
+  `net.enp4s0`, `netmount`, `sshd`, and `local` started.
+- Preserved the pre-patch publisher rollback rootfs at
+  `/var/lib/netboot/path-b/artifacts/gentoo-installer/rollback-20260519T143743Z/rootfs.img`
+  and recorded the active rootfs checksum
+  `23bfe6bb89aa4fae56345f995648ae2321956ba0e3d5e3b235b57159ea402a32`.
+
+## 2026-05-17 - Hasslehoff Backup And ntfy Image Hardening
+
+- Hardened the Hasslehoff scheduled backup wrapper with preflight-only mirror
+  target validation, X12AGAIN/Prinzessin mirror-target rejection, optional
+  restore/readback verification, final manifest re-sync after a successful
+  mirror, and opt-in local retention controls.
+- Replaced the `ntfy` live Docker Hub runtime dependency with a controlled OCI
+  archive preload policy: local image `localhost/rfc1918/ntfy:v2.14.0`,
+  `pull_policy: never`, and required archive plus SHA256 files under
+  `/var/lib/container-services/preload`.
+
+## 2026-05-16 - RFC1918 CA TLS Deployment Planning
+
+- Added gated `rfc1918_ca_trust` and `rfc1918_service_tls` Ansible roles, wired
+  them into install role sequencing, and kept live mutation blocked behind
+  explicit apply variables.
+- Added RouterOS internal-CA certificate import mode for CA plus PKCS#12
+  bundles while preserving the existing self-signed fallback path.
+- Added `scripts/validate-rfc1918-service-tls.sh` for OpenSSL endpoint
+  validation, JSONL audit output, health URL checks, and optional local ntfy
+  notifications.
+- Added the non-secret RFC1918 service TLS certificate matrix for ntfy,
+  rsyslog, Elasticsearch VIP, NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, CheckMK, MCP control plane, RouterOS, Proxmox, and PDU
+  coverage.
+- Added the CA/TLS implementation plan and ITIL/ADR documentation for vault-only
+  secrets, trust-anchor rollout, HAProxy-first leaf deployment, network-device
+  imports, validation, and backout.
+- Extended Ansible Vault documentation with the
+  `vault_service_tls_certificates.<service_id>.*` leaf certificate namespace.
+- Added a shell guard test that validates the matrix structure and blocks
+  committed PEM material.
+
+## 2026-05-14 - M70 PDU Label And EOD Closeout
+
+- Normalized AP7901 outlet 4 inventory to the control-panel label
+  `admin-sun99-forge` for the `admin_sun99_forge_099070` automation-admin host.
+- Removed the paused validation laptop from active repo inventory, roadmap, and
+  docs until it is re-inventoried with stable IP, power, and switch metadata.
+- Added the 2026-05-13 EOD report and overnight execution plan, prioritizing
+  safe repo-only M70 hardening, Forge continuity restore planning, X12AGAIN
+  preflight expansion, SLURM observability, NetBox DCIM dry-run modeling, and
+  BigNetwork/FMT2 smoke-test prep.
+
+## 2026-05-13 - X12AGAIN Reimage And Coherent Scale Model
+
+- Added host-specific `metal-x12again-workstation-xen-coherent` profile intent
+  for X12AGAIN as a LOX workstation, Xen/QEMU hypervisor, AAA/RDMA/NFS client,
+  gated SLURM worker, Optane NVDIMM host, BlueField2 lab system, and Project
+  Coherent Flash scale-model target.
+- Added the no-mutation X12AGAIN live reimage preflight playbook, local-network
+  reimage-candidate inventory, host E2ET manifest, and docs. Destructive
+  mutation remains blocked until backup, service continuity, emergency console,
+  and human change-window gates are all explicitly true.
+- Added ITIL-style X12AGAIN reimage/change-control docs with hard gates,
+  backout, SLURM admission, BlueField2/RDMA admission, and no production
+  storage mutation policy.
+- Added the Project Coherent Flash SLURM scale-model plan mapping ADR-001
+  through ADR-009 to simulation-only job classes, metrics, and conformance
+  artifacts.
+
+## 2026-05-13 - SLURM Pilot Live Validation
+
+- Brought the first RFC99 SLURM pilot online on Hasslehoff VMs:
+  `sched-sun99-slurmctl-099071` (`172.16.99.71`) as controller/accounting and
+  `sched-sun99-slurmwkr-099072` (`172.16.99.72`) as the first worker.
+- Fixed Gentoo/OpenRC runtime blockers found during live apply:
+  `slurmdbd.conf` ownership, unsupported `slurmdbd -f`, OpenRC cgroup-v2
+  `system.slice` creation/controller enablement, and unsupported swap cgroup
+  constraint.
+- Validated `sinfo`, `scontrol show nodes`, and
+  `srun --nodes=1 --ntasks=1 hostname`; full shell validation passed with
+  `bash tests/shell/run-tests.sh`.
+- Updated SLURM pilot docs and roadmap status so X12AGAIN can remain offline or
+  be reimaged without blocking the scheduler control plane.
+
+## 2026-05-12 - Kernel Config Layering Registry
+
+- Added a declarative `kernel-config/` registry with a baseline
+  `basic-minimal` fragment plus machine, hardware, storage, RDMA, ZFS, GPU,
+  and observability overlays for review.
+- Separated Optane NVDIMM support into the `optane-nvdimm` hardware subprofile,
+  with X12AGAIN / `prinzessin` modeled as a workstation exception rather than a
+  generic workstation default.
+- Added CPU tuning policy metadata and a candidate architecture registry keyed
+  from `/tmp/docs/cpu-arch/RFC1918-CPU-Architectures.md`, while keeping existing
+  live Portage CPU profiles stable until `cpuid2cpuflags` captures are
+  committed with provenance.
+- Documented the kernel config gap analysis and next renderer/validator work for
+  Path-B and installed-host E2ET integration.
+- Added the FastMCP infrastructure control-plane promotion plan for NetBox,
+  Proxmox, RouterOS, Trac, and internal-infra MCP wrappers, with LAN-only
+  routing, vault-only credentials, mutation gates, and audit requirements.
+- Added `scripts/forge_memory_spool.py` as the first Forge continuity
+  write-ahead spool, with append-only JSONL events, unsigned closeout manifests,
+  and secret-looking JSON key rejection before writes.
+- Added `forge_memory_spool.py list-sessions` so new Forge runtimes can
+  summarize local event streams and closeout manifests before object-store/MCP
+  continuity is online.
+- Added initial SLURM workload-scheduler scaffolding: `vm-slurm-controller`,
+  `slurm-worker-node`, package lists, service atoms, and a render-first
+  `slurm_cluster` role for controller, worker, and accounting daemon config;
+  opened issue #116 as the SLURM pilot tracking anchor.
+- Extended the gated `nvidia_doca_ofed` role with read-only BlueField-2 /
+  ConnectX-5 PCI detection, required mlx5/RDMA module intent, RoCE validation
+  command planning, and an apply-time detection gate for RDMA issue #111.
+- Created issue #117 for `RDMA-002` and linked the NFS/RDMA storage-client
+  baseline docs to the existing `nfs-storage-client` profile, package atoms,
+  and tests.
+- Created issue #118 for `HPC-003` and added the first scheduler node-feature
+  taxonomy for CPU, memory, GPU, RDMA, storage-locality, and power-control
+  constraints.
+- Added an overnight execution plan and BigNetwork issue #114 readiness runbook
+  so repo-only work can continue safely while X12AGAIN backup I/O is active,
+  with explicit live-mutation deferral and evidence-bundle requirements.
+- Normalized recovered roadmap issues #111-#115 with RDMA/storage/HPC,
+  FMT2, and Agent Memory labels and milestones after the Codex session-memory
+  loss window.
+- Updated local-network and Hasslehoff backup tests/docs to assert stable
+  RouterOS serial `/dev/serial/by-id` paths while retaining current tty
+  observations for operator context.
+- Added initial FastMCP common helpers and a NetBox MCP skeleton with
+  read/plan/apply tool boundaries, mutation gating, and JSON audit artifacts.
+- Added the SLURM-first HPC workload scheduler plan, separating deterministic
+  build/validation scheduling from later HTCondor, Galaxy, UNICORE, ARC, and
+  CVMFS evaluation layers.
+- Added tomorrow planning items for BlueField-2/ConnectX-5 OFED deployment,
+  coherent-storage and heterogeneous-compute ADR import, and BigNetwork FMT2
+  link bring-up.
+- Added the 2026-05-12 EOD report covering recovery, pushed commits, wiki sync,
+  FastMCP scaffold state, tomorrow queue, and Forge continuity design.
+
+## 2026-05-11 - Path B K10 AAA Rootfs Rebuild Prep
+
+- Added secure firstboot producer staging around
+  `stage_secure_firstboot_bundle.py` and `secure-firstboot-bundle-stage.yml`,
+  with repo-output refusal, `no_log` coverage, and tests for age-encrypted OTP
+  bundle generation.
+- Added mutation-gated Tang/Clevis NBDE scaffolding: `vm-tang-nbde-server`,
+  `secure-firstboot-nbde-client`, package lists, service atoms, and OpenRC
+  Tang role templates.
+- Normalized Portage license defaults to `ACCEPT_LICENSE="*.*"` and wired
+  persistent Path B binpkg/distfile cache binds plus buildpkg defaults into the
+  K10 rebuild path.
+- Added planning docs for agent analytics/shared memory, Coherence-CE service
+  role packaging, RDMA storage fabric design, AI/ML HPC supercomputer trends,
+  and X12AGAIN workstation/hypervisor reimage gates.
+- Added a masked, mutation-gated `vm-coherence-ce-node` service scaffold with
+  profile/package-list/service-atom coverage, OpenRC role templates, and a
+  placeholder local overlay ebuild for future Jenkins-pinned builds.
+- Fixed the K10 Path B artifact generation failure where the `mksquashfs`
+  compressor fallback helper wrote a log line to stdout and produced an invalid
+  compressor string. The fallback warning now goes to stderr and the regression
+  test requires stdout to be exactly `gzip`.
+- Promoted the rebuilt K10 Path B artifacts from the X12AGAIN disposable
+  builder to the Hasslehoff netboot publisher at `172.16.99.88`; HTTP readback
+  validated the promoted `vmlinuz`, `initramfs.img`, and `rootfs.img` hashes.
+- Rebooted K10 through AP7901 outlet 6, validated kernel
+  `6.18.28-gentoo-dist`, confirmed the SSSD IPA backend and required tools are
+  present, then re-applied and validated live FreeIPA client enrollment.
+- Extended NetBox intake/apply logic to create real DCIM power cable objects
+  between AP7901 outlets and host power ports, then applied and verified
+  `outlet6 -> K10` and `outlet4 -> M70 automation-admin` with pre/post
+  NetBox snapshots.
+- Added the `secure-firstboot-enrollment` profile, package list, role-service
+  atom entry, and opt-in OpenRC `stage5-firstboot-enroll` role scaffold for
+  FreeIPA host OTP enrollment through age-encrypted first-boot bundles.
+- Added `scripts/render_secure_firstboot_bundle.py` and
+  `scripts/validate_secure_firstboot_bundle.py` so OTP bundles can be rendered
+  from vault/runtime environment input, validated for expiry/FQDN, and rejected
+  if keytab-like secret fields appear.
+- Updated K10 E2ET, netboot manifest, identity docs, and roadmap entries so the
+  remaining durable-AAA blocker is disk install or secure first-boot OTP bundle
+  apply that generates `/etc/krb5.keytab` on the target.
+- Promoted the rebuilt K10 Path B AAA artifacts from the disposable X12AGAIN
+  stagebuild VM to the Hasslehoff netboot publisher at `172.16.99.88`, with
+  hardlinked rollback directories under `/opt/gentoo-netboot/path-b/artifacts`.
+- Validated live `/g` and `/r` HTTP payload hashes after promotion:
+  `vmlinuz` `a9ae6fb8...`, `initramfs.img` `ed326992...`, and `rootfs.img`
+  `2cbdb11e...`.
+- Rebooted K10 through AP7901 outlet 6 and confirmed the promoted rootfs boots
+  kernel `6.18.28-gentoo-dist`, returns root SSH at `172.16.99.156`, and
+  includes `/usr/lib64/sssd/libsss_ipa.so`.
+- Re-applied live FreeIPA client enrollment after acquiring a Kerberos ticket
+  on `svc_identity_ipa01`, then validated SSSD config, NSS lookup, FreeIPA SSH
+  key lookup, PAM account checks, and floating `codex-admin` SSH login.
+- Updated K10 E2ET evidence to mark package/rootfs durability fixed while
+  keeping unattended host-enrollment durability blocked until disk install or a
+  secure first-boot keytab/secret-delivery mechanism exists.
+- Added the `metal-time-authority-stratum1` profile, package list, service atom
+  registry entries, ITIL change-control ADR, wiki page, and shell regression
+  test for the CM4 plus U-Blox MAX-M8Q Stratum 1 NTP authority design.
+- Fixed the X12AGAIN stagebuild dry-run launcher so it does not wait for SSH
+  during dry-run and resolves the same non-empty OVMF firmware path that real
+  launches require.
+- Extended the Path B netboot artifact builder so it can consume profile
+  definition files, expand profile package-list atoms, apply inline
+  `package.use` policy, and enable profile-declared OpenRC services such as
+  `sssd`.
+- Updated the K10 domain-client package set so `net-fs/samba` is explicitly
+  included with `sys-auth/sssd`, matching the required `samba` and `winbind`
+  USE policy for Gentoo's SSSD IPA provider.
+- Added `sys-fs/squashfs-tools` and `dev-python/pyyaml` to the disposable
+  X12AGAIN stagebuild VM baseline so Path B artifact generation has
+  `mksquashfs` and YAML profile parsing available inside the builder.
+- Normalized the shared stagebuild cache root permissions before bind mounts so
+  the Portage sandbox user can traverse `/srv/build-cache` and write staged
+  distfile downloads under the group-writable cache directories.
+- Ensured the shared cache root parent is executable during builder prep,
+  matching the live X12AGAIN correction from `/srv` mode `0750` to traversal
+  mode `0751`.
+- Fixed the actual chroot-side cache mountpoint issue caused by root umask
+  `0027`: guest `/srv` and `/srv/build-cache` parents are now made traversable
+  before bind-mounting host distfiles/binpkg caches.
+
+## 2026-05-10 - X12AGAIN Builder VM Isolation
+
+- Promoted the K10 netboot path to repo-managed Hasslehoff publisher state:
+  `k10-ipxe.efi` is now an embedded iPXE `snponly.efi` chained to
+  `http://172.16.99.88:8080`, `netboot-tftp` is an OpenRC-managed threaded
+  TFTP service, and a PDU reboot validated the generated
+  `workstation-validation.ipxe` path through kernel, initramfs, `rootfs.img`,
+  SSH, and OpenRC service checks on `172.16.99.156`.
+- Fixed the K10 UEFI iPXE handoff by preserving the historical
+  `initrd=initrd.magic` kernel argument while loading the initramfs under its
+  normal `initramfs-gz.img` image name, adding `imgfree` before role boot, and
+  using `boot || shell` so future iPXE boot failures remain inspectable.
+- Completed the X12AGAIN live runtime de-load after K10 validation: stopped the
+  legacy local netboot HTTP publisher, container-services VM, binpkg repo VM,
+  RouterOS Path B lab VM, and workstation test VM; removed stale `br-pathb`,
+  `br-ros-wan`, and Path B tap devices while leaving `eno1` management at
+  `172.16.99.108/24` intact.
+- Captured a post-shutdown off-host QCOW2 delta snapshot under
+  `eva@172.16.99.33:/home/x12again-root/20260510-192925`, using the completed
+  `20260510-173024` backup as `--link-dest`; the targeted preservation set
+  reconciled `binpkg-repository-root.qcow2`,
+  `container-services-root.qcow2`, and `vm-workstation-nscde.qcow2`.
+- Added a network-device post-change backup workflow that collects RouterOS
+  `show-sensitive` exports over SSH or serial console and SwOS `backup.swb`
+  snapshots to operator-private storage, encrypts selected artifacts with
+  Ansible Vault, and stages the encrypted back-channel under
+  `encrypted-backups/network-devices/` for git commit/push without bloating the
+  primary Ansible variable vault.
+- Added the SUN99 netboot publisher offload desired state for Hasslehoff VM
+  `1088` at `172.16.99.88`, including `vm-netboot-publisher` package/profile
+  metadata, K10 manifest URL updates, netboot publisher group vars, and CCR2004
+  DHCP `next-server` desired-state migration away from X12AGAIN
+  `172.16.99.108`.
+- Provisioned live Hasslehoff VM `1088` as
+  `boot-sun99-netboot-099088.rfc1918.host`, copied the X12AGAIN Path B publish
+  tree and absolute artifact symlink target, validated HTTP and TFTP service,
+  cut CCR2004 DHCP over to `next-server=172.16.99.88`, added the CCR2004
+  netboot DNS A/CNAME records, and stored a final encrypted post-change CCR2004
+  export in the network-device backup tree.
+- Moved live RouterOS serial-console access for CCR2004, CRS354, and CRS309
+  from X12AGAIN onto Hasslehoff through an interim generic VIA Labs USB hub.
+  Recorded stable FTDI `/dev/serial/by-id` paths in local-network inventory and
+  validated all three RouterOS prompts at `115200` baud.
+- Added the X12AGAIN final de-load checklist after live readiness validation:
+  Hasslehoff replacements for NetBox, FreeIPA, Prometheus, VictoriaMetrics,
+  Grafana, Kibana, netboot, container-services HAProxy, Elasticsearch VIP,
+  rsyslog VIP, and ntfy HTTPS answer basic probes; remaining X12AGAIN blockers
+  are K10 boot validation, local QEMU guest shutdown, Path B bridge/tap removal,
+  and a post-shutdown delta backup for clean QCOW2 preservation.
+- Defined X12AGAIN as a stable hypervisor/resource provider and moved
+  heavyweight stage4/stage5, Portage, Path B, and rootfs build work into
+  disposable high-resource builder VMs.
+- Added staged artifact promotion rules so active netboot paths remain
+  publish-only targets and failed builds can be discarded without poisoning the
+  host.
+- Added a Path B build-root recovery script for stale pseudo-filesystem mounts
+  and documented that blind `rm -rf` must not be used against potentially
+  mounted build roots.
+- Added `gentoo-virt-qemu/x12again-stagebuild-vm.sh` as the repo wrapper for
+  disposable high-resource X12AGAIN builder VMs.
+- Extended the observability stack with collectd aggregation, Prometheus
+  remote-write, a single-node VictoriaMetrics retention profile, NFS-backed
+  metrics persistence intent, Grafana dashboard provisioning, and a service
+  role to telemetry collector matrix.
+- Added SUN99 live observability deployment intent for Prometheus
+  `172.16.99.64`, VictoriaMetrics `172.16.99.65`, and Grafana `172.16.99.66`,
+  including local-network host vars, Hetzner DNS RRsets, NetBox intake rows,
+  fabric metadata, and Hasslehoff NFS metrics export intent.
+- Added `scripts/proxmox-materialize-gentoo-openrc-static-net.sh` for
+  Proxmox-hosted Gentoo Stage4 service VMs that do not consume Proxmox
+  cloud-init metadata inside the guest.
+- Applied the SUN99 observability DNS and NetBox inventory live, provisioned
+  Hasslehoff VMs `1064`-`1066`, exported VictoriaMetrics NFS persistence from
+  Hasslehoff, and converted NetBox plus the observability VMs to static OpenRC
+  networking after the cloned image exposed stale DHCP behavior.
+- Added a VictoriaMetrics service-VM build governor after the first live
+  collectd dependency build exposed `dev-libs/protobuf` using `ninja -j64` and
+  OOM-killing `clang++` inside the 8 GiB guest.
+- Disabled collectd `rrdtool` and `rrdcached` plugins for the
+  VictoriaMetrics/collectd profile because this pipeline uses Graphite and
+  Prometheus exporters, and the unnecessary `net-analyzer/rrdtool` dependency
+  failed with LLD version-script symbols when graph support was disabled.
+- Corrected the NFS storage-client OpenRC service set from the non-existent
+  `nfsmount` service to `rpcbind`, `rpc.statd`, `nfsclient`, and `netmount`
+  after the live NFSv3 metrics mount required lock-manager startup.
+- Brought the Prometheus VM service layer up with Prometheus, Alertmanager,
+  blackbox_exporter, snmp_exporter, node_exporter, remote_write to
+  VictoriaMetrics, and local exporter scrape validation.
+- Brought the Grafana VM service layer up with `grafana-bin`, node_exporter,
+  provisioned Prometheus/VictoriaMetrics datasources, and a baseline SUN99
+  observability dashboard.
+- Brought the VictoriaMetrics VM service layer up with NFS-backed persistence,
+  VictoriaMetrics HTTP/Graphite listeners, node_exporter, collectd
+  write_prometheus/write_graphite, Prometheus all-target health, VictoriaMetrics
+  remote_write visibility, direct collectd Graphite namespace visibility, and
+  Grafana datasource health validation.
+- Fixed the live rsyslog collector JSON template for `omelasticsearch` by
+  quoting the `message` field while retaining JSON escaping, then validated a
+  unique TCP syslog marker through `172.16.99.89:514` into the `stage5-syslog`
+  Elasticsearch index via the HAProxy VIP `172.16.99.92:9200`.
+- Published HAProxy syslog TCP `6514` on the live container-services wrapper
+  and validated a marker through `172.16.99.89:6514` into Elasticsearch.
+- Added `scripts/syslog_elasticsearch_validator.py` and `service_readiness`
+  support for `type: syslog_elasticsearch`, so post-boot validation can emit a
+  fresh syslog marker and verify it is searchable in Elasticsearch.
+- Migrated the Elasticsearch test backend off X12AGAIN and onto Hasslehoff VM
+  `1091`, preserving service IP `10.9.8.91` on VLAN1098, removing the
+  temporary CCR2004 `/32` route exceptions via `172.16.99.108`, and validating
+  CCR ARP, HAProxy/VIP health, and rsyslog-to-Elasticsearch marker ingestion.
+- Added a dedicated SUN99 rsyslog service VIP:
+  `log-sun99-rsyslog-099093.rfc1918.host` / `172.16.99.93:6514`, with
+  RouterOS DNS A/CNAME records, DNAT/SRCNAT hairpin to the container-services
+  HAProxy syslog listener, service-readiness coverage, and observability VM
+  rsyslog clients updated to ship to the stable syslog DNS name instead of
+  shared service/search VIP paths; Hetzner DNS apply created the rsyslog,
+  Elasticsearch VIP, and Kibana records with zero updates, deletes, or errors.
+- Added SUN99 Kibana deployment intent for
+  `obs-sun99-kibana-099067.rfc1918.host` / `172.16.99.67`, wired to the live
+  Elasticsearch HAProxy VIP `http://172.16.99.92:9200`.
+- Provisioned Hasslehoff VM `1067`, `obs-sun99-kibana-099067`, as the SUN99
+  Kibana interface for infrastructure log search.
+- Installed Kibana `9.3.1` from the verified Elastic upstream tarball after
+  rejecting Gentoo `www-apps/kibana-bin-7.17.25` as incompatible with the live
+  Elasticsearch `9.3.1` test cluster.
+- Fixed live Kibana OpenRC startup with `TZ=UTC`, removed the invalid
+  `xpack.security.enabled` Kibana 9 setting, made the install data directory
+  writable for the service user, created the default `stage5-syslog*` data
+  view, and validated `/api/status` as available.
+- Added `scripts/install-kibana-upstream-tarball.sh` and
+  `scripts/apply-x12again-pathb-sun99-nat.sh` to capture the live-proven
+  install and temporary SUN99-to-Path-B forwarding steps.
+- Applied the scoped CCR2004 service VIP for the SUN99 Elasticsearch front
+  door: `172.16.99.92/32` on `br-lan`, RouterOS DNS A/CNAME records,
+  DNAT/SRCNAT hairpin for TCP/9200 to `svc-container-services-safe-move-01`
+  at `172.16.99.89:9200`, and temporary `/32` Path-B backend routes via
+  `172.16.99.108`; validation passed for ICMP, TCP/9200, Elasticsearch
+  cluster health, and rsyslog-to-Elasticsearch marker ingestion through the
+  new VIP.
+- Removed the safe-move VM-local Path B backend route pins after live testing
+  confirmed `172.16.99.89` reaches `10.9.8.91` through the normal CCR2004
+  gateway at `172.16.99.1`; the follow-up Hasslehoff migration removed the
+  temporary CCR2004 `/32` backend routes via X12AGAIN.
+- Updated the container-services migration helper to persist matching Path-B
+  backend routes on the safe-move VM, preventing HAProxy redeploys from
+  regressing to Elasticsearch `503` responses.
+- Moved live Kibana and its local-network inventory from the Path-B-only
+  `10.9.8.92:9200` endpoint to the CCR2004 SUN99 VIP
+  `172.16.99.92:9200`.
+- Recorded RouterOS `7.22.3` arm64 package/cache metadata under
+  `/opt/routeros/mikrotik-official`.
+
 This changelog tracks operator-visible changes to the Stage4/Stage5
 infrastructure work. It is intentionally higher level than `git log`.
+
+## 2026-05-09
+
+### Added
+
+- Added the `nfs-storage-client` Stage5 overlay and `nfs_storage_client`
+  Ansible role for bare-metal/VM NFSv3, NFSv4, NFS-RDMA, and storage multipath
+  readiness. The profile keeps NFSv3/TCP as default, requires AAA/SSSD for
+  consistent NFSv4 UID/GID behavior, and excludes containers by default.
+- Added gated identity apply automation for the RFC1918 AAA source of truth:
+  dry-run JSON plans, explicit global and provider mutation gates, redacted
+  audit logging, FreeIPA CLI reconciliation for groups/users/hosts, FreeRADIUS
+  `clients.d` rendering, and Ansible playbook integration.
+- Added live K10 FreeIPA client enrollment automation and regression coverage:
+  host-specific inventory, apply/validate playbooks, SSSD IPA backend checks,
+  SSH key lookup checks, PAM checks, and transient floating `codex-admin` SSH
+  validation.
+- Added K10 netboot-image manifest requirements for carrying the
+  `aaa-domain-client` profile into the rebuilt rootfs so future validation can
+  prove reboot-durable SSSD/RBAC behavior instead of one-time live mutation.
+- Added the `RFC99 Host E2ET Acceptance Pipeline` policy, wiki mirror, and
+  regression coverage defining transient validation, reboot-durable acceptance
+  gates, conformance tiers, and K10 release-gating semantics.
+- Added the first Host E2ET conformance report renderer with JSON, Markdown,
+  and JUnit outputs, an Ansible wrapper, and a K10 post-reboot AAA durability
+  manifest.
+
+### Changed
+
+- Updated the AAA domain-client package policy to build `sys-auth/sssd` with
+  `samba` and `net-fs/samba` with `winbind`, which is required for Gentoo's
+  SSSD IPA provider module.
+- Removed the obsolete `config_file_version = 2` SSSD directive and made live
+  K10 domain-status validation tolerant only of the known no-system-D-Bus live
+  image condition after stronger NSS, SSH, PAM, backend-module, and config
+  gates pass.
+- Recorded the post-PDU-reboot K10 continuity gap: the current netboot rootfs
+  returns without SSSD, so AAA client enrollment remains active until the
+  rebuilt rootfs or disk-installed Stage5 image survives reboot validation.
+
+## 2026-05-08
+
+### Added
+
+- Added MCP control-plane scaffolding for repo-managed MCP admission policy,
+  candidate registry, risk tiers, read-only defaults, and explicit
+  change-control gates before any mutation-capable MCP server receives
+  credentials.
+- Added the Stage5 `vm-mcp-control-plane` profile package layer, metadata, and
+  render-only `mcp_control_plane` Ansible role. The role writes
+  `/etc/mcp-control-plane/candidate-registry.yml`,
+  `/etc/mcp-control-plane/promotion-policy.yml`, and
+  `/etc/mcp-control-plane/mcp-control-plane.env` without launching third-party
+  MCP services.
+- Added first-batch MCP candidate tracking for Hugging Face, Trac, NetBox,
+  Grafana, Jenkins, Proxmox, Context7, and Kubernetes/OpenShift MCP servers.
+- Added platform-service TODOs for single-node OpenShift and single-node
+  OpenStack VM profiles, including an explicit Gentoo/OpenRC feasibility gate
+  before assuming native service management.
+- Added MCP candidate audit and Trac MCP evaluation documents, including the
+  inspected `nerpatech/trac-mcp-server` commit, destructive tool inventory,
+  read-only wrapper requirement, and smoke-test promotion order.
+- Added a 2026-05-08 Morning SITREP next-step tracker covering NetBox-driven
+  provisioning, base system services, service-role overlays, centralized AAA,
+  Trac control plane, Codeberg mirroring, read-only MCP tests, and FMT2
+  discovery sequencing.
+- Added GitHub project-management scaffolding for the interim NOW() tracker:
+  structured issue forms, label catalog, milestone catalog, roadmap-derived
+  issue seeding, query-parameter issue URLs, and a dry-run-first local seed
+  script that avoids GitHub Actions.
+- Created the `RFC Codex Infrastructure Roadmap` GitHub Projects v2 board with
+  seeded roadmap items and repo-specific `Roadmap Status` / `Roadmap ID`
+  fields.
+- Added the GitHub issue relationship pass: 14 milestone epic issues,
+  relationship labels, roadmap dependency sections with live issue references,
+  and Projects v2 `Roadmap Status` / `Roadmap ID` field synchronization.
+- Added an AAA identity source-of-truth scaffold for RFC1918: non-secret
+  group/user/service-account/host-enrollment/RADIUS-client definitions,
+  validation, render-only sync-plan output, Ansible validation playbook, docs,
+  and shell regression coverage.
+- Extended NetBox structured inventory intake apply support for device
+  interfaces, interface-bound management IP assignment, same-host IP convergence
+  across prefix-length drift, and non-secret PDU outlet to host power-port
+  mapping.
+- Promoted the GMKtek K10 Stage5 validation host and APC AP7901 PDU into live
+  NetBox with primary management IPs, management interfaces, AP7901 outlet 6,
+  and K10 `power0` metadata.
+
+### Changed
+
+- Updated the AAA rollout sequence to use the now-inventoried K10 as the first
+  Linux SSSD/RBAC validation client and the AP7901 as the first power-device
+  RADIUS enrollment target after local break-glass checks.
 
 ## 2026-05-07
 

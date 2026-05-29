@@ -1,0 +1,28 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-forge-memory-object-store
+  purpose: Stage5 virtual-host profile for the Forge shared-memory object-store control plane.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: forge-memory-object-store
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-base.packages
+      - profile-package-lists/cloud-init-base.packages
+      - profile-package-lists/stage5-virtual-host-forge-memory-object-store.packages
+  base_profile:
+    intended_overlay_on:
+      - llvm-clang-openrc-stage3
+      - vm-guest-application-server
+      - cloud-init-vm
+  package_pins:
+    tracked_atoms:
+      - app-admin/rsyslog
+      - app-misc/jq
+      - net-misc/curl
+      - net-misc/rclone
+    app_version_lock_id: forge-memory-object-store-policy
+  deployment_notes:
+    - The first increment targets an external S3-compatible backend and renders the bucket policy contract used by Forge memory publishing.
+    - Access keys and secret keys are intentionally absent from profile data; supply credentials through vault or runtime environment injection.
+    - Backends may be MinIO, Garage, Ceph RGW, or another S3-compatible service once MEM-002 live deployment is selected.

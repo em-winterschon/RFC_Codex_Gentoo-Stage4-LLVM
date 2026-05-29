@@ -1,0 +1,30 @@
+---
+gentoo_system_profile_metadata:
+  id: metal-time-authority-stratum1
+  purpose: Dedicated CM4-based Stratum 1 NTP authority and gated PTP grandmaster candidate.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-infrastructure
+    role_name: metal-time-authority-stratum1
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-metal-host-time-authority-stratum1.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    support_packages:
+      - net-misc/chrony
+      - sci-geosciences/gpsd
+      - sys-apps/pps-tools
+      - net-misc/linuxptp
+      - app-metrics/chrony_exporter
+  openrc_services:
+    - chronyd
+    - gpsd
+    - sshd
+    - rsyslog
+  hardware_profile:
+    compute: raspberry-pi-cm4
+    primary_reference_clock: u-blox-max-m8q-gpio-hat
+    secondary_reference_clock: usb-gps
+    oob_console: ttl-to-rs232-via-carrier
+    power: redundant-din-rail-supply

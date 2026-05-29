@@ -1,0 +1,19 @@
+{% for zone in coredns_resolver_zones %}
+{{ zone.name }}:{{ coredns_resolver_listen_port }} {
+  errors
+{% if coredns_resolver_log_queries | bool %}
+  log
+{% endif %}
+  file {{ coredns_resolver_zone_dir }}/db.{{ zone.name }} {{ zone.name }}
+  cache {{ zone.cache_ttl_seconds | default(coredns_resolver_cache_ttl_seconds) }}
+}
+
+{% endfor %}
+.:{{ coredns_resolver_listen_port }} {
+  errors
+{% if coredns_resolver_log_queries | bool %}
+  log
+{% endif %}
+  cache {{ coredns_resolver_cache_ttl_seconds }}
+  forward . {{ coredns_resolver_upstreams | join(' ') }}
+}

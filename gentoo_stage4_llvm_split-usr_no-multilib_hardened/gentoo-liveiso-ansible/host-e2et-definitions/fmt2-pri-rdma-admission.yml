@@ -1,0 +1,84 @@
+---
+run:
+  id: fmt2-pri-rdma-admission-20260520
+  phase: pre-rdma-admission-blocked
+  timestamp: "2026-05-20T00:00:00-07:00"
+host:
+  name: kvm_sfo200_pri_9922
+  fqdn: kvm-sfo200-pri-9922.rfc1918.host
+  profile: metal-fmt2-r630-openstack-roce
+baseline:
+  name: RFC99 FMT2 R630 RDMA admission
+  target_tier: p99
+gates:
+  - name: Firmware Maintenance Gate
+    weight: 10
+    hard_required: true
+    checks:
+      - name: Disposable firmware-maintenance OS is reachable
+        status: pass
+        evidence: root SSH works on 10.200.99.22 while booted from the ter-hosted iSCSI LUN.
+      - name: iDRAC firmware update state is captured
+        status: pass
+        evidence: iDRAC firmware is 2.86.86.86, BIOS is 2.13.0, and job queue completed BIOS setup and power-cycle jobs.
+      - name: SOL remains enabled
+        status: pass
+        evidence: R630 SOL baseline is tracked by test_idrac_sol_baseline.sh and must remain enabled through maintenance.
+  - name: Local Storage Safety Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: Maintenance root is not on local install targets
+        status: pass
+        evidence: Root disk is the 80G iSCSI LUN pri-firmware-ma; IDSDM, SATA OS SSDs, SATADOM, SAS SSDs, and Optane are visible but not the maintenance root.
+      - name: SAS bays remain reserved for data ZFS
+        status: pass
+        evidence: metal-fmt2-r630-openstack-roce keeps sas_bays_reserved_for_zfs true and requires a destructive install gate.
+  - name: ConnectX Physical Inventory Gate
+    weight: 35
+    hard_required: true
+    checks:
+      - name: ConnectX endpoint enumerates in Linux PCI tree
+        status: fail
+        hard_fail: true
+        evidence: 2026-05-20 lspci and lspci -tvnn on pri did not show a Mellanox vendor/device endpoint.
+      - name: ConnectX endpoint enumerates in iDRAC hardware inventory
+        status: fail
+        hard_fail: true
+        evidence: 2026-05-20 iDRAC hardware inventory did not show the expected ConnectX adapter.
+      - name: Slot 1 reports populated after replacement
+        status: fail
+        hard_fail: true
+        evidence: Slot 1 is BIOS-enabled but DMI currently reports PCIe Slot 1 as Available.
+      - name: Arista LLDP sees pri ConnectX neighbor
+        status: fail
+        hard_fail: true
+        evidence: 2026-05-20 Arista Et6/1 and Et6/3 reported zero LLDP neighbors.
+  - name: RDMA Driver And Fabric Gate
+    weight: 25
+    hard_required: true
+    checks:
+      - name: Vendor OFED or DOCA line is installed and reported
+        status: fail
+        hard_fail: true
+        evidence: ofed_info cannot be accepted until the replacement ConnectX endpoint is visible.
+      - name: RDMA links are ACTIVE
+        status: fail
+        hard_fail: true
+        evidence: rdma link show cannot expose mlx5_0 and mlx5_1 while the ConnectX endpoint is absent.
+      - name: Pairwise RDMA smoke passes
+        status: skip
+        evidence: Deferred until host PCI inventory, Arista neighbor, and vendor driver gates pass.
+      - name: One-path-failure test passes
+        status: skip
+        evidence: Deferred until dual independent 50G paths are validated.
+  - name: Non-RDMA Provisioning Gate
+    weight: 15
+    hard_required: false
+    checks:
+      - name: X710 path is usable for firmware and non-RDMA Gentoo prep
+        status: pass
+        evidence: X710 rNDC ports enumerate with i40e, NVM 5.04, firmware 5.0.40043, and 32 VFs per PF.
+      - name: Gentoo stage4 non-RDMA prep may continue
+        status: warn
+        evidence: Non-RDMA firmware, X710, iDRAC, IDSDM, SATA OS mirror, and installer prep can continue, but RDMA admission remains blocked.

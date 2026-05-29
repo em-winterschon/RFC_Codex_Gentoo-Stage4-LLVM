@@ -1,0 +1,134 @@
+---
+inference_service_enabled: true
+inference_service_state: started
+inference_service_enable_on_boot: true
+inference_service_manager: auto
+inference_service_container_engine: podman
+inference_service_backend: ""
+inference_service_name: ""
+inference_service_config_dir: /etc/inference-services
+inference_service_libexec_dir: /usr/local/libexec/inference-services
+inference_service_state_root: /var/lib/inference
+inference_service_log_root: /var/log/inference-services
+inference_service_service_user: root
+inference_service_service_group: root
+inference_service_runlevel: default
+inference_service_pull_policy: missing
+inference_service_network: host
+inference_service_accelerator: auto
+
+inference_service_package_map:
+  Debian:
+    - podman
+    - buildah
+    - crun
+    - conmon
+    - netavark
+    - aardvark-dns
+    - passt
+    - uidmap
+    - slirp4netns
+    - fuse-overlayfs
+  RedHat:
+    - podman
+    - buildah
+    - crun
+    - conmon
+    - netavark
+    - aardvark-dns
+    - shadow-utils
+    - slirp4netns
+    - fuse-overlayfs
+  Gentoo:
+    - app-containers/podman
+    - app-containers/buildah
+    - app-containers/crun
+    - app-containers/conmon
+    - app-containers/netavark
+    - app-containers/aardvark-dns
+    - sys-apps/shadow
+
+inference_service_accelerator_profiles:
+  cpu:
+    devices: []
+    docker_args: []
+    security_opts: []
+    extra_args: []
+    environment:
+      INFERENCE_ACCELERATOR: cpu
+  nvidia:
+    devices:
+      - nvidia.com/gpu=all
+    docker_args:
+      - --gpus all
+    security_opts: []
+    extra_args: []
+    environment:
+      INFERENCE_ACCELERATOR: nvidia
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  amd_rocm:
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    docker_args: []
+    security_opts: []
+    extra_args: []
+    environment:
+      INFERENCE_ACCELERATOR: amd_rocm
+      HSA_OVERRIDE_GFX_VERSION: ""
+  auto:
+    devices: []
+    docker_args: []
+    security_opts: []
+    extra_args: []
+    environment:
+      INFERENCE_ACCELERATOR: auto
+
+inference_service_default_environment: {}
+inference_service_default_extra_args: []
+inference_service_default_volumes: []
+inference_service_default_ports: []
+inference_service_default_command: []
+
+inference_service_definitions:
+  - name: ollama
+    image: docker.io/ollama/ollama:latest
+    port: 11434
+    command: []
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    volumes:
+      - ollama:/root/.ollama
+  - name: vllm
+    image: docker.io/vllm/vllm-openai:latest
+    port: 8000
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    environment: {}
+    volumes: []
+  - name: sglang
+    image: docker.io/lmsysorg/sglang:latest
+    port: 30000
+    command:
+      - python3
+      - -m
+      - sglang.launch_server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "30000"
+    environment: {}
+    volumes: []
+  - name: open-webui
+    image: ghcr.io/open-webui/open-webui:main
+    port: 8080
+    command: []
+    environment:
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
+      OPENAI_API_BASE_URL: http://127.0.0.1:8000/v1
+    volumes:
+      - open-webui:/app/backend/data

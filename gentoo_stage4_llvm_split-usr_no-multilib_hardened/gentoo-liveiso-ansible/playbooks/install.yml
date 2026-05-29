@@ -21,10 +21,13 @@
       - network
       - rsyslog_base
       - telemetry_node_exporter
+      - telemetry_nut
       - telemetry_podman_exporter
       - telemetry_blackbox_exporter
       - telemetry_snmp_exporter
       - telemetry_elasticsearch_exporter
+      - telemetry_collectd
+      - telemetry_victoriametrics
       - telemetry_prometheus
       - telemetry_alertmanager
       - telemetry_grafana
@@ -32,20 +35,27 @@
       - nexus_repo
       - trac_server
       - trac_mcp_bridge
+      - forge_memory_object_store
       - freeipa_controller
       - ipa_client
+      - rfc1918_ca_trust
+      - rfc1918_service_tls
+      - native_haproxy_tls_proxy
+      - nfs_storage_client
       - freeradius_bridge
       - elasticsearch_cluster
       - kibana_interface
       - netbox_server
       - netbox_essentials
       - netbox_connector
+      - mcp_control_plane
       - zerotier_access
       - nscde_workstation
       - workstation_session_stack
       - platform_profile
       - identity
       - memory_storage
+      - slurm_cluster
       - jenkins_controller
       - distcc_farm
       - container_host
@@ -53,6 +63,8 @@
       - container_app_elastic_apm
       - container_app_ipmi_exporter
       - container_app_redfish_exporter
+      - container_app_nginx_ui
+      - container_app_mcp_generic
       - container_app_ntfy
       - container_app_nginx
       - container_app_haproxy

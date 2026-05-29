@@ -17,6 +17,7 @@ source_dir="${temp_dir}/source"
 seed_repo="${temp_dir}/seed"
 remote_repo="${temp_dir}/wiki.git"
 wiki_worktree="${temp_dir}/wiki-worktree"
+publish_output="${temp_dir}/publish-wiki-test.out"
 
 mkdir -p "${source_dir}"
 printf '# Source policy\n' > "${source_dir}/README.md"
@@ -35,7 +36,7 @@ COMMIT_MESSAGE='Sync test wiki' \
   "${PUBLISH}" \
   --source-dir "${source_dir}" \
   --wiki-worktree "${wiki_worktree}" \
-  --remote "${remote_repo}" > /tmp/publish-wiki-test.out
+  --remote "${remote_repo}" > "${publish_output}"
 
 test -f "${wiki_worktree}/README.md" || fail 'README.md was not preserved in wiki sync'
 grep -q 'Source policy' "${wiki_worktree}/README.md" || fail 'README.md was not copied from source'

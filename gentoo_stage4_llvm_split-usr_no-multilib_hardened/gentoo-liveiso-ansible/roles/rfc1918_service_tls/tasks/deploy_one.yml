@@ -1,0 +1,139 @@
+---
+- name: Resolve RFC1918 service TLS entry for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.set_fact:
+    rfc1918_service_tls_entry: "{{ rfc1918_service_tls_matrix[rfc1918_service_tls_service_id] }}"
+    rfc1918_service_tls_secret_map: "{{ lookup('vars', rfc1918_service_tls_secret_namespace, default={}) }}"
+
+- name: Resolve RFC1918 service TLS secrets for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.set_fact:
+    rfc1918_service_tls_secret_entry: "{{ rfc1918_service_tls_secret_map[rfc1918_service_tls_service_id] | default({}) }}"
+  no_log: true
+
+- name: Assert RFC1918 service TLS secrets exist for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.assert:
+    that:
+      - rfc1918_service_tls_secret_entry.fullchain_pem is defined
+      - rfc1918_service_tls_secret_entry.fullchain_pem | length > 0
+      - rfc1918_service_tls_secret_entry.private_key_pem is defined
+      - rfc1918_service_tls_secret_entry.private_key_pem | length > 0
+    fail_msg: >-
+      RFC1918 service TLS entry {{ rfc1918_service_tls_service_id }} requires
+      non-empty fullchain_pem and private_key_pem values under
+      {{ rfc1918_service_tls_secret_namespace }}.
+  no_log: true
+
+- name: Resolve RFC1918 service TLS file paths for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.set_fact:
+    rfc1918_service_tls_haproxy_pem_path: "{{ rfc1918_service_tls_entry.deploy_paths.haproxy_pem | default('') }}"
+    rfc1918_service_tls_cert_path: "{{ rfc1918_service_tls_entry.deploy_paths.cert | default('') }}"
+    rfc1918_service_tls_key_path: "{{ rfc1918_service_tls_entry.deploy_paths.key | default('') }}"
+    rfc1918_service_tls_chain_path: "{{ rfc1918_service_tls_entry.deploy_paths.chain | default('') }}"
+    rfc1918_service_tls_unsafe_writes: "{{ rfc1918_service_tls_entry.deploy_options.unsafe_writes | default(false) }}"
+    rfc1918_service_tls_manage_file_modes: "{{ rfc1918_service_tls_entry.deploy_options.manage_file_modes | default(true) }}"
+
+- name: Assert RFC1918 service TLS entry has a file-backed target
+  ansible.builtin.assert:
+    that:
+      - "(rfc1918_service_tls_haproxy_pem_path | length > 0) or ((rfc1918_service_tls_cert_path | length > 0) and (rfc1918_service_tls_key_path | length > 0))"
+    fail_msg: >-
+      RFC1918 service TLS entry {{ rfc1918_service_tls_service_id }} is not
+      file-backed. Use the device-specific certificate import role for this
+      service.
+
+- name: Ensure RFC1918 service TLS directories exist for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.file:
+    path: "{{ rfc1918_service_tls_install_root }}{{ rfc1918_service_tls_directory }}"
+    state: directory
+    mode: "0755"
+  loop: >-
+    {{
+      [
+        rfc1918_service_tls_haproxy_pem_path | dirname
+        if rfc1918_service_tls_haproxy_pem_path | length > 0
+        else '',
+        rfc1918_service_tls_cert_path | dirname
+        if rfc1918_service_tls_cert_path | length > 0
+        else '',
+        rfc1918_service_tls_key_path | dirname
+        if rfc1918_service_tls_key_path | length > 0
+        else '',
+        rfc1918_service_tls_chain_path | dirname
+        if rfc1918_service_tls_chain_path | length > 0
+        else ''
+      ] | reject('equalto', '') | unique | list
+    }}
+  loop_control:
+    loop_var: rfc1918_service_tls_directory
+
+- name: Install HAProxy combined RFC1918 service TLS PEM for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.copy:
+    dest: "{{ rfc1918_service_tls_install_root }}{{ rfc1918_service_tls_haproxy_pem_path }}"
+    content: |-
+      {{ rfc1918_service_tls_secret_entry.fullchain_pem }}
+      {{ rfc1918_service_tls_secret_entry.private_key_pem }}
+    mode: "{{ '0600' if rfc1918_service_tls_manage_file_modes | bool else omit }}"
+    unsafe_writes: "{{ rfc1918_service_tls_unsafe_writes | bool }}"
+  register: rfc1918_service_tls_haproxy_copy
+  when: rfc1918_service_tls_haproxy_pem_path | length > 0
+  no_log: true
+
+- name: Install RFC1918 service TLS certificate for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.copy:
+    dest: "{{ rfc1918_service_tls_install_root }}{{ rfc1918_service_tls_cert_path }}"
+    content: "{{ rfc1918_service_tls_secret_entry.fullchain_pem }}"
+    mode: "{{ '0644' if rfc1918_service_tls_manage_file_modes | bool else omit }}"
+    unsafe_writes: "{{ rfc1918_service_tls_unsafe_writes | bool }}"
+  register: rfc1918_service_tls_cert_copy
+  when: rfc1918_service_tls_cert_path | length > 0
+  no_log: true
+
+- name: Install RFC1918 service TLS private key for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.copy:
+    dest: "{{ rfc1918_service_tls_install_root }}{{ rfc1918_service_tls_key_path }}"
+    content: "{{ rfc1918_service_tls_secret_entry.private_key_pem }}"
+    mode: "{{ '0600' if rfc1918_service_tls_manage_file_modes | bool else omit }}"
+    unsafe_writes: "{{ rfc1918_service_tls_unsafe_writes | bool }}"
+  register: rfc1918_service_tls_key_copy
+  when: rfc1918_service_tls_key_path | length > 0
+  no_log: true
+
+- name: Install RFC1918 service TLS chain for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.copy:
+    dest: "{{ rfc1918_service_tls_install_root }}{{ rfc1918_service_tls_chain_path }}"
+    content: "{{ rfc1918_service_tls_secret_entry.chain_pem | default(rfc1918_service_tls_secret_entry.fullchain_pem) }}"
+    mode: "{{ '0644' if rfc1918_service_tls_manage_file_modes | bool else omit }}"
+    unsafe_writes: "{{ rfc1918_service_tls_unsafe_writes | bool }}"
+  register: rfc1918_service_tls_chain_copy
+  when: rfc1918_service_tls_chain_path | length > 0
+  no_log: true
+
+- name: Validate RFC1918 service TLS certificate metadata for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.command: >-
+    openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+    -in {{ rfc1918_service_tls_install_root }}{{
+      rfc1918_service_tls_cert_path
+      if rfc1918_service_tls_cert_path | length > 0
+      else rfc1918_service_tls_haproxy_pem_path
+    }}
+  changed_when: false
+  no_log: true
+
+- name: Track RFC1918 service TLS reload commands for {{ rfc1918_service_tls_service_id }}
+  ansible.builtin.set_fact:
+    rfc1918_service_tls_reload_commands_pending: >-
+      {{
+        (
+          rfc1918_service_tls_reload_commands_pending | default([])
+        )
+        +
+        (
+          rfc1918_service_tls_entry.reload_commands | default([])
+        )
+      }}
+  notify: Run rfc1918 service TLS reload commands
+  changed_when: true
+  when: >-
+    (rfc1918_service_tls_haproxy_copy.changed | default(false))
+    or (rfc1918_service_tls_cert_copy.changed | default(false))
+    or (rfc1918_service_tls_key_copy.changed | default(false))
+    or (rfc1918_service_tls_chain_copy.changed | default(false))

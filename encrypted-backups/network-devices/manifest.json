@@ -1,0 +1,114 @@
+{
+  "generated_at_epoch": 1778846644,
+  "records": [
+    {
+      "device_type": "routeros",
+      "encrypted_file": "encrypted-backups/network-devices/routeros/sw_spine_crs309_rfc99/20260504T233051Z/export-hide-sensitive.txt.vault",
+      "encrypted_size_bytes": 8979,
+      "inventory_host": "sw_spine_crs309_rfc99",
+      "snapshot_timestamp": "20260504T233051Z",
+      "source_file": "/root/operator-private/routeros/state-snapshots/sw_spine_crs309_rfc99/20260504T233051Z/export-hide-sensitive.txt",
+      "source_size_bytes": 2128
+    },
+    {
+      "device_type": "routeros",
+      "encrypted_file": "encrypted-backups/network-devices/routeros/sw_spine_crs309_rfc99/20260504T233051Z/manifest.json.vault",
+      "encrypted_size_bytes": 10534,
+      "inventory_host": "sw_spine_crs309_rfc99",
+      "snapshot_timestamp": "20260504T233051Z",
+      "source_file": "/root/operator-private/routeros/state-snapshots/sw_spine_crs309_rfc99/20260504T233051Z/manifest.json",
+      "source_size_bytes": 2518
+    },
+    {
+      "device_type": "swos",
+      "encrypted_file": "encrypted-backups/network-devices/swos/css326/20260504T225504Z/backup.swb.vault",
+      "encrypted_size_bytes": 11830,
+      "inventory_host": "css326",
+      "snapshot_timestamp": "20260504T225504Z",
+      "source_file": "/root/operator-private/swos/css326/20260504T225504Z/backup.swb",
+      "source_size_bytes": 2833
+    },
+    {
+      "device_type": "swos",
+      "encrypted_file": "encrypted-backups/network-devices/swos/css326/20260504T225504Z/summary.json.vault",
+      "encrypted_size_bytes": 17857,
+      "inventory_host": "css326",
+      "snapshot_timestamp": "20260504T225504Z",
+      "source_file": "/root/operator-private/swos/css326/20260504T225504Z/summary.json",
+      "source_size_bytes": 4325
+    },
+    {
+      "device_type": "swos",
+      "encrypted_file": "encrypted-backups/network-devices/swos/sw_mgmt_css326/20260515T030821Z/backup.swb.vault",
+      "encrypted_size_bytes": 11830,
+      "inventory_host": "sw_mgmt_css326",
+      "snapshot_timestamp": "20260515T030821Z",
+      "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260515T030821Z/backup.swb",
+      "source_size_bytes": 2833
+    },
+    {
+      "device_type": "swos",
+      "encrypted_file": "encrypted-backups/network-devices/swos/sw_mgmt_css326/20260515T030821Z/summary.json.vault",
+      "encrypted_size_bytes": 18505,
+      "inventory_host": "sw_mgmt_css326",
+      "snapshot_timestamp": "20260515T030821Z",
+      "source_file": "/root/operator-private/swos/sw_mgmt_css326/20260515T030821Z/summary.json",
+      "source_size_bytes": 4495
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004/post-rsyslog-vip-20260510T211510Z.rsc.vault",
+      "encrypted_size_bytes": 59199,
+      "inventory_host": "ccr2004",
+      "snapshot_timestamp": "rsyslog-vip-20260510T211510Z",
+      "source_file": "/root/operator-private/routeros/ccr2004/post-rsyslog-vip-20260510T211510Z.rsc",
+      "source_size_bytes": 14539
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-k10-netboot-clean-20260511T012132Z.rsc.vault",
+      "encrypted_size_bytes": 61078,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "k10-netboot-clean-20260511T012132Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-k10-netboot-clean-20260511T012132Z.rsc",
+      "source_size_bytes": 15002
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/identity.txt.vault",
+      "encrypted_size_bytes": 490,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/identity.txt",
+      "source_size_bytes": 34
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/ip-route-fmt2-openvpn.txt.vault",
+      "encrypted_size_bytes": 3860,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/ip-route-fmt2-openvpn.txt",
+      "source_size_bytes": 867
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/export-hide-sensitive.rsc.vault",
+      "encrypted_size_bytes": 63735,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/export-hide-sensitive.rsc",
+      "source_size_bytes": 15661
+    },
+    {
+      "device_type": "routeros-manual",
+      "encrypted_file": "encrypted-backups/network-devices/routeros-manual/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/manifest.json.vault",
+      "encrypted_size_bytes": 1203,
+      "inventory_host": "ccr2004-16g",
+      "snapshot_timestamp": "20260515T120323Z",
+      "source_file": "/root/operator-private/routeros/ccr2004-16g/post-fmt2-openvpn-20260515T120323Z/manifest.json",
+      "source_size_bytes": 219
+    }
+  ],
+  "schema": "rfc1918.network-device-config-backups.v1"
+}

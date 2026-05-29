@@ -1,0 +1,75 @@
+---
+- name: Validate live FreeIPA SSSD client
+  hosts: aaa_domain_clients
+  gather_facts: false
+  become: true
+  vars:
+    ipa_client_live_domain: "{{ freeipa_client_domain | default('rfc1918.host') }}"
+    ipa_client_live_validate_user: "{{ freeipa_client_validate_user | default('codex-admin') }}"
+    ipa_client_live_pam_validate_user: "{{ freeipa_client_pam_validate_user | default(ipa_client_live_validate_user) }}"
+  tasks:
+    - name: Validate SSSD IPA backend module is installed
+      ansible.builtin.command:
+        argv:
+          - test
+          - -x
+          - /usr/lib64/sssd/libsss_ipa.so
+      register: ipa_client_live_ipa_backend
+      changed_when: false
+
+    - name: Validate SSSD configuration syntax
+      ansible.builtin.command:
+        argv:
+          - sssctl
+          - config-check
+      register: ipa_client_live_config_check
+      changed_when: false
+
+    - name: Check SSSD domain status when system bus is available
+      ansible.builtin.command:
+        argv:
+          - sssctl
+          - domain-status
+          - "{{ ipa_client_live_domain }}"
+      register: ipa_client_live_domain_status
+      changed_when: false
+      failed_when: false
+
+    - name: Validate FreeIPA user NSS lookup
+      ansible.builtin.command:
+        argv:
+          - getent
+          - passwd
+          - "{{ ipa_client_live_validate_user }}"
+      register: ipa_client_live_getent
+      changed_when: false
+
+    - name: Validate FreeIPA SSH authorized key lookup
+      ansible.builtin.command:
+        argv:
+          - sss_ssh_authorizedkeys
+          - "{{ ipa_client_live_validate_user }}"
+      register: ipa_client_live_ssh_keys
+      changed_when: false
+
+    - name: Validate PAM/NSS account for FreeIPA user
+      ansible.builtin.command:
+        argv:
+          - su
+          - -s
+          - /bin/true
+          - "{{ ipa_client_live_pam_validate_user }}"
+      register: ipa_client_live_pam_acct
+      changed_when: false
+
+    - name: Assert SSSD validation passed
+      ansible.builtin.assert:
+        that:
+          - "ipa_client_live_ipa_backend.rc == 0"
+          - "ipa_client_live_config_check.rc == 0"
+          - "ipa_client_live_domain_status.rc == 0 or 'Unable to connect to system bus' in ipa_client_live_domain_status.stderr"
+          - "ipa_client_live_domain_status.rc != 0 or 'Online status: Online' in ipa_client_live_domain_status.stdout"
+          - "ipa_client_live_validate_user in ipa_client_live_getent.stdout"
+          - "ipa_client_live_ssh_keys.stdout | length > 0"
+          - "ipa_client_live_pam_acct.rc == 0"
+        fail_msg: "SSSD client validation failed."

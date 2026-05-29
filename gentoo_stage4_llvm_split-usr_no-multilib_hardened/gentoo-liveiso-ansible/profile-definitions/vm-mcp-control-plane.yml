@@ -1,0 +1,205 @@
+---
+gentoo_profile_definition:
+  profile_id: vm-mcp-control-plane
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-container-services.packages
+    - profile-package-lists/stage5-virtual-host-mcp-control-plane.packages
+  mcp_control_plane:
+    enabled: true
+    install_root: /etc/mcp-control-plane
+    default_mode: read-only
+    write_gate: explicit-change-control
+    audit_log_path: /var/log/mcp-control-plane/audit.log
+    registry_path: /etc/mcp-control-plane/candidate-registry.yml
+    promotion_policy_path: /etc/mcp-control-plane/promotion-policy.yml
+    env_path: /etc/mcp-control-plane/mcp-control-plane.env
+    owner: root
+    group: root
+    mode: "0640"
+  service_readiness:
+    checks:
+      - name: mcp-control-plane-registry
+        type: file
+        path: /etc/mcp-control-plane/candidate-registry.yml
+      - name: mcp-control-plane-policy
+        type: file
+        path: /etc/mcp-control-plane/promotion-policy.yml
+  make_conf_append: |
+    USE="${USE} -X -gtk -pulseaudio -qt5 -qt6 -sdl -spice -wayland"
+  package_use_files:
+    20-mcp-control-plane: |
+      net-proxy/haproxy -slz zlib
+      >=net-firewall/iptables-1.8.13 nftables
+      sys-apps/systemd-utils acl kmod tmpfiles udev -boot -kernel-install -sysusers -ukify
+  package_unmask_files:
+    21-mcp-control-plane-systemd-utils: |
+      sys-apps/systemd-utils
+  env_files:
+    gcc-compat.conf: |
+      CC=gcc
+      CXX=g++
+      CPP="cpp"
+      AR=gcc-ar
+      NM=gcc-nm
+      RANLIB=gcc-ranlib
+      COMMON_FLAGS="-O2 -pipe -fstack-protector-strong -D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security"
+      CFLAGS="${COMMON_FLAGS}"
+      CXXFLAGS="${COMMON_FLAGS}"
+      FCFLAGS="${COMMON_FLAGS}"
+      FFLAGS="${COMMON_FLAGS}"
+      LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro,-z,now -fuse-ld=bfd"
+  package_env_files:
+    20-mcp-control-plane-gcc-compat: |
+      net-proxy/haproxy gcc-compat.conf
+  openrc_services_enable:
+    - cgroups
+    - nftables
+  modules_load_files:
+    vm-mcp-control-plane.conf: |
+      br_netfilter
+      nf_tables
+      overlay
+      tun
+      veth
+  container_services:
+    enabled: true
+    runtime: podman
+    service_user: root
+    service_group: root
+    runtime_root: /var/lib/container-services
+    network_backend: netavark
+    firewall_backend: nftables
+    ssh_console_only: true
+    serial_console_only: true
+  container_service_segments:
+    - name: mgmt
+      driver: bridge
+      subnet: 10.78.0.0/24
+      gateway: 10.78.0.1
+      interface_name: podman-mcp-mgmt0
+    - name: apps
+      driver: bridge
+      subnet: 10.78.1.0/24
+      gateway: 10.78.1.1
+      interface_name: podman-mcp-apps0
+  container_app_profiles:
+    nginx_ui:
+      enabled: true
+      image: docker.io/uozi/nginx-ui:latest
+      pull_policy: missing
+      network: apps
+      ip_address: 10.78.1.60
+      backend_port: 80
+      docker_socket_enabled: false
+      config_dir: /etc/container-services/apps/nginx-ui
+      hostnames:
+        - mcp-control-plane.rfc1918.host
+        - nginx-ui.rfc1918.host
+      published_ports: []
+      env:
+        NGINX_UI_NODE_SECRET: "{{ vault_nginx_ui_node_secret }}"
+        NGINX_UI_OPENAI_BASE_URL: "{{ vault_nginx_ui_openai_base_url }}"
+        NGINX_UI_OPENAI_TOKEN: "{{ vault_nginx_ui_openai_token }}"
+        NGINX_UI_OPENAI_MODEL: "{{ vault_nginx_ui_openai_model }}"
+        NGINX_UI_PREDEFINED_USER_NAME: "{{ vault_nginx_ui_predefined_user_name }}"
+        NGINX_UI_PREDEFINED_USER_PASSWORD: "{{ vault_nginx_ui_predefined_user_password }}"
+        NGINX_UI_JWT_SECRET: "{{ vault_nginx_ui_jwt_secret }}"
+        NGINX_UI_CRYPTO_SECRET: "{{ vault_nginx_ui_crypto_secret }}"
+        NGINX_UI_SERVER_HTTP_PORT: "9000"
+    mcp_generic:
+      enabled: false
+      name: mcp-generic
+      description: Generic HTTP/SSE MCP server slot
+      image: ""
+      pull_policy: missing
+      network: apps
+      ip_address: 10.78.1.61
+      backend_port: 3000
+      transport: sse
+      hostnames:
+        - mcp-generic.rfc1918.host
+      published_ports: []
+      env:
+        MCP_SERVER_TRANSPORT: sse
+        MCP_SERVER_BIND: 0.0.0.0
+        MCP_SERVER_PORT: "3000"
+    haproxy:
+      enabled: true
+      image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:latest
+      pull_policy: missing
+      immutable_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy:git-d5104ae
+      immutable_digest_image: ghcr.io/em-winterschon/gentoo-stage5-haproxy@sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      digest: sha256:322699f05e1109f63fff3796ce7dbbddb7200c7933c2eb7ae7aaaa6e88bc8f37
+      network: apps
+      ip_address: 10.78.1.10
+      config_path: /etc/haproxy/haproxy.cfg
+      command:
+        - /usr/sbin/haproxy
+        - "-f"
+        - /etc/haproxy/haproxy.cfg
+        - "-db"
+      tmpfs:
+        - /tmp:rw,noexec,nosuid,size=64m
+        - /run:rw,noexec,nosuid,size=16m
+      cap_add:
+        - NET_BIND_SERVICE
+        - SETGID
+        - SETUID
+      published_ports:
+        - 80:80/tcp
+        - 443:443/tcp
+      mcp_routes:
+        - name: nginx-ui-mcp
+          hostnames:
+            - mcp-control-plane.rfc1918.host
+            - nginx-ui.rfc1918.host
+          path_prefix: /mcp
+          backend_app: nginx-ui
+          log_requests: false
+        - name: generic-mcp
+          hostnames:
+            - mcp-generic.rfc1918.host
+          path_prefix: /
+          backend_app: mcp-generic
+          log_requests: false
+      tls:
+        enabled: true
+        bind: "*:443"
+        container_dir: /etc/haproxy/tls
+        cert_path: /etc/haproxy/tls/mcp-control-plane.pem
+        certificate_authority: rfc1918_private_ca
+        certificate_source: vault-or-runtime
+        cert_sans:
+          - DNS:mcp-control-plane.rfc1918.host
+          - DNS:nginx-ui.rfc1918.host
+          - DNS:mcp-generic.rfc1918.host
+  site_security_profile:
+    compliance_mode: standard
+    rbac:
+      admin_users:
+        - root
+      deploy_groups:
+        - wheel
+    aaa_policy:
+      ssh_authorized_keys_only: true
+      sudo_nopasswd_groups:
+        - wheel
+    firewall:
+      default_policy_input: drop
+      default_policy_forward: drop
+      default_policy_output: accept
+      allowed_management_cidrs:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+      enable_container_nat: true
+    qos:
+      enabled: false
+      default_egress_mbit: 0
+    isolation:
+      userns: host
+      read_only_rootfs: true
+      drop_capabilities: true
+    ipam:
+      source: netbox-api
+      flat_file_path: /etc/container-services/ipam/site-ipam.json

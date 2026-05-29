@@ -1,0 +1,106 @@
+schema_version: 1
+policy_id: yukonsys-git-annex-artifact-plane
+purpose: >
+  Standard contract for using Git-Annex as the YukonSYS artifact data plane
+  beside normal git source-control workflows.
+
+annex_backend: SHA256E
+backend_reason: >
+  SHA256E is the git-annex default for new files, cryptographically verifies
+  content, preserves filename extensions for tool compatibility, and maps to
+  widely available SHA-256 acceleration on ARMv8 crypto-extension systems and
+  newer x86_64 systems while remaining portable on older x86_64 CPUs.
+minimum_numcopies: 2
+
+primary_special_remote_name: nasa-nfs-artifact-annex
+primary_special_remote_type: directory
+primary_special_remote_path: /mnt/nasa/forge/git-annex/YukonSYS-Artifact-Annex
+remote_encryption_mode: hybrid
+remote_filename_mac: HMACSHA256
+remote_reason: >
+  The first special remote is an NFS-backed directory remote on NASA. Hybrid
+  encryption keeps content encrypted when the remote is treated as an artifact
+  store, while still allowing new GPG recipients to be added later.
+
+forbidden_backends:
+  - SHA1
+  - SHA1E
+  - MD5
+  - MD5E
+  - WORM
+  - URL
+
+artifact_roots:
+  - artifacts/netboot
+  - artifacts/kernels
+  - artifacts/doca
+  - artifacts/binpkgs
+  - artifacts/vm-images
+  - artifacts/inference-models
+  - artifacts/validation-runs
+  - manifests
+  - provenance
+
+source_workspace_policy:
+  root: ~/src
+  required_source_repos:
+    - RFC_Codex_Gentoo-Stage4-LLVM
+    - YukonSYS-Standard-Definitions
+    - agentic-forge-control-plane
+  required_artifact_repos:
+    - YukonSYS-Artifact-Annex
+  feature_worktrees_are_worker_local: true
+  source_parity_note: >
+    Git-Annex is not the source repository parity mechanism. Forge users should
+    share the same mandatory source repos under ~/src, while branch-specific
+    worktrees stay local to the worker that owns the task. Git-Annex is used
+    for large artifacts and build outputs referenced by source manifests.
+
+worker_preferred_content:
+  forge-control-plane: >
+    not (include=artifacts/binpkgs/* or include=artifacts/vm-images/* or
+    include=artifacts/inference-models/*)
+  forge-builder: >
+    include=artifacts/binpkgs/* or include=artifacts/kernels/* or
+    include=artifacts/doca/* or include=artifacts/netboot/*
+  forge-inference: >
+    include=artifacts/inference-models/* or include=artifacts/validation-runs/*
+  forge-archive: include=*
+
+drop_guardrails:
+  - Run git annex fsck before dropping local content.
+  - Confirm minimum_numcopies is satisfied before any automated drop.
+  - Do not use git annex unused/dropunused in worker automation without a
+    scoped review of the corresponding git-annex branch state.
+
+forge_worker_accounts:
+  current_local_m70:
+    forge1:
+      uid: 1000
+      gid: 1001
+      groups: [wheel, forge-superusers, nfsnasa]
+    forge2:
+      uid: 1001
+      gid: 1002
+      groups: [wheel, forge-superusers, nfsnasa]
+    forge3:
+      uid: 1002
+      gid: 1003
+      groups: [wheel, forge-superusers, nfsnasa]
+    forge4:
+      uid: 1003
+      gid: 1004
+      groups: [wheel, forge-superusers, nfsnasa]
+    forge5:
+      uid: 1004
+      gid: 1005
+      groups: [wheel, forge-superusers, nfsnasa]
+    forge6:
+      uid: 1005
+      gid: 1006
+      groups: [wheel, forge-superusers, nfsnasa]
+  freeipa_required: true
+  freeipa_note: >
+    FreeIPA must reserve these UID/GID values before Forge workers are spawned
+    on additional hosts. If the local host lacks the ipa CLI, treat this policy
+    as desired state and apply it from the IPA admin host.

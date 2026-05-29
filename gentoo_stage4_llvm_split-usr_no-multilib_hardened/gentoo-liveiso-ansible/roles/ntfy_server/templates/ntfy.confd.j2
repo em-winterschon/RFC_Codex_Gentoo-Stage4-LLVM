@@ -1,0 +1,7 @@
+# Managed by Ansible: roles/ntfy_server/templates/ntfy.confd.j2
+command="{{ ntfy_server_binary_path }}"
+command_args="serve"
+command_user="{{ ntfy_server_user }}:{{ ntfy_server_group }}"
+pidfile="/run/{{ ntfy_server_service_name }}.pid"
+output_log="{{ ntfy_server_stdout_log }}"
+error_log="{{ ntfy_server_stderr_log }}"

@@ -93,6 +93,37 @@ VLAN-aware bridge `vmbr-qlogic0`. The requested SR-IOV VF design is blocked by
 hardware/firmware exposure: neither QLogic PCI function exposes
 `sriov_totalvfs`, and `lspci` shows no SR-IOV capability.
 
+## 2026-05-10 USB Serial Console Migration
+
+RouterOS router/switch serial consoles were moved from X12AGAIN to Hasslehoff
+through an interim generic VIA Labs USB hub. This removes another live
+operational dependency from X12AGAIN before bare-metal reimage work.
+
+The managed Coolgear `CG-4PU3MGD` hub remains the target state for per-port
+power control, but it is blocked on a replacement power supply. The interim hub
+has no per-port reset capability, so treat it as console connectivity only.
+
+Hasslehoff USB topology:
+
+| Component | USB Path | VID:PID | Notes |
+| --- | --- | --- | --- |
+| Generic hub USB2 root | `1-11` | `2109:2811` | Moved to M70 on 2026-05-17. |
+| Generic hub USB3 root | `2-2` | `2109:8110` | Companion SuperSpeed side. |
+| Dual-RS232 internal hub | `1-11.2` | `1a40:0101` | Presents the CRS354/CRS309 FTDI ports. |
+
+Current console host is `admin-sun99-forge-099070`. Stable adapter IDs remain
+the same after the move; volatile tty paths are now observed on M70:
+
+| Device | Prompt | Stable Device | Current TTY | Baud |
+| --- | --- | --- | --- | --- |
+| CCR2004 gateway | `[admin@gw-rfc99-mkccr2004-16g] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0` | `/dev/ttyUSB0` | `115200` |
+| CRS354 distribution | `[admin@sw-mgmt-mkcrs354] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3W-if00-port0` | `/dev/ttyUSB1` | `115200` |
+| CRS309 spine | `[admin@sw-spine-crs309-rfc99] >` | `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_AB0MRY3X-if00-port0` | `/dev/ttyUSB4` | `115200` |
+
+The `/dev/ttyUSB*` assignments are observed state only. Automation should use
+the stable `/dev/serial/by-id` paths or future `/dev/rfc99-serial/*` udev
+aliases from the dedicated serial gateway VM.
+
 ## Observed Proxmox VMs
 
 | VMID | Name | Status | CPU | Memory MiB | Disk GiB | Tags |

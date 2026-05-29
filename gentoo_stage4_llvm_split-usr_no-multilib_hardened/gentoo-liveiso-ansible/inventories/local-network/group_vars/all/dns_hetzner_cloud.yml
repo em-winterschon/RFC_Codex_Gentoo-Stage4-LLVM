@@ -7,6 +7,13 @@ dns_hetzner_cloud_change_policy:
   default_ttl: 300
   apply: false
   allow_delete: false
+  required_domain_errors_are_fatal: true
+
+dns_hetzner_cloud_default_domain: rfc1918.host
+dns_hetzner_cloud_required_domains:
+  - rfc1918.host
+dns_hetzner_cloud_inventory_managed_domains:
+  - rfc1918.host
 
 dns_hetzner_cloud_token_groups:
   - name: rfc1918
@@ -49,3 +56,147 @@ dns_hetzner_cloud_managed_rrsets:
     values:
       - msg-sun99-ntfysys-099096.rfc1918.host.
     comment: codex ntfy service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: log-sun99-rsyslog-099093
+    fqdn: log-sun99-rsyslog-099093.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.93
+    comment: codex rsyslog service vip
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: log-sun99-rsyslog
+    fqdn: log-sun99-rsyslog.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - log-sun99-rsyslog-099093.rfc1918.host.
+    comment: codex rsyslog service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: admin-sun99-forge-099070
+    fqdn: admin-sun99-forge-099070.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.70
+    comment: sun99 Forge automation admin host
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: admin-sun99-forge
+    fqdn: admin-sun99-forge.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - admin-sun99-forge-099070.rfc1918.host.
+    comment: sun99 Forge automation admin cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: forge
+    fqdn: forge.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - admin-sun99-forge-099070.rfc1918.host.
+    comment: Forge automation admin short cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: forge-sun99
+    fqdn: forge-sun99.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - admin-sun99-forge-099070.rfc1918.host.
+    comment: Forge SUN99 automation admin cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-prometheus-099064
+    fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.64
+    comment: sun99 prometheus vm
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-prometheus
+    fqdn: obs-sun99-prometheus.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - obs-sun99-prometheus-099064.rfc1918.host.
+    comment: sun99 prometheus service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-vmetrics-099065
+    fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.65
+    comment: sun99 victoriametrics vm
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-vmetrics
+    fqdn: obs-sun99-vmetrics.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - obs-sun99-vmetrics-099065.rfc1918.host.
+    comment: sun99 victoriametrics service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-grafana-099066
+    fqdn: obs-sun99-grafana-099066.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.66
+    comment: sun99 grafana vm
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-grafana
+    fqdn: obs-sun99-grafana.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - obs-sun99-grafana-099066.rfc1918.host.
+    comment: sun99 grafana service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-kibana-099067
+    fqdn: obs-sun99-kibana-099067.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.67
+    comment: sun99 kibana vm
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: obs-sun99-kibana
+    fqdn: obs-sun99-kibana.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - obs-sun99-kibana-099067.rfc1918.host.
+    comment: sun99 kibana service cname
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: inf-rfc99-noctosultris-099165
+    fqdn: inf-rfc99-noctosultris-099165.rfc1918.host
+    type: A
+    ttl: 300
+    values:
+      - 172.16.99.165
+    comment: sun99 inference gpu host
+  - token_group: rfc1918
+    zone: rfc1918.host
+    name: inf-rfc99-noctosultris
+    fqdn: inf-rfc99-noctosultris.rfc1918.host
+    type: CNAME
+    ttl: 300
+    values:
+      - inf-rfc99-noctosultris-099165.rfc1918.host.
+    comment: sun99 inference gpu host cname

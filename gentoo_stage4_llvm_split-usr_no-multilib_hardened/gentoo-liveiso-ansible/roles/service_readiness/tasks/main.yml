@@ -13,6 +13,11 @@
         resolved_profile_service_readiness.validator_path
         | default(service_readiness_default_validator_path)
       }}
+    resolved_service_readiness_syslog_elasticsearch_validator_path: >-
+      {{
+        resolved_profile_service_readiness.syslog_elasticsearch_validator_path
+        | default(service_readiness_default_syslog_elasticsearch_validator_path)
+      }}
     resolved_service_readiness_nmap_bin: >-
       {{
         resolved_profile_service_readiness.nmap_bin

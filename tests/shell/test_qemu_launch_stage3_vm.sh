@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LAUNCH_SCRIPT="${REPO_ROOT}/gentoo-virt-qemu/qemu-launch-stage3-vm.sh"
+TEST_TMP_ROOT="$(mktemp -d)"
+trap 'rm -rf "${TEST_TMP_ROOT}"' EXIT
 
 # shellcheck disable=SC1091
 # shellcheck source=../../gentoo-virt-qemu/qemu-launch-stage3-vm.sh
@@ -20,10 +22,22 @@ assert_contains() {
   [[ "${haystack}" == *"${needle}"* ]] || fail "expected to find '${needle}' in '${haystack}'"
 }
 
+assert_file_contains() {
+  local path="$1"
+  local needle="$2"
+  grep -Fq "${needle}" "${path}" || fail "expected '${needle}' in ${path}"
+}
+
 assert_equals() {
   local actual="$1"
   local expected="$2"
   [[ "${actual}" == "${expected}" ]] || fail "expected '${expected}', got '${actual}'"
+}
+
+write_fixture_file() {
+  local path="$1"
+  local content="${2:-fixture}"
+  printf '%s\n' "${content}" > "${path}"
 }
 
 mark_stage3_launch_globals_used() {
@@ -33,6 +47,7 @@ mark_stage3_launch_globals_used() {
     "${QEMU_SMP-}" \
     "${QEMU_MEMORY_MIB-}" \
     "${QEMU_BOOT_STRICT-}" \
+    "${QEMU_ATTACH_HOST_DISKS-}" \
     "${QEMU_LAUNCH_DRY_RUN-}" \
     "${QEMU_DAEMONIZE-}" \
     "${QEMU_DISPLAY_MODE-}" \
@@ -79,17 +94,17 @@ mark_stage3_launch_globals_used() {
 
 reset_launcher_state() {
   INSTANCE_NAME='gentoo-stage4-testvm'
-  STAGE3_IMAGE_DIR='/tmp/stage3'
+  STAGE3_IMAGE_DIR="${TEST_TMP_ROOT}/stage3"
   QCOW_IMAGE="${STAGE3_IMAGE_DIR}/images/${INSTANCE_NAME}.qcow2"
   QEMU_BOOT_SOURCE='qcow'
-  BPOOL_DISK0='/tmp/bpool0.img'
-  BPOOL_DISK1='/tmp/bpool1.img'
-  RPOOL_DISK0='/tmp/rpool0.img'
-  RPOOL_DISK1='/tmp/rpool1.img'
+  BPOOL_DISK0="${TEST_TMP_ROOT}/bpool0.img"
+  BPOOL_DISK1="${TEST_TMP_ROOT}/bpool1.img"
+  RPOOL_DISK0="${TEST_TMP_ROOT}/rpool0.img"
+  RPOOL_DISK1="${TEST_TMP_ROOT}/rpool1.img"
   QEMU_BIN='/usr/bin/qemu-system-x86_64'
-  EFI_FIRM='/tmp/OVMF_CODE.fd'
-  EFI_VARS_TEMPLATE='/tmp/OVMF_VARS.fd'
-  EFI_VARS_FILE='/tmp/stage3/OVMF_VARS.fd'
+  EFI_FIRM="${TEST_TMP_ROOT}/OVMF_CODE.fd"
+  EFI_VARS_TEMPLATE="${TEST_TMP_ROOT}/OVMF_VARS.fd"
+  EFI_VARS_FILE="${STAGE3_IMAGE_DIR}/OVMF_VARS.fd"
   QEMU_MACHINE='q35,accel=kvm'
   QEMU_CPU='host'
   QEMU_SMP='8'
@@ -98,6 +113,7 @@ reset_launcher_state() {
   QEMU_BOOTDISK_ID='bootdisk'
   QEMU_BOOTDISK_MODEL='virtio-blk-pci'
   QEMU_BOOTDISK_BOOTINDEX='1'
+  QEMU_ATTACH_HOST_DISKS='1'
   QEMU_LAUNCH_DRY_RUN='1'
   QEMU_DAEMONIZE='1'
   QEMU_DISPLAY_MODE='none'
@@ -108,7 +124,7 @@ reset_launcher_state() {
   QEMU_SPICE_OPTIONS='port=5931,addr=127.0.0.1,disable-ticketing=on'
   QEMU_SPICE_AGENT='1'
   QEMU_SERIAL_MODE='file'
-  QEMU_SERIAL_FILE='/tmp/stage3.serial.log'
+  QEMU_SERIAL_FILE="${TEST_TMP_ROOT}/stage3.serial.log"
   QEMU_SERIAL_TCP='127.0.0.1:4555,server=on,wait=off,telnet=on'
   QEMU_NETWORK_MODE='user'
   QEMU_NETDEV_ID='net0'
@@ -134,7 +150,7 @@ reset_launcher_state() {
   SSH_WAIT_TIMEOUT='120'
   SSH_BANNER_TIMEOUT='5'
   LAUNCHER_LOG_ENABLE='0'
-  LAUNCHER_LOG_DIR='/tmp'
+  LAUNCHER_LOG_DIR="${TEST_TMP_ROOT}"
   LAUNCHER_LOG_FILE=''
   LAUNCHER_LOG_TIMESTAMP='2026-0421-1830_1234567890.UTC+0000'
   LAUNCHER_LOG_INITIALIZED=0
@@ -145,12 +161,20 @@ reset_launcher_state() {
   mark_stage3_launch_globals_used
 }
 
+set_temp_ovmf_paths() {
+  local temp_dir="$1"
+
+  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  EFI_VARS_TEMPLATE="${temp_dir}/OVMF_VARS_TEMPLATE.fd"
+  EFI_VARS_FILE="${temp_dir}/OVMF_VARS.fd"
+}
+
 test_default_launcher_log_file_uses_requested_format() {
   local logfile
 
   reset_launcher_state
   logfile="$(default_launcher_log_file)"
-  assert_equals "${logfile}" "/tmp/qemu-launch-stage3-vm.sh.${PPID}-${$}.2026-0421-1830_1234567890.UTC+0000.log"
+  assert_equals "${logfile}" "${TEST_TMP_ROOT}/qemu-launch-stage3-vm.sh.${PPID}-${$}.2026-0421-1830_1234567890.UTC+0000.log"
 }
 
 test_build_qemu_cmd_uses_boot_disk_and_tcp_serial() {
@@ -159,19 +183,19 @@ test_build_qemu_cmd_uses_boot_disk_and_tcp_serial() {
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_SERIAL_MODE='tcp'
   : > "${QCOW_IMAGE}"
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -183,8 +207,16 @@ test_build_qemu_cmd_uses_boot_disk_and_tcp_serial() {
   assert_contains "${rendered}" "${QEMU_BOOTDISK_MODEL},drive=${QEMU_BOOTDISK_ID},bootindex=${QEMU_BOOTDISK_BOOTINDEX},serial=stage3-boot"
   assert_contains "${rendered}" "tcp:${QEMU_SERIAL_TCP}"
   assert_contains "${rendered}" "hostfwd=tcp:127.0.0.1:2222-:22,id=${QEMU_NETDEV_ID}"
-  assert_contains "${rendered}" 'file=/tmp'
+  assert_contains "${rendered}" "file=${temp_dir}"
   rm -rf "${temp_dir}"
+}
+
+test_setup_launcher_logging_degrades_without_dev_fd() {
+  reset_launcher_state
+  LAUNCHER_LOG_ENABLE='1'
+  LAUNCHER_LOG_INITIALIZED=0
+
+  assert_file_contains "${LAUNCH_SCRIPT}" 'Launcher log file requested but /dev/fd is unavailable'
 }
 
 test_build_qemu_cmd_supports_pty_serial() {
@@ -193,19 +225,19 @@ test_build_qemu_cmd_supports_pty_serial() {
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_SERIAL_MODE='pty'
   : > "${QCOW_IMAGE}"
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -220,18 +252,18 @@ test_build_qemu_cmd_supports_target_disk_boot() {
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_BOOT_SOURCE='target-disks'
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -243,25 +275,48 @@ test_build_qemu_cmd_supports_target_disk_boot() {
   rm -rf "${temp_dir}"
 }
 
+test_build_qemu_cmd_can_skip_host_disks_for_qcow_boot() {
+  local temp_dir rendered
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/vm.qcow2"
+  set_temp_ovmf_paths "${temp_dir}"
+  QEMU_ATTACH_HOST_DISKS='0'
+  write_fixture_file "${QCOW_IMAGE}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+
+  build_qemu_cmd
+  rendered="${QEMU_CMD[*]}"
+
+  assert_contains "${rendered}" "if=none,id=${QEMU_BOOTDISK_ID},file=${QCOW_IMAGE},format=qcow2"
+  [[ "${rendered}" != *'id=bpool0'* ]] || fail 'optional host disks should not attach bpool0'
+  [[ "${rendered}" != *'id=bpool1'* ]] || fail 'optional host disks should not attach bpool1'
+  [[ "${rendered}" != *'id=rpool0'* ]] || fail 'optional host disks should not attach rpool0'
+  [[ "${rendered}" != *'id=rpool1'* ]] || fail 'optional host disks should not attach rpool1'
+  rm -rf "${temp_dir}"
+}
+
 test_build_qemu_cmd_supports_alias_network_mode() {
   local temp_dir rendered
   temp_dir="$(mktemp -d)"
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_NETWORK_MODE='alias'
   : > "${QCOW_IMAGE}"
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -277,7 +332,7 @@ test_build_qemu_cmd_supports_memory_drive_manifest() {
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
@@ -287,14 +342,14 @@ test_build_qemu_cmd_supports_memory_drive_manifest() {
 {"drives":[{"path":"${temp_dir}/mem0.qcow2","format":"qcow2","serial":"mem-portage-cache","device_model":"virtio-blk-pci"}]}
 EOF
   QEMU_MEMORY_DRIVES_FILE="${manifest}"
-  : > "${QCOW_IMAGE}"
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
-  : > "${temp_dir}/mem0.qcow2"
+  write_fixture_file "${QCOW_IMAGE}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
+  write_fixture_file "${temp_dir}/mem0.qcow2"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -319,24 +374,94 @@ test_validate_boot_source_rejects_invalid_value() {
   assert_contains "${output}" 'Unsupported QEMU_BOOT_SOURCE'
 }
 
+test_validate_qcow_image_allows_missing_qcow_in_dry_run() {
+  local temp_dir output status
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/missing.qcow2"
+  QEMU_LAUNCH_DRY_RUN='1'
+
+  set +e
+  output="$(validate_qcow_image 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '0'
+  assert_contains "${output}" 'QCOW_IMAGE is missing during dry-run'
+  rm -rf "${temp_dir}"
+}
+
+test_validate_qcow_image_requires_qcow_outside_dry_run() {
+  local temp_dir output status
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  QCOW_IMAGE="${temp_dir}/missing.qcow2"
+  QEMU_LAUNCH_DRY_RUN='0'
+
+  set +e
+  output="$(validate_qcow_image 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '1'
+  assert_contains "${output}" 'QCOW_IMAGE is missing'
+  rm -rf "${temp_dir}"
+}
+
+test_validate_host_disks_skips_optional_disks_for_qcow_boot() {
+  local temp_dir
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  BPOOL_DISK0="${temp_dir}/missing-bpool0.img"
+  BPOOL_DISK1="${temp_dir}/missing-bpool1.img"
+  RPOOL_DISK0="${temp_dir}/missing-rpool0.img"
+  RPOOL_DISK1="${temp_dir}/missing-rpool1.img"
+  QEMU_ATTACH_HOST_DISKS='0'
+
+  validate_host_disks
+  rm -rf "${temp_dir}"
+}
+
+test_validate_host_disks_requires_target_disks_even_when_optional_disabled() {
+  local temp_dir output status
+  temp_dir="$(mktemp -d)"
+
+  reset_launcher_state
+  BPOOL_DISK0="${temp_dir}/missing-bpool0.img"
+  QEMU_BOOT_SOURCE='target-disks'
+  QEMU_ATTACH_HOST_DISKS='0'
+
+  set +e
+  output="$(validate_host_disks 2>&1)"
+  status=$?
+  set -e
+
+  assert_equals "${status}" '1'
+  assert_contains "${output}" 'BPOOL_DISK0 is missing'
+  rm -rf "${temp_dir}"
+}
+
 test_main_dry_run_prints_stage3_vm_command() {
   local temp_dir output status
   temp_dir="$(mktemp -d)"
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
-  : > "${QCOW_IMAGE}"
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${QCOW_IMAGE}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   set +e
   output="$(main 2>&1)"
@@ -357,18 +482,18 @@ test_main_dry_run_prints_target_disk_boot_plan() {
   temp_dir="$(mktemp -d)"
 
   reset_launcher_state
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
   RPOOL_DISK1="${temp_dir}/rpool1.img"
   QEMU_BOOT_SOURCE='target-disks'
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   set +e
   output="$(main 2>&1)"
@@ -394,7 +519,7 @@ test_validate_display_backend_rejects_missing_spice() {
 
   reset_launcher_state
   QEMU_DISPLAY_MODE='spice'
-  QEMU_BIN='/tmp/fake-qemu'
+  QEMU_BIN="${TEST_TMP_ROOT}/fake-qemu"
 
   qemu_help_output() {
     printf '%s\n' 'QEMU options without spice'
@@ -415,7 +540,7 @@ test_build_qemu_cmd_supports_spice_qxl_and_agent() {
 
   reset_launcher_state
   QCOW_IMAGE="${temp_dir}/vm.qcow2"
-  EFI_FIRM="${temp_dir}/OVMF_CODE.fd"
+  set_temp_ovmf_paths "${temp_dir}"
   BPOOL_DISK0="${temp_dir}/bpool0.img"
   BPOOL_DISK1="${temp_dir}/bpool1.img"
   RPOOL_DISK0="${temp_dir}/rpool0.img"
@@ -425,13 +550,13 @@ test_build_qemu_cmd_supports_spice_qxl_and_agent() {
   QEMU_SPICE_PORT='5931'
   QEMU_SPICE_ADDRESS='127.0.0.1'
   QEMU_SPICE_OPTIONS='port=5931,addr=127.0.0.1,disable-ticketing=on'
-  : > "${QCOW_IMAGE}"
-  : > "${EFI_FIRM}"
-  : > "${EFI_VARS_TEMPLATE}"
-  : > "${BPOOL_DISK0}"
-  : > "${BPOOL_DISK1}"
-  : > "${RPOOL_DISK0}"
-  : > "${RPOOL_DISK1}"
+  write_fixture_file "${QCOW_IMAGE}"
+  write_fixture_file "${EFI_FIRM}" OVMF
+  write_fixture_file "${EFI_VARS_TEMPLATE}" VARS
+  write_fixture_file "${BPOOL_DISK0}"
+  write_fixture_file "${BPOOL_DISK1}"
+  write_fixture_file "${RPOOL_DISK0}"
+  write_fixture_file "${RPOOL_DISK1}"
 
   build_qemu_cmd
   rendered="${QEMU_CMD[*]}"
@@ -446,14 +571,20 @@ test_build_qemu_cmd_supports_spice_qxl_and_agent() {
 
 test_default_launcher_log_file_uses_requested_format
 test_build_qemu_cmd_uses_boot_disk_and_tcp_serial
+test_setup_launcher_logging_degrades_without_dev_fd
 test_build_qemu_cmd_supports_pty_serial
 test_build_qemu_cmd_supports_target_disk_boot
+test_build_qemu_cmd_can_skip_host_disks_for_qcow_boot
 test_build_qemu_cmd_supports_alias_network_mode
 test_build_qemu_cmd_supports_memory_drive_manifest
 test_video_device_defaults_to_qxl_for_spice
 test_validate_display_backend_rejects_missing_spice
 test_build_qemu_cmd_supports_spice_qxl_and_agent
 test_validate_boot_source_rejects_invalid_value
+test_validate_qcow_image_allows_missing_qcow_in_dry_run
+test_validate_qcow_image_requires_qcow_outside_dry_run
+test_validate_host_disks_skips_optional_disks_for_qcow_boot
+test_validate_host_disks_requires_target_disks_even_when_optional_disabled
 test_main_dry_run_prints_stage3_vm_command
 test_main_dry_run_prints_target_disk_boot_plan
 

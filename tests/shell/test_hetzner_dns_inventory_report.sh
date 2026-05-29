@@ -27,6 +27,7 @@ run_tests="${REPO_ROOT}/tests/shell/run-tests.sh"
 assert_file_contains "${REPORTER}" "generate_dns_inventory_report"
 assert_file_contains "${dns_vars}" "dns_hetzner_cloud_token_groups"
 assert_file_contains "${report_playbook}" "report-hetzner-dns-inventory.py"
+assert_file_contains "${report_playbook}" "check_mode: false"
 assert_file_contains "${docs}" "hetzner-dns-inventory-report.yml"
 assert_file_contains "${run_tests}" "test_hetzner_dns_inventory_report.sh"
 

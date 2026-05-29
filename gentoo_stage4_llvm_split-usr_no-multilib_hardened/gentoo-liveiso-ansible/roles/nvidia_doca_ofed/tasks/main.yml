@@ -2,26 +2,56 @@
 - name: Manage NVIDIA DOCA/OFED host repository
   when: nvidia_doca_ofed_enabled | bool
   block:
-    - name: Read running kernel release
-      ansible.builtin.command: uname -r
+    - name: Preflight-compatible raw command path - read running kernel release
+      ansible.builtin.raw: uname -r
       register: nvidia_doca_ofed_uname
       changed_when: false
+
+    - name: Detect NVIDIA/Mellanox PCI devices
+      ansible.builtin.raw: >-
+        /bin/bash -lc "lspci -Dnn |
+        grep -Ei '{{ (nvidia_doca_ofed_supported_pci_vendor_ids + nvidia_doca_ofed_supported_device_markers) | join("|") }}'
+        || true"
+      register: nvidia_doca_ofed_detected_devices
+      changed_when: false
+      failed_when: false
 
     - name: Publish DOCA/OFED plan when apply is disabled
       ansible.builtin.debug:
         msg:
           apply_required: "{{ nvidia_doca_ofed_apply }}"
           kernel: "{{ nvidia_doca_ofed_uname.stdout }}"
+          detected_devices: "{{ nvidia_doca_ofed_detected_devices.stdout_lines }}"
+          doca_host_version: "{{ nvidia_doca_ofed_supported_doca_host_version }}"
+          repo_package_type: "{{ nvidia_doca_ofed_repo_package_type }}"
+          supported_pci_vendor_ids: "{{ nvidia_doca_ofed_supported_pci_vendor_ids }}"
+          supported_device_markers: "{{ nvidia_doca_ofed_supported_device_markers }}"
+          legacy_connectx4_policy: "{{ nvidia_doca_ofed_legacy_connectx4_policy }}"
+          supported_kernel_targets: "{{ nvidia_doca_ofed_supported_kernel_targets }}"
+          required_kernel_modules: "{{ nvidia_doca_ofed_required_kernel_modules }}"
+          roce_validation_commands: "{{ nvidia_doca_ofed_roce_validation_commands }}"
           repo_deb_url: "{{ nvidia_doca_ofed_repo_deb_url }}"
           repo_deb_path: "{{ nvidia_doca_ofed_repo_deb_path }}"
+          repo_rpm_url: "{{ nvidia_doca_ofed_repo_rpm_url }}"
+          repo_rpm_path: "{{ nvidia_doca_ofed_repo_rpm_path }}"
           packages: "{{ nvidia_doca_ofed_install_packages }}"
           kernel_headers_required: "{{ nvidia_doca_ofed_kernel_headers_required }}"
           custom_kernel_allowed: "{{ nvidia_doca_ofed_allow_custom_kernel }}"
+          artifact_root: "{{ nvidia_doca_ofed_artifact_root }}"
       when: not (nvidia_doca_ofed_apply | bool)
 
     - name: Stop before mutation when DOCA/OFED apply is disabled
       ansible.builtin.meta: end_host
       when: not (nvidia_doca_ofed_apply | bool)
+
+    - name: Assert NVIDIA/Mellanox device detection before apply
+      ansible.builtin.assert:
+        that:
+          - (nvidia_doca_ofed_detected_devices.stdout_lines | length > 0) or (nvidia_doca_ofed_skip_device_detection | bool)
+        fail_msg: >-
+          Refusing DOCA/OFED apply because no supported NVIDIA/Mellanox PCI device
+          was detected via lspci -Dnn. Set nvidia_doca_ofed_skip_device_detection
+          only for a documented lab exception.
 
     - name: Check kernel headers/build tree
       ansible.builtin.stat:
@@ -47,11 +77,26 @@
           Refusing DOCA/OFED install on custom kernel {{ nvidia_doca_ofed_uname.stdout }}
           without explicit nvidia_doca_ofed_allow_custom_kernel and matching ack.
 
+    - name: Assert DOCA/OFED repository package type is explicit for apply
+      ansible.builtin.assert:
+        that:
+          - nvidia_doca_ofed_repo_package_type in ['deb', 'rpm']
+        fail_msg: >-
+          Set nvidia_doca_ofed_repo_package_type to deb or rpm before live apply.
+          The default auto mode is allowed only for read-only planning.
+
     - name: Assert a DOCA/OFED repository package source is configured
       ansible.builtin.assert:
         that:
-          - (nvidia_doca_ofed_repo_deb_url | length > 0) or (nvidia_doca_ofed_repo_deb_path | length > 0)
-        fail_msg: Configure nvidia_doca_ofed_repo_deb_url or nvidia_doca_ofed_repo_deb_path before apply.
+          - >-
+            (
+              nvidia_doca_ofed_repo_package_type == 'deb' and
+              ((nvidia_doca_ofed_repo_deb_url | length > 0) or (nvidia_doca_ofed_repo_deb_path | length > 0))
+            ) or (
+              nvidia_doca_ofed_repo_package_type == 'rpm' and
+              ((nvidia_doca_ofed_repo_rpm_url | length > 0) or (nvidia_doca_ofed_repo_rpm_path | length > 0))
+            )
+        fail_msg: Configure the matching DOCA/OFED repo package URL or local path before apply.
 
     - name: Download NVIDIA DOCA/OFED repository package
       ansible.builtin.get_url:
@@ -59,7 +104,9 @@
         dest: "{{ nvidia_doca_ofed_repo_deb_dest }}"
         mode: '0644'
         checksum: "{{ nvidia_doca_ofed_repo_deb_checksum | default(omit, true) }}"
-      when: nvidia_doca_ofed_repo_deb_url | length > 0
+      when:
+        - nvidia_doca_ofed_repo_package_type == 'deb'
+        - nvidia_doca_ofed_repo_deb_url | length > 0
 
     - name: Copy local NVIDIA DOCA/OFED repository package
       ansible.builtin.copy:
@@ -67,19 +114,62 @@
         dest: "{{ nvidia_doca_ofed_repo_deb_dest }}"
         mode: '0644'
       when:
+        - nvidia_doca_ofed_repo_package_type == 'deb'
         - nvidia_doca_ofed_repo_deb_url | length == 0
         - nvidia_doca_ofed_repo_deb_path | length > 0
 
     - name: Install NVIDIA DOCA/OFED repository package
       ansible.builtin.apt:
         deb: "{{ nvidia_doca_ofed_repo_deb_dest }}"
+      when: nvidia_doca_ofed_repo_package_type == 'deb'
 
     - name: Refresh apt after NVIDIA repository installation
       ansible.builtin.apt:
         update_cache: true
-      when: nvidia_doca_ofed_apt_update_after_repo | bool
+      when:
+        - nvidia_doca_ofed_repo_package_type == 'deb'
+        - nvidia_doca_ofed_apt_update_after_repo | bool
 
     - name: Install NVIDIA DOCA/OFED packages
       ansible.builtin.apt:
         name: "{{ nvidia_doca_ofed_install_packages }}"
         state: present
+      when: nvidia_doca_ofed_repo_package_type == 'deb'
+
+    - name: Download NVIDIA DOCA/OFED RPM repository package
+      ansible.builtin.get_url:
+        url: "{{ nvidia_doca_ofed_repo_rpm_url }}"
+        dest: "{{ nvidia_doca_ofed_repo_rpm_dest }}"
+        mode: '0644'
+        checksum: "{{ nvidia_doca_ofed_repo_rpm_checksum | default(omit, true) }}"
+      when:
+        - nvidia_doca_ofed_repo_package_type == 'rpm'
+        - nvidia_doca_ofed_repo_rpm_url | length > 0
+
+    - name: Copy local NVIDIA DOCA/OFED RPM repository package
+      ansible.builtin.copy:
+        src: "{{ nvidia_doca_ofed_repo_rpm_path }}"
+        dest: "{{ nvidia_doca_ofed_repo_rpm_dest }}"
+        mode: '0644'
+      when:
+        - nvidia_doca_ofed_repo_package_type == 'rpm'
+        - nvidia_doca_ofed_repo_rpm_url | length == 0
+        - nvidia_doca_ofed_repo_rpm_path | length > 0
+
+    - name: Install NVIDIA DOCA/OFED RPM repository package
+      ansible.builtin.dnf:
+        name: "{{ nvidia_doca_ofed_repo_rpm_dest }}"
+        state: present
+        disable_gpg_check: false
+      when: nvidia_doca_ofed_repo_package_type == 'rpm'
+
+    - name: Refresh dnf cache after NVIDIA repository installation
+      ansible.builtin.dnf:
+        update_cache: true
+      when: nvidia_doca_ofed_repo_package_type == 'rpm'
+
+    - name: Install NVIDIA DOCA/OFED packages with dnf
+      ansible.builtin.dnf:
+        name: "{{ nvidia_doca_ofed_install_packages }}"
+        state: present
+      when: nvidia_doca_ofed_repo_package_type == 'rpm'

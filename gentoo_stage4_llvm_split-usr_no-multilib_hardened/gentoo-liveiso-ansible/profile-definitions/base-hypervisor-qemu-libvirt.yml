@@ -1,0 +1,42 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-base-hypervisor-common.packages
+    - profile-package-lists/stage5-base-hypervisor-qemu-libvirt.packages
+  make_conf_append: |
+    QEMU_SOFTMMU_TARGETS="x86_64 aarch64"
+    QEMU_USER_TARGETS="x86_64 aarch64"
+    USE="${USE} aio curl gnutls infiniband iscsi numa python sasl seccomp ssl vhost-net virtfs zfs"
+  package_use_files:
+    20-hypervisor-qemu-libvirt: |
+      app-emulation/qemu aio curl gnutls iscsi ncurses numa pin-upstream-blobs ssh vhost-net virtfs
+      app-emulation/libvirt libvirtd lvm numa parted qemu virt-network zfs
+      net-misc/openvswitch modules ssl
+      sys-fs/zfs rootfs
+  package_accept_keywords_files:
+    20-hypervisor-qemu-libvirt-testing: |
+      =net-misc/openvswitch-3.3.8 ~amd64
+      =sys-fs/zfs-2.4.1 ~amd64
+      =sys-fs/zfs-kmod-2.4.0_rc2-r1 ~amd64
+  modules_load_files:
+    base-hypervisor-qemu-libvirt.conf: |
+      ib_uverbs
+      kvm
+      kvm_amd
+      kvm_intel
+      mlx5_core
+      mlx5_ib
+      nvme
+      nvme-fabrics
+      nvme-rdma
+      openvswitch
+      qede
+      vhost_net
+      zfs
+  openrc_services_enable:
+    - chronyd
+    - libvirtd
+    - openvswitch
+    - rsyslog
+    - sshd

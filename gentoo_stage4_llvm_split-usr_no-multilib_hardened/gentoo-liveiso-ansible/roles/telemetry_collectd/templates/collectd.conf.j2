@@ -1,0 +1,63 @@
+Hostname "{{ resolved_collectd_telemetry.hostname }}"
+FQDNLookup false
+BaseDir "{{ resolved_collectd_telemetry.base_dir }}"
+PluginDir "{{ resolved_collectd_telemetry.plugin_dir }}"
+TypesDB "/usr/share/collectd/types.db"
+Interval {{ resolved_collectd_telemetry.interval }}
+ReadThreads {{ resolved_collectd_telemetry.read_threads }}
+WriteThreads {{ resolved_collectd_telemetry.write_threads }}
+Include "{{ resolved_collectd_telemetry.include_dir }}"
+
+{% for plugin_name in resolved_collectd_telemetry.plugins %}
+LoadPlugin {{ plugin_name }}
+{% endfor %}
+LoadPlugin network
+{% if resolved_collectd_telemetry.write_graphite_enabled %}
+LoadPlugin write_graphite
+{% endif %}
+{% if resolved_collectd_telemetry.write_prometheus_enabled %}
+LoadPlugin write_prometheus
+{% endif %}
+
+<Plugin df>
+  FSType rootfs
+  FSType tmpfs
+  FSType devtmpfs
+  FSType devfs
+  FSType iso9660
+  FSType overlay
+  IgnoreSelected true
+</Plugin>
+
+<Plugin network>
+{% if resolved_collectd_telemetry.network_listen %}
+  <Listen "{{ resolved_collectd_telemetry.network_listen_host }}" "{{ resolved_collectd_telemetry.network_listen_port }}">
+  </Listen>
+{% endif %}
+{% for collectd_server in resolved_collectd_telemetry.network_servers %}
+  <Server "{{ collectd_server.host }}" "{{ collectd_server.port | default(25826) }}">
+  </Server>
+{% endfor %}
+</Plugin>
+
+{% if resolved_collectd_telemetry.write_graphite_enabled %}
+<Plugin write_graphite>
+  <Node "victoriametrics">
+    Host "{{ resolved_collectd_telemetry.write_graphite_host }}"
+    Port "{{ resolved_collectd_telemetry.write_graphite_port }}"
+    Protocol "tcp"
+    LogSendErrors true
+    Prefix "{{ resolved_collectd_telemetry.write_graphite_prefix }}"
+    StoreRates true
+    AlwaysAppendDS false
+    EscapeCharacter "_"
+  </Node>
+</Plugin>
+{% endif %}
+
+{% if resolved_collectd_telemetry.write_prometheus_enabled %}
+<Plugin write_prometheus>
+  Port "{{ resolved_collectd_telemetry.write_prometheus_port }}"
+  Host "{{ resolved_collectd_telemetry.write_prometheus_host }}"
+</Plugin>
+{% endif %}

@@ -1,0 +1,362 @@
+---
+- name: Apply the live RFC99 SLURM pilot controller and worker configuration
+  hosts: slurm_controllers:slurm_workers
+  gather_facts: true
+  become: true
+  any_errors_fatal: true
+  vars:
+    install_target_root: ""
+    openrc_action_services_live: true
+    slurm_pilot_live_apply_required: "{{ slurm_pilot_apply_required | default(false) | bool }}"
+    slurm_pilot_live_install_packages: "{{ slurm_pilot_install_packages | default(true) | bool }}"
+    slurm_pilot_live_run_smoke: "{{ slurm_pilot_run_smoke | default(true) | bool }}"
+    slurm_pilot_accept_keywords_file: /etc/portage/package.accept_keywords/30-slurm-pilot
+    slurm_pilot_package_use_file: /etc/portage/package.use/30-slurm-pilot
+    slurm_pilot_munge_service_name: munged
+    slurm_pilot_slurm_patch_file: /etc/portage/patches/sys-cluster/slurm/slurm-24.05.3-r1-gres-sysmacros.patch
+    slurm_pilot_slurm_gres_sysmacros_patch: |
+      --- a/src/interfaces/gres.c
+      +++ b/src/interfaces/gres.c
+      @@ -59 +59,4 @@
+       #include <sys/types.h>
+      +#ifdef __linux__
+      +#  include <sys/sysmacros.h>
+      +#endif
+    slurm_pilot_controller_package_use: |
+      sys-cluster/slurm munge mysql slurmdbd
+      sys-auth/munge gcrypt
+      sys-cluster/pmix munge
+    slurm_pilot_worker_package_use: |
+      sys-cluster/slurm munge
+      sys-auth/munge gcrypt
+      sys-cluster/pmix munge
+    slurm_pilot_controller_packages:
+      - sys-cluster/slurm
+      - sys-auth/munge
+      - dev-db/mariadb
+      - sys-process/numactl
+    slurm_pilot_worker_packages:
+      - sys-cluster/slurm
+      - sys-auth/munge
+      - sys-process/numactl
+      - sys-cluster/rdma-core
+    slurm_pilot_controller_services:
+      - munged
+      - slurmdbd
+      - slurmctld
+    slurm_pilot_worker_services:
+      - munged
+      - slurmd
+
+  pre_tasks:
+    - name: Gate live SLURM pilot mutation
+      ansible.builtin.assert:
+        that:
+          - slurm_pilot_live_apply_required | bool
+        fail_msg: >-
+          Set slurm_pilot_apply_required=true and use --limit for the intended
+          controller/worker scope before mutating live SLURM pilot hosts.
+
+    - name: Assert the host has a Stage5 profile
+      ansible.builtin.assert:
+        that:
+          - stage5_profile is defined
+          - stage5_profile | length > 0
+        fail_msg: "Each SLURM pilot host must define stage5_profile."
+
+    - name: Check root break-glass access is active
+      ansible.builtin.command:
+        argv:
+          - id
+          - -u
+      register: slurm_pilot_root_id
+      changed_when: false
+
+    - name: Assert root break-glass access is active
+      ansible.builtin.assert:
+        that:
+          - slurm_pilot_root_id.stdout | trim == '0'
+        fail_msg: "Root break-glass SSH is required before mutating live scheduler hosts."
+
+    - name: Load host Stage5 profile definition
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../profile-definitions/{{ stage5_profile }}.yml"
+        name: slurm_pilot_profile_document
+
+    - name: Initialize generated SLURM worker node list
+      ansible.builtin.set_fact:
+        slurm_pilot_worker_nodes: []
+      run_once: true
+
+    - name: Build generated SLURM worker node list from inventory
+      ansible.builtin.set_fact:
+        slurm_pilot_worker_nodes: >-
+          {{
+            slurm_pilot_worker_nodes
+            + [
+              {
+                'name': hostvars[slurm_pilot_worker_host].slurm_node_name
+                  | default(hostvars[slurm_pilot_worker_host].fqdn | default(slurm_pilot_worker_host) | split('.') | first),
+                'hostname': hostvars[slurm_pilot_worker_host].fqdn
+                  | default(hostvars[slurm_pilot_worker_host].ansible_host | default(slurm_pilot_worker_host)),
+                'addr': hostvars[slurm_pilot_worker_host].ansible_host
+                  | default(hostvars[slurm_pilot_worker_host].observed_service_ip | default('')),
+                'cpus': hostvars[slurm_pilot_worker_host].slurm_node_cpus | default(1),
+                'real_memory': hostvars[slurm_pilot_worker_host].slurm_node_real_memory_mb | default(1024),
+                'state': hostvars[slurm_pilot_worker_host].slurm_node_state | default('UNKNOWN'),
+                'features': hostvars[slurm_pilot_worker_host].slurm_node_features | default([])
+              }
+            ]
+          }}
+      loop: "{{ groups.get('slurm_workers', []) }}"
+      loop_control:
+        loop_var: slurm_pilot_worker_host
+      run_once: true
+
+    - name: Resolve host SLURM profile settings for live apply
+      ansible.builtin.set_fact:
+        resolved_profile_slurm_cluster: >-
+          {{
+            slurm_pilot_profile_document.gentoo_profile_definition.slurm_cluster
+            | combine(
+                {
+                  'nodes': hostvars[ansible_play_hosts_all[0]].slurm_pilot_worker_nodes | default([]),
+                  'accounting_storage_password_ref': vault_slurmdbd_storage_password | default(''),
+                  'munge_key_b64': vault_slurm_munge_key_b64 | default('')
+                },
+                recursive=True
+              )
+          }}
+      no_log: true
+
+  tasks:
+    - name: Ensure live Portage override directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /etc/portage/package.accept_keywords
+        - /etc/portage/package.use
+        - "{{ slurm_pilot_slurm_patch_file | dirname }}"
+      when: slurm_pilot_live_install_packages | bool
+
+    - name: Accept targeted SLURM unstable keyword for the pilot only
+      ansible.builtin.copy:
+        dest: "{{ slurm_pilot_accept_keywords_file }}"
+        mode: '0644'
+        content: |
+          sys-cluster/slurm ~amd64
+      when: slurm_pilot_live_install_packages | bool
+
+    - name: Write targeted SLURM pilot USE flags
+      ansible.builtin.copy:
+        dest: "{{ slurm_pilot_package_use_file }}"
+        mode: '0644'
+        content: "{{ slurm_pilot_controller_package_use if inventory_hostname in groups.get('slurm_controllers', []) else slurm_pilot_worker_package_use }}"
+      when: slurm_pilot_live_install_packages | bool
+
+    - name: Install SLURM clang sysmacros user patch
+      ansible.builtin.copy:
+        dest: "{{ slurm_pilot_slurm_patch_file }}"
+        mode: '0644'
+        content: "{{ slurm_pilot_slurm_gres_sysmacros_patch }}"
+      when: slurm_pilot_live_install_packages | bool
+
+    - name: Install live SLURM package set with binary package capture
+      ansible.builtin.command:
+        argv: >-
+          {{
+            [
+              'emerge',
+              '--verbose',
+              '--noreplace',
+              '--changed-use',
+              '--buildpkg=y',
+              '--with-bdeps=y',
+              '--complete-graph=y',
+              '--binpkg-respect-use=y'
+            ]
+            + (
+              slurm_pilot_controller_packages
+              if inventory_hostname in groups.get('slurm_controllers', [])
+              else slurm_pilot_worker_packages
+            )
+          }}
+      register: slurm_pilot_emerge
+      changed_when: "'>>> Emerging' in slurm_pilot_emerge.stdout or 'ebuild' in slurm_pilot_emerge.stdout"
+      when: slurm_pilot_live_install_packages | bool
+
+    - name: Ensure SLURM and MUNGE groups exist before config render
+      ansible.builtin.group:
+        name: "{{ item }}"
+        system: true
+        state: present
+      loop:
+        - slurm
+        - munge
+
+    - name: Ensure SLURM and MUNGE users exist before config render
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        group: "{{ item.group }}"
+        home: "{{ item.home }}"
+        shell: /sbin/nologin
+        system: true
+        create_home: false
+        state: present
+      loop:
+        - { name: slurm, group: slurm, home: /var/lib/slurm }
+        - { name: munge, group: munge, home: /var/lib/munge }
+
+    - name: Render SLURM pilot configuration and action services
+      ansible.builtin.include_role:
+        name: slurm_cluster
+
+    - name: Install live OpenRC action services for SLURM
+      ansible.builtin.include_role:
+        name: services
+
+    - name: Check MariaDB OpenRC service name
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/init.d/mariadb
+        - /etc/init.d/mysql
+      register: slurm_pilot_db_service_stats
+      when: inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Resolve MariaDB OpenRC service name
+      ansible.builtin.set_fact:
+        slurm_pilot_db_service_name: >-
+          {{
+            'mariadb'
+            if (slurm_pilot_db_service_stats.results | selectattr('item', 'equalto', '/etc/init.d/mariadb') | map(attribute='stat.exists') | first | default(false))
+            else 'mysql'
+          }}
+      when: inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Initialize MariaDB data directory
+      ansible.builtin.command:
+        argv:
+          - mariadb-install-db
+          - --user=mysql
+          - --basedir=/usr
+          - --datadir=/var/lib/mysql
+        creates: /var/lib/mysql/mysql
+      when: inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Enable MariaDB OpenRC service
+      ansible.builtin.command:
+        argv:
+          - rc-update
+          - add
+          - "{{ slurm_pilot_db_service_name }}"
+          - default
+      register: slurm_pilot_db_rc_update
+      changed_when: "'already installed' not in (slurm_pilot_db_rc_update.stdout ~ slurm_pilot_db_rc_update.stderr)"
+      failed_when:
+        - slurm_pilot_db_rc_update.rc != 0
+        - "'already installed' not in (slurm_pilot_db_rc_update.stdout ~ slurm_pilot_db_rc_update.stderr)"
+      when: inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Start MariaDB OpenRC service
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - "{{ slurm_pilot_db_service_name }}"
+          - start
+      register: slurm_pilot_db_start
+      changed_when: "'started' in (slurm_pilot_db_start.stdout ~ slurm_pilot_db_start.stderr)"
+      failed_when:
+        - slurm_pilot_db_start.rc != 0
+        - "'already started' not in (slurm_pilot_db_start.stdout ~ slurm_pilot_db_start.stderr)"
+      when: inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Create SLURM accounting database and user
+      ansible.builtin.command:
+        argv:
+          - mariadb
+          - --user=root
+          - --execute
+          - |
+            CREATE DATABASE IF NOT EXISTS {{ resolved_profile_slurm_cluster.accounting_storage_database }};
+            CREATE USER IF NOT EXISTS '{{ resolved_profile_slurm_cluster.accounting_storage_user }}'@'localhost' IDENTIFIED BY '{{ vault_slurmdbd_storage_password | replace("'", "''") }}';
+            ALTER USER '{{ resolved_profile_slurm_cluster.accounting_storage_user }}'@'localhost' IDENTIFIED BY '{{ vault_slurmdbd_storage_password | replace("'", "''") }}';
+            GRANT ALL PRIVILEGES ON {{ resolved_profile_slurm_cluster.accounting_storage_database }}.* TO '{{ resolved_profile_slurm_cluster.accounting_storage_user }}'@'localhost';
+            FLUSH PRIVILEGES;
+      changed_when: true
+      no_log: true
+      when: inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Enable native OpenRC services for the SLURM pilot
+      ansible.builtin.command:
+        argv:
+          - rc-update
+          - add
+          - "{{ item }}"
+          - default
+      loop: "{{ [slurm_pilot_munge_service_name] + ([slurm_pilot_db_service_name] if inventory_hostname in groups.get('slurm_controllers', []) else []) }}"
+      register: slurm_pilot_native_rc_update
+      changed_when: "'already installed' not in (slurm_pilot_native_rc_update.stdout ~ slurm_pilot_native_rc_update.stderr)"
+      failed_when:
+        - slurm_pilot_native_rc_update.rc != 0
+        - "'already installed' not in (slurm_pilot_native_rc_update.stdout ~ slurm_pilot_native_rc_update.stderr)"
+
+    - name: Restart MUNGE before SLURM daemons
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - "{{ slurm_pilot_munge_service_name }}"
+          - restart
+      register: slurm_pilot_munge_restart
+      changed_when: true
+
+    - name: Restart SLURM pilot services in dependency order
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - "{{ item }}"
+          - restart
+      loop: "{{ slurm_pilot_controller_services[1:] if inventory_hostname in groups.get('slurm_controllers', []) else slurm_pilot_worker_services[1:] }}"
+      register: slurm_pilot_service_restart
+      changed_when: true
+
+    - name: Validate SLURM pilot service status
+      ansible.builtin.command:
+        argv:
+          - rc-service
+          - "{{ item }}"
+          - status
+      loop: "{{ slurm_pilot_controller_services if inventory_hostname in groups.get('slurm_controllers', []) else slurm_pilot_worker_services }}"
+      changed_when: false
+
+    - name: Run controller sinfo smoke test
+      ansible.builtin.command:
+        argv:
+          - sinfo
+          - --noheader
+      register: slurm_pilot_sinfo
+      changed_when: false
+      retries: 6
+      delay: 5
+      until: slurm_pilot_sinfo.rc == 0
+      when:
+        - slurm_pilot_live_run_smoke | bool
+        - inventory_hostname in groups.get('slurm_controllers', [])
+
+    - name: Run controller srun hostname smoke test
+      ansible.builtin.command:
+        argv:
+          - srun
+          - --nodes=1
+          - --ntasks=1
+          - hostname
+      register: slurm_pilot_srun
+      changed_when: false
+      retries: 6
+      delay: 5
+      until: slurm_pilot_srun.rc == 0
+      when:
+        - slurm_pilot_live_run_smoke | bool
+        - inventory_hostname in groups.get('slurm_controllers', [])

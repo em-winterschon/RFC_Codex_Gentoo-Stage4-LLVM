@@ -163,6 +163,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Ansible / ansible-lint cache
+.ansible/
+
 # pytype static type analyzer
 .pytype/
 

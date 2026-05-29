@@ -1,0 +1,111 @@
+---
+- name: Resolve NFS storage client settings
+  ansible.builtin.set_fact:
+    nfs_storage_client_profile: "{{ resolved_profile_nfs_storage_client | default({}) }}"
+
+- name: Resolve NFS storage client enabled flag
+  ansible.builtin.set_fact:
+    nfs_storage_client_enabled: "{{ nfs_storage_client_profile.enabled | default(nfs_storage_client_default_enabled) | bool }}"
+
+- name: Compose NFS storage client runtime map
+  ansible.builtin.set_fact:
+    resolved_nfs_storage_client:
+      protocol_default: "{{ nfs_storage_client_profile.protocol_default | default(nfs_storage_client_protocol_default) }}"
+      non_lacp_protocol_default: "{{ nfs_storage_client_profile.non_lacp_protocol_default | default(nfs_storage_client_non_lacp_protocol_default) }}"
+      lacp_protocol_default: "{{ nfs_storage_client_profile.lacp_protocol_default | default(nfs_storage_client_lacp_protocol_default) }}"
+      idmap_domain: "{{ nfs_storage_client_profile.idmap_domain | default(nfs_storage_client_idmap_domain) }}"
+      require_aaa_for_nfsv4: "{{ nfs_storage_client_profile.require_aaa_for_nfsv4 | default(nfs_storage_client_require_aaa_for_nfsv4) | bool }}"
+      enable_nfsv3: "{{ nfs_storage_client_profile.enable_nfsv3 | default(nfs_storage_client_enable_nfsv3) | bool }}"
+      enable_nfsv4: "{{ nfs_storage_client_profile.enable_nfsv4 | default(nfs_storage_client_enable_nfsv4) | bool }}"
+      enable_rdma: "{{ nfs_storage_client_profile.enable_rdma | default(nfs_storage_client_enable_rdma) | bool }}"
+      enable_multipath: "{{ nfs_storage_client_profile.enable_multipath | default(nfs_storage_client_enable_multipath) | bool }}"
+      rdma_port: "{{ nfs_storage_client_profile.rdma_port | default(nfs_storage_client_rdma_port) }}"
+      nconnect: "{{ nfs_storage_client_profile.nconnect | default(nfs_storage_client_nconnect) }}"
+      fstab_safety_options: "{{ nfs_storage_client_profile.fstab_safety_options | default(nfs_storage_client_fstab_safety_options) }}"
+      mounts: "{{ nfs_storage_client_profile.mounts | default(nfs_storage_client_mounts) }}"
+      exports: "{{ nfs_storage_client_profile.exports | default(nfs_storage_client_exports) }}"
+  when: nfs_storage_client_enabled
+
+- name: Ensure NFS configuration directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nfs_storage_client_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc
+    - /etc/nfs.conf.d
+    - /etc/modprobe.d
+  loop_control:
+    loop_var: nfs_storage_client_dir
+  when: nfs_storage_client_enabled
+
+- name: Render NFS idmapd.conf
+  ansible.builtin.template:
+    src: idmapd.conf.j2
+    dest: "{{ install_target_root }}/etc/idmapd.conf"
+    mode: '0644'
+  when: nfs_storage_client_enabled
+
+- name: Render NFS client nfs.conf fragment
+  ansible.builtin.template:
+    src: nfs.conf.j2
+    dest: "{{ install_target_root }}/etc/nfs.conf.d/90-stage5-client.conf"
+    mode: '0644'
+  when: nfs_storage_client_enabled
+
+- name: Render NFS-RDMA module policy
+  ansible.builtin.template:
+    src: nfs-rdma-modules.conf.j2
+    dest: "{{ install_target_root }}/etc/modprobe.d/nfs-rdma.conf"
+    mode: '0644'
+  when:
+    - nfs_storage_client_enabled
+    - resolved_nfs_storage_client.enable_rdma | bool
+
+- name: Ensure NFS mount points exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ nfs_storage_mount.path }}"
+    state: directory
+    mode: "{{ nfs_storage_mount.mode | default('0755') }}"
+  loop: "{{ resolved_nfs_storage_client.mounts }}"
+  loop_control:
+    loop_var: nfs_storage_mount
+    label: "{{ nfs_storage_mount.path }}"
+  when:
+    - nfs_storage_client_enabled
+    - resolved_nfs_storage_client.mounts | length > 0
+
+- name: Render managed NFS mount entries in /etc/fstab
+  ansible.builtin.blockinfile:
+    path: "{{ install_target_root }}/etc/fstab"
+    create: true
+    mode: '0644'
+    marker: "# {mark} STAGE5 NFS STORAGE CLIENT"
+    block: "{{ lookup('template', 'fstab.j2') }}"
+  when:
+    - nfs_storage_client_enabled
+    - resolved_nfs_storage_client.mounts | length > 0
+
+- name: Add NFS client OpenRC services
+  ansible.builtin.set_fact:
+    resolved_profile_openrc_services_enable: >-
+      {{
+        (
+          resolved_profile_openrc_services_enable | default([])
+          + nfs_storage_client_openrc_services
+        ) | unique
+      }}
+  when: nfs_storage_client_enabled
+
+- name: Add NFS-RDMA kernel modules to profile module intent
+  ansible.builtin.set_fact:
+    resolved_profile_kernel_modules_load: >-
+      {{
+        (
+          resolved_profile_kernel_modules_load | default([])
+          + nfs_storage_client_kernel_modules
+        ) | unique
+      }}
+  when:
+    - nfs_storage_client_enabled
+    - resolved_nfs_storage_client.enable_rdma | bool

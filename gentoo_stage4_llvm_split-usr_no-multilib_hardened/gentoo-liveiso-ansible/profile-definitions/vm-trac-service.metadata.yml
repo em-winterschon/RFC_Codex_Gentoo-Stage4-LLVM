@@ -38,6 +38,14 @@ gentoo_system_profile_metadata:
       Trac's plugin ecosystem is useful but unevenly maintained. Validate Git,
       RPC/API, dependency, Jenkins, Buildbot, and LDAP plugins before adding
       them to the default live deployment.
+  package_pins:
+    tracked_atoms:
+      - www-apps/trac
+      - dev-db/postgresql
+      - net-proxy/haproxy
+      - dev-vcs/git
+    pin_gaps:
+      - Trac plugin atoms remain intentionally excluded until each plugin has source, version, and auth-scope review.
   mcp_bridge:
     status: scaffolded
     default_exposure: local-management-only

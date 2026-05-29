@@ -1,0 +1,80 @@
+---
+- name: Gate Coherence-CE service mutations
+  ansible.builtin.assert:
+    that:
+      - coherence_ce_service_mutation_enabled | bool
+    fail_msg: >-
+      Coherence-CE service role is scaffolded but mutation-gated. Set
+      coherence_ce_service_mutation_enabled=true only after a pinned Jenkins
+      build artifact and readiness plan exist.
+  when: coherence_ce_service_enabled | bool
+
+- name: Ensure Coherence-CE group exists
+  ansible.builtin.group:
+    name: "{{ coherence_ce_service_group }}"
+    system: true
+  when:
+    - coherence_ce_service_enabled | bool
+    - coherence_ce_service_mutation_enabled | bool
+
+- name: Ensure Coherence-CE user exists
+  ansible.builtin.user:
+    name: "{{ coherence_ce_service_user }}"
+    group: "{{ coherence_ce_service_group }}"
+    home: "{{ coherence_ce_service_home }}"
+    shell: /sbin/nologin
+    system: true
+    create_home: true
+  when:
+    - coherence_ce_service_enabled | bool
+    - coherence_ce_service_mutation_enabled | bool
+
+- name: Ensure Coherence-CE directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ coherence_ce_service_home }}"
+      owner: "{{ coherence_ce_service_user }}"
+      group: "{{ coherence_ce_service_group }}"
+      mode: "0750"
+    - path: "{{ coherence_ce_service_log_dir }}"
+      owner: "{{ coherence_ce_service_user }}"
+      group: "{{ coherence_ce_service_group }}"
+      mode: "0750"
+    - path: /etc/conf.d
+      owner: root
+      group: root
+      mode: "0755"
+    - path: /etc/init.d
+      owner: root
+      group: root
+      mode: "0755"
+  when:
+    - coherence_ce_service_enabled | bool
+    - coherence_ce_service_mutation_enabled | bool
+
+- name: Render Coherence-CE OpenRC conf.d
+  ansible.builtin.template:
+    src: coherence-ce.confd.j2
+    dest: "/etc/conf.d/{{ coherence_ce_service_name }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - coherence_ce_service_enabled | bool
+    - coherence_ce_service_mutation_enabled | bool
+
+- name: Render Coherence-CE OpenRC init.d
+  ansible.builtin.template:
+    src: coherence-ce.initd.j2
+    dest: "/etc/init.d/{{ coherence_ce_service_name }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - coherence_ce_service_enabled | bool
+    - coherence_ce_service_mutation_enabled | bool

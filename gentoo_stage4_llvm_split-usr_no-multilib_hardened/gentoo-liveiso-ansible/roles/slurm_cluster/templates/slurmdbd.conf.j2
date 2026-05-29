@@ -1,0 +1,12 @@
+# Managed by Ansible. Contains database credentials after render.
+AuthType=auth/munge
+DbdHost={{ resolved_slurm_cluster.control_machine }}
+SlurmUser={{ resolved_slurm_cluster.user }}
+DebugLevel=info
+LogFile={{ resolved_slurm_cluster.log_dir }}/slurmdbd.log
+PidFile=/run/slurmdbd-daemon.pid
+StorageType=accounting_storage/mysql
+StorageHost={{ resolved_slurm_cluster.accounting_storage_host }}
+StorageLoc={{ resolved_slurm_cluster.accounting_storage_database }}
+StorageUser={{ resolved_slurm_cluster.accounting_storage_user }}
+StoragePass={{ resolved_slurm_cluster.accounting_storage_password_ref }}

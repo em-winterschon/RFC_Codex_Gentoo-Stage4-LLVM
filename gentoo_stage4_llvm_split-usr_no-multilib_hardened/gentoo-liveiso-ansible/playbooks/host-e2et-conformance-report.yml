@@ -1,0 +1,38 @@
+---
+- name: Render host E2ET conformance report
+  hosts: localhost
+  gather_facts: false
+  vars:
+    host_e2et_manifest: "{{ playbook_dir }}/../host-e2et-definitions/k10-stage5-aaa-reboot.yml"
+    host_e2et_report_dir: "{{ playbook_dir }}/../artifacts/host-e2et"
+    host_e2et_reporter_path: "{{ playbook_dir }}/../../../scripts/host_e2et_conformance.py"
+    host_e2et_report_name: "{{ (host_e2et_manifest | basename | splitext)[0] }}"
+    host_e2et_fail_on_blocked: false
+  tasks:
+    - name: Ensure host E2ET report directory exists
+      ansible.builtin.file:
+        path: "{{ host_e2et_report_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Render host E2ET conformance artifacts
+      ansible.builtin.command:
+        argv:
+          - "{{ host_e2et_reporter_path }}"
+          - "--manifest"
+          - "{{ host_e2et_manifest }}"
+          - "--json-output"
+          - "{{ host_e2et_report_dir }}/{{ host_e2et_report_name }}.json"
+          - "--markdown-output"
+          - "{{ host_e2et_report_dir }}/{{ host_e2et_report_name }}.md"
+          - "--junit-output"
+          - "{{ host_e2et_report_dir }}/{{ host_e2et_report_name }}.xml"
+      register: host_e2et_report
+      changed_when: false
+      failed_when: >-
+        host_e2et_report.rc not in [0, 1] or
+        ((host_e2et_fail_on_blocked | bool) and host_e2et_report.rc == 1)
+
+    - name: Show host E2ET conformance summary
+      ansible.builtin.debug:
+        msg: "{{ host_e2et_report.stdout | from_json }}"

@@ -1,0 +1,40 @@
+---
+coredns_resolver_enabled: true
+coredns_resolver_manage_service: true
+coredns_resolver_start_service: false
+coredns_resolver_service_manager: auto
+coredns_resolver_allow_systemd_on_native_hosts: true
+coredns_resolver_runtime: native
+
+coredns_resolver_container_name: coredns-resolver
+coredns_resolver_image: docker.io/coredns/coredns:latest
+coredns_resolver_pull_policy: missing
+coredns_resolver_network_mode: host
+
+coredns_resolver_config_dir: /etc/coredns
+coredns_resolver_zone_dir: /etc/coredns/zones
+coredns_resolver_log_dir: /var/log/coredns
+coredns_resolver_start_script: /usr/local/sbin/coredns-resolver-start
+coredns_resolver_service_name: coredns-resolver
+coredns_resolver_openrc_runlevel: default
+coredns_resolver_binary_path: /usr/bin/coredns
+
+coredns_resolver_listen_port: 53
+coredns_resolver_cache_ttl_seconds: 30
+coredns_resolver_log_queries: true
+coredns_resolver_primary_ns: ns1.rfc1918.host
+coredns_resolver_hostmaster: hostmaster.rfc1918.host
+coredns_resolver_serial: "{{ ansible_date_time.epoch | default('2026052201') }}"
+coredns_resolver_upstreams:
+  - 172.16.99.1
+  - 1.1.1.1
+  - 9.9.9.9
+
+coredns_resolver_native_packages:
+  - net-dns/coredns
+coredns_resolver_container_packages:
+  - podman
+coredns_resolver_install_packages: true
+
+coredns_resolver_extra_podman_args: []
+coredns_resolver_zones: []

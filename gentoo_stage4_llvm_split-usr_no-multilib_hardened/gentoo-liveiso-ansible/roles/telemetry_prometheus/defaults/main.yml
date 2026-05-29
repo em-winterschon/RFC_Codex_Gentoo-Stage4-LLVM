@@ -9,6 +9,7 @@ telemetry_prometheus_default_scrape_interval: 30s
 telemetry_prometheus_default_evaluation_interval: 30s
 telemetry_prometheus_default_external_labels: {}
 telemetry_prometheus_default_scrape_configs: []
+telemetry_prometheus_default_remote_write: []
 telemetry_prometheus_default_alert_rules: []
 telemetry_prometheus_default_alertmanager_targets: []
 telemetry_prometheus_default_extra_args: []

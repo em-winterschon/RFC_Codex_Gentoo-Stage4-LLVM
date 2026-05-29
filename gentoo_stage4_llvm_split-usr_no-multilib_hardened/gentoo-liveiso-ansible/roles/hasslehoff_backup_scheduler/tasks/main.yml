@@ -1,0 +1,172 @@
+---
+- name: Resolve Hasslehoff backup scheduler paths
+  ansible.builtin.set_fact:
+    hasslehoff_backup_scheduler_runtime_policy_abs: >-
+      {{ hasslehoff_backup_scheduler_runtime_root }}/{{ hasslehoff_backup_scheduler_policy_path }}
+    hasslehoff_backup_scheduler_runtime_script_abs: >-
+      {{ hasslehoff_backup_scheduler_runtime_root }}/{{ hasslehoff_backup_scheduler_script_path }}
+    hasslehoff_backup_scheduler_policy_abs: >-
+      {{ hasslehoff_backup_scheduler_repo_root }}/{{ hasslehoff_backup_scheduler_policy_path }}
+    hasslehoff_backup_scheduler_script_abs: >-
+      {{ hasslehoff_backup_scheduler_repo_root }}/{{ hasslehoff_backup_scheduler_script_path }}
+
+- name: Resolve Hasslehoff backup scheduler command
+  ansible.builtin.set_fact:
+    hasslehoff_backup_scheduler_command: >-
+      cd {{ hasslehoff_backup_scheduler_runtime_root }} &&
+      {{ hasslehoff_backup_scheduler_environment | join(' ') }}
+      bash {{ hasslehoff_backup_scheduler_runtime_script_abs }}
+    hasslehoff_backup_scheduler_cron_schedule: >-
+      {{ hasslehoff_backup_scheduler_cron_minute }}
+      {{ hasslehoff_backup_scheduler_cron_hour }}
+      * * *
+      {{ hasslehoff_backup_scheduler_cron_user }}
+
+- name: Report Hasslehoff backup scheduler dry-run state
+  ansible.builtin.debug:
+    msg:
+      enabled: "{{ hasslehoff_backup_scheduler_enabled | bool }}"
+      apply: "{{ hasslehoff_backup_scheduler_apply | bool }}"
+      mode: "{{ hasslehoff_backup_scheduler_mode }}"
+      cron_file: "{{ hasslehoff_backup_scheduler_cron_file }}"
+      mirror_target: "{{ hasslehoff_backup_scheduler_mirror_target }}"
+      runtime_root: "{{ hasslehoff_backup_scheduler_runtime_root }}"
+      policy: "{{ hasslehoff_backup_scheduler_runtime_policy_abs }}"
+      script: "{{ hasslehoff_backup_scheduler_runtime_script_abs }}"
+  when: not hasslehoff_backup_scheduler_enabled | bool
+
+- name: Refuse Hasslehoff backup scheduler mutation without explicit apply gate
+  ansible.builtin.assert:
+    that:
+      - hasslehoff_backup_scheduler_apply | bool
+      - hasslehoff_backup_scheduler_mode == "cron"
+      - hasslehoff_backup_scheduler_mirror_target | length > 0
+      - hasslehoff_backup_scheduler_script_path == "scripts/backup-hasslehoff-scheduled.sh"
+      - hasslehoff_backup_scheduler_runtime_files | map(attribute='dest') is contains('scripts/backup-hasslehoff-config.sh')
+      - hasslehoff_backup_scheduler_runtime_files | map(attribute='dest') is contains('scripts/backup-hasslehoff-scheduled.sh')
+      - hasslehoff_backup_scheduler_runtime_files | map(attribute='dest') is contains('scripts/validate-hasslehoff-backup-policy.py')
+      - >-
+        "HASSLEHOFF_BACKUP_MIRROR_TARGET="
+        in (hasslehoff_backup_scheduler_environment | join(" "))
+    fail_msg: >-
+      Hasslehoff backup scheduler requires hasslehoff_backup_scheduler_enabled=true,
+      hasslehoff_backup_scheduler_apply=true, mode=cron, and an explicit mirror
+      target before installing recurring jobs.
+  when: hasslehoff_backup_scheduler_enabled | bool
+
+- name: Assert Hasslehoff backup scheduler target does not reject X12AGAIN
+  ansible.builtin.assert:
+    that:
+      - >-
+        hasslehoff_backup_scheduler_forbidden_target_pattern not in
+        (hasslehoff_backup_scheduler_mirror_target | lower)
+    fail_msg: >-
+      Refusing to install Hasslehoff backup scheduler because the mirror target
+      appears to depend on X12AGAIN: {{ hasslehoff_backup_scheduler_mirror_target }}.
+  loop: "{{ hasslehoff_backup_scheduler_forbidden_target_patterns }}"
+  loop_control:
+    loop_var: hasslehoff_backup_scheduler_forbidden_target_pattern
+  when: hasslehoff_backup_scheduler_enabled | bool
+
+- name: Ensure Hasslehoff backup runtime directories exist
+  ansible.builtin.file:
+    path: "{{ hasslehoff_backup_scheduler_runtime_root }}/{{ hasslehoff_backup_scheduler_runtime_file.dest | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ hasslehoff_backup_scheduler_runtime_files }}"
+  loop_control:
+    loop_var: hasslehoff_backup_scheduler_runtime_file
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_apply | bool
+    - hasslehoff_backup_scheduler_install_runtime_bundle | bool
+
+- name: Install Hasslehoff backup runtime scripts
+  ansible.builtin.copy:
+    src: "{{ hasslehoff_backup_scheduler_repo_root }}/{{ hasslehoff_backup_scheduler_runtime_file.src }}"
+    dest: "{{ hasslehoff_backup_scheduler_runtime_root }}/{{ hasslehoff_backup_scheduler_runtime_file.dest }}"
+    owner: root
+    group: root
+    mode: "{{ hasslehoff_backup_scheduler_runtime_file.mode }}"
+  loop: "{{ hasslehoff_backup_scheduler_runtime_files | selectattr('dest', 'match', '^scripts/') }}"
+  loop_control:
+    loop_var: hasslehoff_backup_scheduler_runtime_file
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_apply | bool
+    - hasslehoff_backup_scheduler_install_runtime_bundle | bool
+
+- name: Install Hasslehoff backup policy
+  ansible.builtin.copy:
+    src: "{{ hasslehoff_backup_scheduler_policy_abs }}"
+    dest: "{{ hasslehoff_backup_scheduler_runtime_policy_abs }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_apply | bool
+    - hasslehoff_backup_scheduler_install_runtime_bundle | bool
+
+- name: Install Hasslehoff backup policy validator
+  ansible.builtin.copy:
+    src: "{{ hasslehoff_backup_scheduler_repo_root }}/scripts/validate-hasslehoff-backup-policy.py"
+    dest: "{{ hasslehoff_backup_scheduler_runtime_root }}/scripts/validate-hasslehoff-backup-policy.py"
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_apply | bool
+    - hasslehoff_backup_scheduler_install_runtime_bundle | bool
+
+- name: Validate Hasslehoff backup policy before scheduler install
+  ansible.builtin.command: >-
+    python3 {{ hasslehoff_backup_scheduler_runtime_root }}/scripts/validate-hasslehoff-backup-policy.py
+    {{ hasslehoff_backup_scheduler_runtime_policy_abs }}
+    --format json
+  changed_when: false
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_validate_policy | bool
+    - not ansible_check_mode | bool
+
+- name: Validate Hasslehoff backup scheduled wrapper syntax
+  ansible.builtin.command: "bash -n {{ hasslehoff_backup_scheduler_runtime_script_abs }}"
+  changed_when: false
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - not ansible_check_mode | bool
+
+- name: Run Hasslehoff backup scheduler preflight
+  ansible.builtin.shell: >-
+    set -euo pipefail;
+    cd {{ hasslehoff_backup_scheduler_runtime_root }};
+    {{ hasslehoff_backup_scheduler_environment | join(' ') }}
+    HASSLEHOFF_BACKUP_PREFLIGHT_ONLY=1
+    bash {{ hasslehoff_backup_scheduler_runtime_script_abs }}
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_run_preflight | bool
+
+- name: Install Hasslehoff backup cron job
+  ansible.builtin.copy:
+    dest: "{{ hasslehoff_backup_scheduler_cron_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible: Hasslehoff scheduled external backup.
+      # Runtime: {{ hasslehoff_backup_scheduler_runtime_root }}
+      # Policy: {{ hasslehoff_backup_scheduler_runtime_policy_abs }}
+      SHELL=/bin/bash
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      {{ hasslehoff_backup_scheduler_cron_schedule }} bash -lc {{ hasslehoff_backup_scheduler_command | quote }}
+  when:
+    - hasslehoff_backup_scheduler_enabled | bool
+    - hasslehoff_backup_scheduler_apply | bool

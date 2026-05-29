@@ -525,13 +525,25 @@ Additional YAML profile definitions can be layered via:
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-split-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 ```
+
+The LLVM/Clang Portage baseline profile adds:
+
+- hardening and ThinLTO append blocks for generated `make.conf`
+- explicit `/etc/portage/env` and `package.env` GCC fallback control
+- repo-local metadata for validated exact-version pin sets in:
+  `profile-definitions/llvm-clang-hardened-portage.metadata.yml`
+
+This profile is enabled by default in the shipped example, qemu-alias, and
+vm-stage4 inventories.
 
 For merged-usr VM and container consumers, prefer:
 
 ```yaml
 profile_definition_files:
   - "{{ playbook_dir }}/../profile-definitions/hardened-llvm-stage4-merged-usr.yml"
+  - "{{ playbook_dir }}/../profile-definitions/llvm-clang-hardened-portage.yml"
 ```
 
 ## 9. Service Definition Configuration

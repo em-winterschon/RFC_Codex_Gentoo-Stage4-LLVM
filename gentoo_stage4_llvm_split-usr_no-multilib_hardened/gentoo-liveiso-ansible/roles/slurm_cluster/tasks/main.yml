@@ -1,0 +1,229 @@
+---
+- name: Resolve SLURM cluster settings
+  ansible.builtin.set_fact:
+    slurm_cluster_enabled: >-
+      {{
+        (resolved_profile_slurm_cluster | default({})).enabled
+        | default(slurm_cluster_default_enabled)
+        | bool
+      }}
+    resolved_slurm_cluster: >-
+      {{
+        {
+          'cluster_name': (resolved_profile_slurm_cluster | default({})).cluster_name
+            | default(slurm_cluster_default_cluster_name),
+          'control_machine': (resolved_profile_slurm_cluster | default({})).control_machine
+            | default(slurm_cluster_default_control_machine),
+          'control_addr': (resolved_profile_slurm_cluster | default({})).control_addr
+            | default(slurm_cluster_default_control_addr),
+          'controller_enabled': (resolved_profile_slurm_cluster | default({})).controller_enabled
+            | default(slurm_cluster_default_controller_enabled),
+          'dbd_enabled': (resolved_profile_slurm_cluster | default({})).dbd_enabled
+            | default(slurm_cluster_default_dbd_enabled),
+          'worker_enabled': (resolved_profile_slurm_cluster | default({})).worker_enabled
+            | default(slurm_cluster_default_worker_enabled),
+          'user': (resolved_profile_slurm_cluster | default({})).user
+            | default(slurm_cluster_default_user),
+          'group': (resolved_profile_slurm_cluster | default({})).group
+            | default(slurm_cluster_default_group),
+          'munge_user': (resolved_profile_slurm_cluster | default({})).munge_user
+            | default(slurm_cluster_default_munge_user),
+          'munge_group': (resolved_profile_slurm_cluster | default({})).munge_group
+            | default(slurm_cluster_default_munge_group),
+          'munge_key_b64': (resolved_profile_slurm_cluster | default({})).munge_key_b64
+            | default(slurm_cluster_default_munge_key_b64),
+          'state_save_location': (resolved_profile_slurm_cluster | default({})).state_save_location
+            | default(slurm_cluster_default_state_save_location),
+          'slurmd_spool_dir': (resolved_profile_slurm_cluster | default({})).slurmd_spool_dir
+            | default(slurm_cluster_default_slurmd_spool_dir),
+          'log_dir': (resolved_profile_slurm_cluster | default({})).log_dir
+            | default(slurm_cluster_default_log_dir),
+          'config_dir': (resolved_profile_slurm_cluster | default({})).config_dir
+            | default(slurm_cluster_default_config_dir),
+          'accounting_storage_host': (resolved_profile_slurm_cluster | default({})).accounting_storage_host
+            | default(slurm_cluster_default_accounting_storage_host),
+          'accounting_storage_database': (resolved_profile_slurm_cluster | default({})).accounting_storage_database
+            | default(slurm_cluster_default_accounting_storage_database),
+          'accounting_storage_user': (resolved_profile_slurm_cluster | default({})).accounting_storage_user
+            | default(slurm_cluster_default_accounting_storage_user),
+          'accounting_storage_password_ref': (resolved_profile_slurm_cluster | default({})).accounting_storage_password_ref
+            | default(slurm_cluster_default_accounting_storage_password_ref),
+          'nodes': (resolved_profile_slurm_cluster | default({})).nodes
+            | default(slurm_cluster_default_nodes),
+          'node_features': (resolved_profile_slurm_cluster | default({})).node_features
+            | default(slurm_cluster_default_node_features),
+          'partitions': (resolved_profile_slurm_cluster | default({})).partitions
+            | default(slurm_cluster_default_partitions)
+        }
+      }}
+
+- name: Ensure SLURM support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ resolved_slurm_cluster.config_dir }}"
+    - "{{ resolved_slurm_cluster.log_dir }}"
+    - /var/lib/slurm
+    - "{{ resolved_slurm_cluster.state_save_location }}"
+    - "{{ resolved_slurm_cluster.slurmd_spool_dir }}"
+    - /etc/munge
+    - /var/lib/slurm/slurmdbd
+    - /var/lib/munge
+  loop_control:
+    loop_var: slurm_cluster_dir
+  when: slurm_cluster_enabled
+
+- name: Ensure SLURM runtime directories are writable by the SLURM daemon
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_runtime_dir }}"
+    state: directory
+    owner: "{{ resolved_slurm_cluster.user }}"
+    group: "{{ resolved_slurm_cluster.group }}"
+    mode: '0755'
+  loop:
+    - "{{ resolved_slurm_cluster.log_dir }}"
+    - /var/lib/slurm
+    - "{{ resolved_slurm_cluster.state_save_location }}"
+    - "{{ resolved_slurm_cluster.slurmd_spool_dir }}"
+    - /var/lib/slurm/slurmdbd
+  loop_control:
+    loop_var: slurm_cluster_runtime_dir
+  when: slurm_cluster_enabled
+
+- name: Ensure MUNGE runtime directories are owned by MUNGE
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ slurm_cluster_munge_dir }}"
+    state: directory
+    owner: "{{ resolved_slurm_cluster.munge_user }}"
+    group: "{{ resolved_slurm_cluster.munge_group }}"
+    mode: "{{ '0700' if slurm_cluster_munge_dir == '/etc/munge' else '0755' }}"
+  loop:
+    - /etc/munge
+    - /var/lib/munge
+  loop_control:
+    loop_var: slurm_cluster_munge_dir
+  when: slurm_cluster_enabled
+
+- name: Render SLURM cluster configuration
+  ansible.builtin.template:
+    src: slurm.conf.j2
+    dest: "{{ install_target_root }}{{ resolved_slurm_cluster.config_dir }}/slurm.conf"
+    mode: '0644'
+  when: slurm_cluster_enabled
+
+- name: Render SLURM cgroup configuration
+  ansible.builtin.template:
+    src: cgroup.conf.j2
+    dest: "{{ install_target_root }}{{ resolved_slurm_cluster.config_dir }}/cgroup.conf"
+    mode: '0644'
+  when: slurm_cluster_enabled
+
+- name: Render SLURM accounting daemon configuration
+  ansible.builtin.template:
+    src: slurmdbd.conf.j2
+    dest: "{{ install_target_root }}{{ resolved_slurm_cluster.config_dir }}/slurmdbd.conf"
+    owner: "{{ resolved_slurm_cluster.user }}"
+    group: "{{ resolved_slurm_cluster.group }}"
+    mode: '0600'
+  no_log: true
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.dbd_enabled | bool
+
+- name: Install vaulted MUNGE key when provided
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/etc/munge/munge.key"
+    mode: '0400'
+    owner: "{{ resolved_slurm_cluster.munge_user }}"
+    group: "{{ resolved_slurm_cluster.munge_group }}"
+    content: "{{ resolved_slurm_cluster.munge_key_b64 | b64decode }}"
+  no_log: true
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.munge_key_b64 | length > 0
+
+- name: Render MUNGE key policy note
+  ansible.builtin.copy:
+    dest: "{{ install_target_root }}/var/lib/munge/README.rfc1918"
+    mode: '0640'
+    content: |
+      MUNGE key material is intentionally not stored in this repository.
+      Generate or distribute /etc/munge/munge.key through vaulted first-boot or
+      an approved secret-delivery workflow before starting SLURM services.
+  when: slurm_cluster_enabled
+
+- name: Register SLURM controller OpenRC action service
+  ansible.builtin.set_fact:
+    openrc_action_services: >-
+      {{
+        (openrc_action_services | default([]))
+        + [
+            {
+              'name': 'slurmctld',
+              'description': 'SLURM controller daemon',
+              'command': '/usr/sbin/slurmctld -D -f ' + resolved_slurm_cluster.config_dir + '/slurm.conf',
+              'runlevel': 'default',
+              'enabled': true,
+              'user': 'root',
+              'group': 'root',
+              'dependencies_need': ['net'],
+              'output_log': resolved_slurm_cluster.log_dir + '/slurmctld.log',
+              'error_log': resolved_slurm_cluster.log_dir + '/slurmctld.err'
+            }
+          ]
+      }}
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.controller_enabled | bool
+
+- name: Register SLURM worker OpenRC action service
+  ansible.builtin.set_fact:
+    openrc_action_services: >-
+      {{
+        (openrc_action_services | default([]))
+        + [
+            {
+              'name': 'slurmd',
+              'description': 'SLURM worker daemon',
+              'command': '/usr/sbin/slurmd -D -f ' + resolved_slurm_cluster.config_dir + '/slurm.conf',
+              'runlevel': 'default',
+              'enabled': true,
+              'user': 'root',
+              'group': 'root',
+              'cgroup_v2_system_slice': true,
+              'cgroup_v2_controllers': ['cpuset', 'cpu', 'memory'],
+              'dependencies_need': ['net'],
+              'output_log': resolved_slurm_cluster.log_dir + '/slurmd.log',
+              'error_log': resolved_slurm_cluster.log_dir + '/slurmd.err'
+            }
+          ]
+      }}
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.worker_enabled | bool
+
+- name: Register SLURM accounting OpenRC action service
+  ansible.builtin.set_fact:
+    openrc_action_services: >-
+      {{
+        (openrc_action_services | default([]))
+        + [
+            {
+              'name': 'slurmdbd',
+              'description': 'SLURM accounting daemon',
+              'command': '/usr/sbin/slurmdbd -D',
+              'runlevel': 'default',
+              'enabled': true,
+              'user': 'root',
+              'group': 'root',
+              'dependencies_need': ['net'],
+              'output_log': resolved_slurm_cluster.log_dir + '/slurmdbd.log',
+              'error_log': resolved_slurm_cluster.log_dir + '/slurmdbd.err'
+            }
+          ]
+      }}
+  when:
+    - slurm_cluster_enabled
+    - resolved_slurm_cluster.dbd_enabled | bool

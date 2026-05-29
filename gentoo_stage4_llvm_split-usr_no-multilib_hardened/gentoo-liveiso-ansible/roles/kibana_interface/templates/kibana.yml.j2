@@ -3,6 +3,18 @@ server.name: {{ resolved_kibana.server_name | to_json }}
 server.host: {{ resolved_kibana.server_host | to_json }}
 server.port: {{ resolved_kibana.server_port }}
 elasticsearch.hosts: {{ resolved_kibana.elasticsearch_hosts | to_json }}
+path.data: "/var/lib/kibana"
+telemetry.enabled: false
+logging:
+  appenders:
+    file:
+      type: file
+      fileName: /var/log/kibana/kibana.log
+      layout:
+        type: json
+  root:
+    appenders: [default, file]
+    level: info
 {% if resolved_kibana.base_path | length > 0 %}
 server.basePath: {{ resolved_kibana.base_path | to_json }}
 server.rewriteBasePath: true

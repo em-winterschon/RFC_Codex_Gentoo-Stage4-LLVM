@@ -1,0 +1,11 @@
+---
+rfc1918_ca_trust_enabled: false
+rfc1918_ca_trust_apply: false
+rfc1918_ca_trust_authority_id: rfc1918_private_ca
+rfc1918_ca_trust_cert_pem: "{{ (private_certificate_authorities | default({})).get(rfc1918_ca_trust_authority_id, {}).get('cert_pem', '') }}"
+rfc1918_ca_trust_dest_name: rfc1918-private-ca.crt
+rfc1918_ca_trust_gentoo_anchor_dir: /usr/local/share/ca-certificates
+rfc1918_ca_trust_rhel_anchor_dir: /etc/pki/ca-trust/source/anchors
+rfc1918_ca_trust_freebsd_anchor_dir: /usr/local/share/certs
+rfc1918_ca_trust_platform: ""
+rfc1918_ca_trust_install_root: "{{ install_target_root | default('') }}"

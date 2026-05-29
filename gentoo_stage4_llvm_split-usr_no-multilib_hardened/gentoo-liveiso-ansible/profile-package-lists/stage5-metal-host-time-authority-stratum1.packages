@@ -1,0 +1,10 @@
+app-metrics/chrony_exporter
+net-analyzer/tcpdump
+net-misc/chrony
+net-misc/linuxptp
+sci-geosciences/gpsd
+sys-apps/ethtool
+sys-apps/i2c-tools
+sys-apps/lm-sensors
+sys-apps/pps-tools
+sys-apps/usbutils

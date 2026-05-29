@@ -1,0 +1,9 @@
+media-fonts/dejavu
+sys-apps/dbus
+x11-apps/xauth
+x11-apps/xinit
+x11-apps/xrandr
+x11-base/xorg-server
+x11-drivers/xf86-input-libinput
+x11-misc/slim
+x11-terms/xterm

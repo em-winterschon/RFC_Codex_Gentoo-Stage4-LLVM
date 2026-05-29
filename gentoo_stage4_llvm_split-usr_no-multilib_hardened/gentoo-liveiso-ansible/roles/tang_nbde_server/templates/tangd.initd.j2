@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+description="Tang NBDE advertisement server"
+command="${TANGD_COMMAND:-{{ tang_nbde_server_command }}}"
+command_args="${TANGD_EXTRA_ARGS:-} ${TANGD_STATE_DIR:-{{ tang_nbde_server_state_dir }}}"
+command_background="yes"
+pidfile="/run/tangd.pid"
+output_log="/var/log/tangd.log"
+error_log="/var/log/tangd.err"
+start_stop_daemon_args="--make-pidfile"
+
+depend() {
+  need net
+  after firewall
+}
+
+start_pre() {
+  checkpath -d -m 0750 "${TANGD_STATE_DIR:-{{ tang_nbde_server_state_dir }}}"
+}

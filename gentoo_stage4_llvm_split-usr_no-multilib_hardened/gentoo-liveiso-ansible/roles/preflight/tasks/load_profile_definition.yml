@@ -87,6 +87,14 @@
             recursive=True
           )
       }}
+    resolved_portage_config_files: >-
+      {{
+        resolved_portage_config_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.portage_config_files | default({}),
+            recursive=True
+          )
+      }}
     resolved_portage_patch_files: >-
       {{
         resolved_portage_patch_files
@@ -251,6 +259,14 @@
             recursive=True
           )
       }}
+    resolved_profile_nfs_storage_client: >-
+      {{
+        resolved_profile_nfs_storage_client
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.nfs_storage_client | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_binpkg_repo: >-
       {{
         resolved_profile_binpkg_repo
@@ -283,6 +299,14 @@
             recursive=True
           )
       }}
+    resolved_profile_forge_memory_object_store: >-
+      {{
+        resolved_profile_forge_memory_object_store
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.forge_memory_object_store | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_nscde_workstation: >-
       {{
         resolved_profile_nscde_workstation
@@ -303,6 +327,14 @@
       {{
         resolved_profile_haproxy_service_types
         + (loaded_profile_definition_file.gentoo_profile_definition.haproxy_service_types | default([]))
+      }}
+    resolved_profile_native_haproxy_tls_proxy: >-
+      {{
+        resolved_profile_native_haproxy_tls_proxy
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.native_haproxy_tls_proxy | default({}),
+            recursive=True
+          )
       }}
     resolved_profile_service_readiness: >-
       {{
@@ -365,6 +397,14 @@
             recursive=True
           )
       }}
+    resolved_profile_slurm_cluster: >-
+      {{
+        resolved_profile_slurm_cluster
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.slurm_cluster | default({}),
+            recursive=True
+          )
+      }}
     resolved_profile_jenkins_controller: >-
       {{
         resolved_profile_jenkins_controller
@@ -378,6 +418,22 @@
         resolved_profile_distcc_farm
         | combine(
             loaded_profile_definition_file.gentoo_profile_definition.distcc_farm | default({}),
+            recursive=True
+          )
+      }}
+    resolved_profile_mcp_control_plane: >-
+      {{
+        resolved_profile_mcp_control_plane
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.mcp_control_plane | default({}),
+            recursive=True
+          )
+      }}
+    resolved_kernel_config_fragment_files: >-
+      {{
+        resolved_kernel_config_fragment_files
+        | combine(
+            loaded_profile_definition_file.gentoo_profile_definition.kernel_config_fragment_files | default({}),
             recursive=True
           )
       }}

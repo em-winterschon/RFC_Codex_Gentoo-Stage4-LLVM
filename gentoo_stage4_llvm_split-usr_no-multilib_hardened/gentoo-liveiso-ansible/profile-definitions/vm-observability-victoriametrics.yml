@@ -1,0 +1,92 @@
+---
+gentoo_profile_definition:
+  make_conf_append: |
+    # VictoriaMetrics/collectd pulls protobuf through write_prometheus; keep
+    # service VM package builds below OOM thresholds on 8 GiB staging guests.
+    MAKEOPTS="-j4 -l4"
+    NINJAOPTS="-j4 -l4"
+    NINJAFLAGS="-j4 -l4"
+  package_list_files:
+    - profile-package-lists/stage5-virtual-host-observability-victoriametrics.packages
+    - profile-package-lists/stage5-observability-metrics-collectd-client.packages
+    - profile-package-lists/stage5-storage-nfs-client.packages
+  package_use_files:
+    40-observability-victoriametrics: |
+      app-metrics/collectd collectd_plugins_cpu collectd_plugins_df collectd_plugins_disk collectd_plugins_entropy collectd_plugins_interface collectd_plugins_load collectd_plugins_memory collectd_plugins_network collectd_plugins_nfs collectd_plugins_processes collectd_plugins_protocols -collectd_plugins_rrdcached -collectd_plugins_rrdtool collectd_plugins_swap collectd_plugins_tcpconns collectd_plugins_uptime collectd_plugins_write_graphite collectd_plugins_write_prometheus
+      net-fs/nfs-utils kerberos nfsv4 nfsv41
+      net-libs/libtirpc kerberos
+  telemetry:
+    victoriametrics:
+      enabled: true
+      version: "1.142.0"
+      architecture: amd64
+      download_checksum: sha256:878e09069184d4cc86297e1f0574f2a78f5ebfce87dd1d32b286abf13aad4f85
+      data_path: /srv/metrics/victoriametrics
+      retention_period: 12
+      http_listen_addr: "0.0.0.0:8428"
+      graphite_listen_addr: "0.0.0.0:2003"
+    collectd:
+      enabled: true
+      network_listen: true
+      network_listen_host: "0.0.0.0"
+      network_listen_port: 25826
+      write_graphite:
+        enabled: true
+        host: 127.0.0.1
+        port: 2003
+        prefix: collectd.
+      write_prometheus:
+        enabled: true
+        host: "0.0.0.0"
+        port: 9103
+  nfs_storage_client:
+    enabled: true
+    protocol_default: nfsv3_tcp
+    enable_nfsv3: true
+    enable_nfsv4: true
+    enable_rdma: false
+    enable_multipath: false
+    mounts:
+      - src: metrics-nfs.example.internal:/exports/metrics/victoriametrics
+        path: /srv/metrics/victoriametrics
+        fstype: nfs
+        options:
+          - vers=3
+          - proto=tcp
+          - hard
+          - timeo=600
+          - retrans=2
+          - _netdev
+  haproxy_service_types:
+    - name: victoriametrics-http
+      bind: "*:8428"
+      mode: http
+      backend_name: be_victoriametrics_http
+      servers:
+        - name: victoriametrics
+          address: 127.0.0.1
+          port: 8428
+    - name: victoriametrics-graphite
+      bind: "*:2003"
+      mode: tcp
+      backend_name: be_victoriametrics_graphite
+      servers:
+        - name: victoriametrics-graphite
+          address: 127.0.0.1
+          port: 2003
+    - name: collectd-network
+      bind: "*:25826"
+      mode: tcp
+      backend_name: be_collectd_network
+      servers:
+        - name: collectd-network
+          address: 127.0.0.1
+          port: 25826
+    - name: collectd-prometheus-http
+      bind: "*:9103"
+      mode: http
+      backend_name: be_collectd_prometheus_http
+      servers:
+        - name: collectd-prometheus
+          address: 127.0.0.1
+          port: 9103

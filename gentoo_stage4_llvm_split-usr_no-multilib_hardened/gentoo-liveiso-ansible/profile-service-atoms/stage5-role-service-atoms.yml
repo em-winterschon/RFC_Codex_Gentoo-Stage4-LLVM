@@ -1,0 +1,429 @@
+---
+role_service_atoms_version: 1
+policy:
+  source_of_truth: repo-profile-definitions
+  purpose: >-
+    Map each Stage 5 role type to package atoms, OpenRC services, kernel
+    modules, and protocol surfaces so profile composition stays auditable.
+  containers:
+    note: Container service application atoms remain in container-image-definitions and VM container runtime atoms remain in vm-container-services.
+
+role_service_atoms:
+  base-minimal-nox:
+    role_class: baremetal-base
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+    service_atoms:
+      - id: ssh
+        package_atoms:
+          - net-misc/openssh
+        openrc_services:
+          - sshd
+        protocol_ports:
+          - tcp/22
+      - id: syslog-client
+        package_atoms:
+          - app-admin/rsyslog
+        openrc_services:
+          - rsyslog
+        protocol_ports:
+          - udp/514
+          - tcp/514
+          - tcp/6514
+        required_rsyslog_modules:
+          - omfwd
+          - omelasticsearch
+      - id: time-sync
+        package_atoms:
+          - net-misc/chrony
+        openrc_services:
+          - chronyd
+        protocol_ports:
+          - udp/123
+      - id: host-monitoring-local
+        package_atoms:
+          - sys-apps/lm-sensors
+          - sys-process/btop
+          - sys-process/htop
+          - sys-process/iotop-c
+          - sys-process/lsof
+          - sys-process/numactl
+          - sys-process/numad
+          - sys-process/parallel
+          - sys-process/psmisc
+          - sys-process/time
+        openrc_services:
+          - lm_sensors
+
+  base-minimal-xorg-slim:
+    role_class: baremetal-base
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+    service_atoms:
+      - id: xorg-display
+        package_atoms:
+          - x11-base/xorg-server
+          - x11-apps/xinit
+          - x11-misc/slim
+        openrc_services:
+          - dbus
+          - xdm
+
+  base-hypervisor-common:
+    role_class: baremetal-hypervisor
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-base-hypervisor-common.packages
+    service_atoms:
+      - id: openvswitch
+        package_atoms:
+          - =net-misc/openvswitch-3.3.8
+        openrc_services:
+          - openvswitch
+        kernel_modules:
+          - openvswitch
+      - id: storage-rdma
+        package_atoms:
+          - sys-cluster/rdma-core
+          - sys-fs/zfs
+          - =sys-apps/nvme-cli-2.16
+          - =sys-block/ndctl-77-r2
+        kernel_modules:
+          - ib_uverbs
+          - mlx5_core
+          - mlx5_ib
+          - nvme
+          - nvme-fabrics
+          - nvme-rdma
+          - zfs
+
+  base-hypervisor-xen:
+    role_class: baremetal-hypervisor
+    extends:
+      - base-minimal-nox
+      - base-hypervisor-common
+    package_lists:
+      - profile-package-lists/stage5-base-hypervisor-xen.packages
+    service_atoms:
+      - id: xen
+        package_atoms:
+          - =app-emulation/xen-4.19.3
+          - =app-emulation/xen-tools-4.19.3
+        openrc_services:
+          - xenconsoled
+          - xendomains
+          - xenstored
+        kernel_modules:
+          - xen-evtchn
+          - xen-gntdev
+
+  base-hypervisor-qemu-libvirt:
+    role_class: baremetal-hypervisor
+    extends:
+      - base-minimal-nox
+      - base-hypervisor-common
+    package_lists:
+      - profile-package-lists/stage5-base-hypervisor-qemu-libvirt.packages
+    service_atoms:
+      - id: qemu-libvirt
+        package_atoms:
+          - =app-emulation/qemu-10.2.0-r1
+          - =app-emulation/libvirt-12.0.0
+          - =app-emulation/guestfs-tools-1.52.3-r1
+        openrc_services:
+          - libvirtd
+        protocol_ports:
+          - tcp/16509
+        kernel_modules:
+          - kvm
+          - kvm_amd
+          - kvm_intel
+          - vhost_net
+
+  base-hypervisor-xen-qemu-libvirt:
+    role_class: baremetal-hypervisor
+    extends:
+      - base-hypervisor-xen
+      - base-hypervisor-qemu-libvirt
+    package_lists:
+      - profile-package-lists/stage5-base-hypervisor-common.packages
+      - profile-package-lists/stage5-base-hypervisor-xen.packages
+      - profile-package-lists/stage5-base-hypervisor-qemu-libvirt.packages
+    service_atoms:
+      - id: xen
+        inherits: base-hypervisor-xen
+      - id: qemu-libvirt
+        inherits: base-hypervisor-qemu-libvirt
+
+  virt-minimal:
+    role_class: virtual-host
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-virt-minimal.packages
+    service_atoms:
+      - id: qemu-guest-agent
+        package_atoms:
+          - =app-emulation/qemu-guest-agent-9.2.0
+        openrc_services:
+          - qemu-guest-agent
+        kernel_modules:
+          - virtio_blk
+          - virtio_net
+          - virtio_pci
+
+  virt-xorg:
+    role_class: virtual-host
+    extends:
+      - virt-minimal
+      - base-minimal-xorg-slim
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+      - profile-package-lists/stage5-virt-minimal.packages
+      - profile-package-lists/stage5-virt-xorg.packages
+    service_atoms:
+      - id: spice-guest
+        package_atoms:
+          - app-emulation/spice-vdagent
+          - x11-drivers/xf86-video-qxl
+        openrc_services:
+          - dbus
+          - qemu-guest-agent
+          - xdm
+
+  secure-firstboot-enrollment:
+    role_class: identity-overlay
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+    service_atoms:
+      - id: freeipa-otp-age-firstboot
+        package_atoms:
+          - app-crypt/age
+          - net-misc/curl
+          - app-misc/jq
+          - app-misc/ca-certificates
+        openrc_services:
+          - stage5-firstboot-enroll
+        protocol_ports:
+          - tcp/443
+        forbidden_artifacts:
+          - /etc/krb5.keytab
+
+  secure-firstboot-nbde-client:
+    role_class: identity-overlay
+    extends:
+      - secure-firstboot-enrollment
+    package_lists:
+      - profile-package-lists/stage5-secure-firstboot-nbde-client.packages
+    service_atoms:
+      - id: clevis-tpm2-tang-client
+        package_atoms:
+          - app-crypt/clevis
+          - app-crypt/tpm2-tools
+          - app-crypt/tpm2-tss
+        kernel_modules:
+          - tpm
+          - tpm_tis
+        forbidden_policies:
+          - tang-only
+        required_policies:
+          - tpm2+tang
+
+  vm-tang-nbde-server:
+    role_class: virtual-host
+    extends:
+      - virt-minimal
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-tang-nbde-server.packages
+    service_atoms:
+      - id: tang-advertisement
+        package_atoms:
+          - app-crypt/tang
+        openrc_services:
+          - tangd
+        protocol_ports:
+          - tcp/7500
+
+  vm-coherence-ce-node:
+    role_class: virtual-host
+    extends:
+      - virt-minimal
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-coherence-ce-node.packages
+    service_atoms:
+      - id: coherence-ce-cache-node
+        package_atoms:
+          - virtual/jre
+        openrc_services:
+          - coherence-ce
+        protocol_ports:
+          - tcp/7574
+          - tcp/30000
+        mutation_gate:
+          - coherence_ce_service_mutation_enabled
+
+  vm-slurm-controller:
+    role_class: scheduler-controller
+    extends:
+      - virt-minimal
+      - aaa-domain-client
+      - nfs-storage-client
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-slurm-controller.packages
+    service_atoms:
+      - id: slurm-control-plane
+        package_atoms:
+          - sys-cluster/slurm
+          - sys-auth/munge
+          - dev-db/mariadb
+        openrc_services:
+          - munged
+          - slurmctld
+          - slurmdbd
+        protocol_ports:
+          - tcp/6817
+          - tcp/6819
+      - id: slurm-accounting-db
+        package_atoms:
+          - dev-db/mariadb
+        openrc_services:
+          - mariadb
+        protocol_ports:
+          - tcp/3306
+
+  slurm-worker-node:
+    role_class: scheduler-worker
+    extends:
+      - base-minimal-nox
+      - aaa-domain-client
+      - nfs-storage-client
+    package_lists:
+      - profile-package-lists/stage5-slurm-worker-node.packages
+    service_atoms:
+      - id: slurm-worker
+        package_atoms:
+          - sys-cluster/slurm
+          - sys-auth/munge
+          - sys-process/numactl
+        openrc_services:
+          - munged
+          - slurmd
+        protocol_ports:
+          - tcp/6818
+      - id: slurm-rdma-worker-capability
+        package_atoms:
+          - sys-cluster/rdma-core
+        kernel_modules:
+          - ib_uverbs
+          - rdma_cm
+          - mlx5_core
+          - mlx5_ib
+
+  vm-container-services:
+    role_class: virtual-host
+    extends:
+      - virt-minimal
+    package_lists:
+      - profile-package-lists/stage5-virtual-host-container-services.packages
+    service_atoms:
+      - id: podman-runtime
+        package_atoms:
+          - app-containers/podman
+          - app-containers/buildah
+          - app-containers/netavark
+          - app-containers/aardvark-dns
+          - net-firewall/nftables
+        openrc_services:
+          - cgroups
+          - nftables
+        kernel_modules:
+          - br_netfilter
+          - nf_tables
+          - overlay
+          - tun
+          - veth
+
+  metal-forge-automation-admin:
+    role_class: baremetal-infrastructure
+    extends:
+      - base-minimal-nox
+      - aaa-domain-client
+      - nfs-storage-client
+      - telemetry-node-exporter-client
+      - secure-firstboot-enrollment
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-domain-client.packages
+      - profile-package-lists/stage5-storage-nfs-client.packages
+      - profile-package-lists/stage5-observability-metrics-client.packages
+      - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+      - profile-package-lists/stage5-metal-forge-automation-admin.packages
+    service_atoms:
+      - id: forge-control-plane
+        package_atoms:
+          - app-admin/ansible
+          - dev-vcs/git
+          - dev-vcs/github-cli
+          - sys-apps/ipmitool
+        protocol_ports:
+          - tcp/22
+      - id: network-validation-toolkit
+        package_atoms:
+          - net-analyzer/nmap
+          - net-analyzer/tcpdump
+          - net-dns/bind-tools
+      - id: continuity-storage-client
+        package_atoms:
+          - net-fs/nfs-utils
+          - net-misc/rsync
+          - sys-fs/zfs
+        openrc_services:
+          - nfsmount
+          - rpcbind
+
+  metal-time-authority-stratum1:
+    role_class: baremetal-infrastructure
+    extends:
+      - base-minimal-nox
+    package_lists:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+      - profile-package-lists/stage5-metal-host-time-authority-stratum1.packages
+    service_atoms:
+      - id: chrony-stratum1
+        package_atoms:
+          - net-misc/chrony
+          - app-metrics/chrony_exporter
+        openrc_services:
+          - chronyd
+        protocol_ports:
+          - udp/123
+          - tcp/9123
+      - id: gnss-pps
+        package_atoms:
+          - sci-geosciences/gpsd
+          - sys-apps/pps-tools
+          - sys-apps/i2c-tools
+        openrc_services:
+          - gpsd
+        kernel_modules:
+          - i2c-dev
+          - pps-gpio
+          - pps_ldisc
+      - id: ptp-grandmaster-candidate
+        package_atoms:
+          - net-misc/linuxptp
+          - sys-apps/ethtool
+        kernel_modules:
+          - ptp
+          - ptp_ocp
+        protocol_ports:
+          - udp/319
+          - udp/320

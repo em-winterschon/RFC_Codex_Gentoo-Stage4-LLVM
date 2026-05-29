@@ -1,0 +1,10 @@
+sys-cluster/slurm
+sys-auth/munge
+sys-process/numactl
+sys-cluster/rdma-core
+sys-devel/distcc
+dev-util/ccache
+dev-vcs/git
+net-misc/curl
+net-misc/rsync
+app-misc/jq

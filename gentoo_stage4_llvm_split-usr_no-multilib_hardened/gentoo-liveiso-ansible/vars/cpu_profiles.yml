@@ -1,4 +1,130 @@
 ---
+cpu_profile_policy:
+  source_provenance:
+    requested_inventory: /tmp/docs/cpu-arch/RFC1918-CPU-Architectures.md
+    requested_datasheets: /tmp/docs/cpu-arch/datasheets
+    status: local-reference-reviewed
+  cpuid2cpuflags_capture_required: true
+  cpu_flags_x86_override:
+    policy: capture-on-hardware-before-live-use
+    reason: CPU_FLAGS_X86 should be exact for the installed CPU stepping, microcode, and Portage profile; do not infer final flag strings from datasheet names alone.
+  optimization_scopes:
+    portable: Reproducible across the named baseline ISA family; appropriate for shared binpkgs and generic VMs.
+    native_reviewed: Hardware class has a selected `-march` and `-mtune`, but CPU_FLAGS_X86 must still be confirmed by `cpuid2cpuflags`.
+    native_host: Host-specific profile generated from live `cpuid2cpuflags`, `gcc -march=native -Q --help=target`, and LLVM target support.
+  host_capture_commands:
+    cpuid2cpuflags: cpuid2cpuflags
+    gcc_native: gcc -march=native -Q --help=target
+    clang_targets: clang --print-targets
+  architecture_gap_summary:
+    x86_64: Define portable binpkg baselines first, then native reviewed profiles per CPU generation.
+    arm64: Requires CHOST and `-mcpu` support in the Portage template before enabling architecture-specific profiles.
+    ppc64le: Requires CHOST and ABI validation before adding POWER9 optimized profiles.
+
+cpu_architecture_registry:
+  amd_epyc:
+    zen1_naples:
+      march: znver1
+      tune: znver1
+      optimization_scope: native_reviewed
+    zen2_rome:
+      march: znver2
+      tune: znver2
+      optimization_scope: native_reviewed
+    zen3_milan:
+      march: znver3
+      tune: znver3
+      optimization_scope: native_reviewed
+    zen4_genoa_bergamo_siena:
+      march: znver4
+      tune: znver4
+      optimization_scope: native_reviewed
+    zen5_turin:
+      march: znver5
+      tune: znver5
+      optimization_scope: native_reviewed
+  intel_xeon:
+    e5_2600_v0:
+      march: sandybridge
+      tune: sandybridge
+      optimization_scope: native_reviewed
+    e5_2600_v2:
+      march: ivybridge
+      tune: ivybridge
+      optimization_scope: native_reviewed
+    e5_2600_v3:
+      march: haswell
+      tune: haswell
+      optimization_scope: native_reviewed
+    e5_2600_v4:
+      march: broadwell
+      tune: broadwell
+      optimization_scope: native_reviewed
+    scalable_skylake:
+      march: skylake-avx512
+      tune: skylake-avx512
+      optimization_scope: native_reviewed
+    scalable_icelake:
+      march: icelake-server
+      tune: icelake-server
+      optimization_scope: native_reviewed
+    scalable_sapphire_rapids:
+      march: sapphirerapids
+      tune: sapphirerapids
+      optimization_scope: native_reviewed
+    scalable_emerald_rapids:
+      march: sapphirerapids
+      tune: sapphirerapids
+      optimization_scope: native_reviewed
+      notes: Use Sapphire Rapids compiler target until the selected compiler exposes a distinct Emerald Rapids target.
+  intel_core:
+    core_10th_gen:
+      march: skylake
+      tune: skylake
+      optimization_scope: native_reviewed
+    core_11th_gen:
+      march: tigerlake
+      tune: tigerlake
+      optimization_scope: native_reviewed
+    core_12th_gen:
+      march: alderlake
+      tune: alderlake
+      optimization_scope: native_reviewed
+    core_13th_gen:
+      march: raptorlake
+      tune: raptorlake
+      optimization_scope: native_reviewed
+    core_14th_gen:
+      march: raptorlake
+      tune: raptorlake
+      optimization_scope: native_reviewed
+    core_ultra_series_1:
+      march: meteorlake
+      tune: meteorlake
+      optimization_scope: native_reviewed
+    core_ultra_series_2:
+      march: arrowlake
+      tune: arrowlake
+      optimization_scope: native_reviewed
+      notes: Compiler support must be verified before live use.
+  arm64_reference:
+    cortex_a72:
+      mcpu: cortex-a72
+      optimization_scope: template-gap
+    cortex_a76:
+      mcpu: cortex-a76
+      optimization_scope: template-gap
+    neoverse_n1:
+      mcpu: neoverse-n1
+      optimization_scope: template-gap
+    neoverse_v3:
+      mcpu: neoverse-v3
+      optimization_scope: template-gap
+  ppc64le_reference:
+    power9:
+      mcpu: power9
+      optimization_scope: template-gap
+
 portage_cpu_profiles:
   x86_64_v2_generic:
     march: x86-64-v2

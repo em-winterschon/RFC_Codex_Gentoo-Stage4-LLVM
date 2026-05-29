@@ -1,0 +1,413 @@
+---
+service_tls_certificate_policy:
+  default_certificate_authority: "{{ service_tls_certificate_authority_default | default('rfc1918_private_ca') }}"
+  secret_namespace: vault_service_tls_certificates
+  deploy_enabled_default: false
+  mutation_required: true
+  leaf_key_mode: "0600"
+  leaf_cert_mode: "0644"
+  leaf_chain_mode: "0644"
+  trust_anchor_mode: "0644"
+  trust_anchor_targets:
+    gentoo_openrc:
+      anchors_dir: /usr/local/share/ca-certificates
+      refresh_command: update-ca-certificates
+      bundle_path: /etc/ssl/certs/ca-certificates.crt
+    rocky_rhel:
+      anchors_dir: /etc/pki/ca-trust/source/anchors
+      refresh_command: update-ca-trust
+      bundle_path: /etc/pki/tls/certs/ca-bundle.crt
+    freebsd:
+      anchors_dir: /usr/local/share/certs
+      refresh_command: certctl rehash
+      bundle_path: /usr/local/share/certs/ca-root-nss.crt
+
+service_tls_certificate_matrix:
+  ntfy_lan:
+    rollout_priority: 10
+    lifecycle_state: active
+    service_class: container_http
+    owner_inventory_host: svc_container_services_safe_move_01
+    termination_owner: haproxy
+    endpoint_fqdn: msg-sun99-ntfysys-099096.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.96
+    dns_aliases:
+      - msg-sun99-ntfysys.rfc1918.host
+      - sg-sun99-ntfysys-099096.rfc1918.host
+      - ntfy.local
+    service_ports:
+      - "443/tcp"
+      - "80/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      haproxy_pem: /etc/container-services/apps/haproxy/tls/msg-sun99-ntfysys.pem
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.ntfy_lan.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.ntfy_lan.private_key_pem
+    reload_commands:
+      - rc-service container-haproxy restart
+    validation:
+      url: https://msg-sun99-ntfysys-099096.rfc1918.host/v1/health
+      openssl_name: msg-sun99-ntfysys-099096.rfc1918.host
+
+  rsyslog_tls_vip:
+    rollout_priority: 20
+    lifecycle_state: active
+    service_class: tcp_tls_ingress
+    owner_inventory_host: svc_container_services_safe_move_01
+    termination_owner: haproxy
+    endpoint_fqdn: log-sun99-rsyslog-099093.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.93
+    dns_aliases:
+      - log-sun99-rsyslog.rfc1918.host
+    service_ports:
+      - "6514/tcp"
+    certificate_profile: syslog-tls-server
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      haproxy_pem: /etc/container-services/apps/haproxy/tls/log-sun99-rsyslog.pem
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.rsyslog_tls_vip.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.rsyslog_tls_vip.private_key_pem
+    reload_commands:
+      - rc-service container-haproxy restart
+    validation:
+      openssl_name: log-sun99-rsyslog-099093.rfc1918.host
+      tcp_port: 6514
+
+  elasticsearch_sun99_vip:
+    rollout_priority: 30
+    lifecycle_state: active
+    service_class: http_api
+    owner_inventory_host: svc_container_services_safe_move_01
+    termination_owner: haproxy
+    endpoint_fqdn: obs-sun99-esvip-099092.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.92
+    dns_aliases:
+      - obs-sun99-esvip.rfc1918.host
+    service_ports:
+      - "443/tcp"
+      - "9200/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      haproxy_pem: /etc/container-services/apps/haproxy/tls/obs-sun99-esvip.pem
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.elasticsearch_sun99_vip.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.elasticsearch_sun99_vip.private_key_pem
+    reload_commands:
+      - rc-service container-haproxy restart
+    validation:
+      url: https://obs-sun99-esvip-099092.rfc1918.host/
+      openssl_name: obs-sun99-esvip-099092.rfc1918.host
+
+  netbox_stage4:
+    rollout_priority: 40
+    lifecycle_state: active
+    service_class: django_http
+    owner_inventory_host: svc_netbox_stage4
+    termination_owner: nginx
+    endpoint_fqdn: svc-netbox-stage4.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.62
+    dns_aliases:
+      - netbox.rfc1918.host
+      - netbox-sun99.rfc1918.host
+    service_ports:
+      - "443/tcp"
+      - "80/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/ssl/rfc1918/svc-netbox-stage4.crt
+      key: /etc/ssl/rfc1918/private/svc-netbox-stage4.key
+      chain: /etc/ssl/rfc1918/rfc1918-private-ca-chain.pem
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.netbox_stage4.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.netbox_stage4.private_key_pem
+    reload_commands:
+      - rc-service nginx reload
+    validation:
+      url: https://svc-netbox-stage4.rfc1918.host/
+      openssl_name: svc-netbox-stage4.rfc1918.host
+
+  freeipa_ipa01:
+    rollout_priority: 50
+    lifecycle_state: active
+    service_class: identity_http_ldap
+    owner_inventory_host: svc_identity_ipa01
+    termination_owner: freeipa_httpd
+    endpoint_fqdn: ipa01.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.63
+    dns_aliases: []
+    service_ports:
+      - "443/tcp"
+      - "636/tcp"
+      - "88/tcp"
+      - "464/tcp"
+    certificate_profile: identity-server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/httpd/alias/ipa01-rfc1918.crt
+      key: /etc/httpd/alias/ipa01-rfc1918.key
+      chain: /etc/ipa/ca.crt
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.freeipa_ipa01.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.freeipa_ipa01.private_key_pem
+      pkcs12_base64: vault_service_tls_certificates.freeipa_ipa01.pkcs12_base64
+      pkcs12_password: vault_service_tls_certificates.freeipa_ipa01.pkcs12_password
+      directory_manager_password: vault_freeipa_ipa01_directory_manager_password
+    deploy_options:
+      install_http_certificate: true
+      install_dirsrv_certificate: true
+      install_kdc_certificate: false
+      cert_name: ipa01-rfc1918-2026
+      ca_nickname: RFC1918-Private-CA-2026
+    reload_commands:
+      - ipactl restart
+    validation:
+      url: https://ipa01.rfc1918.host/ipa/ui/
+      openssl_name: ipa01.rfc1918.host
+
+  prometheus_sun99:
+    rollout_priority: 60
+    lifecycle_state: active
+    service_class: observability_http
+    owner_inventory_host: obs_sun99_prometheus_099064
+    termination_owner: native_or_reverse_proxy
+    endpoint_fqdn: obs-sun99-prometheus-099064.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.64
+    dns_aliases:
+      - obs-sun99-prometheus.rfc1918.host
+    service_ports:
+      - "443/tcp"
+      - "9090/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/ssl/rfc1918/obs-sun99-prometheus.crt
+      key: /etc/ssl/rfc1918/private/obs-sun99-prometheus.key
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.prometheus_sun99.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.prometheus_sun99.private_key_pem
+    reload_commands:
+      - rc-service prometheus reload
+    validation:
+      url: https://obs-sun99-prometheus.rfc1918.host/-/ready
+      openssl_name: obs-sun99-prometheus.rfc1918.host
+
+  victoriametrics_sun99:
+    rollout_priority: 70
+    lifecycle_state: active
+    service_class: observability_http
+    owner_inventory_host: obs_sun99_vmetrics_099065
+    termination_owner: native_or_reverse_proxy
+    endpoint_fqdn: obs-sun99-vmetrics-099065.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.65
+    dns_aliases:
+      - obs-sun99-vmetrics.rfc1918.host
+    service_ports:
+      - "443/tcp"
+      - "8428/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/ssl/rfc1918/obs-sun99-vmetrics.crt
+      key: /etc/ssl/rfc1918/private/obs-sun99-vmetrics.key
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.victoriametrics_sun99.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.victoriametrics_sun99.private_key_pem
+    reload_commands:
+      - rc-service victoriametrics restart
+    validation:
+      url: https://obs-sun99-vmetrics.rfc1918.host/health
+      openssl_name: obs-sun99-vmetrics.rfc1918.host
+
+  grafana_sun99:
+    rollout_priority: 80
+    lifecycle_state: active
+    service_class: observability_http
+    owner_inventory_host: obs_sun99_grafana_099066
+    termination_owner: native_or_reverse_proxy
+    endpoint_fqdn: obs-sun99-grafana-099066.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.66
+    dns_aliases:
+      - obs-sun99-grafana.rfc1918.host
+    service_ports:
+      - "443/tcp"
+      - "3000/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/grafana/tls/obs-sun99-grafana.crt
+      key: /etc/grafana/tls/obs-sun99-grafana.key
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.grafana_sun99.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.grafana_sun99.private_key_pem
+    reload_commands:
+      - rc-service grafana restart
+    validation:
+      url: https://obs-sun99-grafana.rfc1918.host/api/health
+      openssl_name: obs-sun99-grafana.rfc1918.host
+
+  kibana_sun99:
+    rollout_priority: 90
+    lifecycle_state: active
+    service_class: observability_http
+    owner_inventory_host: obs_sun99_kibana_099067
+    termination_owner: native_or_reverse_proxy
+    endpoint_fqdn: obs-sun99-kibana-099067.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.67
+    dns_aliases:
+      - obs-sun99-kibana.rfc1918.host
+    service_ports:
+      - "443/tcp"
+      - "5601/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/kibana/tls/obs-sun99-kibana.crt
+      key: /etc/kibana/tls/obs-sun99-kibana.key
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.kibana_sun99.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.kibana_sun99.private_key_pem
+    reload_commands:
+      - rc-service kibana restart
+    validation:
+      url: https://obs-sun99-kibana.rfc1918.host/api/status
+      openssl_name: obs-sun99-kibana.rfc1918.host
+
+  checkmk_fmt2:
+    rollout_priority: 100
+    lifecycle_state: active
+    service_class: monitoring_http
+    owner_inventory_host: app_sfo200_monitoring_9927
+    termination_owner: apache_httpd
+    endpoint_fqdn: app-sfo200-monitoring-9927.vernetzen.io
+    endpoint_ips:
+      - 10.200.99.27
+    dns_aliases: []
+    service_ports:
+      - "443/tcp"
+      - "80/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/pki/tls/certs/vernetzen.io-server.crt
+      key: /etc/pki/tls/private/vernetzen.io-server.key
+      chain: /etc/pki/tls/certs/vernetzen.io-server.ca-cert-chain.pem
+      trust_anchor: /etc/pki/ca-trust/source/anchors/rfc1918-internal-ca.pem
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.checkmk_fmt2.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.checkmk_fmt2.private_key_pem
+    reload_commands:
+      - systemctl reload httpd
+    validation:
+      url: https://app-sfo200-monitoring-9927.vernetzen.io/vernetzen/check_mk/
+      openssl_name: app-sfo200-monitoring-9927.vernetzen.io
+
+  mcp_control_plane:
+    rollout_priority: 110
+    lifecycle_state: planned
+    service_class: container_http
+    owner_inventory_host: vm_mcp_control_plane
+    termination_owner: haproxy
+    endpoint_fqdn: mcp-control-plane.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.68
+    dns_aliases:
+      - nginx-ui.rfc1918.host
+      - mcp-generic.rfc1918.host
+    service_ports:
+      - "443/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      haproxy_pem: /etc/haproxy/tls/mcp-control-plane.pem
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.mcp_control_plane.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.mcp_control_plane.private_key_pem
+    reload_commands:
+      - rc-service container-services restart
+    validation:
+      url: https://mcp-control-plane.rfc1918.host/
+      openssl_name: mcp-control-plane.rfc1918.host
+
+  routeros_ccr2004_gateway:
+    rollout_priority: 120
+    lifecycle_state: active
+    service_class: network_device_api
+    owner_inventory_host: gw_rfc99_mkccr2004_16g
+    termination_owner: routeros
+    endpoint_fqdn: gw-rfc99-mkccr2004-16g.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.1
+    dns_aliases: []
+    service_ports:
+      - "443/tcp"
+      - "8729/tcp"
+    certificate_profile: device-web-api
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      routeros_cert_name: rfc1918-gw-rfc99-mkccr2004-16g
+      trust_anchor: routeros:certificate-store
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.routeros_ccr2004_gateway.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.routeros_ccr2004_gateway.private_key_pem
+      pkcs12_base64: vault_service_tls_certificates.routeros_ccr2004_gateway.pkcs12_base64
+      pkcs12_password: vault_service_tls_certificates.routeros_ccr2004_gateway.pkcs12_password
+    reload_commands:
+      - /ip/service/set www-ssl certificate=rfc1918-gw-rfc99-mkccr2004-16g
+      - /ip/service/set api-ssl certificate=rfc1918-gw-rfc99-mkccr2004-16g
+    validation:
+      url: https://gw-rfc99-mkccr2004-16g.rfc1918.host/
+      openssl_name: gw-rfc99-mkccr2004-16g.rfc1918.host
+
+  proxmox_hasslehoff:
+    rollout_priority: 130
+    lifecycle_state: active
+    service_class: hypervisor_api
+    owner_inventory_host: hasslehoff
+    termination_owner: pveproxy
+    endpoint_fqdn: hasslehoff.rfc1918.host
+    endpoint_ips:
+      - 172.16.99.9
+    dns_aliases: []
+    service_ports:
+      - "8006/tcp"
+    certificate_profile: server-auth
+    certificate_authority: rfc1918_private_ca
+    deploy_paths:
+      cert: /etc/pve/local/pveproxy-ssl.pem
+      key: /etc/pve/local/pveproxy-ssl.key
+      trust_anchor: /usr/local/share/ca-certificates/rfc1918-private-ca.crt
+    deploy_options:
+      unsafe_writes: true
+      manage_file_modes: false
+    secret_refs:
+      fullchain_pem: vault_service_tls_certificates.proxmox_hasslehoff.fullchain_pem
+      private_key_pem: vault_service_tls_certificates.proxmox_hasslehoff.private_key_pem
+    reload_commands:
+      - systemctl restart pveproxy
+    validation:
+      url: https://hasslehoff.rfc1918.host:8006/
+      openssl_name: hasslehoff.rfc1918.host

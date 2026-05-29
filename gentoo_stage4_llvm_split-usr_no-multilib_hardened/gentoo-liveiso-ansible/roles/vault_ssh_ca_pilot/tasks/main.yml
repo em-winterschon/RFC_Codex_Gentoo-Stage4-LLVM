@@ -1,0 +1,98 @@
+---
+- name: Resolve Vault SSH CA pilot runtime state
+  ansible.builtin.set_fact:
+    vault_ssh_ca_pilot_live_root: "{{ vault_ssh_ca_pilot_install_root in ['', '/'] }}"
+    vault_ssh_ca_pilot_trusted_user_ca_dir: "{{ vault_ssh_ca_pilot_trusted_user_ca_path | dirname }}"
+
+- name: Report Vault SSH CA pilot dry-run state
+  ansible.builtin.debug:
+    msg:
+      enabled: "{{ vault_ssh_ca_pilot_enabled | bool }}"
+      apply: "{{ vault_ssh_ca_pilot_apply | bool }}"
+      expected_vault_mount: "{{ vault_ssh_ca_pilot_expected_vault_mount }}"
+      expected_vault_role: "{{ vault_ssh_ca_pilot_expected_vault_role }}"
+      trusted_user_ca_path: "{{ vault_ssh_ca_pilot_trusted_user_ca_path }}"
+      sshd_config_path: "{{ vault_ssh_ca_pilot_sshd_config_path }}"
+      validation_user: "{{ vault_ssh_ca_pilot_validation_user }}"
+  when: not vault_ssh_ca_pilot_enabled | bool
+
+- name: Refuse Vault SSH CA pilot mutation without explicit apply gate
+  ansible.builtin.assert:
+    that:
+      - vault_ssh_ca_pilot_apply | bool
+      - vault_ssh_ca_pilot_ca_public_key | length > 0
+    fail_msg: >-
+      Vault SSH CA pilot requires vault_ssh_ca_pilot_enabled=true,
+      vault_ssh_ca_pilot_apply=true, and a non-empty
+      vault_ssh_ca_pilot_ca_public_key value from Vault or Ansible Vault.
+  when: vault_ssh_ca_pilot_enabled | bool
+  no_log: true
+
+- name: Ensure Vault SSH CA trust directory exists
+  ansible.builtin.file:
+    path: "{{ vault_ssh_ca_pilot_install_root }}{{ vault_ssh_ca_pilot_trusted_user_ca_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - vault_ssh_ca_pilot_enabled | bool
+    - vault_ssh_ca_pilot_apply | bool
+
+- name: Install Vault SSH CA public key
+  ansible.builtin.copy:
+    dest: "{{ vault_ssh_ca_pilot_install_root }}{{ vault_ssh_ca_pilot_trusted_user_ca_path }}"
+    content: "{{ vault_ssh_ca_pilot_ca_public_key | trim }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  register: vault_ssh_ca_pilot_public_key_copy
+  when:
+    - vault_ssh_ca_pilot_enabled | bool
+    - vault_ssh_ca_pilot_apply | bool
+  no_log: true
+
+- name: Configure sshd TrustedUserCAKeys for Vault SSH CA pilot
+  ansible.builtin.lineinfile:
+    path: "{{ vault_ssh_ca_pilot_install_root }}{{ vault_ssh_ca_pilot_sshd_config_path }}"
+    regexp: "^\\s*TrustedUserCAKeys\\s+"
+    line: "TrustedUserCAKeys {{ vault_ssh_ca_pilot_trusted_user_ca_path }}"
+    backup: true
+    validate: "sshd -t -f %s"
+  notify: Restart Vault SSH CA pilot sshd service
+  when:
+    - vault_ssh_ca_pilot_enabled | bool
+    - vault_ssh_ca_pilot_apply | bool
+    - vault_ssh_ca_pilot_live_root | bool
+
+- name: Read effective sshd configuration for Vault SSH CA pilot
+  ansible.builtin.command: sshd -T
+  register: vault_ssh_ca_pilot_sshd_runtime
+  changed_when: false
+  when:
+    - vault_ssh_ca_pilot_enabled | bool
+    - vault_ssh_ca_pilot_apply | bool
+    - vault_ssh_ca_pilot_live_root | bool
+
+- name: Assert sshd trusts the Vault SSH CA pilot key path
+  ansible.builtin.assert:
+    that:
+      - >-
+        'trustedusercakeys ' ~ vault_ssh_ca_pilot_trusted_user_ca_path
+        in (vault_ssh_ca_pilot_sshd_runtime.stdout | default('') | lower)
+    fail_msg: >-
+      sshd -T did not report trustedusercakeys
+      {{ vault_ssh_ca_pilot_trusted_user_ca_path }}.
+  when:
+    - vault_ssh_ca_pilot_enabled | bool
+    - vault_ssh_ca_pilot_apply | bool
+    - vault_ssh_ca_pilot_live_root | bool
+
+- name: Validate FreeIPA user resolution for Vault SSH CA pilot
+  ansible.builtin.command: "getent passwd {{ vault_ssh_ca_pilot_validation_user }}"
+  changed_when: false
+  when:
+    - vault_ssh_ca_pilot_enabled | bool
+    - vault_ssh_ca_pilot_apply | bool
+    - vault_ssh_ca_pilot_validate_freeipa_user | bool
+    - vault_ssh_ca_pilot_validation_user | length > 0

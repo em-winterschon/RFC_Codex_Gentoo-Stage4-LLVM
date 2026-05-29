@@ -1,0 +1,29 @@
+---
+gentoo_system_profile_metadata:
+  id: vm-tang-nbde-server
+  purpose: >-
+    Optional Tang network-bound disk encryption server for Stage5 firstboot and
+    storage workflows that need host-bound Clevis policies.
+  profile_taxonomy:
+    stage: stage5
+    role_class: virtual-host
+    role_name: tang-nbde-server
+    package_layers:
+      - profile-package-lists/stage5-virtual-host-tang-nbde-server.packages
+  security_model:
+    warning: Tang-only decryption is not sufficient for host enrollment secrets.
+    supported_firstboot_policy: tpm2+tang
+    mutation_gate: tang_nbde_server_mutation_enabled
+  package_pins:
+    tracked_atoms:
+      - app-crypt/tang
+      - app-crypt/clevis
+    gentoo_repo: guru
+    keywording:
+      - ~amd64
+  validation:
+    required_before_live_enablement:
+      - package install from Guru succeeds with pinned atoms
+      - Tang advertisement endpoint answers locally
+      - Clevis client binds with TPM2 plus Tang, not Tang alone
+      - encrypted firstboot bundle remains age-encrypted even when NBDE exists

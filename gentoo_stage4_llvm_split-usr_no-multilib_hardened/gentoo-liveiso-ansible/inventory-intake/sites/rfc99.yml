@@ -79,7 +79,9 @@ devices:
     role: routeros-gateway
     manufacturer: MikroTik
     model: CCR2004-16G-2S+PC
-    status: planned
+    status: active
+    management_ip: 172.16.99.1
+    fqdn: gw-rfc99-mkccr2004-16g.rfc1918.host
     serial_console: /dev/ttyUSB2
     interfaces:
       - name: ether1

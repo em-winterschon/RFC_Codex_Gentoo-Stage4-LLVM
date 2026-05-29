@@ -1,0 +1,73 @@
+---
+- name: fleet-ipa-nfs-readiness-audit
+  hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    fleet_ipa_nfs_validate_user: "{{ freeipa_client_validate_user | default('verwalterin') }}"
+    fleet_ipa_nfs_home_mountpoint: "{{ nfs_home_mountpoint | default('/home') }}"
+  tasks:
+    - name: Check SSSD control utility
+      ansible.builtin.command:
+        argv: [sh, -lc, "command -v sssctl"]
+      register: fleet_sssctl
+      changed_when: false
+      failed_when: false
+
+    - name: Check SSSD configuration
+      ansible.builtin.command:
+        argv: [sssctl, config-check]
+      register: fleet_sssd_config
+      changed_when: false
+      failed_when: false
+      when: fleet_sssctl.rc == 0
+
+    - name: Check FreeIPA user NSS resolution
+      ansible.builtin.command:
+        argv: [getent, passwd, "{{ fleet_ipa_nfs_validate_user }}"]
+      register: fleet_getent_user
+      changed_when: false
+      failed_when: false
+
+    - name: Check FreeIPA SSH authorized key resolution
+      ansible.builtin.command:
+        argv: [sss_ssh_authorizedkeys, "{{ fleet_ipa_nfs_validate_user }}"]
+      register: fleet_sss_ssh_keys
+      changed_when: false
+      failed_when: false
+
+    - name: Check NFS home mount metadata
+      ansible.builtin.command:
+        argv: [findmnt, --noheadings, --output, FSTYPE,OPTIONS, "{{ fleet_ipa_nfs_home_mountpoint }}"]
+      register: fleet_home_findmnt
+      changed_when: false
+      failed_when: false
+
+    - name: Check NFS home fstab entry
+      ansible.builtin.shell: "awk '$2 == \"{{ fleet_ipa_nfs_home_mountpoint }}\" {print}' /etc/fstab"
+      register: fleet_home_fstab
+      changed_when: false
+      failed_when: false
+
+    - name: Check NFS home protocol version when mounted
+      ansible.builtin.command:
+        argv: [findmnt, --noheadings, --output, OPTIONS, "{{ fleet_ipa_nfs_home_mountpoint }}"]
+      register: fleet_home_nfsvers
+      changed_when: false
+      failed_when: false
+      when: fleet_home_findmnt.rc == 0
+
+    - name: Validate fleet IPA and NFS readiness
+      ansible.builtin.assert:
+        that:
+          - fleet_sssctl.rc == 0
+          - fleet_sssd_config is skipped or fleet_sssd_config.rc == 0
+          - fleet_getent_user.rc == 0
+          - fleet_sss_ssh_keys.rc == 0
+          - fleet_home_findmnt.rc == 0
+          - "'nfs' in fleet_home_findmnt.stdout"
+          - fleet_home_fstab.rc == 0
+          - "'nofail' in fleet_home_fstab.stdout"
+          - "'soft' in fleet_home_fstab.stdout"
+          - "'nfsvers=4.2' in fleet_home_nfsvers.stdout or 'vers=4.2' in fleet_home_nfsvers.stdout or 'nfsvers=4.1' in fleet_home_nfsvers.stdout or 'vers=4.1' in fleet_home_nfsvers.stdout"
+        fail_msg: "Host does not meet fleet IPA/NFS readiness requirements."

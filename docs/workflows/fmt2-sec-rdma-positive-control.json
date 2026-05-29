@@ -1,0 +1,137 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "fmt2-sec-rdma-positive-control",
+    "description": "Use kvm-sfo200-sec-9923 as the non-destructive positive-control R630 for ConnectX-4/RoCEv2 admission while pri remains gated on physical ConnectX replacement.",
+    "owners": [
+      "forge",
+      "stage4-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "ansible_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM/gentoo_stage4_llvm_split-usr_no-multilib_hardened/gentoo-liveiso-ansible",
+      "description": "Ansible root containing host E2ET definitions and playbooks."
+    },
+    {
+      "name": "sec_host",
+      "required": true,
+      "default": "kvm_sfo200_sec_9923",
+      "description": "FMT2 R630 inventory host with working X710 and ConnectX-4 discovery paths."
+    },
+    {
+      "name": "ter_host",
+      "required": true,
+      "default": "kvm_sfo200_ter_9924",
+      "description": "FMT2 R630 inventory peer used for later pairwise RDMA smoke because it also has active ConnectX-4 links."
+    },
+    {
+      "name": "arista_host",
+      "required": true,
+      "default": "sw-sfo200-7060cx32s-2010",
+      "description": "Arista 7060 switch with sec ConnectX-facing ports Et7/1 and Et7/3."
+    },
+    {
+      "name": "e2et_manifest",
+      "required": true,
+      "default": "host-e2et-definitions/fmt2-sec-rdma-positive-control.yml",
+      "description": "Positive-control admission manifest that remains blocked until vendor driver and pairwise RDMA gates pass."
+    },
+    {
+      "name": "inventory",
+      "required": true,
+      "default": "inventories/local-network/hosts.yml",
+      "description": "Inventory containing the FMT2 roce_hosts entries. Execute this workflow from admin-sun99-forge-099070/M70 so the OpenVPN route and FMT2 SSH keys are available."
+    }
+  ],
+  "stages": [
+    {
+      "id": "read-only-sec-evidence-capture",
+      "summary": "Capture sec host inventory without changing disk, network, driver, or service state.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Capture on sec: hostname; uname -a; lspci -Dnn; ip -br link; ip -br addr; ethtool -i eno1 eno2 eno3 eno4 enp130s0f0np0 enp130s0f1np1; ethtool link speed checks; rdma link show; lsmod mlx5/i40e/rdma modules; /sys/class/net/*/device/sriov_totalvfs and sriov_numvfs. Do not mutate sec storage, pri, ter, or X12AGAIN.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "switch-positive-control-capture",
+      "summary": "Capture Arista Et7/1 and Et7/3 status, LLDP, counters, and Po713 config as the known-good switch-side comparison for pri.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Capture on Arista: show interfaces Ethernet7/1 status; show interfaces Ethernet7/3 status; show lldp neighbors Ethernet7/1 detail; show lldp neighbors Ethernet7/3 detail; show interfaces Ethernet7/1 counters errors; show interfaces Ethernet7/3 counters errors; show running-config interfaces Ethernet7/1 Ethernet7/3 Port-Channel713.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "vendor-driver-preflight",
+      "summary": "Run the NVIDIA DOCA/OFED role in preflight mode and keep the same vendor driver family used by ConnectX-4 and BlueField-2 behind one gate.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "ansible-playbook",
+        "-i",
+        "${inventory}",
+        "playbooks/nvidia-doca-ofed.yml",
+        "-l",
+        "${sec_host}",
+        "-e",
+        "nvidia_doca_ofed_enabled=true",
+        "-e",
+        "nvidia_doca_ofed_apply=false"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "rdma-tooling-gap-closeout",
+      "summary": "Close the current userspace tooling gap before pairwise testing; do not treat in-kernel mlx5 alone as production admission.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Required before pairwise smoke: ofed_info -s; ibv_devinfo; rping or ibv_rc_pingpong; ib_write_bw or ib_send_bw; rdma resource show. Install through the selected vendor OFED/DOCA or Gentoo stage4 profile, not ad-hoc unmanaged packages.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "sec-ter-pairwise-rdma-smoke",
+      "summary": "Run sec to ter pairwise RDMA smoke only after both endpoints have vendor driver reporting and userspace RDMA tools.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "printf '%s\\n' 'Deferred gate: run pairwise RDMA smoke between sec and ter over the independent 50G ConnectX paths, then test one-path-failure behavior before any LACP, OVS switchdev, or production storage promotion.'"
+      ],
+      "expectedExitCodes": [
+        0
+      ]
+    },
+    {
+      "id": "sec-rdma-admission-report",
+      "summary": "Render the sec RDMA E2ET conformance report; blocked is expected until vendor driver and pairwise gates are updated with passing evidence.",
+      "cwd": "${ansible_root}",
+      "command": [
+        "bash",
+        "-lc",
+        "../../scripts/host_e2et_conformance.py --manifest ${e2et_manifest}"
+      ],
+      "expectedExitCodes": [
+        1
+      ]
+    }
+  ]
+}

@@ -1,4 +1,11 @@
 ---
+- name: Install LiveISO installer prerequisites
+  ansible.builtin.command: >-
+    emerge --verbose --noreplace --oneshot {{ installer_prerequisites | default([]) | join(' ') }}
+  changed_when: "'>>> Emerging' in liveiso_prerequisites_install.stdout"
+  when: (installer_prerequisites | default([]) | length) > 0
+  register: liveiso_prerequisites_install
+
 - name: Check required commands exist on the LiveISO
   ansible.builtin.shell: "command -v {{ item }} >/dev/null"
   args:

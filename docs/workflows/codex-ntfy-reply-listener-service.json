@@ -1,0 +1,102 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "WorkflowManifest",
+  "metadata": {
+    "name": "codex-ntfy-reply-listener-service",
+    "description": "Install and validate the persistent Codex ntfy reply listener with local queue storage on a Gentoo/OpenRC host.",
+    "owners": [
+      "codex",
+      "host-operator"
+    ]
+  },
+  "variables": [
+    {
+      "name": "repo_root",
+      "required": true,
+      "default": "/root/RFC_Codex_Gentoo-Stage4-LLVM",
+      "description": "Local checkout used to install the reply-listener service."
+    },
+    {
+      "name": "ntfy_env_file",
+      "required": true,
+      "default": "/root/.codex/ntfy-pub-subs.export.sh",
+      "description": "Export file containing NTFY_URL and CODEX_NTFY_* variables."
+    },
+    {
+      "name": "reply_queue_dir",
+      "required": true,
+      "default": "/root/.codex/ntfy-replies",
+      "description": "Directory containing pending and processed reply queue files."
+    }
+  ],
+  "stages": [
+    {
+      "id": "validate-shell-suite",
+      "summary": "Run the repo shell validation suite before changing host service state.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "tests/shell/run-tests.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "stdout includes PASS: run-tests.sh"
+      ]
+    },
+    {
+      "id": "install-service",
+      "summary": "Install the OpenRC reply-listener service, enable it, and restart it.",
+      "cwd": "${repo_root}",
+      "command": [
+        "bash",
+        "scripts/install_codex_ntfy_reply_listener_service.sh"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "/usr/local/libexec/codex-ntfy-reply-listener",
+        "/etc/conf.d/codex-ntfy-reply-listener",
+        "/etc/init.d/codex-ntfy-reply-listener"
+      ]
+    },
+    {
+      "id": "verify-service-status",
+      "summary": "Confirm the reply-listener OpenRC service is running.",
+      "cwd": "/root",
+      "command": [
+        "rc-service",
+        "codex-ntfy-reply-listener",
+        "status"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "stdout or stderr includes status: started"
+      ]
+    },
+    {
+      "id": "verify-queue-layout",
+      "summary": "Inspect the reply queue directories created for pending and processed messages.",
+      "cwd": "/root",
+      "command": [
+        "find",
+        "${reply_queue_dir}",
+        "-maxdepth",
+        "2",
+        "-type",
+        "d"
+      ],
+      "expectedExitCodes": [
+        0
+      ],
+      "artifacts": [
+        "${reply_queue_dir}/pending",
+        "${reply_queue_dir}/processed"
+      ]
+    }
+  ]
+}

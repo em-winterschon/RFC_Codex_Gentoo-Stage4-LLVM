@@ -1,0 +1,12 @@
+---
+secure_firstboot_enrollment_enabled: false
+secure_firstboot_enrollment_service_name: stage5-firstboot-enroll
+secure_firstboot_enrollment_config_dir: /etc/stage5-firstboot
+secure_firstboot_enrollment_state_dir: /var/lib/stage5-firstboot
+secure_firstboot_enrollment_bundle_url: ""
+secure_firstboot_enrollment_age_identity: /etc/stage5-firstboot/age.identity
+secure_firstboot_enrollment_expected_fqdn: "{{ ansible_fqdn | default(inventory_hostname) }}"
+secure_firstboot_enrollment_command: ""
+secure_firstboot_enrollment_bundle_remove_after_success: true
+secure_firstboot_enrollment_validator: /usr/local/sbin/validate_secure_firstboot_bundle.py
+secure_firstboot_enrollment_validator_source: "{{ playbook_dir }}/../../../scripts/validate_secure_firstboot_bundle.py"

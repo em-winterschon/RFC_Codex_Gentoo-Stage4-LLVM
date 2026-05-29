@@ -10,12 +10,21 @@
     resolved_kibana: >-
       {{
         {
+          'install_method': resolved_profile_kibana.install_method | default(kibana_default_install_method),
+          'version': resolved_profile_kibana.version | default(kibana_default_version),
+          'tarball_url': resolved_profile_kibana.tarball_url | default(kibana_default_tarball_url),
+          'tarball_sha512': resolved_profile_kibana.tarball_sha512 | default(kibana_default_tarball_sha512),
+          'install_root': resolved_profile_kibana.install_root | default(kibana_default_install_root),
+          'service_user': resolved_profile_kibana.service_user | default(kibana_default_service_user),
+          'timezone': resolved_profile_kibana.timezone | default(kibana_default_timezone),
+          'node_options': resolved_profile_kibana.node_options | default(kibana_default_node_options),
           'server_name': resolved_profile_kibana.server_name | default(kibana_default_server_name),
           'server_host': resolved_profile_kibana.server_host | default(kibana_default_server_host),
           'server_port': resolved_profile_kibana.server_port | default(kibana_default_server_port),
           'base_path': resolved_profile_kibana.base_path | default(kibana_default_base_path),
           'public_base_url': resolved_profile_kibana.public_base_url | default(kibana_default_public_base_url),
-          'elasticsearch_hosts': resolved_profile_kibana.elasticsearch_hosts | default(kibana_default_elasticsearch_hosts)
+          'elasticsearch_hosts': resolved_profile_kibana.elasticsearch_hosts | default(kibana_default_elasticsearch_hosts),
+          'data_views': resolved_profile_kibana.data_views | default(kibana_default_data_views)
         }
       }}
 
@@ -26,11 +35,41 @@
     mode: '0755'
   when: kibana_enabled
 
+- name: Ensure Kibana support directories exist
+  ansible.builtin.file:
+    path: "{{ install_target_root }}{{ kibana_support_dir }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/init.d
+    - /usr/local/sbin
+    - /var/lib/kibana
+    - /var/log/kibana
+  loop_control:
+    loop_var: kibana_support_dir
+  when: kibana_enabled
+
 - name: Render Kibana configuration
   ansible.builtin.template:
     src: kibana.yml.j2
     dest: "{{ install_target_root }}/etc/kibana/kibana.yml"
     mode: '0644'
+  when: kibana_enabled
+
+- name: Render Kibana OpenRC service for upstream tarball installs
+  ansible.builtin.template:
+    src: kibana.openrc.j2
+    dest: "{{ install_target_root }}/etc/init.d/kibana"
+    mode: '0755'
+  when:
+    - kibana_enabled
+    - resolved_kibana.install_method == 'upstream_tarball'
+
+- name: Render Kibana data view bootstrap helper
+  ansible.builtin.template:
+    src: stage5-kibana-bootstrap-data-views.sh.j2
+    dest: "{{ install_target_root }}/usr/local/sbin/stage5-kibana-bootstrap-data-views"
+    mode: '0755'
   when: kibana_enabled
 
 - name: Enable Kibana service

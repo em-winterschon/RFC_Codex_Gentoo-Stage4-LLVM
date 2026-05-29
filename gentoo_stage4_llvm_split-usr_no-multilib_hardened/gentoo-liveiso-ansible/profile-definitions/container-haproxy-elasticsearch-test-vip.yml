@@ -5,26 +5,35 @@ gentoo_profile_definition:
       published_ports:
         - 80:80/tcp
         - 443:443/tcp
-        - 10.9.8.92:9200:9200/tcp
-      pre_commands:
-        - >-
-          vip_dev="$(ip -o route get 10.9.8.1 | awk '{for (i = 1; i <= NF; i++) if ($i == "dev") {print $(i + 1); exit}}')";
-          test -n "${vip_dev}";
-          ip address replace 10.9.8.92/32 dev "${vip_dev}"
+        - 6514:6514/tcp
+        - 9200:9200/tcp
   haproxy_service_types:
     - name: elasticsearch-test-http
       bind: "*:9200"
       mode: http
       backend_name: be_elasticsearch_test_http
+      tls_https_route: true
+      host_acl: obs-sun99-esvip-099092.rfc1918.host obs-sun99-esvip.rfc1918.host
       servers:
         - name: elasticsearch-test
           address: 10.9.8.91
           port: 9200
+    - name: syslog-tcp
+      bind: "*:6514"
+      mode: tcp
+      backend_name: be_syslog_tcp
+      tls:
+        enabled: true
+        cert_path: /etc/haproxy/tls/log-sun99-rsyslog.pem
+      servers:
+        - name: rsyslog-collector
+          address: 10.77.0.40
+          port: 514
   service_readiness:
     enabled: true
     checks:
       - name: elasticsearch-test-vip-http
-        target: 10.9.8.92
+        target: 172.16.99.92
         port: 9200
         protocol: tcp
         retries: 24

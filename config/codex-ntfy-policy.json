@@ -1,0 +1,22 @@
+{
+  "apiVersion": "rfc-codex/v1alpha1",
+  "kind": "CodexNtfyPolicy",
+  "metadata": {
+    "name": "default-codex-ntfy-policy",
+    "description": "Default reply-handling policy for Codex ntfy responses."
+  },
+  "replyKinds": {
+    "permission_reply": {
+      "mode": "state-driven"
+    },
+    "question_reply": {
+      "mode": "state-driven"
+    },
+    "status_request": {
+      "mode": "advisory"
+    },
+    "unrecognized_reply": {
+      "mode": "advisory"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+---
+gentoo_profile_definition:
+  name: metal-workstation-basic-xorg
+  profile_id: metal-workstation-basic-xorg
+  description: Bare-metal Stage5 workstation baseline for Xorg, SLiM, Intel display output, SSSD, and no Wayland components.
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-base-minimal-xorg-slim.packages
+    - profile-package-lists/stage5-metal-intel-platform.packages
+    - profile-package-lists/stage5-domain-client-freeipa-minimal.packages
+    - profile-package-lists/stage5-secure-firstboot-enrollment.packages
+    - profile-package-lists/stage5-observability-metrics-client.packages
+  make_conf_append: |
+    ACCEPT_LICENSE="* *.*"
+    USE="${USE} X dbus elogind opengl truetype vaapi vulkan xinerama zstd -gnome -kde -systemd -wayland"
+    VIDEO_CARDS="intel i915 modesetting fbdev"
+    INPUT_DEVICES="libinput evdev keyboard mouse"
+    FEATURES="${FEATURES} -ccache -distcc buildpkg parallel-install merge-sync"
+    PKGDIR="/var/cache/binpkgs/stage4-lox__stage5-metal-workstation-basic-xorg__amd64__intel-display-xorg"
+  package_use_files:
+    35-metal-workstation-basic-xorg: |
+      media-libs/libglvnd X
+      media-libs/libva X glx -wayland
+      media-libs/mesa X lm-sensors opengl proprietary-codecs vaapi vulkan vulkan-overlay zstd -debug -opencl -selinux -test -wayland
+      media-libs/vulkan-loader X -wayland
+      dev-python/pillow -truetype
+      app-admin/sudo -sendmail
+      sys-apps/smartmontools -daemon
+      sys-auth/pambase elogind
+      x11-base/xorg-server elogind udev xorg -systemd
+      x11-libs/libdrm video_cards_intel tools udev
+      x11-misc/slim pam
+  package_mask_files:
+    35-metal-workstation-no-wayland: |
+      dev-libs/plasma-wayland-protocols
+      dev-libs/wayland
+      dev-libs/wayland-protocols
+      dev-qt/qtwayland
+      dev-util/wayland-scanner
+      gui-apps/xwaylandvideobridge
+      gui-libs/wlroots
+      kde-plasma/kwayland
+      kde-plasma/kwin
+      kde-plasma/plasma-meta
+      kde-plasma/plasma-workspace
+      sys-apps/xdg-desktop-portal
+      x11-base/xwayland
+      x11-misc/sddm
+  modules_load_files:
+    metal-workstation-basic-xorg.conf: |
+      coretemp
+      i915
+      mei
+      mei_me
+      zfs
+  openrc_services_enable:
+    - chronyd
+    - dbus
+    - lm_sensors
+    - rsyslog
+    - sshd
+    - sssd
+    - xdm
+  service_readiness:
+    enabled: true
+    checks:
+      - name: ssh
+        protocol: tcp
+        target: "{{ ansible_host | default('127.0.0.1') }}"
+        port: 22
+        timeout_seconds: 5

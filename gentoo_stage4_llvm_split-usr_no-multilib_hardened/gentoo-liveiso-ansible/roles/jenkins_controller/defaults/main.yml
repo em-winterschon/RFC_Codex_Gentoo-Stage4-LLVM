@@ -34,6 +34,7 @@ jenkins_controller_default_folders:
     description: Container image and GHCR publication pipelines.
   - name: binpkgs
     description: Binpkg rebuild and package-host publication pipelines.
+jenkins_controller_default_job_seed_manifests: []
 jenkins_controller_default_builder_farm_uplink_interfaces: []
 jenkins_controller_default_builder_farm_switch_name: ""
 jenkins_controller_default_builder_farm_switch_port_profile: ""

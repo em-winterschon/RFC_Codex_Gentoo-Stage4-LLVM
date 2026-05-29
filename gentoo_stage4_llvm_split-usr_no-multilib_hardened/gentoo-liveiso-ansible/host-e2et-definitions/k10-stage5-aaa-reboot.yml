@@ -1,0 +1,61 @@
+---
+run:
+  id: k10-stage5-aaa-reboot-20260512
+  phase: post-reboot-post-apply
+  timestamp: "2026-05-11T19:02:34-07:00"
+host:
+  name: gmktek_nucbox_k10_stage5_candidate
+  fqdn: gmktek-k10-stage5.rfc1918.host
+  profile: stage4-lox__stage5-workstation-nscde__amd64__gpu-universal-xorg
+baseline:
+  name: RFC99 workstation AAA reboot durability
+  target_tier: p90
+gates:
+  - name: Inventory Gate
+    weight: 10
+    hard_required: true
+    checks:
+      - name: K10 inventory identity is modeled
+        status: pass
+        evidence: K10 host vars, NetBox intake, CSS326 ge16, and AP7901 outlet 6 are repo-tracked.
+  - name: Provisioning Gate
+    weight: 15
+    hard_required: true
+    checks:
+      - name: PXE chainload reaches Gentoo live root
+        status: pass
+        evidence: AP7901 outlet 6 reboot returned SSH on 172.16.99.156 from the promoted 2026-05-12 Path B image served by 172.16.99.88.
+      - name: Rebuilt rootfs contains aaa-domain-client
+        status: pass
+        evidence: Rebooted rootfs runs 6.18.28-gentoo-dist and contains sys-auth/sssd, net-fs/samba, app-crypt/mit-krb5, net-nds/openldap, age, jq, curl, and /usr/lib64/sssd/libsss_ipa.so.
+  - name: Identity Gate
+    weight: 30
+    hard_required: true
+    checks:
+      - name: SSSD IPA backend persists after reboot
+        status: pass
+        evidence: /usr/lib64/sssd/libsss_ipa.so exists after AP7901 outlet 6 reboot into the promoted rootfs.
+      - name: FreeIPA live enrollment applies after reboot
+        status: pass
+        evidence: ipa-client-live-apply passed after acquiring a controller Kerberos ticket and installing the host keytab on the live K10 rootfs.
+      - name: FreeIPA SSH login works after live enrollment
+        status: pass
+        evidence: codex-admin SSH login resolved UID 200100, GID 201000, and linux-admin, ci-builder, network-admin, and power-admin supplemental groups.
+      - name: Host enrollment survives reboot through secure first-boot bundle
+        status: fail
+        hard_fail: true
+        evidence: Rebooted HTTP netboot rootfs intentionally does not embed /etc/krb5.keytab; unattended durable enrollment requires disk install or stage5-firstboot-enroll consuming an age-encrypted FreeIPA host OTP bundle so /etc/krb5.keytab is generated on the target.
+  - name: Service Gate
+    weight: 15
+    hard_required: false
+    checks:
+      - name: SSH management path returns after reboot
+        status: pass
+        evidence: root SSH returned at attempt 3 after AP7901 outlet 6 immediateReboot.
+  - name: Performance Gate
+    weight: 10
+    hard_required: false
+    checks:
+      - name: Package build performance baseline
+        status: skip
+        evidence: Deferred until reboot-durable identity and workstation install gates pass.

@@ -1,9 +1,9 @@
 # RouterOS RFC99 Gateway Role
 
 `routeros_rfc99_gateway` renders the physical CCR2004 replacement-router
-configuration for the RFC99 management and services fabric. It is intentionally
-render-only until the generated `.rsc` file has been reviewed against the live
-serial console state.
+configuration for the RFC99 management and services fabric. The role remains
+render-first: generated `.rsc` files must be reviewed against live gateway
+state before any operator-applied import or SSH command stream.
 
 ## Target
 
@@ -44,6 +44,22 @@ Rendered artifacts:
 
 - `/tmp/routeros-rfc99-gateway/<host>-rfc99-gateway.rsc`
 - `/tmp/routeros-rfc99-gateway/<host>-rfc99-gateway.json`
+
+## RouterOS Artifact Cache
+
+The on-host RouterOS package cache for this target is
+`/opt/routeros/mikrotik-official`.
+
+Current staged artifacts:
+
+- RouterOS `7.22.3` arm64 package:
+  `/opt/routeros/mikrotik-official/os-systems/arm64/routeros-7.22.3-arm64.npk`
+- RouterOS container `7.22.3` arm64 package:
+  `/opt/routeros/mikrotik-official/containers/arm64/container-7.22.3-arm64.npk`
+
+The container package is tracked for lab validation only. Production service
+VIPs should continue to terminate on the Stage4 container-services VM through
+HAProxy, not inside RouterOS containers on the primary gateway.
 
 ## Security Posture
 
@@ -92,6 +108,54 @@ The CRS309 WIP declared overlapping `172.16.228.0/22` gateway entries. The
 CCR2004 render normalizes that to only `172.16.228.1/22` and intentionally omits
 the duplicate `172.16.229.1/22` and `172.16.230.1/22` entries.
 
+## Service VIP Routing
+
+The approved production boundary is:
+
+- CCR2004 owns L3 service VIPs and narrowly scoped DNAT rules.
+- Stage4 container-services VMs run HAProxy/nginx and own application behavior.
+- RouterOS containers remain a lab-only experiment until package enablement,
+  external storage, image provenance, health checks, and private key handling
+  are validated away from the primary gateway.
+
+Initial SUN99 Elasticsearch/search VIP:
+
+| Field | Value |
+| --- | --- |
+| VIP | `172.16.99.92/32` |
+| FQDN | `obs-sun99-esvip-099092.rfc1918.host` |
+| Alias | `obs-sun99-esvip.rfc1918.host` |
+| CCR2004 action | DNAT TCP/9200 to `172.16.99.89:9200` |
+| CCR2004 hairpin | SRCNAT LAN clients to the backend for symmetric replies |
+| HAProxy host | `svc-container-services-safe-move-01` |
+| Backend path | HAProxy forwards to the Path B Elasticsearch test endpoint |
+
+Dedicated SUN99 rsyslog VIP:
+
+| Field | Value |
+| --- | --- |
+| VIP | `172.16.99.93/32` |
+| FQDN | `log-sun99-rsyslog-099093.rfc1918.host` |
+| Alias | `log-sun99-rsyslog.rfc1918.host` |
+| CCR2004 action | DNAT TCP/6514 to `172.16.99.89:6514` |
+| CCR2004 hairpin | SRCNAT LAN clients to the backend for symmetric replies |
+| HAProxy host | `svc-container-services-safe-move-01` |
+| Backend path | HAProxy forwards to the rsyslog collector TCP listener |
+
+The Elasticsearch service VIP was applied live on `2026-05-10` after pre-change RouterOS
+backup/export capture. Validation passed for ICMP reachability, TCP/9200
+readiness, RouterOS DNS A/CNAME resolution, Elasticsearch cluster health
+`green`, and syslog-to-Elasticsearch marker ingestion through the VIP.
+
+The role also renders temporary `/32` static routes for `10.9.8.91` and
+`10.9.8.92` via `172.16.99.108` while Path B services remain behind X12AGAIN.
+The container-services VM no longer keeps matching backend route pins through
+`172.16.99.108`; live validation on `2026-05-10` confirmed it can use the
+normal CCR2004 gateway at `172.16.99.1` while CCR2004 owns the temporary
+backend `/32` routing exception. Remove the CCR2004 `/32` routes only after
+VLAN `1098` and the Elasticsearch service path are fully owned by the physical
+CCR2004/spine fabric.
+
 ## DHCP Scope
 
 The active gateway provides a narrow DHCP scope for the management-compat
@@ -135,16 +199,29 @@ path is now PXE/TFTP with filename `k10-ipxe.efi`.
 
 ## Live Apply Gate
 
-No live apply task exists in this role yet. Before adding one:
+The first scoped live apply covered only the Elasticsearch/search service VIP.
+Before adding broader apply automation:
 
-1. Keep `/dev/ttyUSB2` serial console open.
+1. Keep the Hasslehoff CCR2004 serial console open:
+   `/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A9888PID-if00-port0`.
 2. Export current RouterOS config and binary backup.
 3. Review the rendered RSC line-by-line.
 4. Confirm cabling: `sfp-sfpplus1` WAN and `sfp-sfpplus2` LAN trunk.
 5. Confirm management access source is inside the allowed CIDRs.
 6. Apply a management-only subset first if reachability risk is high.
 7. Validate SSH, HTTPS, API-SSL, WAN DHCP, default route, DNS, SNAT, and VLAN
-   gateway reachability before retiring the existing gateway path.
+   gateway reachability before retiring any existing gateway path.
+
+Captured operator artifacts from the scoped service-VIP apply:
+
+- pre-change state:
+  `/root/operator-private/routeros/ccr2004-16g/pre-service-vip-20260510T175807Z`
+- reviewed render:
+  `/root/operator-private/routeros/ccr2004-16g/render-20260510T180201Z`
+- applied RSC:
+  `/root/operator-private/routeros/ccr2004-16g/service-vip-apply-20260510T180226Z.rsc`
+- post-change state:
+  `/root/operator-private/routeros/ccr2004-16g/post-service-vip-20260510T180309Z`
 
 ## Validation
 

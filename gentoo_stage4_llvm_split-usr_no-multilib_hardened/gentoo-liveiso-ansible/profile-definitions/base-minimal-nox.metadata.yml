@@ -1,0 +1,48 @@
+---
+gentoo_system_profile_metadata:
+  id: base-minimal-nox
+  purpose: Minimal non-graphical baseline for bare-metal hosts, VMs, and role overlays.
+  profile_taxonomy:
+    stage: stage5
+    role_class: baremetal-base
+    role_name: base-minimal-nox
+    package_layers:
+      - profile-package-lists/stage5-base-minimal-nox.packages
+    service_atom_registry: profile-service-atoms/stage5-role-service-atoms.yml
+  package_pins:
+    support_packages:
+      - app-admin/rsyslog
+      - app-admin/sudo
+      - app-portage/gentoolkit
+      - net-misc/openssh
+      - net-misc/chrony
+      - sys-apps/ethtool
+      - sys-apps/lm-sensors
+      - sys-apps/net-tools
+      - sys-process/btop
+      - sys-process/daemontools
+      - sys-process/htop
+      - sys-process/iotop-c
+      - sys-process/lsof
+      - sys-process/numactl
+      - sys-process/numad
+      - sys-process/parallel
+      - sys-process/psmisc
+      - sys-process/time
+      - sys-process/wait_on_pid
+      - sys-process/watchpid
+    optional_keyworded_monitoring_packages:
+      - sys-process/bashtop
+      - sys-process/psinfo
+      - sys-process/rtirq
+      - sys-process/pipectl
+      - sys-process/procenv
+    optional_keyworded_monitoring_policy: >-
+      Keep keyworded or Guru-only monitoring tools as explicit host/profile
+      opt-ins so base-minimal remains buildable on stable amd64 without a
+      mandatory external overlay.
+  openrc_services:
+    - chronyd
+    - lm_sensors
+    - rsyslog
+    - sshd

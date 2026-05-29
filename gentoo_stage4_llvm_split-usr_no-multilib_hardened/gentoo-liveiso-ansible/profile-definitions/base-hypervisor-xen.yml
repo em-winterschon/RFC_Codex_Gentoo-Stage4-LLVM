@@ -1,0 +1,40 @@
+---
+gentoo_profile_definition:
+  package_list_files:
+    - profile-package-lists/stage5-base-minimal-nox.packages
+    - profile-package-lists/stage5-base-hypervisor-common.packages
+    - profile-package-lists/stage5-base-hypervisor-xen.packages
+  make_conf_append: |
+    USE="${USE} aio curl gnutls infiniband iscsi numa seccomp ssl xen zfs"
+  package_use_files:
+    20-hypervisor-xen: |
+      app-emulation/xen uefi
+      app-emulation/xen-tools hvm ipxe ovmf qemu system-ipxe system-qemu
+      net-misc/openvswitch modules ssl
+      sys-fs/zfs rootfs
+  package_accept_keywords_files:
+    20-hypervisor-xen-testing: |
+      =net-misc/openvswitch-3.3.8 ~amd64
+      =sys-fs/zfs-2.4.1 ~amd64
+      =sys-fs/zfs-kmod-2.4.0_rc2-r1 ~amd64
+  modules_load_files:
+    base-hypervisor-xen.conf: |
+      ib_uverbs
+      mlx5_core
+      mlx5_ib
+      nvme
+      nvme-fabrics
+      nvme-rdma
+      openvswitch
+      qede
+      xen-evtchn
+      xen-gntdev
+      zfs
+  openrc_services_enable:
+    - chronyd
+    - openvswitch
+    - rsyslog
+    - sshd
+    - xenconsoled
+    - xendomains
+    - xenstored
