@@ -96,6 +96,8 @@
     resolved_profile_nfs_storage_client: "{{ profile_nfs_storage_client | default({}) }}"
     resolved_profile_binpkg_repo: "{{ profile_binpkg_repo | default({}) }}"
     resolved_profile_nexus_repo: "{{ profile_nexus_repo | default({}) }}"
+    resolved_profile_trac_server: "{{ profile_trac_server | default({}) }}"
+    resolved_profile_trac_mcp_bridge: "{{ profile_trac_mcp_bridge | default({}) }}"
     resolved_profile_forge_memory_object_store: "{{ profile_forge_memory_object_store | default({}) }}"
     resolved_profile_nscde_workstation: "{{ profile_nscde_workstation | default({}) }}"
     resolved_profile_workstation_session_stack: "{{ profile_workstation_session_stack | default({}) }}"
@@ -217,6 +219,16 @@
       {{
         resolved_profile_nexus_repo
         | combine(profile_nexus_repo | default({}), recursive=True)
+      }}
+    resolved_profile_trac_server: >-
+      {{
+        resolved_profile_trac_server
+        | combine(profile_trac_server | default({}), recursive=True)
+      }}
+    resolved_profile_trac_mcp_bridge: >-
+      {{
+        resolved_profile_trac_mcp_bridge
+        | combine(profile_trac_mcp_bridge | default({}), recursive=True)
       }}
     resolved_profile_forge_memory_object_store: >-
       {{

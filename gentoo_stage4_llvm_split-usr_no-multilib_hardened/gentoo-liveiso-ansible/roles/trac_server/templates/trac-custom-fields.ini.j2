@@ -1,0 +1,8 @@
+[ticket-custom]
+{% for field in resolved_trac_server.ticket_custom_fields %}
+{{ field.name }} = {{ field.type }}
+{{ field.name }}.label = {{ field.label }}
+{% if field.options is defined %}
+{{ field.name }}.options = {{ field.options | join('|') }}
+{% endif %}
+{% endfor %}

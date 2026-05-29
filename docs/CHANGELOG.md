@@ -592,6 +592,11 @@ infrastructure work. It is intentionally higher level than `git log`.
 
 ### Added
 
+- Added the Trac project-management control-plane design, Stage5
+  `vm-trac-service` profile, `trac_server` role, and `trac_mcp_bridge` role
+  scaffolding so Trac can become the authoritative Kanban/ticket/wiki plane
+  while GitHub and Codeberg remain linked Git surfaces.
+
 - Added Stage5 `vm-redfish-emulator` profile scaffolding using OpenStack
   `sushy-tools` as the primary libvirt-backed VM Redfish path and DMTF Redfish
   Interface Emulator as the static mockup fallback.

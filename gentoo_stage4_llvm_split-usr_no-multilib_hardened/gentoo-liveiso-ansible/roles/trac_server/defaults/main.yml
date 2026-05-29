@@ -1,0 +1,81 @@
+---
+trac_server_default_enabled: false
+trac_server_default_service_user: trac
+trac_server_default_service_group: trac
+trac_server_default_project_name: rfc1918-platform-fabric
+trac_server_default_project_path: /var/lib/trac/rfc1918-platform-fabric
+trac_server_default_config_root: /etc/trac
+trac_server_default_log_root: /var/log/trac
+trac_server_default_listen_host: 127.0.0.1
+trac_server_default_listen_port: 8082
+trac_server_default_public_base_url: https://trac.rfc1918.host/
+trac_server_default_database:
+  engine: postgresql
+  name: trac_platform_fabric
+  user: trac
+  password_vault_var: vault_trac_postgres_password
+  host: 127.0.0.1
+  port: 5432
+trac_server_default_auth:
+  mode: freeipa-ldap
+  require_domain_groups:
+    - infra-admins
+    - infra-operators
+  break_glass_local_admin: true
+trac_server_default_workflow_states:
+  - intake
+  - ready
+  - in_progress
+  - blocked
+  - review
+  - validation
+  - done
+trac_server_default_ticket_custom_fields:
+  - name: site
+    type: text
+    label: Site
+  - name: system_type
+    type: select
+    label: System Type
+    options:
+      - metal-host
+      - virtual-host
+      - service-container
+      - network-device
+      - power-device
+  - name: service_role
+    type: text
+    label: Service Role
+  - name: component
+    type: text
+    label: Component
+  - name: blocked_by
+    type: text
+    label: Blocked By
+  - name: github_pr
+    type: text
+    label: GitHub PR
+  - name: codeberg_ref
+    type: text
+    label: Codeberg Ref
+  - name: netbox_object
+    type: text
+    label: NetBox Object
+  - name: change_window
+    type: text
+    label: Change Window
+  - name: backout_plan
+    type: textarea
+    label: Backout Plan
+  - name: slo_validation
+    type: textarea
+    label: SLO Validation
+trac_server_default_plugins:
+  policy: pinned-minimal
+  desired_classes:
+    - git
+    - rpc-api
+    - ticket-dependencies
+    - jenkins
+    - buildbot
+    - ldap-auth

@@ -1,0 +1,20 @@
+---
+trac_mcp_bridge_default_enabled: false
+trac_mcp_bridge_default_service_user: trac-mcp
+trac_mcp_bridge_default_service_group: trac-mcp
+trac_mcp_bridge_default_config_root: /etc/trac-mcp
+trac_mcp_bridge_default_log_root: /var/log/trac-mcp
+trac_mcp_bridge_default_implementation_mode: third_party
+trac_mcp_bridge_default_command: /usr/local/bin/trac-mcp-server
+trac_mcp_bridge_default_listen_host: 127.0.0.1
+trac_mcp_bridge_default_listen_port: 8765
+trac_mcp_bridge_default_trac_base_url: http://127.0.0.1:8082/
+trac_mcp_bridge_default_token_vault_var: vault_trac_mcp_service_token
+trac_mcp_bridge_default_mutation_allowlist:
+  - ticket.create
+  - ticket.update
+  - ticket.comment
+  - milestone.create
+  - milestone.update
+  - wiki.create
+  - wiki.update

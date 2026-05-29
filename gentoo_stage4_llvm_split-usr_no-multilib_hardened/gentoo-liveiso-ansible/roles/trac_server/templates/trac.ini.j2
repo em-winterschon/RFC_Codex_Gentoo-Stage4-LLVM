@@ -1,0 +1,26 @@
+[trac]
+base_url = {{ resolved_trac_server.public_base_url }}
+project_name = {{ resolved_trac_server.project_name }}
+
+[database]
+connection = postgres://{{ resolved_trac_server.database.user }}:${{{ resolved_trac_server.database.password_vault_var }}}@{{ resolved_trac_server.database.host }}:{{ resolved_trac_server.database.port }}/{{ resolved_trac_server.database.name }}
+
+[logging]
+log_type = file
+log_file = {{ resolved_trac_server.log_root }}/trac.log
+log_level = INFO
+
+[components]
+tracopt.ticket.commit_updater.* = enabled
+
+[project-management]
+authority = trac
+github_usage = linked-pr-surface
+codeberg_usage = mirror-ref-surface
+netbox_authority = ipam-dcim
+identity_authority = freeipa
+
+[auth]
+mode = {{ resolved_trac_server.auth.mode }}
+break_glass_local_admin = {{ resolved_trac_server.auth.break_glass_local_admin | ternary('true', 'false') }}
+required_groups = {{ resolved_trac_server.auth.require_domain_groups | join(',') }}

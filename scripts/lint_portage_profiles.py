@@ -71,6 +71,8 @@ ALLOWED_PROFILE_KEYS = {
     "nexus_repo",
     "mcp_control_plane",
     "forge_memory_object_store",
+    "trac_server",
+    "trac_mcp_bridge",
     "netboot_publisher",
     "nfs_storage_client",
     "nscde_workstation",
